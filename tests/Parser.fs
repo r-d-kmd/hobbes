@@ -55,5 +55,11 @@ module Parser =
             
         Assert.Equal(ast, expected)
 
+    [<Fact>]
+    let onlyParse() =
+        let actual = only (!> "Sprint" == 5) |> parse
+        let expected = FilterAndSorting (Only(Comparison(ColumnName "Sprint", Number (Int32 5), EqualTo)))
+        Assert.True(actual.Equals(expected))
+
 
         

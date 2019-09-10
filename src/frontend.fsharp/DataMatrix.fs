@@ -553,7 +553,6 @@ module DataStructures =
                 
             frame |> f
         let cluster c  =
-            if debugPrint then printfn "Clustering %A" c
             let f = 
                 match c with
                  | AST.Buckets(b,reduction) -> Clustering.counting b reduction 

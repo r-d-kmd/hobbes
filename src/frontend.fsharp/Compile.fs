@@ -12,9 +12,6 @@ module Compile =
             |> Seq.append table2
             
      let parsedExpressions expressions = 
-         if debugPrint then
-             printfn "Compiling %d expressions" (expressions |> Seq.length)
-             printfn "%A" (expressions |> List.ofSeq)
          expressions
          |> Seq.fold(fun f' transform -> f' >> (fun (d : IDataMatrix) -> d.Transform transform)) id
 

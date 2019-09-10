@@ -39,7 +39,7 @@ module Frontend =
         )
     type Column = seq<KeyType * IComparable>
     type Table = seq<string * Column>
-    let testDataset = 
+    let testDataset() = 
         testDataTable
          |> Hobbes.DataStructures.DataMatrix.fromTable
 
@@ -50,7 +50,7 @@ module Frontend =
         Map.ofSeq
         >> Map.find name
 
-    let compareColumns (actual : Column) expected = 
+    let compareColumns expected (actual : Column) = 
         Assert.Equal(expected |> Seq.length, actual |> Seq.length)
         actual
         |> Seq.iter2(fun (rowKeyExpected,rowValueExpected) (rowKeyActual,rowValueActual) -> 
@@ -73,7 +73,8 @@ module Frontend =
             |> parse
         let execute = Compile.parsedExpressions [parsedStatements] 
         let actual = 
-            (execute testDataset) |> asTable
+            (testDataset() |> execute) 
+            |> asTable
             |> getColumn "Test"
         let expected = 
             testDataTable
@@ -89,10 +90,50 @@ module Frontend =
             |> parse
         let execute = Compile.parsedExpressions [parsedStatements] 
         let actual = 
-            (execute testDataset) |> asTable
-            |> getColumn "Test"
+            (testDataset() |> execute) 
+            |> asTable
+            |> getColumn "Test"  
         let expected = 
             testDataTable
             |> getColumn "State"
             |> Seq.map(fun (key,state) -> key,(if (state |> string) = matchState then 1. elif (state |> string) = nestedMatchState then 2. else 3.) :> IComparable)
+        compareColumns expected actual
+    [<Fact>]
+    let onlyReturnAll() =
+        let statement = only (!!> "foo" == !!> "foo") |> parse
+        let execute = Compile.parsedExpressions [statement]
+        (testDataset() |> execute) 
+        |> asTable
+        |> assertTablesEqual testDataTable  
+    [<Fact>]
+    let onlyReturnNone() =
+        let statement = only (!!> "foo" == !!> "boo") |> parse
+        let execute = Compile.parsedExpressions [statement]
+        let actual = 
+            (testDataset() |> execute) 
+            |> asTable
+
+        assertTablesEqual (testDataTable |> Seq.map (fun (c, _) -> c, Seq.empty)) actual
+    [<Fact>]
+    let onlyReturnSome() =
+        let statement = only (!> "State" == "Active") |> parse
+        let execute = Compile.parsedExpressions [statement]
+        let actual = 
+            (testDataset() |> execute) 
+            |> asTable
+            |> getColumn "State"
+        let expected = seq{yield (AST.KeyType.Create 3,"Active":>IComparable)}        
+
+        compareColumns expected actual
+
+    [<Fact>]
+    let onlyReturnSomeInts() =
+        let statement = only (!> "Sprint" == 5) |> parse
+        let execute = Compile.parsedExpressions [statement]
+        let actual = 
+            (testDataset() |> execute) 
+            |> asTable
+            |> getColumn "Sprint"
+        let expected = seq{yield (AST.KeyType.Create 4, 5 :> IComparable)}        
+
         compareColumns expected actual

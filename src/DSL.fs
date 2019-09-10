@@ -50,6 +50,8 @@ type Expression =
              Equal(e1,TextLiteral(e2))
          static member (==) (e1:Expression, e2:Expression) = 
              Equal(e1,e2)
+         static member (==) (e1:Expression, e2:int) = 
+             Equal(e1,e2 |> float |> NumberConstant)
          static member (!=) (e1:Expression, e2:string) = 
              Not(e1 == e2)
          static member (.||) (exp1:Expression,exp2:Expression) =

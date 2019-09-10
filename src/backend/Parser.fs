@@ -7,7 +7,7 @@ module Parser =
 
     let private indexByColumn = kwIndex >>. kwBy >>. kwColumn >>. columnName >>= (AST.IndexBy >> preturn)
     let private sortByColumns = kwSort  >>. kwBy  >>. kwColumn >>. columnName >>= (AST.SortBy >> preturn)
-    let private sliceColumns = kwSlice  .>> kwColumns  >>. columnNameList >>= (AST.SliceColumns >> preturn)
+    let private sliceColumns = kwSlice  >>. kwColumns  >>. columnNameList >>= (AST.SliceColumns >> preturn)
     let private dense = kwDense >>?  (kwColumns  >>= (fun _ -> AST.NumericColumns |> preturn) <|> kwRows)
     let private numericColumns = kwNumeric >>? kwColumns >>= (fun _ -> AST.NumericColumns |> preturn)
     let private only = 

@@ -1,0 +1,14 @@
+version: 0.2.0.{build}
+image: Visual Studio 2017
+environment:
+  key:
+    secure: Z0PUCccTrpJH6+ynayg4VRwVp8T5JlqPe6YZhDij+z4B3yF+i5EiDeJDXDJInoHF
+
+install:
+  - dotnet tool install fake-cli -g
+  - dotnet tool install --global --version 5.198.0 paket
+
+before_build:
+  - paket install
+build_script: 
+  - fake build --target PublishPackage

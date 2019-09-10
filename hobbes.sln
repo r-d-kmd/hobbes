@@ -1,0 +1,29 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "hobbes", ".\src\hobbes.fsproj", "{A5E05D54-6E7D-4C2C-AC92-46D7CF6B8EDE}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "hobbes.test", ".\tests\hobbes.tests.fsproj", "{E85E9D67-798E-4D24-AB20-14989DD8D285}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "hobbes.lab", ".\lab\hobbes.lab.fsproj", "{E85E9D67-798E-4D24-AB20-14989DD8D286}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A5E05D54-6E7D-4C2C-AC92-46D7CF6B8EDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5E05D54-6E7D-4C2C-AC92-46D7CF6B8EDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5E05D54-6E7D-4C2C-AC92-46D7CF6B8EDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5E05D54-6E7D-4C2C-AC92-46D7CF6B8EDE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E85E9D67-798E-4D24-AB20-14989DD8D285}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E85E9D67-798E-4D24-AB20-14989DD8D285}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E85E9D67-798E-4D24-AB20-14989DD8D285}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E85E9D67-798E-4D24-AB20-14989DD8D285}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E85E9D67-798E-4D24-AB20-14989DD8D286}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E85E9D67-798E-4D24-AB20-14989DD8D286}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E85E9D67-798E-4D24-AB20-14989DD8D286}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E85E9D67-798E-4D24-AB20-14989DD8D286}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

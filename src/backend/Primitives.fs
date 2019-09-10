@@ -4,7 +4,7 @@ namespace Hobbes.Parsing
 module Primitives = 
     open FParsec
     type Parser<'a> = Parser<'a,unit> 
-    let debugPrint = false
+    
     let private identifier : Parser<_> = identifier (IdentifierOptions())
   
     let stringThenWhiteSpace s = pstring s >>. spaces

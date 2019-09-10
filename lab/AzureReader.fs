@@ -6,7 +6,7 @@ open System
 open Hobbes.Parsing
 open FSharp.Data.JsonExtensions
 
-type AzureWorkItems = JsonProvider<"data/azure_medium.json", SampleIsList = true>
+type AzureWorkItems = JsonProvider<"""[{"@odata.nextLink":"https"},{"@odata.nextLink":"https"}]""", SampleIsList = true>
 type Cookies = JsonProvider<"""[["foo","bar"]]"""> //JsonProvider<"cookies.json">
 
 let combineData matrix1 matrix2= 

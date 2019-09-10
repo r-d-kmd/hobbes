@@ -1,0 +1,31 @@
+source https://www.nuget.org/api/v2
+version 5.198.0
+framework: auto-detect
+storage: none
+
+nuget Accord.MachineLearning
+nuget ARgu
+nuget Deedle
+nuget Fake
+nuget Fake.Core
+nuget Fake.Core.Target
+nuget Fake.DotNet
+nuget Fake.DotNet.Cli
+nuget Fake.DotNet.NuGet
+nuget Fake.IO.FileSystem
+nuget FSharp.Data
+nuget FParsec
+nuget FSharp.Interop.Dynamic 4.0.3.130
+nuget Microsoft.VisualStudio.Services.Client
+
+group test
+    source https://www.nuget.org/api/v2
+    framework: auto-detect
+    storage: none
+    
+    nuget FsUnit
+    nuget FsUnit.xUnit
+    nuget xUnit
+    nuget Microsoft.NET.Test.SDK
+    nuget microsoft.testplatform.testhost
+    nuget xunit.runner.visualstudio

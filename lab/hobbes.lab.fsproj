@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\src\hobbes.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AzureReader.fs" />
+    <Compile Include="Lab.fs" />
+    <None Include="data/*.json" Copy="Always" />
+    <None Include="results/*.csv" Copy="Always" />
+  </ItemGroup>
+  <Import Project="..\.paket\Paket.Restore.targets" />
+</Project>

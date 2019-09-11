@@ -2,6 +2,7 @@ namespace hobbes.tests.Fsharp
 
 open System
 open Xunit
+open Hobbes.DataStructures
 open Hobbes.DSL
 open Hobbes.Parsing.AST
 open Hobbes.Parsing
@@ -28,11 +29,14 @@ module Frontend =
             "Completed"
             "Resolved"
         ]
+
+        let fooList = [1;6;4;7;9;1;5;9;4;6]
         
         seq{
             yield "Sprint", seq {for i in 1..length -> i :> IComparable}
             yield "State", seq {for i in 1..length -> states.[i % states.Length]}
             yield "Sprint Start Date", seq { for i in 1..length -> System.DateTime(2019,8,25).AddDays(float i)}
+            yield "Foo", Seq.map(fun x -> x :> IComparable) fooList
         } |> Seq.map(fun (columnName,values) -> 
             columnName, values
                         |> Seq.mapi(fun i v -> KeyType.Create i, v)
@@ -63,7 +67,24 @@ module Frontend =
         Seq.iter2 (fun (n1, values1) (n2, values2) -> 
             Assert.Equal(n1, n2)
             compareColumns values1 values2
-        ) expected actual                                     
+        ) expected actual
+
+    let createExpectedSortByTable sortByColumn sortFun =
+        let expectedFooColumn = testDataTable 
+                                |> getColumn sortByColumn
+                                |> Seq.indexed
+                                |> Seq.sortBy sortFun
+        let indexMap = expectedFooColumn
+                       |> Seq.mapi(fun i1 (i2,_) -> (i2, i1))
+                       |> Map.ofSeq             
+        testDataTable
+        |> Seq.map(fun (name, values) ->
+           name,
+           values
+           |> Seq.indexed
+           |> Seq.sortBy(fun (i,_) -> indexMap.[i])
+           |> Seq.map(snd)
+        )                                     
 
     [<Fact>]
     let SimpleIfExpressiont() =
@@ -73,7 +94,8 @@ module Frontend =
             |> parse
         let execute = Compile.parsedExpressions [parsedStatements] 
         let actual = 
-            (testDataset() |> execute) 
+            testDataset() 
+            |> execute 
             |> asTable
             |> getColumn "Test"
         let expected = 
@@ -90,7 +112,8 @@ module Frontend =
             |> parse
         let execute = Compile.parsedExpressions [parsedStatements] 
         let actual = 
-            (testDataset() |> execute) 
+            testDataset() 
+            |> execute 
             |> asTable
             |> getColumn "Test"  
         let expected = 
@@ -102,7 +125,8 @@ module Frontend =
     let onlyReturnAll() =
         let statement = only (!!> "foo" == !!> "foo") |> parse
         let execute = Compile.parsedExpressions [statement]
-        (testDataset() |> execute) 
+        testDataset() 
+        |> execute 
         |> asTable
         |> assertTablesEqual testDataTable  
     [<Fact>]
@@ -110,7 +134,8 @@ module Frontend =
         let statement = only (!!> "foo" == !!> "boo") |> parse
         let execute = Compile.parsedExpressions [statement]
         let actual = 
-            (testDataset() |> execute) 
+            testDataset() 
+            |> execute 
             |> asTable
 
         assertTablesEqual (testDataTable |> Seq.map (fun (c, _) -> c, Seq.empty)) actual
@@ -119,7 +144,8 @@ module Frontend =
         let statement = only (!> "State" == "Active") |> parse
         let execute = Compile.parsedExpressions [statement]
         let actual = 
-            (testDataset() |> execute) 
+            testDataset() 
+            |> execute 
             |> asTable
             |> getColumn "State"
         let expected = seq{yield (AST.KeyType.Create 3,"Active":>IComparable)}        
@@ -131,7 +157,8 @@ module Frontend =
         let statement = only (!> "Sprint" == 5) |> parse
         let execute = Compile.parsedExpressions [statement]
         let actual = 
-            (testDataset() |> execute) 
+            testDataset()
+            |> execute 
             |> asTable
             |> getColumn "Sprint"
         let expected = seq{yield (AST.KeyType.Create 4, 5 :> IComparable)}        
@@ -144,9 +171,106 @@ module Frontend =
         let statement = only (!> "Sprint Start Date" == date.ToString(Globalization.CultureInfo.CurrentCulture)) |> parse
         let execute = Compile.parsedExpressions [statement]
         let actual = 
-            (testDataset() |> execute) 
+            testDataset() 
+            |> execute 
             |> asTable
             |> getColumn "Sprint Start Date"
         let expected = seq{yield (AST.KeyType.Create 4, date :> IComparable)}        
 
         compareColumns expected actual
+    
+    [<Fact>]
+    let sliceColumnsNonExisting() =
+        let statement = slice columns ["None"] |> parse
+        let execute = Compile.parsedExpressions [statement]
+        let actual =
+            testDataset() 
+            |> execute
+            |> asTable
+        let expected = seq{yield "None", Seq.empty}
+        assertTablesEqual expected actual
+
+    [<Fact>]
+    let sliceColumnsOne() =
+        let statement = slice columns ["Sprint"] |> parse
+        let execute = Compile.parsedExpressions [statement]
+        let actual =
+            testDataset() 
+            |> execute
+            |> asTable
+        let expected = seq { yield "Sprint", testDataTable |> getColumn "Sprint" }
+        assertTablesEqual expected actual
+
+    [<Fact>]
+    let sliceColumnsMany() =
+        let statement = slice columns ["Sprint"; "Sprint Start Date"] |> parse
+        let execute = Compile.parsedExpressions [statement]
+        let actual =
+            testDataset() 
+            |> execute
+            |> asTable
+        let expected = seq { yield "Sprint", testDataTable |> getColumn "Sprint"
+                             yield "Sprint Start Date", testDataTable |> getColumn "Sprint Start Date" }
+        assertTablesEqual expected actual
+
+    [<Fact>]
+    let sliceColumnsAll() =
+        let statement = slice columns ["Sprint"; "Sprint Start Date"; "State"; "Foo"] |> parse
+        let execute = Compile.parsedExpressions [statement]
+        let actual =
+            testDataset() 
+            |> execute
+            |> asTable
+        let expected = seq { yield "Sprint", testDataTable |> getColumn "Sprint"
+                             yield "Sprint Start Date", testDataTable |> getColumn "Sprint Start Date"
+                             yield "State", testDataTable |> getColumn "State"
+                             yield "Foo", testDataTable |> getColumn "Foo" }
+        assertTablesEqual expected actual       
+
+
+
+    [<Fact>]
+    let sortByColumnNumericValues() =
+        let statement = sort by (column "Foo") |> parse
+        let execute = Compile.parsedExpressions [statement]
+        let actual =
+            testDataset() 
+            |> execute
+            |> asTable
+
+        let expected = createExpectedSortByTable "Foo" (snd >> snd)
+        assertTablesEqual expected actual   
+
+    [<Fact>]
+    let sortByColumnStringValues() =
+        let statement = sort by (column "State") |> parse
+        let execute = Compile.parsedExpressions [statement]
+        let actual =
+            testDataset() 
+            |> execute
+            |> asTable
+
+        let expected = createExpectedSortByTable "State" (snd >> snd)
+        assertTablesEqual expected actual   
+
+    [<Fact>]
+    let sortByColumnDateTimeValues() =
+        let statement = sort by (column "Sprint Start Date") |> parse
+        let execute = Compile.parsedExpressions [statement]
+        let actual =
+            testDataset() 
+            |> execute
+            |> asTable
+
+        let expected = createExpectedSortByTable "Sprint Start Date" (snd >> snd)
+        assertTablesEqual expected actual   
+
+    [<Fact>]
+    let indexBy() =
+        let statement = index by (column "State") |> parse
+        let execute =  Compile.parsedExpressions [statement]
+        let actual =
+            testDataset() 
+            |> execute
+            |> asTable
+        Assert.True(true)

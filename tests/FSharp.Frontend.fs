@@ -74,6 +74,7 @@ module Frontend =
                                 |> getColumn sortByColumn
                                 |> Seq.indexed
                                 |> Seq.sortBy sortFun
+
         let indexMap = expectedFooColumn
                        |> Seq.mapi(fun i1 (i2,_) -> (i2, i1))
                        |> Map.ofSeq             
@@ -231,7 +232,7 @@ module Frontend =
 
     [<Fact>]
     let sortByColumnNumericValues() =
-        let statement = sort by (column "Foo") |> parse
+        let statement = sort by "Foo" |> parse
         let execute = Compile.parsedExpressions [statement]
         let actual =
             testDataset() 
@@ -243,7 +244,7 @@ module Frontend =
 
     [<Fact>]
     let sortByColumnStringValues() =
-        let statement = sort by (column "State") |> parse
+        let statement = sort by "State" |> parse
         let execute = Compile.parsedExpressions [statement]
         let actual =
             testDataset() 
@@ -255,7 +256,7 @@ module Frontend =
 
     [<Fact>]
     let sortByColumnDateTimeValues() =
-        let statement = sort by (column "Sprint Start Date") |> parse
+        let statement = sort by "Sprint Start Date" |> parse
         let execute = Compile.parsedExpressions [statement]
         let actual =
             testDataset() 
@@ -273,4 +274,65 @@ module Frontend =
             testDataset() 
             |> execute
             |> asTable
-        Assert.True(true)
+        Assert.True(false)
+
+    [<Fact>]
+    let rename() =
+        let statement = rename "State" "NewName" |> parse
+        let execute =  Compile.parsedExpressions [statement]
+        let actual =
+            testDataset() 
+            |> execute
+            |> asTable
+        let expected = Seq.map(fun (name, rows) -> if name = "State" then ("NewName", rows) else (name, rows)) testDataTable        
+        assertTablesEqual expected actual
+
+    let reduceGroup (minMaxColumn : seq<IComparable>) op (group : seq<int * (KeyType * IComparable)>) =
+        let groupList = List.ofSeq group
+        let rec aux groupList current ret =
+            match groupList with
+            | (i, (kt, v))::rest -> let current', ret' = if op (Seq.item i minMaxColumn) current then (Seq.item i minMaxColumn), (i, (kt, v)) else current, ret
+                                    aux rest current' ret'
+            | []                 -> ret
+        aux groupList (Seq.item 0 minMaxColumn) (groupList.[0])
+
+
+    [<Fact>]
+    let groupBy() =
+        let statement = group by ["State"] => maxby !> "Sprint" |> parse
+        let execute =  Compile.parsedExpressions [statement]
+        let actual =
+            testDataset() 
+            |> execute
+            |> asTable
+        let expectedStateColumn =
+            testDataTable
+            |> getColumn "State"
+            |> Seq.indexed
+            |> Seq.groupBy (snd >> snd)
+            |> Seq.map snd
+
+        let sprintColumn =
+            testDataTable
+            |> getColumn "Sprint"
+            |> Seq.map snd  
+
+        let maxByed = expectedStateColumn
+                      |> Seq.map (reduceGroup sprintColumn (>))
+
+        let indexMap = maxByed
+                       |> Seq.mapi(fun i1 (i2,_) -> (i2, i1))
+                       |> Map.ofSeq                  
+
+
+        let expected = testDataTable
+                    |> Seq.map(fun (name, values) ->
+                       name,
+                       values
+                       |> Seq.indexed
+                       |> Seq.filter(fun (i,_) -> Map.exists (fun k _ -> k = i) indexMap)
+                       |> Seq.sortBy(fun (i,_) -> indexMap.[i])
+                       |> Seq.map(snd)
+                       ) 
+
+        assertTablesEqual expected actual

@@ -254,14 +254,16 @@ module DataStructures =
             AST.Number n ->
                let n = 
                    match n with
-                     AST.Int32 n -> n |> float
-                     | AST.Int64 n -> n |> float
-                     | AST.Float n -> n |> float 
-               Series.mapValues(fun _ -> n :> Comp )
+                     AST.Int32 n -> n :> Comp
+                     | AST.Int64 n -> n :> Comp
+                     | AST.Float n -> n :> Comp
+               Series.mapValues(fun _ -> n)
+            | AST.DateTime d ->
+               Series.mapValues(fun _ -> d :> Comp)           
             | AST.MissingValue ->
                Series.mapValues(fun _ -> null )
             | AST.String s ->
-                  Series.mapValues(fun _ -> s :> Comp )
+                  Series.mapValues(fun _ -> s :> Comp )          
             | AST.Keys ->
                   Series.keys
                   >> Seq.map(fun key ->
@@ -394,7 +396,7 @@ module DataStructures =
                defaultName
         
         and compileBooleanExpression exp : Series<AST.KeyType,Comp> -> Series<AST.KeyType,Comp> = 
-            let binaryOp (op : 'a -> 'a -> bool) lhs rhs =
+            let binaryOp op lhs rhs =
                  fun series -> 
                    
                      let lhsSerie = lhs series
@@ -407,9 +409,9 @@ module DataStructures =
                                 ])
                      frame
                      |> Frame.mapRowValues(fun row ->
-                         let lhs = row.GetAs<'a> "lhs"
-                         let rhs = row.GetAs<'a> "rhs"
-                         let res = op (lhs |> unbox) (rhs |> unbox)
+                         let lhs = row.GetAs<Comp> "lhs"
+                         let rhs = row.GetAs<Comp> "rhs"
+                         let res = op lhs rhs
                          res :> Comp
                      )
             match exp with
@@ -422,11 +424,11 @@ module DataStructures =
             | AST.And(e1,e2) ->
                 let exp1 = compileBooleanExpression e1
                 let exp2 = compileBooleanExpression e2
-                binaryOp (&&) exp1 exp2
+                binaryOp (fun exp1 exp2 -> exp1 :?> bool && exp2 :?> bool) exp1 exp2
             | AST.Or(e1,e2) ->
                 let exp1 = compileBooleanExpression e1
                 let exp2 = compileBooleanExpression e2
-                binaryOp (||) exp1 exp2
+                binaryOp (fun exp1 exp2 -> exp1 :?> bool || exp2 :?> bool) exp1 exp2
             | AST.Comparison(lhs,rhs,op) ->
                 let opExp : System.IComparable -> System.IComparable -> bool =                
                     match op with

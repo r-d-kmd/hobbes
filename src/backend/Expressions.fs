@@ -64,9 +64,9 @@ module Expressions =
             <|> kwMissing
             <|> kwKeys
             <|> formatDate
+            <|> quotedStringLiteral .>> spaces
             <|> (columnName .>> spaces >>= (AST.ColumnName >> preturn))
             <|> between (stringThenWhiteSpace "(") (stringThenWhiteSpace ")") expr
-            <|> (quotedStringLiteral .>> spaces >>= (AST.String >> preturn))
             
 
         // operator definitions follow the schema

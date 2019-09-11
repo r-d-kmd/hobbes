@@ -71,6 +71,7 @@ module AST =
         | Keys
         | MissingValue
         | String of string
+        | DateTime of System.DateTime
         | ColumnName of string
         | ColumnExpression of ColumnComputationExpression
         | Regression of Regression * ComputationExpression * ComputationExpression

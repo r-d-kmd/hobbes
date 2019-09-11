@@ -19,7 +19,7 @@ module Primitives =
         between (pstring "\"") (pstring "\"")
                 (manyChars (normalChar <|> escapedChar)) 
 
-    let quotedStringLiteral<'u> : Parser<string, 'u> =
+    let quotedStringLiteral<'u> : Parser<AST.ComputationExpression, 'u> =
         let normalChar = satisfy (fun c -> c <> '\\' && c <> '\'')
         let unescape c = match c with
                          | 'n' -> '\n'
@@ -28,7 +28,11 @@ module Primitives =
                          | c   -> c
         let escapedChar = pstring "\\" >>. (anyOf "\\nrt\'" |>> unescape)
         between (pstring "\'") (pstring "\'")
-                (manyChars (normalChar <|> escapedChar)) 
+                (manyChars (normalChar <|> escapedChar)) >>= ((fun s -> 
+                     match System.DateTime.TryParse(s,System.Globalization.CultureInfo.CurrentCulture,System.Globalization.DateTimeStyles.None) with
+                     true, v  -> AST.DateTime v
+                     | false, _ -> AST.String s
+                ) >> preturn)
     //someName || "some quoted string"
     let columnName = stringLiteral <|> identifier 
     //col1, "col2" , "column three"

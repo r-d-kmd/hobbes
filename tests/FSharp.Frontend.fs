@@ -32,7 +32,7 @@ module Frontend =
         seq{
             yield "Sprint", seq {for i in 1..length -> i :> IComparable}
             yield "State", seq {for i in 1..length -> states.[i % states.Length]}
-            yield "Sprint Start Date", seq { for i in 1..length -> DateTime(2019,8,25).AddDays(float i)}
+            yield "Sprint Start Date", seq { for i in 1..length -> System.DateTime(2019,8,25).AddDays(float i)}
         } |> Seq.map(fun (columnName,values) -> 
             columnName, values
                         |> Seq.mapi(fun i v -> KeyType.Create i, v)
@@ -115,7 +115,7 @@ module Frontend =
 
         assertTablesEqual (testDataTable |> Seq.map (fun (c, _) -> c, Seq.empty)) actual
     [<Fact>]
-    let onlyReturnSome() =
+    let onlyReturnSomeString() =
         let statement = only (!> "State" == "Active") |> parse
         let execute = Compile.parsedExpressions [statement]
         let actual = 
@@ -127,7 +127,7 @@ module Frontend =
         compareColumns expected actual
 
     [<Fact>]
-    let onlyReturnSomeInts() =
+    let onlyReturnSomeInt() =
         let statement = only (!> "Sprint" == 5) |> parse
         let execute = Compile.parsedExpressions [statement]
         let actual = 
@@ -135,5 +135,18 @@ module Frontend =
             |> asTable
             |> getColumn "Sprint"
         let expected = seq{yield (AST.KeyType.Create 4, 5 :> IComparable)}        
+
+        compareColumns expected actual
+
+    [<Fact>]
+    let onlyReturnSomeDateTime() =
+        let date = System.DateTime(2019,8,25).AddDays(float 5)
+        let statement = only (!> "Sprint Start Date" == date.ToString(Globalization.CultureInfo.CurrentCulture)) |> parse
+        let execute = Compile.parsedExpressions [statement]
+        let actual = 
+            (testDataset() |> execute) 
+            |> asTable
+            |> getColumn "Sprint Start Date"
+        let expected = seq{yield (AST.KeyType.Create 4, date :> IComparable)}        
 
         compareColumns expected actual

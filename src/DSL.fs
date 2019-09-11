@@ -2,6 +2,7 @@ module Hobbes.DSL
 
 open Hobbes.Parsing
 
+let private culture = System.Globalization.CultureInfo.CurrentCulture
 
 let toString = 
     function
@@ -25,6 +26,7 @@ type Expression =
     | And of Expression * Expression
     | Gt of Expression * Expression
     | NumberConstant of float
+    | DateTimeConstant of System.DateTime
     | Not of Expression
     | Keys
     with override x.ToString() =
@@ -43,16 +45,23 @@ type Expression =
              | Gt(a,b) ->  sprintf " %s > %s" (a.ToString()) (b.ToString())
              | Not e -> sprintf "!%s" (e.ToString())
              | Keys -> "keys"
+             | DateTimeConstant d -> sprintf "\'%s\'" (d.ToString(culture))
            |> sprintf "(%s)" 
+         static member private ParseStringOrDate (stringOrDate : string) = 
+            match System.DateTime.TryParse(stringOrDate) with
+            true, v  -> DateTimeConstant v
+            | false, _ -> TextLiteral stringOrDate
          static member (-) (e1:Expression, e2:Expression) = 
              Subtraction(e1,e2)
          static member (==) (e1:Expression, e2:string) = 
-             Equal(e1,TextLiteral(e2))
+             let e2 = Expression.ParseStringOrDate e2
+             Equal(e1,e2)
          static member (==) (e1:Expression, e2:Expression) = 
              Equal(e1,e2)
          static member (==) (e1:Expression, e2:int) = 
-             Equal(e1,e2 |> float |> NumberConstant)
+             Equal(e1,e2 |> float |> NumberConstant)      
          static member (!=) (e1:Expression, e2:string) = 
+             let e2 = Expression.ParseStringOrDate e2
              Not(e1 == e2)
          static member (.||) (exp1:Expression,exp2:Expression) =
              Or(exp1,exp2)

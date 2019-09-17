@@ -317,10 +317,10 @@ module Frontend =
             |> getColumn "Sprint"
             |> Seq.map snd  
 
-        let maxByed = expectedStateColumn
-                      |> Seq.map (reduceGroup sprintColumn (>))
+        let reducedExpectedStateColumn = expectedStateColumn
+                                         |> Seq.map (reduceGroup sprintColumn (>))
 
-        let indexMap = maxByed
+        let indexMap = reducedExpectedStateColumn
                        |> Seq.mapi(fun i1 (i2,_) -> (i2, i1))
                        |> Map.ofSeq                  
 

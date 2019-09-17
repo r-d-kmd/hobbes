@@ -298,7 +298,7 @@ module Frontend =
 
 
     [<Fact>]
-    let groupBy() =
+    let groupByMaxBy() =
         let statement = group by ["State"] => maxby !> "Sprint" |> parse
         let execute =  Compile.parsedExpressions [statement]
         let actual =
@@ -336,3 +336,45 @@ module Frontend =
                        ) 
 
         assertTablesEqual expected actual
+
+//Selector had an error in which it only was able to parse maxby. For some reason this allowed reduction to parse minby,
+//as the keyword min. This needs to be looked into!
+    [<Fact>]
+    let groupByMinBy() =
+        let statement = group by ["State"] => minby !> "Sprint" |> parse
+        let execute =  Compile.parsedExpressions [statement]
+        let actual =
+            testDataset() 
+            |> execute
+            |> asTable
+        let expectedStateColumn =
+            testDataTable
+            |> getColumn "State"
+            |> Seq.indexed
+            |> Seq.groupBy (snd >> snd)
+            |> Seq.map snd
+
+        let sprintColumn =
+            testDataTable
+            |> getColumn "Sprint"
+            |> Seq.map snd  
+
+        let reducedExpectedStateColumn = expectedStateColumn
+                                         |> Seq.map (reduceGroup sprintColumn (<))
+
+        let indexMap = reducedExpectedStateColumn
+                       |> Seq.mapi(fun i1 (i2,_) -> (i2, i1))
+                       |> Map.ofSeq                  
+
+
+        let expected = testDataTable
+                    |> Seq.map(fun (name, values) ->
+                       name,
+                       values
+                       |> Seq.indexed
+                       |> Seq.filter(fun (i,_) -> Map.exists (fun k _ -> k = i) indexMap)
+                       |> Seq.sortBy(fun (i,_) -> indexMap.[i])
+                       |> Seq.map(snd)
+                       ) 
+
+        assertTablesEqual expected actual    

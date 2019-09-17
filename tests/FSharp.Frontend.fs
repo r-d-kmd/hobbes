@@ -6,6 +6,7 @@ open Hobbes.DataStructures
 open Hobbes.DSL
 open Hobbes.Parsing.AST
 open Hobbes.Parsing
+open Deedle
 
 module Frontend =
 
@@ -37,6 +38,7 @@ module Frontend =
             yield "State", seq {for i in 1..length -> states.[i % states.Length]}
             yield "Sprint Start Date", seq { for i in 1..length -> System.DateTime(2019,8,25).AddDays(float i)}
             yield "Foo", Seq.map(fun x -> x :> IComparable) fooList
+            //yield "Bar", seq {for i in 1..length -> i % 2 :> IComparable } 
         } |> Seq.map(fun (columnName,values) -> 
             columnName, values
                         |> Seq.mapi(fun i v -> KeyType.Create i, v)
@@ -378,3 +380,13 @@ module Frontend =
                        ) 
 
         assertTablesEqual expected actual    
+
+    [<Fact>]
+    let pivotSprintStateWorkitemId() =
+        let frame = testDataTable
+                   |> Seq.map(fun (columnName,values) -> columnName, 
+                                                         values |> series)
+                   |> series
+                   |> Frame.ofColumns
+        let x = frame.PivotTable("Sprint", "State", Frame.countRows)
+        Assert.True(false)

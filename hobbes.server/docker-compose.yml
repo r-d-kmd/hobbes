@@ -1,0 +1,25 @@
+version: "3.7"
+services:
+
+  hobbes:
+    image: hobbes
+    #build:
+    #    context: ./src
+    #    dockerfile: Dockerfile
+    expose:
+      - 8085
+    ports:
+      - 8085:8085
+
+  db:
+    image: apache/couchdb
+    environment:
+      - COUCHDB_USER=admin 
+      - COUCHDB_PASSWORD=password
+    expose: 
+      - 5984
+    volumes:
+      - ./db/data:/opt/couchdb/data
+    ports:
+      - 5984:5984
+

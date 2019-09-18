@@ -99,7 +99,7 @@ type Statements =
     | Dense of ColumnsOrRows
     | Only of Expression
     | Sort of string
-    | Index of string
+    | Index of Expression
     with override x.ToString() = 
            match x with
            GroupStatement grp ->
@@ -129,7 +129,7 @@ type Statements =
            | Dense(Rows) -> "dense rows"
            | Dense(Columns) -> "dense columns"
            | Sort(name) -> sprintf """sort by column "%s" """ name
-           | Index(name) -> sprintf """index by column "%s" """ name
+           | Index(exp) -> sprintf """index rows by %s """ (exp.ToString())
            | Only exp -> sprintf "only %s" (exp.ToString())
                
 let by = ()
@@ -180,8 +180,8 @@ let slice colOrRow columnNames =
     Slice(colOrRow,columnNames)
 let sort _ name = 
     Sort(name)
-let index _ name =
-    Index(name)
+let index _ _ exp =
+    Index(exp)
 let only expression = 
     Only(expression)
 let inline (!!>) (text:string) = 

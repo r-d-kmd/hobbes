@@ -62,7 +62,7 @@ module Keywords =
     let internal kwPivot  =    createKeyword "pivot"  
 
     let internal kwRegression  =    createKeyword "regression"  
-    let internal kwRows     =  createKeywordReturn "rows" AST.DenseRows
+    let internal kwRows     =  createKeyword "rows"
 
     let internal kwSlice    =  createKeyword "slice" 
     let internal kwSort     =  createKeyword "sort"

@@ -81,7 +81,7 @@ module AST =
        | DenseColumns
        | DenseRows  
        | NumericColumns
-       | IndexBy of columnName: string
+       | IndexBy of ComputationExpression
        | SortBy of columnName : string
        | Only of condition: BooleanExpression
 

@@ -45,10 +45,10 @@ module Frontend =
     type Table = seq<string * Column>
     let testDataset() = 
         testDataTable
-         |> Hobbes.DataStructures.DataMatrix.fromTable
+         |> DataMatrix.fromTable
 
     let asTable (matrix : Hobbes.DataStructures.IDataMatrix) : seq<string * seq<KeyType * IComparable>> = 
-        (matrix :?> Hobbes.DataStructures.DataMatrix).AsTable()
+        (matrix :?> DataMatrix).AsTable()
 
     let getColumn name = 
         Map.ofSeq
@@ -102,7 +102,7 @@ module Frontend =
         let expected = 
             testDataTable
             |> getColumn "State"
-            |> Seq.map(fun (key,state) -> key,(if (state |> string) = matchState then 1. else 2.) :> IComparable)
+            |> Seq.map(fun (key,state) -> key,(if (state |> string) = matchState then 1 else 2) :> IComparable)
         compareColumns expected actual
     [<Fact>]
     let NestedIfExpression() =
@@ -120,7 +120,7 @@ module Frontend =
         let expected = 
             testDataTable
             |> getColumn "State"
-            |> Seq.map(fun (key,state) -> key,(if (state |> string) = matchState then 1. elif (state |> string) = nestedMatchState then 2. else 3.) :> IComparable)
+            |> Seq.map(fun (key,state) -> key,(if (state |> string) = matchState then 1 elif (state |> string) = nestedMatchState then 2 else 3) :> IComparable)
         compareColumns expected actual
     [<Fact>]
     let onlyReturnAll() =
@@ -268,13 +268,20 @@ module Frontend =
 
     [<Fact>]
     let indexBy() =
-        let statement = index by (column "State") |> parse
-        let execute =  Compile.parsedExpressions [statement]
+        let indexColumn = "State"
+        let keysColumn = "Keys"
+        let statements = 
+            [
+                index rows by (!> indexColumn)
+                create (column keysColumn) Expression.Keys
+            ] |> List.map parse
+        let execute =  Compile.parsedExpressions statements
         let actual =
             testDataset() 
             |> execute
             |> asTable
-        Assert.True(false)
+            |> getColumn keysColumn
+        compareColumns actual (testDataTable |> getColumn indexColumn)
 
     [<Fact>]
     let rename() =

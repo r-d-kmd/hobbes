@@ -530,8 +530,20 @@ module DataStructures =
                 match filter with
                 AST.SliceColumns cols ->
                     Frame.sliceCols cols
-                | AST.IndexBy columnName ->
-                    Frame.indexRows columnName
+                | AST.IndexBy exp ->
+                    fun frame ->
+                        let columnName = 
+                            match exp with
+                            AST.ColumnName name ->
+                                //Lets use the optimized verstion if it's a column and not a calcultaed expression
+                                name
+                            | _ -> 
+                                let indexByColumnName ="__index__"
+                                let exp = compileExpression frame exp
+                                frame?(indexByColumnName) <- (exp keySeries)
+                                indexByColumnName
+                        frame
+                        |> Frame.indexRows columnName
                 | AST.SortBy columnName ->
                      Frame.sortRows columnName
                 | AST.DenseRows->

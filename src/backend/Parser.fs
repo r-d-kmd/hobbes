@@ -5,13 +5,13 @@ module Parser =
     open FParsec.CharParsers
     open Hobbes.Parsing.Expressions
 
-    let private indexByColumn = kwIndex >>. kwBy >>. kwColumn >>. columnName >>= (AST.IndexBy >> preturn)
+    let private indexByColumn = kwIndex >>. kwRows >>. kwBy >>. expression >>= (AST.IndexBy >> preturn)
     let private sortByColumns = kwSort  >>. kwBy  >>. kwColumn >>. columnName >>= (AST.SortBy >> preturn)
     let private sliceColumns = kwSlice  >>. kwColumns  >>. columnNameList >>= (AST.SliceColumns >> preturn)
-    let private dense = kwDense >>?  (kwColumns  >>= (fun _ -> AST.NumericColumns |> preturn) <|> kwRows)
+    let private dense = kwDense >>?  (kwColumns  >>= (fun _ -> AST.DenseColumns |> preturn) <|> (kwRows >>= (fun _ -> AST.DenseRows |> preturn)))
     let private numericColumns = kwNumeric >>? kwColumns >>= (fun _ -> AST.NumericColumns |> preturn)
     let private only = 
-        kwOnly >>. expressionStatement .>> (skipNewline <|> eof) >>= (
+        kwOnly >>. expression .>> (skipNewline <|> eof) >>= (
             checkBooleanExp
             >> AST.Only 
             >> preturn)
@@ -35,7 +35,7 @@ module Parser =
         )
    
     let createColumn = 
-        pipe2 (kwCreate .>> kwColumn >>. columnName) expressionStatement (fun columnName exp  -> AST.CreateColumn(exp,columnName))
+        pipe2 (kwCreate .>> kwColumn >>. columnName) expression (fun columnName exp  -> AST.CreateColumn(exp,columnName))
 
     let renameColumn = 
         pipe2 (kwRename .>> kwColumn >>. columnName) (spaces >>. columnName)  (fun orgColumnName newColumnName  -> AST.RenameColumn(orgColumnName,newColumnName))
@@ -48,8 +48,8 @@ module Parser =
 
     
     let private selector = 
-        (kwMaxBy >>. expressionStatement >>= (AST.MaxBy >> preturn))
-        <|> (kwMaxBy >>. expressionStatement >>= (AST.MaxBy >> preturn)) //Did you mean kwMinBy?
+        (kwMaxBy >>. expression >>= (AST.MaxBy >> preturn))
+        <|> (kwMaxBy >>. expression >>= (AST.MaxBy >> preturn)) //Did you mean kwMinBy?
     let private groupExpression = 
         kwGroup >>. kwBy >>. 
             pipe2 (columnNameList .>> opArrow)

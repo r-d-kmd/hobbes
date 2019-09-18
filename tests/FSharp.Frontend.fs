@@ -6,7 +6,7 @@ open Hobbes.DataStructures
 open Hobbes.DSL
 open Hobbes.Parsing.AST
 open Hobbes.Parsing
-open Deedle
+
 
 module Frontend =
 
@@ -104,14 +104,14 @@ module Frontend =
         let expected = 
             testDataTable
             |> getColumn "State"
-            |> Seq.map(fun (key,state) -> key,(if (state |> string) = matchState then 1. else 2.) :> IComparable)
+            |> Seq.map(fun (key,state) -> key,(if (state |> string) = matchState then 1 else 2) :> IComparable)
         compareColumns expected actual
     [<Fact>]
     let NestedIfExpression() =
         let matchState = "Completed"
         let nestedMatchState = "Ready"
         let parsedStatements = 
-            create (column "Test") (If (!> "State" == matchState) (Then 1.) (Else (If (!> "State" == nestedMatchState) (Then 2.) (Else 3.))))
+            create (column "Test") (If (!> "State" == matchState) (Then 1) (Else (If (!> "State" == nestedMatchState) (Then 2) (Else 3))))
             |> parse
         let execute = Compile.parsedExpressions [parsedStatements] 
         let actual = 
@@ -122,7 +122,7 @@ module Frontend =
         let expected = 
             testDataTable
             |> getColumn "State"
-            |> Seq.map(fun (key,state) -> key,(if (state |> string) = matchState then 1. elif (state |> string) = nestedMatchState then 2. else 3.) :> IComparable)
+            |> Seq.map(fun (key,state) -> key,(if (state |> string) = matchState then 1 elif (state |> string) = nestedMatchState then 2 else 3) :> IComparable)
         compareColumns expected actual
     [<Fact>]
     let onlyReturnAll() =
@@ -380,13 +380,3 @@ module Frontend =
                        ) 
 
         assertTablesEqual expected actual    
-
-    [<Fact>]
-    let pivotSprintStateWorkitemId() =
-        let frame = testDataTable
-                   |> Seq.map(fun (columnName,values) -> columnName, 
-                                                         values |> series)
-                   |> series
-                   |> Frame.ofColumns
-        let x = frame.PivotTable("Sprint", "State", Frame.countRows)
-        Assert.True(false)

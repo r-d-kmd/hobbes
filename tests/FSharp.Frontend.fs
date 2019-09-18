@@ -7,6 +7,7 @@ open Hobbes.DSL
 open Hobbes.Parsing.AST
 open Hobbes.Parsing
 
+
 module Frontend =
 
     let parse stmt =
@@ -37,6 +38,7 @@ module Frontend =
             yield "State", seq {for i in 1..length -> states.[i % states.Length]}
             yield "Sprint Start Date", seq { for i in 1..length -> System.DateTime(2019,8,25).AddDays(float i)}
             yield "Foo", Seq.map(fun x -> x :> IComparable) fooList
+            //yield "Bar", seq {for i in 1..length -> i % 2 :> IComparable } 
         } |> Seq.map(fun (columnName,values) -> 
             columnName, values
                         |> Seq.mapi(fun i v -> KeyType.Create i, v)
@@ -109,7 +111,7 @@ module Frontend =
         let matchState = "Completed"
         let nestedMatchState = "Ready"
         let parsedStatements = 
-            create (column "Test") (If (!> "State" == matchState) (Then 1.) (Else (If (!> "State" == nestedMatchState) (Then 2.) (Else 3.))))
+            create (column "Test") (If (!> "State" == matchState) (Then 1) (Else (If (!> "State" == nestedMatchState) (Then 2) (Else 3))))
             |> parse
         let execute = Compile.parsedExpressions [parsedStatements] 
         let actual = 
@@ -305,7 +307,7 @@ module Frontend =
 
 
     [<Fact>]
-    let groupBy() =
+    let groupByMaxBy() =
         let statement = group by ["State"] => maxby !> "Sprint" |> parse
         let execute =  Compile.parsedExpressions [statement]
         let actual =
@@ -324,10 +326,10 @@ module Frontend =
             |> getColumn "Sprint"
             |> Seq.map snd  
 
-        let maxByed = expectedStateColumn
-                      |> Seq.map (reduceGroup sprintColumn (>))
+        let reducedExpectedStateColumn = expectedStateColumn
+                                         |> Seq.map (reduceGroup sprintColumn (>))
 
-        let indexMap = maxByed
+        let indexMap = reducedExpectedStateColumn
                        |> Seq.mapi(fun i1 (i2,_) -> (i2, i1))
                        |> Map.ofSeq                  
 
@@ -343,3 +345,45 @@ module Frontend =
                        ) 
 
         assertTablesEqual expected actual
+
+//Selector had an error in which it only was able to parse maxby. For some reason this allowed reduction to parse minby,
+//as the keyword min. This needs to be looked into!
+    [<Fact>]
+    let groupByMinBy() =
+        let statement = group by ["State"] => minby !> "Sprint" |> parse
+        let execute =  Compile.parsedExpressions [statement]
+        let actual =
+            testDataset() 
+            |> execute
+            |> asTable
+        let expectedStateColumn =
+            testDataTable
+            |> getColumn "State"
+            |> Seq.indexed
+            |> Seq.groupBy (snd >> snd)
+            |> Seq.map snd
+
+        let sprintColumn =
+            testDataTable
+            |> getColumn "Sprint"
+            |> Seq.map snd  
+
+        let reducedExpectedStateColumn = expectedStateColumn
+                                         |> Seq.map (reduceGroup sprintColumn (<))
+
+        let indexMap = reducedExpectedStateColumn
+                       |> Seq.mapi(fun i1 (i2,_) -> (i2, i1))
+                       |> Map.ofSeq                  
+
+
+        let expected = testDataTable
+                    |> Seq.map(fun (name, values) ->
+                       name,
+                       values
+                       |> Seq.indexed
+                       |> Seq.filter(fun (i,_) -> Map.exists (fun k _ -> k = i) indexMap)
+                       |> Seq.sortBy(fun (i,_) -> indexMap.[i])
+                       |> Seq.map(snd)
+                       ) 
+
+        assertTablesEqual expected actual    

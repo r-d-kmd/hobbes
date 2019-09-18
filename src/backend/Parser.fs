@@ -49,7 +49,8 @@ module Parser =
     
     let private selector = 
         (kwMaxBy >>. expression >>= (AST.MaxBy >> preturn))
-        <|> (kwMaxBy >>. expression >>= (AST.MaxBy >> preturn)) //Did you mean kwMinBy?
+        <|> (kwMinBy >>. expression >>= (AST.MinBy >> preturn))
+        
     let private groupExpression = 
         kwGroup >>. kwBy >>. 
             pipe2 (columnNameList .>> opArrow)

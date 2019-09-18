@@ -101,6 +101,7 @@ module AST =
     type KeyType =
         Numbers of decimal
         | Text of string
+        | DateTime of System.DateTime
         | Obj of obj
         | List of KeyType list
         | Missing
@@ -109,11 +110,13 @@ module AST =
                 function 
                     Numbers n -> n |> box
                     | Text s -> s :> obj
+                    | DateTime d -> d :> obj
                     | Obj o -> 
                         match o with
                         :? KeyType as k ->
                              k |> KeyType.UnWrap
                         | :? string as s -> s :> obj
+                        | :? System.DateTime as d -> d :> obj
                         | :? System.UInt16 as a -> 
                             a |> decimal |> box
                         | :? System.UInt32 as a -> 
@@ -142,6 +145,8 @@ module AST =
                 | :? KeyType as k -> k |> KeyType.UnWrap |> KeyType.Create
                 | :? string as s -> 
                     Text(s) 
+                | :? System.DateTime as d ->
+                    DateTime(d)                
                 | :? System.UInt16 as a -> 
                     Numbers(a |> decimal)
                 | :? System.UInt32 as a -> 
@@ -191,6 +196,7 @@ module AST =
                 match x with
                 Numbers d -> d.GetHashCode()
                 | Text d -> d.GetHashCode()
+                | DateTime d -> d.GetHashCode()
                 | Obj d -> d.GetHashCode()
                 | List d -> d.GetHashCode()
                 | Missing -> 0

@@ -269,9 +269,30 @@ module Frontend =
         assertTablesEqual expected actual   
 
     [<Fact>]
+    let ``keys expression``() = 
+        let keysColumn = "Keys"
+        let statement = 
+            create (column keysColumn) Expression.Keys
+            |> parse
+        let execute =  Compile.parsedExpressions [statement]
+        let expected = 
+            testDataTable
+            |> Seq.head
+            |> snd
+            |> Seq.map(fun (key,_) -> key, (KeyType.UnWrap key) :?> IComparable)
+
+        let actual =
+            testDataset() 
+            |> execute
+            |> asTable
+            |> getColumn keysColumn
+        compareColumns expected actual
+
+    [<Fact>]
     let indexBy() =
         let indexColumn = "State"
         let keysColumn = "Keys"
+
         let statements = 
             [
                 index rows by (!> indexColumn)
@@ -346,8 +367,6 @@ module Frontend =
 
         assertTablesEqual expected actual
 
-//Selector had an error in which it only was able to parse maxby. For some reason this allowed reduction to parse minby,
-//as the keyword min. This needs to be looked into!
     [<Fact>]
     let groupByMinBy() =
         let statement = group by ["State"] => minby !> "Sprint" |> parse

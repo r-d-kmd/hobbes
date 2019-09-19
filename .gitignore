@@ -21,3 +21,5 @@ lab/CookieReader/CookieReader.fsproj
 lab/CookieReader/Dockerfile
 lab/CookieReader/Program.fs
 lab/CookieReader/Properties/launchSettings.json
+deploy/
+hobbes.server/db/data

@@ -25,11 +25,11 @@ let build configuration workingDir =
         if result.ExitCode <> 0 then failwithf "'dotnet %s' failed in %s" "build" workingDir
 
 Target.create "Build" (fun _ ->
-    build "Debug" "./src"
+    build "Debug" "./"
 )
 
 Target.create "ReleaseBuild" (fun _ ->
-    build "Release" "./src"
+    build "Release" "./"
 )
 
 Target.create "Test" (fun _ ->
@@ -38,7 +38,7 @@ Target.create "Test" (fun _ ->
 let inline (@@) p1 p2 = 
     System.IO.Path.Combine(p1,p2)
 let company = "KMD A/S"
-let authors = [company; "Rune Funch Søltoft"]
+let authors = [company; "Rune Lund-Søltoft"]
 let projectName = "hobbes"
 let projectDescription = "A high level language for data transformations and calculations"
 let projectSummary = projectDescription
@@ -63,12 +63,7 @@ let CleanDirs dirs =
             System.IO.Directory.Delete(dir, true)
         printfn "Creating directory %s" dir
         System.IO.Directory.CreateDirectory(dir) |> ignore
-    )
-
-
-
-let CopyFile f2 f1 = 
-    System.IO.File.Copy(f1,f2)    
+    )   
 
 Target.create "Clean" (fun _ ->
     CleanDirs [buildDir; packagingRoot; packagingDir; netDir]

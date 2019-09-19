@@ -1,0 +1,109 @@
+{
+	"info": {
+		"_postman_id": "387c112b-5282-4270-81f3-8c03f657c9df",
+		"name": "Create default db's",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create _replicator",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "password",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "localhost:5984/_global_changes",
+					"host": [
+						"localhost"
+					],
+					"port": "5984",
+					"path": [
+						"_global_changes"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create _global_changes",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "password",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "localhost:5984/_global_changes",
+					"host": [
+						"localhost"
+					],
+					"port": "5984",
+					"path": [
+						"_global_changes"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create _users",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "password",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "localhost:5984/users",
+					"host": [
+						"localhost"
+					],
+					"port": "5984",
+					"path": [
+						"users"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

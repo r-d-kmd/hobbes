@@ -4,6 +4,8 @@ module Azure.Reader
 open FSharp.Data
 open System
 open Hobbes.Parsing
+open Hobbes.FSharp
+open Hobbes.FSharp.DataStructures
 open FSharp.Data.JsonExtensions
 
 type AzureWorkItems = JsonProvider<"""[{"@odata.nextLink":"https"},{"@odata.nextLink":"https"}]""", SampleIsList = true>
@@ -179,7 +181,7 @@ let rec private readRecord (stopwatch : Diagnostics.Stopwatch) projectName url r
                 return (dataFile,dataJson)::acc
         }
 
-let read stopwatch projectName (modelling : Hobbes.DataStructures.IDataMatrix -> Hobbes.DataStructures.IDataMatrix) : Async<Hobbes.DataStructures.IDataMatrix> =
+let read stopwatch projectName (modelling : IDataMatrix -> IDataMatrix) : Async<IDataMatrix> =
     let convertedDataFiles = 
         getCachedFiles "results" projectName
 
@@ -303,7 +305,7 @@ let read stopwatch projectName (modelling : Hobbes.DataStructures.IDataMatrix ->
         
         let matrix = 
             completeTable
-            |> Hobbes.DataStructures.DataMatrix.fromTable
+            |> DataMatrix.fromTable
         
         printfn "Matrix created"
 

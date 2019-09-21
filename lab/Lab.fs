@@ -2,6 +2,8 @@ open System
 open Hobbes.Parsing
 open Hobbes.DSL
 open FSharp.Data
+open Hobbes.FSharp
+open Hobbes.FSharp.DataStructures
 
 let inline debug(isDebugging) = 
     if isDebugging && not(Diagnostics.Debugger.IsAttached) then
@@ -13,7 +15,7 @@ let inline debug(isDebugging) =
 let stopwatch = Diagnostics.Stopwatch()
 let compile stmt =
     stmt, Compile.expressions [stmt]
-let execute (data : Hobbes.DataStructures.IDataMatrix) = 
+let execute (data : IDataMatrix) = 
     if stopwatch.IsRunning |> not then stopwatch.Start()
     List.fold(fun table (source,stmt) ->
         let s = stopwatch.ElapsedMilliseconds
@@ -23,7 +25,7 @@ let execute (data : Hobbes.DataStructures.IDataMatrix) =
         res
     ) data
 
-let modelling (data : Hobbes.DataStructures.IDataMatrix) = 
+let modelling (data : IDataMatrix) = 
     let start = stopwatch.ElapsedMilliseconds
     let dataModelingTransformation =
         let state = !> "State"
@@ -99,7 +101,7 @@ let main args =
                             |> Seq.map(fun (columnName, columnValues) -> 
                                                 columnName, columnValues 
                                                             |> Seq.mapi(fun index value -> AST.KeyType.Create index, value))
-                            |> Hobbes.DataStructures.DataMatrix.fromTable
+                            |> DataMatrix.fromTable
                             |> modelling
                 }
 

@@ -2,10 +2,11 @@ namespace hobbes.tests.Fsharp
 
 open System
 open Xunit
-open Hobbes.DataStructures
+open Hobbes.FSharp.DataStructures
 open Hobbes.DSL
 open Hobbes.Parsing.AST
 open Hobbes.Parsing
+open Hobbes.FSharp
 
 
 module Frontend =
@@ -31,15 +32,24 @@ module Frontend =
             "Resolved"
         ]
 
-        let fooList = [1;6;4;7;9;1;5;9;4;6]
+        let count = 
+            [1;6;4;7;9;1;5;9;4;6] |> Seq.cast<IComparable>
+
+        let uniqueString = 
+            count
+            |> Seq.map(fun i -> 
+                let i = i :?> int
+                sprintf "%s - %d" states.[i % states.Length] i :> IComparable
+            )
         
-        seq{
-            yield "Sprint", seq {for i in 1..length -> i :> IComparable}
-            yield "State", seq {for i in 1..length -> states.[i % states.Length]}
-            yield "Sprint Start Date", seq { for i in 1..length -> System.DateTime(2019,8,25).AddDays(float i)}
-            yield "Foo", Seq.map(fun x -> x :> IComparable) fooList
+        [
+            "Sprint", seq {for i in 1..length -> i :> IComparable}
+            "State", seq {for i in 1..length -> states.[i % states.Length]}
+            "Sprint Start Date", seq { for i in 1..length -> System.DateTime(2019,8,25).AddDays(float i)}
+            "Count", count
+            "Index", uniqueString
             //yield "Bar", seq {for i in 1..length -> i % 2 :> IComparable } 
-        } |> Seq.map(fun (columnName,values) -> 
+        ] |> Seq.map(fun (columnName,values) -> 
             columnName, values
                         |> Seq.mapi(fun i v -> KeyType.Create i, v)
         )
@@ -49,7 +59,7 @@ module Frontend =
         testDataTable
          |> DataMatrix.fromTable
 
-    let asTable (matrix : Hobbes.DataStructures.IDataMatrix) : seq<string * seq<KeyType * IComparable>> = 
+    let asTable (matrix : IDataMatrix) : seq<string * seq<KeyType * IComparable>> = 
         (matrix :?> DataMatrix).AsTable()
 
     let getColumn name = 
@@ -106,6 +116,7 @@ module Frontend =
             |> getColumn "State"
             |> Seq.map(fun (key,state) -> key,(if (state |> string) = matchState then 1 else 2) :> IComparable)
         compareColumns expected actual
+
     [<Fact>]
     let NestedIfExpression() =
         let matchState = "Completed"
@@ -124,6 +135,7 @@ module Frontend =
             |> getColumn "State"
             |> Seq.map(fun (key,state) -> key,(if (state |> string) = matchState then 1 elif (state |> string) = nestedMatchState then 2 else 3) :> IComparable)
         compareColumns expected actual
+
     [<Fact>]
     let onlyReturnAll() =
         let statement = only (!!> "foo" == !!> "foo") |> parse
@@ -132,6 +144,7 @@ module Frontend =
         |> execute 
         |> asTable
         |> assertTablesEqual testDataTable  
+
     [<Fact>]
     let onlyReturnNone() =
         let statement = only (!!> "foo" == !!> "boo") |> parse
@@ -142,6 +155,7 @@ module Frontend =
             |> asTable
 
         assertTablesEqual (testDataTable |> Seq.map (fun (c, _) -> c, Seq.empty)) actual
+
     [<Fact>]
     let onlyReturnSomeString() =
         let statement = only (!> "State" == "Active") |> parse
@@ -218,7 +232,7 @@ module Frontend =
 
     [<Fact>]
     let sliceColumnsAll() =
-        let statement = slice columns ["Sprint"; "Sprint Start Date"; "State"; "Foo"] |> parse
+        let statement = slice columns (testDataTable |> Seq.map fst |> List.ofSeq) |> parse
         let execute = Compile.parsedExpressions [statement]
         let actual =
             testDataset() 
@@ -227,21 +241,21 @@ module Frontend =
         let expected = seq { yield "Sprint", testDataTable |> getColumn "Sprint"
                              yield "Sprint Start Date", testDataTable |> getColumn "Sprint Start Date"
                              yield "State", testDataTable |> getColumn "State"
-                             yield "Foo", testDataTable |> getColumn "Foo" }
+                             yield "Count", testDataTable |> getColumn "Count" }
         assertTablesEqual expected actual       
 
 
 
     [<Fact>]
     let sortByColumnNumericValues() =
-        let statement = sort by "Foo" |> parse
+        let statement = sort by "Count" |> parse
         let execute = Compile.parsedExpressions [statement]
         let actual =
             testDataset() 
             |> execute
             |> asTable
 
-        let expected = createExpectedSortByTable "Foo" (snd >> snd)
+        let expected = createExpectedSortByTable "Count" (snd >> snd)
         assertTablesEqual expected actual   
 
     [<Fact>]
@@ -289,8 +303,8 @@ module Frontend =
         compareColumns expected actual
 
     [<Fact>]
-    let indexBy() =
-        let indexColumn = "State"
+    let ``index by``() =
+        let indexColumn = "Index"
         let keysColumn = "Keys"
 
         let statements = 
@@ -298,6 +312,7 @@ module Frontend =
                 index rows by (!> indexColumn)
                 create (column keysColumn) Expression.Keys
             ] |> List.map parse
+
         let execute =  Compile.parsedExpressions statements
         let actual =
             testDataset() 

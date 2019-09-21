@@ -1,4 +1,4 @@
-namespace Hobbes
+namespace Hobbes.FSharp
 
 open Deedle
 open Accord.MachineLearning
@@ -540,10 +540,14 @@ module DataStructures =
                             | _ -> 
                                 let indexByColumnName ="__index__"
                                 let exp = compileExpression frame exp
-                                frame?(indexByColumnName) <- (exp keySeries)
+                                frame?(indexByColumnName) <- 
+                                    (exp keySeries)
                                 indexByColumnName
-                        frame
-                        |> Frame.indexRows columnName
+                        let res = 
+                            frame
+                            |> Frame.indexRows columnName
+                            |> Frame.mapRowKeys(AST.KeyType.Create)
+                        res
                 | AST.SortBy columnName ->
                      Frame.sortRows columnName
                 | AST.DenseRows->

@@ -60,10 +60,8 @@ Target.create "BuildImage" (fun _ ->
 )
 
 open Fake.Core.TargetOperators
-"Bundle" 
-    ==> "Build"
-
 "Clean" 
+    ==> "Bundle" 
     ==> "Build"
 
 "Build"

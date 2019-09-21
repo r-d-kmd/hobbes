@@ -4,7 +4,7 @@ framework: auto-detect
 storage: none
 
 nuget Accord.MachineLearning
-nuget ARgu
+nuget Argu
 nuget Deedle
 nuget Fake
 nuget Fake.Core

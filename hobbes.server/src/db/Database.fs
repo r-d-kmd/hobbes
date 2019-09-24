@@ -24,12 +24,17 @@ type ConfigurationRecord = JsonProvider<"""{
     "transformations" : ["transformation 1", "transformation 2"]
 }""">
 
+type DataSet = JsonProvider<"""{
+    "some column" : ["rowValue1", "rowValue2"],
+    "some column2" : ["rowValue1", "lars"]
+}""">
+
 type TransformationRecord = JsonProvider<"""{"lines" : ["","jghkhj"]}""">
 
 
 type CacheRecord = JsonProvider<"""{
     "_id" : "name",
-    "TimeStamp" : "2019-09-20",
+    "TimeStamp" : "24-09-2019",
     "Data" : "some json"
 }""">
 
@@ -89,5 +94,5 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
 let configurations = Database ("configurations", ConfigurationRecord.Parse)
 let transformations = Database ("transformations", TransformationRecord.Parse)
 let cache = Database ("cache", CacheRecord.Parse)
-let rawdata = Database("rawdata", fun s -> s)
+let rawdata = Database("rawdata", CacheRecord.Parse)
 let users = Database ("_users", UserRecord.Parse)

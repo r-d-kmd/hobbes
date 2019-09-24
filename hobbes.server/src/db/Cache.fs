@@ -6,14 +6,6 @@ let private json2columns (data:string) =
        yield "some column", Seq.empty
    }
 
-let tryGet configurationName = 
-    try
-        configurationName
-        |> Database.cache.Get 
-        |> Some
-    with _ -> 
-        None
-
 let store configurationName (jsonDoc : string)  = 
     jsonDoc 
 

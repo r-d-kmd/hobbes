@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "387c112b-5282-4270-81f3-8c03f657c9df",
+		"_postman_id": "edf8fc93-c33e-4590-b6ba-962de9590b8c",
 		"name": "Create default db's",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -99,6 +99,72 @@
 					"port": "5984",
 					"path": [
 						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create transformations",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "password",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "localhost:5984/transformations",
+					"host": [
+						"localhost"
+					],
+					"port": "5984",
+					"path": [
+						"transformations"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create raw_data",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "password",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "localhost:5984/raw_data",
+					"host": [
+						"localhost"
+					],
+					"port": "5984",
+					"path": [
+						"raw_data"
 					]
 				}
 			},

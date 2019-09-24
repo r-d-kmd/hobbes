@@ -13,6 +13,7 @@
     <Compile Include="db/DataConfiguration.fs" />
     <Compile Include="db/Transformations.fs" />
     <Compile Include="db/Cache.fs" />
+    <Compile Include="db/Rawdata.fs"/>
     <Compile Include="db/DataCollector.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>

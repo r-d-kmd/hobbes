@@ -3,6 +3,7 @@ open Giraffe.Core
 open Giraffe.ResponseWriters
 open Microsoft.AspNetCore.Http
 open Hobbes.FSharp.DataStructures
+open FSharp.Data
 open Database
 
 let private port = 
@@ -11,7 +12,7 @@ let private port =
     | p -> int p
 
 let private getBytes (s:string)= 
-        System.Text.Encoding.ASCII.GetBytes s
+    System.Text.Encoding.ASCII.GetBytes s
 
 let private toB64 s = 
     System.Convert.ToBase64String s
@@ -56,11 +57,19 @@ let private verifyToken (token : string) =
         eprintfn "Tried to gain access with %s" token
         false
 
+let enumeratorMap f (e : System.Collections.IEnumerator) = //Shouldn't be here
+    let rec aux acc =
+        match e.MoveNext() with
+        true -> aux (f e.Current :: acc)
+        | false -> acc
+    aux []
+      
+
 let private getData configurationName =
     
     fun func (ctx : HttpContext) ->
         let statusCode, body =  
-            match ctx.TryGetRequestHeader "Autorization" with
+            match ctx.TryGetRequestHeader "Authorization" with
             None ->    
                 eprintfn "Tried to gain access without a key"
                 403, "Unauthorized"
@@ -70,19 +79,36 @@ let private getData configurationName =
                     |> fromB64 
                 if  key
                     |> verifyToken then
+                    
                     let data = 
-                        match Cache.tryGet configurationName with
+                        match cache.TryGet configurationName with
                         None -> 
                             let configuration = DataConfiguration.get configurationName
-                            let rawData = DataCollector.get configuration.Source configuration.Dataset
+                            
+                            let rawData =
+                                match rawdata.TryGet (sprintf "%s:%s" configuration.Source configuration.Dataset) with
+                                None -> 
+                                    let rawData = DataCollector.get configuration.Source configuration.Dataset
+                                                  |> DataMatrix.fromTable
+                                    rawData.AsJson()
+                                    |> Rawdata.store (sprintf "%s:%s" configuration.Source configuration.Dataset)
+                                | Some rawdataRecord -> rawdataRecord.Data 
+
                             let transformations = 
-                                Transformations.load configuration.Transformations
-                                |> Array.collect(fun t -> t.Lines)
-                            let func = Hobbes.FSharp.Compile.expressions transformations
-                            (rawData
+                                    Transformations.load configuration.Transformations
+                                    |> Array.collect(fun t -> t.Lines)
+                            let func = Hobbes.FSharp.Compile.expressions transformations                                                                   
+                            ((rawData
+                             |> DataSet.Parse).JsonValue.Properties()
+                             |> Seq.map (fun (c, rs) -> (c, 
+                                                         rs.GetEnumerator()
+                                                         |> enumeratorMap (fun v -> (Hobbes.Parsing.AST.KeyType.Create v, v))
+                                                         )
+                                        )
                              |> DataMatrix.fromTable
                              |> func).AsJson()
-                            |> Cache.store configurationName
+                             |> Cache.store configurationName 
+                            
                         | Some cacheRecord -> cacheRecord.Data
                     200, data
                 else
@@ -102,9 +128,8 @@ let private tryParseUser (user : string) =
     [|user;_;token|] ->
         let userInfo = 
             user
-            |> System.Convert.FromBase64String
-            |> System.Text.Encoding.ASCII.GetString 
-        //github and asure use different formats so let try and alogn them
+            |> fromB64
+        //github and asure use different formats so lets try and align them
         let user = 
             userInfo.Replace("\"email\"", "\"Email\"").Replace("\"user\"","\"User\"").Trim().Replace(" ", ",").Trim().TrimStart('{').TrimEnd('}')
             |> sprintf "{%s}"
@@ -113,34 +138,37 @@ let private tryParseUser (user : string) =
     | _ -> None
    
 let getKey token =
-    match token
-          |> tryParseUser
-          |> Option.bind(fun (user,token) -> 
-                match users.TryGet user with
-                None ->
-                  let userId =
-                      sprintf "%s" user
-                  sprintf """{
-                    "_id": "org.couchdb.user:%s",
-                    "_rev": "1-39b7182af5f4dc7a72d1782d808663b1",
-                    "name": "%s",
-                    "type": "user",
-                    "roles": []
-                    "password": "%s"
-                  }""" userId user token
-                  |> users.Put userId
-                  users.Get userId
-                  |> Some
-                | s -> s
-          ) with
+    let user = 
+        token
+        |> tryParseUser
+        |> Option.bind(fun (user,token) -> 
+              match users.TryGet user with
+              None ->
+                let userId =
+                    sprintf "%s" user
+                sprintf """{
+                  "_id": "org.couchdb.user:%s",
+                  "_rev": "1-39b7182af5f4dc7a72d1782d808663b1",
+                  "name": "%s",
+                  "type": "user",
+                  "roles": []
+                  "password": "%s"
+                }""" userId user token
+                |> users.Put userId
+                users.Get userId
+                |> Some
+              | s -> s
+        )
+
+    match user with
     None ->
         eprintfn "No user token. Tried with %s" token 
-        setStatusCode 403 >=> setBodyFromString "Umauthorized"
+        setStatusCode 403 >=> setBodyFromString "Unauthorized"
     | Some (user) ->
         setStatusCode 200 >=> setBodyFromString user.DerivedKey
 
 let apiRouter = router {
-    not_found_handler (setStatusCode 200 >=> text "Api 404")
+    not_found_handler (setStatusCode 404 >=> text "Api 404")
     
     getf "/data/%s" getData
     get "/HelloServer" GetHelloWorld

@@ -21,7 +21,6 @@ let serverPath = Path.getFullName "./"
 
 let clientDeployPath = Path.combine serverPath "deploy"
 let deployDir = Path.getFullName "./deploy"
-let buildDir = "./bin"
 
 Target.create "Clean" (fun _ ->
     [ deployDir
@@ -51,7 +50,7 @@ Target.create "Bundle" (fun _ ->
 
 Target.create "BuildImage" (fun _ ->
     let arguments = "build -t hobbes ." |> String.split ' ' |> Arguments.OfArgs
-    Command.RawCommand ("docker", arguments)
+    RawCommand ("docker", arguments)
     |> CreateProcess.fromCommand
     |> CreateProcess.withWorkingDirectory "."
     |> CreateProcess.ensureExitCode

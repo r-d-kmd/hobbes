@@ -167,9 +167,10 @@ let getKey token =
         setStatusCode 200 >=> setBodyFromString user.DerivedKey
 
 let getTest =
-    let resp () = Http.RequestString("http://db:5984/db/transformations/transformation1")
+    let resp () = Http.RequestString("http://db:5984/", headers = ["Authorization", "YWRtaW46cGFzc3dvcmQ="])
     setStatusCode 200
-    >=> setBodyFromString (resp() ) 
+    >=> setBodyFromString (resp() )
+    
 
 let apiRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")

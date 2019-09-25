@@ -74,11 +74,11 @@ let private getData configurationName =
                 eprintfn "Tried to gain access without a key"
                 403, "Unauthorized"
             | Some authToken ->
-                let key =
+                (*let key =
                     authToken
                     |> fromB64 
                 if  key
-                    |> verifyToken then
+                    |> verifyToken then*)
                     
                     let data = 
                         match cache.TryGet configurationName with
@@ -88,9 +88,8 @@ let private getData configurationName =
                             let rawData =
                                 match rawdata.TryGet (sprintf "%s:%s" configuration.Source configuration.Dataset) with
                                 None -> 
-                                    let rawData = DataCollector.get configuration.Source configuration.Dataset
-                                                  |> DataMatrix.fromTable
-                                    rawData.AsJson()
+                                    (DataCollector.get configuration.Source configuration.Dataset
+                                    |> DataMatrix.fromTable).AsJson()
                                     |> Rawdata.store (sprintf "%s:%s" configuration.Source configuration.Dataset)
                                 | Some rawdataRecord -> rawdataRecord.Data 
 
@@ -111,15 +110,15 @@ let private getData configurationName =
                             
                         | Some cacheRecord -> cacheRecord.Data
                     200, data
-                else
+                (*else
                    eprintfn "Tried to gain access with an invalid. %s" key
-                   403, "Unauthorized"
+                   403, "Unauthorized"*)
         (setStatusCode statusCode
          >=> setBodyFromString body) func ctx
 
 let GetHelloWorld =
     setStatusCode 200
-    >=> setBodyFromString "Hello World"
+    >=> setBodyFromString "Hello Lucas"
 
 type AzureUser = FSharp.Data.JsonProvider<"""{"Email": " lkjljk", "User" : "lkjlkj"}""">
 
@@ -167,12 +166,18 @@ let getKey token =
     | Some (user) ->
         setStatusCode 200 >=> setBodyFromString user.DerivedKey
 
+let getTest =
+    let resp () = Http.RequestString("http://db:5984/db/transformations/transformation1")
+    setStatusCode 200
+    >=> setBodyFromString (resp() ) 
+
 let apiRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
     getf "/data/%s" getData
     get "/HelloServer" GetHelloWorld
     getf "/key/%s" getKey
+    get "/test" getTest
 }
 
 let appRouter = router {

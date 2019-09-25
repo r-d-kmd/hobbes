@@ -26,7 +26,7 @@ type ConfigurationRecord = JsonProvider<"""{
 
 type DataSet = JsonProvider<"""{
     "some column" : ["rowValue1", "rowValue2"],
-    "some column2" : ["rowValue1", "lars"]
+    "some column2" : ["rowValue1", "rowValue2"]
 }""">
 
 type TransformationRecord = JsonProvider<"""{"lines" : ["","jghkhj"]}""">
@@ -39,13 +39,24 @@ type CacheRecord = JsonProvider<"""{
 }""">
 
 
-type List = JsonProvider<""" {"offset": 0,
+type List = JsonProvider<"""{
+    "total_rows": 2,
+    "offset": null,
     "rows": [
         {
-            "id": "16e458537602f5ef2a710089dffd9453",
-            "key": "16e458537602f5ef2a710089dffd9453",
+            "id": "id1",
+            "key": "id1",
             "value": {
-                "rev": "1-967a00dff5e02add41819138abb3284d"
+                "rev": "1-a4f8ac9d02e65da8251583a0c893e26b"
+            },
+            "doc": {
+                "_id": "id1",
+                "_rev": "1-a4f8ac9d02e65da8251583a0c893e26b",
+                "lines": [
+                    "line1",
+                    "line2",
+                    "line3"
+                ]
             }
         }]
     }""">
@@ -84,11 +95,11 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
                |> Seq.map(fun s -> sprintf "%A" s)
            )
            |> sprintf """{"keys" : [%s]}"""
-        (Http.RequestString(dbUrl + "_all_docs",
+        (Http.RequestString(dbUrl + "_all_docs?include_docs=true",
                            httpMethod = "POST",
                            body = TextRequest body
         ) |> List.Parse).Rows
-        |> Array.map(fun doc -> doc.ToString() |> parser)
+        |> Array.map(fun entry -> entry.Doc.ToString() |> parser)
 
 
 let configurations = Database ("configurations", ConfigurationRecord.Parse)

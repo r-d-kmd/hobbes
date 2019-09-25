@@ -50,8 +50,8 @@ module Frontend =
             "Index", uniqueString
             //yield "Bar", seq {for i in 1..length -> i % 2 :> IComparable } 
         ] |> Seq.map(fun (columnName,values) -> 
-            columnName, values
-                        |> Seq.mapi(fun i v -> KeyType.Create i, v)
+             columnName, values
+                         |> Seq.mapi(fun i v -> KeyType.Create i, v)
         )
     type Column = seq<KeyType * IComparable>
     type Table = seq<string * Column>

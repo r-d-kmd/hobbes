@@ -38,7 +38,7 @@ Target.create "Test" (fun _ ->
 let inline (@@) p1 p2 = 
     System.IO.Path.Combine(p1,p2)
 let company = "KMD A/S"
-let authors = [company; "Rune Lund-Søltoft"]
+let authors = [company; "Rune Lund-Søltoft"; "Lucas Helin Petersen"; "Mikkel Ditlevsen"]
 let projectName = "hobbes"
 let projectDescription = "A high level language for data transformations and calculations"
 let projectSummary = projectDescription

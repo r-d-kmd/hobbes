@@ -58,24 +58,6 @@ let testDataset =
 let assertTablesEqual t1 t2 =
     List.iter2 (fun (n1, v1) (n2, v2) -> Assert.Equal(n1, n2) |> ignore
                                          List.iter2 (fun (v1 : KeyType * string) (v2 : KeyType * string) -> Assert.Equal(v1,v2)) v1 v2) t1 t2                                     
-
-//TODO: hack. Have to find out how to convert DataMatrix to table.
-let toTable dataMatrix =
-    ["",[Missing, ""]]
-
-[<Fact>]
-let ``If statement test no nested``() =
-    let statement = 
-        create (column "Test") (If (!> "State" == "Done") (Then 1) (Else 2))
-        |> compile
-    let lars = Compile.parsedExpression [statement] 
-    let actual = lars testDataset 
-    //             |> toTable
-    //let expected = toTable testDataset
-    //assertTablesEqual actual expected
-    Assert.True(true)
-    
-    
     
 [<Fact>]
 let ``If else parse``() =

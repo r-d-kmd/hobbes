@@ -1,4 +1,7 @@
 version: "3.7"
+networks:
+  internal:
+  jens:
 services:
 
   hobbes:
@@ -6,6 +9,9 @@ services:
     #build:
     #    context: ./src
     #    dockerfile: Dockerfile
+    container_name: hobbes
+    networks: 
+      - internal
     expose:
       - 8085
     ports:
@@ -13,13 +19,30 @@ services:
 
   db:
     image: apache/couchdb
+    container_name: db
+    networks: 
+      internal:
+          aliases:
+             - jens
     environment:
       - COUCHDB_USER=admin 
       - COUCHDB_PASSWORD=password
     expose: 
       - 5984
+      - 80
     volumes:
       - ./db/data:/opt/couchdb/data
     ports:
       - 5984:5984
+
+  nginx:
+    image: nginx
+    networks: 
+      - internal
+      - jens
+    ports:
+      - 8080:80
+    depends_on:
+      - hobbes
+      - db
 

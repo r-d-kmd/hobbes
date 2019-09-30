@@ -14,7 +14,11 @@
     <Compile Include="db/Transformations.fs" />
     <Compile Include="db/Cache.fs" />
     <Compile Include="db/Rawdata.fs"/>
-    <Compile Include="db/DataCollector.fs" />
+    
+    <Compile Include="Collector/Json.fs" />
+    <Compile Include="Collector/Azure.fs" />
+    <Compile Include="Collector/DataCollector.fs" />
+
     <Compile Include="Server.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

@@ -3,11 +3,11 @@ open Giraffe.Core
 open Giraffe.ResponseWriters
 open Microsoft.AspNetCore.Http
 open Hobbes.FSharp.DataStructures
-open FSharp.Data
 open Database
+open Hobbes.Server.Db
 
 let private port = 
-    match System.Environment.GetEnvironmentVariable("port") with
+    match env "port" with
     null -> 8085
     | p -> int p
 
@@ -22,12 +22,12 @@ let private fromB64 s =
     |> System.Text.Encoding.ASCII.GetString
 
 
-type JwtPayload = FSharp.Data.JsonProvider<"""{"name":"some"}""">
+type private JwtPayload = FSharp.Data.JsonProvider<"""{"name":"some"}""">
 
 let private getSignature personalKey header payload = 
     let hmac = System.Security.Cryptography.HMAC.Create()
     hmac.Key <- 
-        (personalKey + System.Environment.GetEnvironmentVariable("key_suffix"))
+        (personalKey + System.Environment.GetEnvironmentVariable("KEY_SUFFIX"))
         |> getBytes
 
     payload
@@ -57,7 +57,7 @@ let private verifyToken (token : string) =
         eprintfn "Tried to gain access with %s" token
         false
 
-let enumeratorMap f (e : System.Collections.IEnumerator) = //Shouldn't be here
+let private enumeratorMap f (e : System.Collections.IEnumerator) = //Shouldn't be here
     let rec aux acc =
         match e.MoveNext() with
         true -> aux (f e.Current :: acc)
@@ -65,7 +65,7 @@ let enumeratorMap f (e : System.Collections.IEnumerator) = //Shouldn't be here
     aux []
       
 
-let private getData configurationName =
+let private data configurationName =
     
     fun func (ctx : HttpContext) ->
         let statusCode, body =  
@@ -74,53 +74,51 @@ let private getData configurationName =
                 eprintfn "Tried to gain access without a key"
                 403, "Unauthorized"
             | Some authToken ->
-                (*let key =
+                let key =
                     authToken
                     |> fromB64 
                 if  key
-                    |> verifyToken then*)
+                    |> verifyToken then
                     
                     let data = 
                         match cache.TryGet configurationName with
                         None -> 
                             let configuration = DataConfiguration.get configurationName
-                            
+                            let datasetKey =
+                                sprintf "%s:%s" (configuration.Source.SourceName) (configuration.Source.ProjectName)
                             let rawData =
-                                match rawdata.TryGet (sprintf "%s:%s" configuration.Source configuration.Dataset) with
-                                None -> 
-                                    (DataCollector.get configuration.Source configuration.Dataset
-                                    |> DataMatrix.fromTable).AsJson()
-                                    |> Rawdata.store (sprintf "%s:%s" configuration.Source configuration.Dataset)
-                                | Some rawdataRecord -> rawdataRecord.Data 
+                                match Rawdata.list datasetKey with
+                                s when s |> Seq.isEmpty -> 
+                                    DataCollector.get configuration.Source |> ignore
+                                    Rawdata.list datasetKey
+                                | data -> 
+                                    data
 
                             let transformations = 
                                     Transformations.load configuration.Transformations
                                     |> Array.collect(fun t -> t.Lines)
                             let func = Hobbes.FSharp.Compile.expressions transformations                                                                   
-                            ((rawData
-                             |> DataSet.Parse).JsonValue.Properties()
-                             |> Seq.map (fun (c, rs) -> (c, 
-                                                         rs.GetEnumerator()
-                                                         |> enumeratorMap (fun v -> (Hobbes.Parsing.AST.KeyType.Create v, v))
-                                                         )
-                                        )
-                             |> DataMatrix.fromTable
-                             |> func).AsJson()
-                             |> Cache.store configurationName 
+                            (rawData
+                             |> Seq.map(fun (columnName,values) -> 
+                                columnName, values.ToSeq()
+                                             |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
+                             ) |> DataMatrix.fromTable
+                             |> func).ToJson()
+                            |> Cache.store configurationName 
                             
                         | Some cacheRecord -> cacheRecord.Data
                     200, data
-                (*else
+                else
                    eprintfn "Tried to gain access with an invalid. %s" key
-                   403, "Unauthorized"*)
+                   403, "Unauthorized"
         (setStatusCode statusCode
          >=> setBodyFromString body) func ctx
 
-let GetHelloWorld =
+let private helloWorld =
     setStatusCode 200
     >=> setBodyFromString "Hello Lucas"
 
-type AzureUser = FSharp.Data.JsonProvider<"""{"Email": " lkjljk", "User" : "lkjlkj"}""">
+type private AzureUser = FSharp.Data.JsonProvider<"""{"Email": " lkjljk", "User" : "lkjlkj"}""">
 
 let private tryParseUser (user : string) = 
     match user.Split('|') with
@@ -136,23 +134,23 @@ let private tryParseUser (user : string) =
         Some(user.User, token)
     | _ -> None
    
-let getKey token =
+let private key token =
     let user = 
         token
         |> tryParseUser
         |> Option.bind(fun (user,token) -> 
-              match users.TryGet user with
+              let userId = sprintf "org.couchdb.user%%3A%s" user
+              match users.TryGet userId with
               None ->
-                let userId =
-                    sprintf "%s" user
-                sprintf """{
-                  "_id": "org.couchdb.user:%s",
-                  "_rev": "1-39b7182af5f4dc7a72d1782d808663b1",
-                  "name": "%s",
-                  "type": "user",
-                  "roles": []
-                  "password": "%s"
-                }""" userId user token
+                printfn "Didn't find user. %s" userId
+                let userRecord = 
+                    sprintf """{
+                      "name": "%s",
+                      "type": "user",
+                      "roles": [],
+                      "password": "%s"
+                    }""" user token
+                userRecord
                 |> users.Put userId
                 users.Get userId
                 |> Some
@@ -166,26 +164,19 @@ let getKey token =
     | Some (user) ->
         setStatusCode 200 >=> setBodyFromString user.DerivedKey
 
-let getTest =
-    let resp () = Http.RequestString("http://db:5984/", headers = ["Authorization", "YWRtaW46cGFzc3dvcmQ="])
-    setStatusCode 200
-    >=> setBodyFromString (resp() )
-    
-
-let apiRouter = router {
+let private apiRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
-    getf "/data/%s" getData
-    get "/HelloServer" GetHelloWorld
-    getf "/key/%s" getKey
-    get "/test" getTest
+    getf "/data/%s" data
+    get "/helloServer" helloWorld
+    getf "/key/%s" key
 }
 
-let appRouter = router {
+let private appRouter = router {
     forward "" apiRouter
 }
 
-let app = application {
+let private app = application {
     url (sprintf "http://0.0.0.0:%d/" port)
     use_router appRouter
     memory_cache

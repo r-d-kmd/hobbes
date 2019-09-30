@@ -33,13 +33,12 @@ module Frontend =
         ]
 
         let count = 
-            [1;6;4;7;9;1;5;9;4;6] |> Seq.cast<IComparable>
+            [1;6;9;7;4;13;5;9;4;6] |> Seq.cast<IComparable>
 
         let uniqueString = 
-            count
-            |> Seq.map(fun i -> 
-                let i = i :?> int
-                sprintf "%s - %d" states.[i % states.Length] i :> IComparable
+            states
+            |> Seq.mapi(fun i state -> 
+                sprintf "%s - %d" state i :> IComparable
             )
         
         [
@@ -48,7 +47,6 @@ module Frontend =
             "Sprint Start Date", seq { for i in 1..length -> System.DateTime(2019,8,25).AddDays(float i)}
             "Count", count
             "Index", uniqueString
-            //yield "Bar", seq {for i in 1..length -> i % 2 :> IComparable } 
         ] |> Seq.map(fun (columnName,values) -> 
              columnName, values
                          |> Seq.mapi(fun i v -> KeyType.Create i, v)
@@ -232,16 +230,16 @@ module Frontend =
 
     [<Fact>]
     let sliceColumnsAll() =
-        let statement = slice columns (testDataTable |> Seq.map fst |> List.ofSeq) |> parse
+        let allColumns = testDataTable |> Seq.map fst |> List.ofSeq
+        let statement = slice columns allColumns |> parse
         let execute = Compile.parsedExpressions [statement]
         let actual =
             testDataset() 
             |> execute
             |> asTable
-        let expected = seq { yield "Sprint", testDataTable |> getColumn "Sprint"
-                             yield "Sprint Start Date", testDataTable |> getColumn "Sprint Start Date"
-                             yield "State", testDataTable |> getColumn "State"
-                             yield "Count", testDataTable |> getColumn "Count" }
+        let expected = 
+              allColumns
+              |> Seq.map(fun name -> name, testDataTable |> getColumn name)
         assertTablesEqual expected actual       
 
 

@@ -2,8 +2,10 @@ module DataCollector
 
 open System
 open Hobbes.Parsing.AST
+open Hobbes.FSharp.DataStructures
+open Hobbes.Server.Db.DataConfiguration
 
-let get source datasetName = 
+let testDataCollector  = 
    let testDataTable =
       let length = 10 //number of rows in the test data set
  
@@ -22,10 +24,9 @@ let get source datasetName =
          [1;6;4;7;9;1;5;9;4;6] |> Seq.cast<IComparable>
 
       let uniqueString = 
-         count
-         |> Seq.map(fun i -> 
-             let i = i :?> int
-             sprintf "%s - %d" states.[i % states.Length] i :> IComparable
+         states
+         |> Seq.mapi(fun i state -> 
+             sprintf "%s - %d" state i :> IComparable
          )
      
       [
@@ -34,9 +35,18 @@ let get source datasetName =
          "Sprint Start Date", seq { for i in 1..length -> System.DateTime(2019,8,25).AddDays(float i)}
          "Count", count
          "Index", uniqueString
-         //yield "Bar", seq {for i in 1..length -> i % 2 :> IComparable } 
       ] |> Seq.map(fun (columnName,values) -> 
            columnName, values
                        |> Seq.mapi(fun i v -> KeyType.Create i, v)
      )
-   testDataTable     
+
+  
+   (testDataTable
+    |> DataMatrix.fromTable).ToJson()
+   
+let get source = 
+   match source with
+   Test -> testDataCollector
+   | _ -> 
+       failwithf "No collector for source %A" source
+   

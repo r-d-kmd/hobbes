@@ -2,8 +2,11 @@ module Database
 
 open FSharp.Data
 
-[<Literal>]
-let private dbServerUrl = "http://db:5984/"
+let env name = 
+    System.Environment.GetEnvironmentVariable name
+
+let private dbServerUrl = 
+    sprintf "http://%s:%s@db:5984"  (env "COUCHDB_USER") (env "COUCHDB_PASSWORD")
 
 type UserRecord = JsonProvider<"""{
   "_id": "org.couchdb.user:dev",
@@ -60,7 +63,7 @@ type List = JsonProvider<"""{
             }
         }]
     }""">
-
+type TableView = JsonProvider<""" {"columnNames" : ["a","b"], "values" : [[0,1,2,3,4],[0.4,1.2,2.4,3.5,4.1],["x","y","z"],["2019-01.01","2019-01.01"]]} """>
 type private DatabaseName =
     Configurations
     | Transformations
@@ -70,36 +73,48 @@ type private DatabaseName =
         
 type Database<'a> (databaseName, parser : string -> 'a)  =
     
-    let dbUrl = dbServerUrl + databaseName + "/"
+    let dbUrl = dbServerUrl + "/" + databaseName
 
-    let urlWithId = 
-        sprintf "%s%s/" dbUrl 
-    member __.Get id = 
+    let urlWithId (id : string) = 
+        id
+        |> sprintf "%s/%s" dbUrl
+        
+    member __.Get id =
+        printfn "Requesting document %s from %s" id databaseName
         Http.RequestString(urlWithId id)
         |> parser
     member __.TryGet id = 
-        let resp = Http.Request(urlWithId id, silentHttpErrors = false)
+        let url = urlWithId id
+        let resp = Http.Request(url, silentHttpErrors = true)
         if resp.StatusCode = 200 then
             match resp.Body with
             Text s ->
              s |> parser |> Some
             | _ -> None
         else
+            printfn "Didn't find %s in %s. %s" id databaseName url
             None
     member __.Put id body = 
         Http.RequestString(urlWithId id, httpMethod = "PUT", body = TextRequest body) |> ignore
-    member __.List keys = 
+    member __.FilterByKeys keys = 
         let body = 
            System.String.Join(",", 
                keys
                |> Seq.map(fun s -> sprintf "%A" s)
            )
            |> sprintf """{"keys" : [%s]}"""
-        (Http.RequestString(dbUrl + "_all_docs?include_docs=true",
+        (Http.RequestString(dbUrl + "/_all_docs?include_docs=true",
                            httpMethod = "POST",
                            body = TextRequest body
         ) |> List.Parse).Rows
         |> Array.map(fun entry -> entry.Doc.ToString() |> parser)
+    member __.TableView key = 
+        let url = sprintf """/_design/default/_view/table/?startkey=["%s"]&endkey=["%s"]""" key key
+        (Http.RequestString(dbUrl + url,
+                           httpMethod = "GET"
+        ) |> List.Parse).Rows
+        |> Array.map(fun entry -> entry.Doc.ToString() |> TableView.Parse)
+
 
 
 let configurations = Database ("configurations", ConfigurationRecord.Parse)

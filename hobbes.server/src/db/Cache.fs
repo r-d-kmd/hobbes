@@ -12,6 +12,6 @@ let store configurationName (jsonDoc : string)  =
 let raw configurationName data =
     (data
     |> json2columns
-    |> Hobbes.FSharp.DataStructures.DataMatrix.fromTable).AsJson()
+    |> Hobbes.FSharp.DataStructures.DataMatrix.fromTable).ToJson()
     |> store configurationName
     |> json2columns

@@ -183,7 +183,7 @@ module DataStructures =
     type IDataMatrix = 
         abstract Transform : AST.Expression -> IDataMatrix
         abstract Combine : IDataMatrix -> IDataMatrix
-        abstract AsJson : unit -> string
+        abstract ToJson : unit -> string
         abstract RowCount : int with get
     
     type private Comp = System.IComparable
@@ -724,7 +724,7 @@ module DataStructures =
                 | AST.NoOp -> 
                     this
                     :> IDataMatrix
-            member ___.AsJson() = 
+            member ___.ToJson() = 
                 String.Join(",", frame
                          |> toTable
                          |> Seq.map(fun (columnName,values) -> 

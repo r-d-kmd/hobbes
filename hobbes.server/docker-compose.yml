@@ -4,9 +4,7 @@ networks:
   front:
 services:
   hobbes:
-    build:
-        context: ./src
-        dockerfile: Dockerfile
+    image: hobbes
     container_name: hobbes
     networks: 
       - internal

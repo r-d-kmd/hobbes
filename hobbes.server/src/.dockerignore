@@ -1,0 +1,10 @@
+.fake/
+,bin/
+Collector/
+db/
+obj/
+build.fsx/
+build.lock.fsx
+*.fsproj
+*.fs
+*.references

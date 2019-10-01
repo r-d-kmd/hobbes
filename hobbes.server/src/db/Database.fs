@@ -5,8 +5,9 @@ open FSharp.Data
 let env name = 
     System.Environment.GetEnvironmentVariable name
 
-let private dbServerUrl = 
-    sprintf "http://%s:%s@db:5984"  (env "COUCHDB_USER") (env "COUCHDB_PASSWORD")
+let private user = env "COUCHDB_USER"
+let private pwd = env "COUCHDB_PASSWORD"
+let private dbServerUrl = "http://db:5984"
 
 type UserRecord = JsonProvider<"""{
   "_id": "org.couchdb.user:dev",
@@ -70,32 +71,81 @@ type private DatabaseName =
     | Cache
     | RawData
     | Users
-        
+type HttpMethod = 
+    Get
+    | Post
+    | Put
+    
 type Database<'a> (databaseName, parser : string -> 'a)  =
     
-    let dbUrl = dbServerUrl + "/" + databaseName
-
     let urlWithId (id : string) = 
+        let dbUrl = dbServerUrl + "/" + databaseName
         id
         |> sprintf "%s/%s" dbUrl
         
+    let request httpMethod silentErrors body path  =
+        let m =
+              match httpMethod with 
+              Get -> "GET"
+              | Post -> "POST"
+              | Put -> "PUT"
+        let url = 
+            System.String.Join("/",[
+                dbServerUrl
+                databaseName
+                path
+            ])
+        printfn "Requesting document %s from %s" path databaseName
+        let resp =
+            match body with
+            None -> 
+                Http.Request(url,
+                    httpMethod = m, 
+                    silentHttpErrors = silentErrors,
+                    headers = [HttpRequestHeaders.BasicAuth user pwd]
+                )
+            | Some body ->
+                Http.Request(url,
+                    httpMethod = m, 
+                    silentHttpErrors = silentErrors, 
+                    body = TextRequest body,
+                    headers = [HttpRequestHeaders.BasicAuth user pwd]
+                )
+        printfn "Response status code : %d. Url: %s" resp.StatusCode resp.ResponseUrl
+        resp
+
+    let getBody (resp : HttpResponse) = 
+        match resp.Body with
+        Binary _ -> failwithf "Can't use a binary response"
+        | Text res -> res
+    let requestString httpMethod silentErrors body path = 
+        request httpMethod silentErrors body path |> getBody
+    let get = requestString Get false None
+    let put body = requestString Put false (Some body) 
+    let post body = requestString Post false (Some body) 
+    let tryGet = request Get true None 
+    let tryPut body = request Put true (Some body)  
+    let tryPost body = request Post true (Some body) 
+    
     member __.Get id =
-        printfn "Requesting document %s from %s" id databaseName
-        Http.RequestString(urlWithId id)
-        |> parser
+        get id |> parser
+
     member __.TryGet id = 
-        let url = urlWithId id
-        let resp = Http.Request(url, silentHttpErrors = true)
-        if resp.StatusCode = 200 then
+        let resp = tryGet id
+        let body = 
             match resp.Body with
             Text s ->
              s |> parser |> Some
             | _ -> None
+        if resp.StatusCode >= 200  && resp.StatusCode <= 299 then
+            body
         else
-            printfn "Didn't find %s in %s. %s" id databaseName url
+            eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode body
             None
+
     member __.Put id body = 
-        Http.RequestString(urlWithId id, httpMethod = "PUT", body = TextRequest body) |> ignore
+        put body id |> ignore
+
     member __.FilterByKeys keys = 
         let body = 
            System.String.Join(",", 
@@ -103,16 +153,13 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
                |> Seq.map(fun s -> sprintf "%A" s)
            )
            |> sprintf """{"keys" : [%s]}"""
-        (Http.RequestString(dbUrl + "/_all_docs?include_docs=true",
-                           httpMethod = "POST",
-                           body = TextRequest body
-        ) |> List.Parse).Rows
+        (post body "_all_docs?include_docs=true"
+         |> List.Parse).Rows
         |> Array.map(fun entry -> entry.Doc.ToString() |> parser)
+
     member __.TableView key = 
-        let url = sprintf """/_design/default/_view/table/?startkey=["%s"]&endkey=["%s"]""" key key
-        (Http.RequestString(dbUrl + url,
-                           httpMethod = "GET"
-        ) |> List.Parse).Rows
+        let path = sprintf """_design/default/_view/table/?startkey=["%s"]&endkey=["%s"]""" key key
+        (get path |> List.Parse).Rows
         |> Array.map(fun entry -> entry.Doc.ToString() |> TableView.Parse)
 
 

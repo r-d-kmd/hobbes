@@ -101,6 +101,36 @@ Target.create "PublishPackage" (fun _ ->
             }) "src/hobbes.nuspec"
 )
 
+Target.create "PushToDocker" (fun _ ->
+    let dockerOrg = "kmdrd"
+    let run args = 
+        let arguments = 
+            args |> String.split ' ' |> Arguments.OfArgs
+        RawCommand ("docker", arguments)
+        |> CreateProcess.fromCommand
+        |> CreateProcess.withWorkingDirectory "."
+        |> CreateProcess.ensureExitCode
+        |> Proc.run
+        |> ignore
+    let build tag path = 
+        let args = sprintf "build -t %s/hobbes:%s %s" dockerOrg tag path 
+        printfn "Executing: $ docker %s" args
+        run args
+
+    let push tag = 
+        let args = sprintf "push %s/hobbes:%s " dockerOrg tag
+        printfn "Executing: $ docker %s" args
+        run args
+        
+    System.IO.Directory.EnumerateFiles(".","Dockerfile",System.IO.SearchOption.AllDirectories)
+    |> Seq.map(fun path ->
+        let dirPath = System.IO.Path.GetDirectoryName path
+        let tag = dirPath.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last
+        build tag dirPath
+        push tag
+    ) |> ignore
+)
+
 open Fake.Core.TargetOperators
 
 "Clean"

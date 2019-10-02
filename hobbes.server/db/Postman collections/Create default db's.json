@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "9ffaad14-319b-4a48-b498-c5d1f0512eec",
+		"_postman_id": "4480dbe7-1d1a-429f-83f7-9bcb9e026311",
 		"name": "Create default db's",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -13,12 +13,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "password",
+							"value": "{{password}}",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "admin",
+							"value": "{{user}}",
 							"type": "string"
 						}
 					]
@@ -46,12 +46,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "password",
+							"value": "{{password}}",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "admin",
+							"value": "{{user}}",
 							"type": "string"
 						}
 					]
@@ -79,12 +79,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "password",
+							"value": "{{password}}",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "admin",
+							"value": "{{user}}",
 							"type": "string"
 						}
 					]
@@ -112,12 +112,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "password",
+							"value": "{{password}}",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "admin",
+							"value": "{{user}}",
 							"type": "string"
 						}
 					]
@@ -145,12 +145,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "password",
+							"value": "{{password}}",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "admin",
+							"value": "{{user}}",
 							"type": "string"
 						}
 					]
@@ -178,12 +178,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "password",
+							"value": "{{password}}",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "admin",
+							"value": "{{user}}",
 							"type": "string"
 						}
 					]

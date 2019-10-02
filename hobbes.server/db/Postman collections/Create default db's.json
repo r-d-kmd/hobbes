@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "4480dbe7-1d1a-429f-83f7-9bcb9e026311",
+		"_postman_id": "f86f2008-f827-4441-b29a-a427cc4bb865",
 		"name": "Create default db's",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -26,13 +26,14 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "localhost:5984/_global_changes",
+					"raw": "localhost:8080/db/_replicator",
 					"host": [
 						"localhost"
 					],
-					"port": "5984",
+					"port": "8080",
 					"path": [
-						"_global_changes"
+						"db",
+						"_replicator"
 					]
 				}
 			},
@@ -59,12 +60,13 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "localhost:5984/_global_changes",
+					"raw": "localhost:8080/db/_global_changes",
 					"host": [
 						"localhost"
 					],
-					"port": "5984",
+					"port": "8080",
 					"path": [
+						"db",
 						"_global_changes"
 					]
 				}
@@ -92,13 +94,14 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "localhost:5984/users",
+					"raw": "localhost:8080/db/_users",
 					"host": [
 						"localhost"
 					],
-					"port": "5984",
+					"port": "8080",
 					"path": [
-						"users"
+						"db",
+						"_users"
 					]
 				}
 			},
@@ -125,12 +128,13 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "localhost:5984/transformations",
+					"raw": "localhost:8080/db/transformations",
 					"host": [
 						"localhost"
 					],
-					"port": "5984",
+					"port": "8080",
 					"path": [
+						"db",
 						"transformations"
 					]
 				}
@@ -158,12 +162,13 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "localhost:5984/rawdata",
+					"raw": "localhost:8080/db/rawdata",
 					"host": [
 						"localhost"
 					],
-					"port": "5984",
+					"port": "8080",
 					"path": [
+						"db",
 						"rawdata"
 					]
 				}
@@ -191,13 +196,66 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "localhost:5984/configurations",
+					"raw": "localhost:8080/db/configurations",
 					"host": [
 						"localhost"
 					],
-					"port": "5984",
+					"port": "8080",
 					"path": [
+						"db",
 						"configurations"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create design document in rawdata.",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "{{user}}",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{password}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"_id\": \"_design/default\",\n  \"views\": {\n    \"table\": {\n      \"map\": \"function(doc){\\r\\n  \\r\\n  var columnNames = [];\\r\\n  var values = [];\\r\\n  var map = [];\\r\\n  \\r\\n    if(doc.source == \\\"Azure\\\") {\\r\\n      var index = 0;\\r\\n      for(o in doc.data.value) {\\r\\n        buildMap(\\\"\\\", doc.data.value[o], index++);\\r\\n      }\\r\\n        \\r\\n      for(i in map) {\\r\\n        columnNames.push(map[i][0]);\\r\\n        map[i].shift();\\r\\n        values.push(map[i]);\\r\\n      }\\r\\n      emit([doc.source, doc.project, doc._id], {\\\"columnNames\\\": columnNames, \\\"values\\\": values});\\r\\n    }\\r\\n  \\r\\n  function add(array, key, value, index) {\\r\\n    var existed = false;\\r\\n    for(x in array) {\\r\\n      if(array[x][0] == key) {\\r\\n        addNull(array[x], index - (array[x].length - 1));\\r\\n        array[x].push(value);\\r\\n        existed = true;\\r\\n      }\\r\\n    }\\r\\n    if(!existed) {\\r\\n      var entry = [];\\r\\n      entry.push(key);\\r\\n      addNull(entry, index)\\r\\n      entry.push(value);\\r\\n      array.push(entry);\\r\\n    }\\r\\n  }\\r\\n  \\r\\n  function addNull(array, n)\\r\\n  {\\r\\n    for(var i = 0; i < n; i++) {\\r\\n        array.push(null);\\r\\n      }\\r\\n  }\\r\\n    \\r\\n    function buildMap(prefix, o, index) {\\r\\n      for (tag in o) {\\r\\n        if(typeof o[tag] == 'object') buildMap(prefix + \\\".\\\" + tag, o[tag], index)\\r\\n        else {\\r\\n          var dottedName = prefix + \\\".\\\" + tag;\\r\\n          var name = dottedName.substring(1, dottedName.length);\\r\\n          add(map, name, o[tag], index);\\r\\n        }\\r\\n      }\\r\\n    }\\r\\n}\"\n    }\n  },\n  \"language\": \"javascript\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/db/rawdata/_design/default",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"db",
+						"rawdata",
+						"_design",
+						"default"
 					]
 				}
 			},

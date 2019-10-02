@@ -1,0 +1,19 @@
+{
+	"id": "00298c3c-ba06-4ba4-a7d4-50c52e6b3122",
+	"name": "Development",
+	"values": [
+		{
+			"key": "user",
+			"value": "admin",
+			"enabled": true
+		},
+		{
+			"key": "password",
+			"value": "password",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2019-10-02T15:51:15.907Z",
+	"_postman_exported_using": "Postman/7.8.0"
+}

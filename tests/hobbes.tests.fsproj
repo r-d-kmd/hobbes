@@ -4,12 +4,13 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\hobbes.server/src/hobbes.server.fsproj" />
     <ProjectReference Include="..\src\hobbes.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AST.fs" />
     <Compile Include="Parser.fs" />
-    <Compile Include="Server.fs" />
+    <Compile Include="Security.fs" />
     <Compile Include="FSharp.Frontend.fs" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />

@@ -14,11 +14,27 @@
 						"id": "03bed438-621b-4d53-8433-93d5e4d3d754",
 						"exec": [
 							"var response = pm.response.json();",
-							"pm.environment.set(\"data\", JSON.stringify(response));",
-							"pm.environment.set(\"project\", JSON.stringify(response._id));",
+							"",
+							"pm.environment.set(\"url\", JSON.stringify(request.url.toString()));",
+							"var string = pm.environment.get(\"url\");",
+							"var groups = string.match(\"(.*kmddk\\/)(?<project>.*?)\\/\").groups;",
+							"pm.environment.set(\"project\", JSON.stringify(groups.project));",
+							"",
 							"pm.environment.set(\"source\", JSON.stringify(\"Azure\"));",
+							"",
 							"pm.environment.set(\"timestamp\", JSON.stringify(new Date()));",
-							"console.log(pm.response.url)"
+							"",
+							"var array = [];",
+							"if(\"@odata.nextLink\" in response) {",
+							"    console.log(\"going deeper\");",
+							"    //pm.environment.set(\"initialUrl\", response._id);",
+							"    //pm.setNextRequest('GetAzurePlaceholder'); ",
+							"} else {",
+							"    console.log(\"not so deep\")",
+							"    //array.push(pm.setNextRequest(null));",
+							"}",
+							"",
+							"pm.environment.set(\"data\", JSON.stringify(response));"
 						],
 						"type": "text/javascript"
 					}
@@ -29,7 +45,8 @@
 						"id": "435cf740-9b02-4a91-bb08-84b21c117852",
 						"exec": [
 							"var request = pm.request;",
-							"pm.environment.set(\"url\", JSON.stringify(request.url.toString()));"
+							"pm.environment.set(\"initialUrl\", \"https://analytics.dev.azure.com/kmddk/gandalf/_odata/v2.0/WorkItemRevisions?%24expand=Iteration&%24select=WorkITemId%2CWorkItemType%2CState%2CStateCategory%2CIteration&%24filter=Iteration%2FStartDate%20gt%202019-01-01Z&%24skiptoken=89859398\")",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -44,12 +61,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "password",
+							"value": "4m64rdzd3cohe2c463uzdozttn6i4yh6cbqfpni26acbls75jzva",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "admin",
+							"value": "4m64rdzd3cohe2c463uzdozttn6i4yh6cbqfpni26acbls75jzva",
 							"type": "string"
 						}
 					]
@@ -68,15 +85,9 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "localhost:8080/db/rawdata/543sa",
+					"raw": "{{initialUrl}}",
 					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"db",
-						"rawdata",
-						"543sa"
+						"{{initialUrl}}"
 					]
 				}
 			},

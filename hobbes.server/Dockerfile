@@ -1,4 +1,4 @@
-FROM microsoft/dotnet:3.0-aspnetcore-runtime
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.0
 COPY /src/deploy /
 WORKDIR /Server
 ENTRYPOINT [ "dotnet", "hobbes.server.dll" ]

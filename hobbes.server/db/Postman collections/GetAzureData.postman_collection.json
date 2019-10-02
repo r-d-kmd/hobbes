@@ -1,0 +1,164 @@
+{
+	"info": {
+		"_postman_id": "e94fdba4-3f3f-4f80-bb4a-4c24e51459d7",
+		"name": "GetAzureData",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "GetAzurePlaceholder",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "03bed438-621b-4d53-8433-93d5e4d3d754",
+						"exec": [
+							"var response = pm.response.json();",
+							"pm.environment.set(\"data\", JSON.stringify(response));",
+							"pm.environment.set(\"project\", JSON.stringify(response._id));",
+							"pm.environment.set(\"source\", JSON.stringify(\"Azure\"));",
+							"pm.environment.set(\"timestamp\", JSON.stringify(new Date()));",
+							"console.log(pm.response.url)"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "435cf740-9b02-4a91-bb08-84b21c117852",
+						"exec": [
+							"var request = pm.request;",
+							"pm.environment.set(\"url\", JSON.stringify(request.url.toString()));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "password",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "localhost:8080/db/rawdata/543sa",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"db",
+						"rawdata",
+						"543sa"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PostToRawData",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "8fabbc26-8aa0-4b26-8ead-1fb7c4cd8ebc",
+						"exec": [
+							"console.log(pm.environment.get(\"project\"))",
+							"console.log(pm.environment.get(\"url\"))",
+							"console.log(pm.environment.get(\"source\"))",
+							"console.log(pm.environment.get(\"timestamp\"))",
+							"console.log(pm.environment.get(\"data\"))"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "6f6d8a05-d3a6-4b60-bbce-c7cd01a1fad0",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "password",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"source\": {{source}},\n\t\"project\": {{project}},\n\t\"timestamp\": {{timestamp}},\n\t\"data\": {{data}}\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/db/rawdata/{{url}}",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"db",
+						"rawdata",
+						"{{url}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

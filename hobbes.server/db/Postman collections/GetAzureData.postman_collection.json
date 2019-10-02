@@ -126,18 +126,18 @@
 						}
 					]
 				},
-				"method": "PUT",
+				"method": "POST",
 				"header": [
 					{
 						"key": "Content-Type",
 						"name": "Content-Type",
-						"value": "application/x-www-form-urlencoded",
+						"value": "application/json",
 						"type": "text"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"source\": {{source}},\n\t\"project\": {{project}},\n\t\"timestamp\": {{timestamp}},\n\t\"data\": {{data}}\n}",
+					"raw": "{\n\t\"_id\": {{url}},\n\t\"source\": {{source}},\n\t\"project\": {{project}},\n\t\"timestamp\": {{timestamp}},\n\t\"data\": {{data}}\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -145,7 +145,7 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/db/rawdata/{{url}}",
+					"raw": "localhost:8080/db/rawdata/",
 					"host": [
 						"localhost"
 					],
@@ -153,7 +153,7 @@
 					"path": [
 						"db",
 						"rawdata",
-						"{{url}}"
+						""
 					]
 				}
 			},

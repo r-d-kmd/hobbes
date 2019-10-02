@@ -46,7 +46,7 @@ services:
   front:
     container_name: front
     build:
-        context: ./nginx
+        context: ./front
         dockerfile: Dockerfile
     networks: 
       - internal

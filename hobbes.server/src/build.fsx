@@ -49,7 +49,7 @@ Target.create "Bundle" (fun _ ->
 )
 
 Target.create "BuildImage" (fun _ ->
-    let arguments = "build -t hobbes ." |> String.split ' ' |> Arguments.OfArgs
+    let arguments = "build -t hobbes .." |> String.split ' ' |> Arguments.OfArgs
     RawCommand ("docker", arguments)
     |> CreateProcess.fromCommand
     |> CreateProcess.withWorkingDirectory "."

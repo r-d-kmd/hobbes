@@ -21,7 +21,7 @@ module DataConfiguration =
                 x.SourceName 
                     with get() =
                         match x with
-                        AzureDevOps _ -> "AzureDevOps"
+                        AzureDevOps _ -> "Azure DevOps"
                         | Rally _ -> "Rally"
                         | Jira  _ -> "Jira"
                         | TeamFoundationServer _ -> "TFS"
@@ -40,7 +40,7 @@ module DataConfiguration =
             Source = 
                 record.Dataset
                 |> (match record.Source.ToLower() with
-                    "azure" -> AzureDevOps
+                    "azure devops" | "azure" -> AzureDevOps
                     | "rally" -> Rally
                     | "jira" -> Jira
                     | _ -> failwithf "Couldn't read from source %s" record.Source)

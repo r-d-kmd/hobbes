@@ -61,5 +61,4 @@ module Parser =
         let expected = FilterAndSorting (Only(Comparison(ColumnName "Sprint", Number (Int32 5), EqualTo)))
         Assert.True(actual.Equals(expected))
 
-
         

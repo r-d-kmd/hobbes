@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e94fdba4-3f3f-4f80-bb4a-4c24e51459d7",
+		"_postman_id": "80e7d06c-1043-44a4-ac47-4da9a4ce6c3f",
 		"name": "GetAzureData",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -13,28 +13,23 @@
 					"script": {
 						"id": "03bed438-621b-4d53-8433-93d5e4d3d754",
 						"exec": [
-							"var response = pm.response.json();",
+							"var data = pm.response.json();",
+							"Date.prototype.yyyymmdd = function() {",
+							"  var mm = this.getMonth() + 1; // getMonth() is zero-based",
+							"  var dd = this.getDate();",
 							"",
-							"pm.environment.set(\"url\", JSON.stringify(request.url.toString()));",
-							"var string = pm.environment.get(\"url\");",
-							"var groups = string.match(\"(.*kmddk\\/)(?<project>.*?)\\/\").groups;",
-							"pm.environment.set(\"project\", JSON.stringify(groups.project));",
-							"",
-							"pm.environment.set(\"source\", JSON.stringify(\"Azure\"));",
-							"",
-							"pm.environment.set(\"timestamp\", JSON.stringify(new Date()));",
-							"",
-							"var array = [];",
-							"if(\"@odata.nextLink\" in response) {",
-							"    console.log(\"going deeper\");",
-							"    //pm.environment.set(\"initialUrl\", response._id);",
-							"    //pm.setNextRequest('GetAzurePlaceholder'); ",
-							"} else {",
-							"    console.log(\"not so deep\")",
-							"    //array.push(pm.setNextRequest(null));",
-							"}",
-							"",
-							"pm.environment.set(\"data\", JSON.stringify(response));"
+							"  return [this.getFullYear(),",
+							"          (mm>9 ? '' : '0') + mm,",
+							"          (dd>9 ? '' : '0') + dd",
+							"         ].join('-');",
+							"};",
+							"pm.environment.set(\"doc\", JSON.stringify( {",
+							"    \"_id\" : request.url.toString(),",
+							"    \"project\" : pm.environment.get('AzureProject'),",
+							"    \"source\" : \"Azure DevOps\",",
+							"    \"timestamp\" : new Date().yyyymmdd(),",
+							"    \"data\" : data",
+							"}));"
 						],
 						"type": "text/javascript"
 					}
@@ -45,7 +40,9 @@
 						"id": "435cf740-9b02-4a91-bb08-84b21c117852",
 						"exec": [
 							"var request = pm.request;",
-							"pm.environment.set(\"initialUrl\", \"https://analytics.dev.azure.com/kmddk/gandalf/_odata/v2.0/WorkItemRevisions?%24expand=Iteration&%24select=WorkITemId%2CWorkItemType%2CState%2CStateCategory%2CIteration&%24filter=Iteration%2FStartDate%20gt%202019-01-01Z&%24skiptoken=89859398\")",
+							"console.log(\"url\",request.url);",
+							"pm.environment.set(\"skiptoken\", \"\");",
+							"pm.environment.set(\"data\",\"\");",
 							""
 						],
 						"type": "text/javascript"
@@ -85,9 +82,12 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{initialUrl}}",
+					"raw": "{{AzureDevOpsRoot}}/{{AzureProject}}{{AzureAnalyticsQuery}}&skiptoken={{skiptoken}}",
 					"host": [
-						"{{initialUrl}}"
+						"{{AzureDevOpsRoot}}"
+					],
+					"path": [
+						"{{AzureProject}}{{AzureAnalyticsQuery}}&skiptoken={{skiptoken}}"
 					]
 				}
 			},
@@ -101,11 +101,9 @@
 					"script": {
 						"id": "8fabbc26-8aa0-4b26-8ead-1fb7c4cd8ebc",
 						"exec": [
-							"console.log(pm.environment.get(\"project\"))",
-							"console.log(pm.environment.get(\"url\"))",
-							"console.log(pm.environment.get(\"source\"))",
-							"console.log(pm.environment.get(\"timestamp\"))",
-							"console.log(pm.environment.get(\"data\"))"
+							"console.log(\"doc\",JSON.parse(pm.environment.get(\"doc\")));",
+							"console.log(pm.request.body);",
+							"pm.environment.set(\"doc\",\"{}\");"
 						],
 						"type": "text/javascript"
 					}
@@ -115,7 +113,16 @@
 					"script": {
 						"id": "6f6d8a05-d3a6-4b60-bbce-c7cd01a1fad0",
 						"exec": [
-							""
+							"var doc = JSON.parse(pm.environment.get(\"doc\"));",
+							"",
+							"console.log(\"data\", doc, doc.data);",
+							"",
+							"if(doc.data.hasOwnProperty(\"@odata.nextLink\")) {",
+							"    var parts = doc.data[\"@odata.nextLink\"].split(\"skiptoken=\");",
+							"    var skipToken = parts[parts.length - 1];",
+							"    pm.environment.set(\"skipToken\", skipToken);",
+							"    postman.setNextRequest('GetAzurePlaceholder'); ",
+							"}"
 						],
 						"type": "text/javascript"
 					}
@@ -148,7 +155,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"_id\": {{url}},\n\t\"source\": {{source}},\n\t\"project\": {{project}},\n\t\"timestamp\": {{timestamp}},\n\t\"data\": {{data}}\n}",
+					"raw": "{{doc}}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -156,15 +163,48 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/db/rawdata/",
+					"raw": "{{front}}/db/rawdata/",
 					"host": [
-						"localhost"
+						"{{front}}"
 					],
-					"port": "8080",
 					"path": [
 						"db",
 						"rawdata",
 						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "show all",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "{{couch_user}}",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{couch_password}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{front}}/db/rawdata/_all_docs",
+					"host": [
+						"{{front}}"
+					],
+					"path": [
+						"db",
+						"rawdata",
+						"_all_docs"
 					]
 				}
 			},

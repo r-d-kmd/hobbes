@@ -95,7 +95,7 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
                 databaseName
                 path
             ])
-        printfn "Requesting document %s from %s" path databaseName
+        printfn "Requesting %s from %s" path databaseName
         let resp =
             match body with
             None -> 
@@ -109,7 +109,10 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
                     httpMethod = m, 
                     silentHttpErrors = silentErrors, 
                     body = TextRequest body,
-                    headers = [HttpRequestHeaders.BasicAuth user pwd]
+                    headers = [
+                        HttpRequestHeaders.BasicAuth user pwd
+                        HttpRequestHeaders.ContentType HttpContentTypes.Json
+                    ]
                 )
         printfn "Response status code : %d. Url: %s" resp.StatusCode resp.ResponseUrl
         resp
@@ -155,12 +158,30 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
            |> sprintf """{"keys" : [%s]}"""
         (post body "_all_docs?include_docs=true"
          |> List.Parse).Rows
-        |> Array.map(fun entry -> entry.Doc.ToString() |> parser)
+        |> Array.map(fun entry -> 
+            try
+                entry.Doc.ToString() |> parser
+            with e ->
+                failwithf "Failed loading transformations. Row: %A. Msg: %s" (entry.ToString()) e.Message
+            )
 
-    member __.TableView key = 
-        let path = sprintf """_design/default/_view/table/?startkey=["%s"]&endkey=["%s"]""" key key
+    member __.TableView (keys : string list) = 
+        let startKey = 
+            System.String.Join(",", keys |> List.map (sprintf "%A")) |> sprintf "[%s]"
+        let endkey =
+            let reversed = 
+                keys
+                |> List.rev
+            
+            System.String.Join(",", 
+                (reversed.Head + "a")::reversed.Tail 
+                |> List.rev
+                |> List.map (sprintf "%A") 
+            ) |> sprintf "[%s]"
+        let path = sprintf """_design/default/_view/table/?startkey=%s&endkey=%s""" startKey endkey
+        printfn "Path used for table view %A" path
         (get path |> List.Parse).Rows
-        |> Array.map(fun entry -> entry.Doc.ToString() |> TableView.Parse)
+        |> Array.map(fun entry -> entry.Value.ToString() |> TableView.Parse)
 
 
 

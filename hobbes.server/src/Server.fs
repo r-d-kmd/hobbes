@@ -36,7 +36,7 @@ let private data configurationName =
                             None -> 
                                 let configuration = DataConfiguration.get configurationName
                                 let datasetKey =
-                                    sprintf "%s:%s" (configuration.Source.SourceName) (configuration.Source.ProjectName)
+                                    [configuration.Source.SourceName;configuration.Source.ProjectName]
                                 let rawData =
                                     match Rawdata.list datasetKey with
                                     s when s |> Seq.isEmpty -> 

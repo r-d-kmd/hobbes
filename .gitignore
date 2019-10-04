@@ -24,3 +24,6 @@ lab/CookieReader/Properties/launchSettings.json
 deploy/
 hobbes.server/db/data
 docker-compose.prod.yml
+.vs/
+hobbes.server/src/hobbes.server.fsproj.user
+*.user

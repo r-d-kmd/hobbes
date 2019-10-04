@@ -15,7 +15,7 @@ nuget Fake.DotNet.Cli //"
 open Fake.Core
 
 Target.create "BuildImage" (fun _ ->
-    let arguments = "build -t nginx ." |> String.split ' ' |> Arguments.OfArgs
+    let arguments = "build -t front ." |> String.split ' ' |> Arguments.OfArgs
     RawCommand ("docker", arguments)
     |> CreateProcess.fromCommand
     |> CreateProcess.withWorkingDirectory "."

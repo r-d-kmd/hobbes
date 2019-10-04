@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "f86f2008-f827-4441-b29a-a427cc4bb865",
+		"_postman_id": "ff4f0c6a-c35e-4c26-aebc-ddb92a4a4048",
 		"name": "Create default db's",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -13,12 +13,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "{{password}}",
+							"value": "{{couch_password}}",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "{{user}}",
+							"value": "{{couch_user}}",
 							"type": "string"
 						}
 					]
@@ -26,11 +26,10 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/db/_replicator",
+					"raw": "{{front}}/db/_replicator",
 					"host": [
-						"localhost"
+						"{{front}}"
 					],
-					"port": "8080",
 					"path": [
 						"db",
 						"_replicator"
@@ -47,12 +46,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "{{password}}",
+							"value": "{{couch_password}}",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "{{user}}",
+							"value": "{{couch_user}}",
 							"type": "string"
 						}
 					]
@@ -60,11 +59,10 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/db/_global_changes",
+					"raw": "{{front}}/db/_global_changes",
 					"host": [
-						"localhost"
+						"{{front}}"
 					],
-					"port": "8080",
 					"path": [
 						"db",
 						"_global_changes"
@@ -81,12 +79,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "{{password}}",
+							"value": "{{couch_password}}",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "{{user}}",
+							"value": "{{couch_user}}",
 							"type": "string"
 						}
 					]
@@ -94,11 +92,10 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/db/_users",
+					"raw": "{{front}}/db/_users",
 					"host": [
-						"localhost"
+						"{{front}}"
 					],
-					"port": "8080",
 					"path": [
 						"db",
 						"_users"
@@ -115,12 +112,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "{{password}}",
+							"value": "{{couch_password}}",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "{{user}}",
+							"value": "{{couch_user}}",
 							"type": "string"
 						}
 					]
@@ -128,11 +125,10 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/db/transformations",
+					"raw": "{{front}}/db/transformations",
 					"host": [
-						"localhost"
+						"{{front}}"
 					],
-					"port": "8080",
 					"path": [
 						"db",
 						"transformations"
@@ -149,12 +145,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "{{password}}",
+							"value": "{{couch_password}}",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "{{user}}",
+							"value": "{{couch_user}}",
 							"type": "string"
 						}
 					]
@@ -162,11 +158,10 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/db/rawdata",
+					"raw": "{{front}}/db/rawdata",
 					"host": [
-						"localhost"
+						"{{front}}"
 					],
-					"port": "8080",
 					"path": [
 						"db",
 						"rawdata"
@@ -183,12 +178,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "{{password}}",
+							"value": "{{couch_password}}",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "{{user}}",
+							"value": "{{couch_user}}",
 							"type": "string"
 						}
 					]
@@ -196,11 +191,10 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/db/configurations",
+					"raw": "{{front}}/db/configurations",
 					"host": [
-						"localhost"
+						"{{front}}"
 					],
-					"port": "8080",
 					"path": [
 						"db",
 						"configurations"
@@ -217,12 +211,12 @@
 					"basic": [
 						{
 							"key": "username",
-							"value": "{{user}}",
+							"value": "{{couch_user}}",
 							"type": "string"
 						},
 						{
 							"key": "password",
-							"value": "{{password}}",
+							"value": "{{couch_password}}",
 							"type": "string"
 						}
 					]
@@ -238,7 +232,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"_id\": \"_design/default\",\n  \"views\": {\n    \"table\": {\n      \"map\": \"function(doc){\\r\\n  \\r\\n  var columnNames = [];\\r\\n  var values = [];\\r\\n  var map = [];\\r\\n  \\r\\n    if(doc.source == \\\"Azure\\\") {\\r\\n      var index = 0;\\r\\n      for(o in doc.data.value) {\\r\\n        buildMap(\\\"\\\", doc.data.value[o], index++);\\r\\n      }\\r\\n        \\r\\n      for(i in map) {\\r\\n        columnNames.push(map[i][0]);\\r\\n        map[i].shift();\\r\\n        values.push(map[i]);\\r\\n      }\\r\\n      emit([doc.source, doc.project, doc._id], {\\\"columnNames\\\": columnNames, \\\"values\\\": values});\\r\\n    }\\r\\n  \\r\\n  function add(array, key, value, index) {\\r\\n    var existed = false;\\r\\n    for(x in array) {\\r\\n      if(array[x][0] == key) {\\r\\n        addNull(array[x], index - (array[x].length - 1));\\r\\n        array[x].push(value);\\r\\n        existed = true;\\r\\n      }\\r\\n    }\\r\\n    if(!existed) {\\r\\n      var entry = [];\\r\\n      entry.push(key);\\r\\n      addNull(entry, index)\\r\\n      entry.push(value);\\r\\n      array.push(entry);\\r\\n    }\\r\\n  }\\r\\n  \\r\\n  function addNull(array, n)\\r\\n  {\\r\\n    for(var i = 0; i < n; i++) {\\r\\n        array.push(null);\\r\\n      }\\r\\n  }\\r\\n    \\r\\n    function buildMap(prefix, o, index) {\\r\\n      for (tag in o) {\\r\\n        if(typeof o[tag] == 'object') buildMap(prefix + \\\".\\\" + tag, o[tag], index)\\r\\n        else {\\r\\n          var dottedName = prefix + \\\".\\\" + tag;\\r\\n          var name = dottedName.substring(1, dottedName.length);\\r\\n          add(map, name, o[tag], index);\\r\\n        }\\r\\n      }\\r\\n    }\\r\\n}\"\n    }\n  },\n  \"language\": \"javascript\"\n}",
+					"raw": "{\n  \"_id\": \"_design/default\",\n  \"views\": {\n    \"table\": {\n      \"map\": \"function(doc){\\r\\n  \\r\\n  var columnNames = [];\\r\\n  var values = [];\\r\\n  var map = [];\\r\\n  \\r\\n    if(doc.source == \\\"Azure DevOps\\\") {\\r\\n      var index = 0;\\r\\n      for(o in doc.data.value) {\\r\\n        buildMap(\\\"\\\", doc.data.value[o], index++);\\r\\n      }\\r\\n        \\r\\n      for(i in map) {\\r\\n        columnNames.push(map[i][0]);\\r\\n        map[i].shift();\\r\\n        values.push(map[i]);\\r\\n      }\\r\\n      emit([doc.source, doc.project, doc._id], {\\\"columnNames\\\": columnNames, \\\"values\\\": values});\\r\\n    }\\r\\n  \\r\\n  function add(array, key, value, index) {\\r\\n    var existed = false;\\r\\n    for(x in array) {\\r\\n      if(array[x][0] == key) {\\r\\n        addNull(array[x], index - (array[x].length - 1));\\r\\n        array[x].push(value);\\r\\n        existed = true;\\r\\n      }\\r\\n    }\\r\\n    if(!existed) {\\r\\n      var entry = [];\\r\\n      entry.push(key);\\r\\n      addNull(entry, index)\\r\\n      entry.push(value);\\r\\n      array.push(entry);\\r\\n    }\\r\\n  }\\r\\n  \\r\\n  function addNull(array, n)\\r\\n  {\\r\\n    for(var i = 0; i < n; i++) {\\r\\n        array.push(null);\\r\\n      }\\r\\n  }\\r\\n    \\r\\n    function buildMap(prefix, o, index) {\\r\\n      for (tag in o) {\\r\\n        if(typeof o[tag] == 'object') buildMap(prefix + \\\".\\\" + tag, o[tag], index)\\r\\n        else {\\r\\n          var dottedName = prefix + \\\".\\\" + tag;\\r\\n          var name = dottedName.substring(1, dottedName.length);\\r\\n          add(map, name, o[tag], index);\\r\\n        }\\r\\n      }\\r\\n    }\\r\\n}\"\n    }\n  },\n  \"language\": \"javascript\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -246,11 +240,10 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/db/rawdata/_design/default",
+					"raw": "{{front}}/db/rawdata/_design/default",
 					"host": [
-						"localhost"
+						"{{front}}"
 					],
-					"port": "8080",
 					"path": [
 						"db",
 						"rawdata",

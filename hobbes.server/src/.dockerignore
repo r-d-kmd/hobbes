@@ -3,7 +3,8 @@
 **/Collector/
 **/db/
 **/obj/
-**/build.fsx/
+**/Properties/
+**/build.fsx
 **/build.lock.fsx
 **/*.fsproj
 **/*.fs

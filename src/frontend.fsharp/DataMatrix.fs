@@ -560,14 +560,14 @@ module DataStructures =
                      Frame.getNumericCols
                      >> Frame.ofColumns
                 | AST.Only condition ->
-                     fun frame ->
-                         let conditionColumn = "__condition__"
-                         frame?(conditionColumn) <- compileBooleanExpression condition keySeries
-                         frame
-                         |> Frame.filterRows(fun _ row ->
-                            row.GetAs<bool> conditionColumn
-                         )
-                         |> Frame.dropCol conditionColumn
+                    fun frame ->
+                        let conditionColumn = "__condition__"
+                        frame?(conditionColumn) <- compileBooleanExpression condition keySeries
+                        frame
+                        |> Frame.filterRows(fun _ row ->
+                            (row.TryGetAs<bool> conditionColumn).ValueOrDefault
+                        )
+                        |> Frame.dropCol conditionColumn
                 
             frame |> f
         let cluster c  =

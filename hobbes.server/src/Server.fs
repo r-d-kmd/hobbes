@@ -115,7 +115,8 @@ let private sync configurationName =
                                     None
                             match record with
                             Some record ->
-                                let responseText = Rawdata.store configuration.Source.SourceName configuration.Source.ProjectName url (record.ToString())
+                                let data = record.JsonValue.ToString JsonSaveOptions.DisableFormatting
+                                let responseText = Rawdata.store configuration.Source.SourceName configuration.Source.ProjectName url data
                                 if System.String.IsNullOrWhiteSpace(record.OdataNextLink) |> not then
                                     printfn "Countinuing sync"
                                     printfn "%s" record.OdataNextLink

@@ -1,4 +1,4 @@
-namespace hobbes.tests
+namespace Hobbes.Tests
 
 open Xunit
 open Hobbes.DSL

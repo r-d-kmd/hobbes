@@ -32,15 +32,18 @@ type DataRecord = {
 }
 
 module Rawdata =
-    let store source project recordId (data : string)  = 
-        let makeJsonDoc = sprintf """{
+    let store source project recordId data  = 
+        let makeJsonDoc = 
+            sprintf """{
+              "_id" : "%s",
               "project": "%s",
               "source": "%s",
               "timestamp": "%s",
-              "data": {%s} """ project source
+              "data": %s
+            } """ recordId project source
 
         makeJsonDoc (System.DateTime.Today.ToShortDateString()) data
-        |> rawdata.Put recordId
+        |> rawdata.Post ""
         
     let list datasetId = 
         (rawdata.TableView datasetId)

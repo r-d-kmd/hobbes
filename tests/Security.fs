@@ -1,4 +1,4 @@
-namespace hobbes.tests
+namespace Hobbes.Tests
 
 open Hobbes.Server.Security
 open Xunit

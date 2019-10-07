@@ -1,6 +1,4 @@
 module Cache
-open FSharp.Data
-
 let store cacheKey (data : string) =
     let record = 
             sprintf """{
@@ -8,7 +6,7 @@ let store cacheKey (data : string) =
                 "Data" : %s
             }""" (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) data
     try
-        Database.cache.Put cacheKey record
+        Database.cache.Put cacheKey record |> ignore
     with e ->
         eprintfn "Failed to cahce data. Reason: %s. Record: %s" e.Message record
     (Database.CacheRecord.Parse record).Data

@@ -181,8 +181,26 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
             None
 
     member __.Put id body = 
-        put body id |> ignore
-
+        put body id
+    member __.Post path body = 
+        let resp = tryPost body path
+        if  resp.StatusCode >= 200  && resp.StatusCode <= 299  then
+            resp |> getBody
+        elif resp.StatusCode = 400 then
+            let respB = (resp |> getBody)
+            let length = 500
+            let start =
+                if (respB).Contains "Invalid JSON starting at character " then
+                    (((respB.Split("Invalid JSON starting at character ") |> Array.last).Split ' '
+                     |> Array.head).Trim()
+                    |> int)
+                    - 20
+                    |> max 0
+                else
+                    0
+            failwithf "Bad format. Doc: %s" (body.Substring(start, length))
+        else
+            failwith (resp |> getBody)
     member __.FilterByKeys keys = 
         let body = 
            System.String.Join(",", 

@@ -5,9 +5,9 @@ open Microsoft.AspNetCore.Http
 open Hobbes.FSharp.DataStructures
 open Database
 open Hobbes.Server.Db
-open System.Security.Cryptography
-open System.IO
+open FSharp.Data
 open Hobbes.Server.Security
+
 let private port = 
     match env "port" with
     null -> 8085
@@ -20,12 +20,8 @@ let private enumeratorMap f (e : System.Collections.IEnumerator) = //Shouldn't b
         | false -> acc
     aux []
       
-let stopwatch = System.Diagnostics.Stopwatch()
-stopwatch.Start()
-
-let private verifiedAndTimed serviceName f =
+let private verified f =
     fun func (ctx : HttpContext) ->
-        let start = stopwatch.ElapsedMilliseconds
         let statusCode, body =  
             match ctx.TryGetRequestHeader "Authorization" with
             None ->    
@@ -33,16 +29,14 @@ let private verifiedAndTimed serviceName f =
                 403, "Unauthorized"
             | Some authToken ->
                 if authToken |> verifyAuthToken then
-                    f()
+                    f ctx
                 else 
                     403, "Unauthorized"
-        let responseTime = stopwatch.ElapsedMilliseconds - start
-        printfn "[PERF] %s loaded in: %d ms" serviceName responseTime
         (setStatusCode statusCode
          >=> setBodyFromString body) func ctx
 
 let private data configurationName =
-    let executer() =
+    let executer _ =
         let cacheKey = configurationName
         let data = 
             match cacheKey
@@ -75,34 +69,85 @@ let private data configurationName =
                 printfn "Cache hit %s" cacheKey
                 data
         (200, data.ToString())
-    verifiedAndTimed (sprintf "data - configuration: %s" configurationName) executer
-        
-
-let private helloWorld =
-    setStatusCode 200
-    >=> setBodyFromString "Hello Lucas"
+    verified executer
+       
+let request user pwd httpMethod body url  =
+    let headers =
+        [
+            HttpRequestHeaders.BasicAuth user pwd
+            HttpRequestHeaders.ContentType HttpContentTypes.Json
+        ]
+    match body with
+    None -> 
+        Http.Request(url,
+            httpMethod = httpMethod, 
+            silentHttpErrors = true,
+            headers = headers
+        )
+    | Some body ->
+        Http.Request(url,
+            httpMethod = httpMethod, 
+            silentHttpErrors = true, 
+            body = TextRequest body,
+            headers = headers
+        )
 
 let private sync configurationName =
-    let executer() =
+    let executer (ctx : HttpContext) =
         try
-            let configuration = DataConfiguration.get configurationName
-            match configuration.Source with
-            DataConfiguration.AzureDevOps projectName ->
-                let rec _sync (url : string) = 
-                    let record = Database.AzureDevOpsAnalyticsRecord.Load url
-                    Rawdata.store configuration.Source.SourceName configuration.Source.ProjectName url (record.ToString())
-                    if System.String.IsNullOrWhiteSpace(record.OdataNextLink) |> not then
-                        _sync record.OdataNextLink
-                sprintf "https://analytics.dev.azure.com/kmddk/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=WorkITemId%%2CWorkItemType%%2CState%%2CStateCategory%%2CIteration&$filter=Iteration%%2FStartDate%%20gt%%202019-01-01Z" projectName
-                |> _sync
-                200,"Synced" 
-            | _ -> 
-                404,"No reader found" 
+            match ctx.TryGetRequestHeader "PAT" with
+            Some pat ->
+                let configuration = DataConfiguration.get configurationName
+                match configuration.Source with
+                DataConfiguration.AzureDevOps projectName ->
+                    let rec _sync (url : string) = 
+                        let resp = 
+                            url
+                            |> request pat pat "GET" None
+                        if resp.StatusCode = 200 then
+                            let record = 
+                                match resp.Body with
+                                Text body ->
+                                    body
+                                    |> AzureDevOpsAnalyticsRecord.Parse
+                                    |> Some
+                                | _ -> 
+                                    None
+                            match record with
+                            Some record ->
+                                let responseText = Rawdata.store configuration.Source.SourceName configuration.Source.ProjectName url (record.ToString())
+                                if System.String.IsNullOrWhiteSpace(record.OdataNextLink) |> not then
+                                    printfn "Countinuing sync"
+                                    printfn "%s" record.OdataNextLink
+                                    _sync record.OdataNextLink
+                                else 
+                                    200, responseText
+                            | None -> 500, "Couldn't parse record"
+                        else 
+                            resp.StatusCode, (match resp.Body with Text t -> t | _ -> "")
+                    let statusCode,message = 
+                        let selectedFields = 
+                           (",", [
+                             "ChangedDate"
+                             "WorkITemId"
+                             "WorkItemType"
+                             "State"
+                             "StateCategory"
+                             "Iteration"
+                             "LeadTimeDays"
+                             "CycleTimeDays"
+                           ]) |> System.String.Join
+                        sprintf "https://analytics.dev.azure.com/kmddk/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s&$filter=IsLastRevisionOfDay%%20eq%%20true%%20and%%20Iteration%%2FStartDate%%20gt%%202019-01-01Z" projectName selectedFields
+                        |> _sync
+                    statusCode,message
+                | _ -> 
+                    404,"No reader found" 
+            | None -> 403,"Unauthorized"
         with e -> 
             eprintfn "Couldn't sync %s. Reason: %s" configurationName e.Message
             500, e.Message
             
-    verifiedAndTimed (sprintf "sync - configuration: %s" configurationName) executer
+    verified executer
 
 
 let private key token =
@@ -123,6 +168,7 @@ let private key token =
                     }""" user token
                 userRecord
                 |> users.Put userId
+                |> ignore
                 users.Get userId
                 |> Some
               | s -> s
@@ -141,7 +187,6 @@ let private apiRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
     getf "/data/%s" data
-    get "/helloServer" helloWorld
     getf "/key/%s" key
     get "/ping" (setStatusCode 200 >=> setBodyFromString "pong")
     getf "/sync/%s" sync

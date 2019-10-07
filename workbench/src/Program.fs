@@ -11,23 +11,31 @@ let parse stmt =
 [<EntryPoint>]
 let main args =
     let statements = 
-        [
-            only (!> "WorkItemType" == !!> "User Story")
-            pivot (!> "Iteration.IterationLevel3") (!> "StateCategory") Count (!> "WorkItemType")
-        ]
+        match args.[0].ToLower() with
+        "gandalf.renaming" ->
+            Some Gandalf.renaming
+        | "azure.foldbysprint" ->
+            Some Azure.foldBySprint
+        | _ ->
+           printfn "Didn't find statements"
+           None
     statements
-    |> List.map parse
-    |> ignore
-    
-    System.String.Join(",",
+    |> Option.iter(fun statements ->
+        let name = args.[0]
         statements
-        |> List.map (fun stmt ->
-           (stmt |> string).Replace("\"", "\\\"") |> sprintf "\n  %A"
-        )
-    ) |> sprintf "[%s\n]"
-    |> printfn """{
-        "_id" : "%s",
-        "lines" : %s
-    }
-    """ args.[0]
+        |> List.map parse
+        |> ignore
+        
+        System.String.Join(",",
+            statements
+            |> List.map (fun stmt ->
+               (stmt |> string).Replace("\"", "\\\"") |> sprintf "\n  %A"
+            )
+        ) |> sprintf "[%s\n]"
+        |> printfn """{
+            "_id" : "%s",
+            "lines" : %s
+        }
+        """ name
+    ) 
     0

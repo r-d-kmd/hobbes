@@ -1,4 +1,4 @@
-namespace hobbes.tests.Fsharp
+namespace Hobbes.Tests.Fsharp
 
 open System
 open Xunit

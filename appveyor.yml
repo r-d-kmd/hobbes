@@ -11,4 +11,4 @@ install:
 before_build:
   - paket install
 build_script: 
-  - fake build --target PublishPackage
+  - fake build --target PushToDocker

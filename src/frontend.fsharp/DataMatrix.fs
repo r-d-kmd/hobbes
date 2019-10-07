@@ -476,9 +476,9 @@ module DataStructures =
                 frame
                 |> Frame.pivotTable 
                     (fun _ r -> 
-                        r.Get rowkey
+                        (r.TryGet rowkey).ValueOrDefault
                         |> AST.KeyType.Create)
-                    (fun _ r -> r.Get columnkey |> string)
+                    (fun _ r -> (r.TryGet columnkey).ValueOrDefault |> string)
                     (fun f ->
                           let resultsColumn = compileTempColumn keySeries f "__result__" valueExpression
                           f.GetColumn resultsColumn
@@ -638,8 +638,6 @@ module DataStructures =
             |> Frame.cols
             |> Series.observations
             |> Seq.map(fun (columnName, values) -> columnName, values |> Series.observations)
-        
-        static let __empty = DataMatrix(Frame([],[]))
 
         let serialiseValue (_,value : obj) = 
             match value with
@@ -663,19 +661,7 @@ module DataStructures =
                                              | k,Some s -> k,s) 
                 )
         member private ___.Frame with get() = frame
-        static member empty with get() = __empty
         
-        static member fromTable table =
-                let frame = 
-                    table
-                    |> Seq.map(fun (columnName, values) ->
-                        columnName,
-                        values |> series
-                    ) |> series
-                    |> Frame.ofColumns
-                frame
-                |> DataMatrix
-                :> IDataMatrix
         member ___.AsTable() =
                 frame
                 |> Frame.cols
@@ -755,3 +741,19 @@ module DataStructures =
                             ) |> sprintf "{%s}"
                         )
                      ) |> sprintf "[%s]"
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module DataMatrix =
+        let empty = DataMatrix(Frame([],[]))
+            
+        let fromTable table =
+                let frame = 
+                    table
+                    |> Seq.map(fun (columnName, values) ->
+                        columnName,
+                        values |> series
+                    ) |> series
+                    |> Frame.ofColumns
+                frame
+                |> DataMatrix
+                :> IDataMatrix

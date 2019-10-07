@@ -180,10 +180,13 @@ module Clustering =
          counting frame.RowCount transformation frame
 
 module DataStructures =
+    type JsonTableFormat = 
+        Column
+        | Row
     type IDataMatrix = 
         abstract Transform : AST.Expression -> IDataMatrix
         abstract Combine : IDataMatrix -> IDataMatrix
-        abstract ToJson : unit -> string
+        abstract ToJson : JsonTableFormat -> string
         abstract RowCount : int with get
     
     type private Comp = System.IComparable
@@ -724,18 +727,31 @@ module DataStructures =
                 | AST.NoOp -> 
                     this
                     :> IDataMatrix
-            member ___.ToJson() = 
-                System.String.Join(",",
-                    frame
-                    |> Frame.rows
-                    |> Series.observations
-                    |> Seq.map(fun (_,row) ->
-                        System.String.Join(",",
-                            row
-                            |> Series.observations
-                            |> Seq.map(fun (columnName, value) ->
-                               sprintf """ "%s":%A""" columnName value 
-                            )
-                        ) |> sprintf "{%s}"
-                    )
-                 ) |> sprintf "[%s]"
+            member ___.ToJson format =
+                match format with
+                Column -> 
+                    String.Join(",", frame
+                             |> toTable
+                             |> Seq.map(fun (columnName,values) -> 
+                                let valuesAsString =
+                                    System.String.Join(",", values 
+                                                            |> Seq.map serialiseValue
+                                    )
+                                sprintf """ "%s" : [%s] """ columnName valuesAsString
+                             )
+                    ) |> sprintf "{%s}"
+                | Row ->
+                    System.String.Join(",",
+                        frame
+                        |> Frame.rows
+                        |> Series.observations
+                        |> Seq.map(fun (_,row) ->
+                            System.String.Join(",",
+                                row
+                                |> Series.observations
+                                |> Seq.map(fun (columnName, value) ->
+                                   sprintf """ "%s":%A""" columnName value 
+                                )
+                            ) |> sprintf "{%s}"
+                        )
+                     ) |> sprintf "[%s]"

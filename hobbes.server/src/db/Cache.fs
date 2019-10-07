@@ -1,17 +1,24 @@
 module Cache
 open FSharp.Data
 
-let private json2columns (data:string) = 
-   seq {
-       yield "some column", Seq.empty
-   }
+let store cacheKey (data : string) =
+    let record = 
+            sprintf """{
+                "TimeStamp" : "%s",
+                "Data" : %s
+            }""" (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) data
+    try
+        Database.cache.Put cacheKey record
+    with e ->
+        eprintfn "Failed to cahce data. Reason: %s. Record: %s" e.Message record
+    (Database.CacheRecord.Parse record).Data
 
-let store configurationName (jsonDoc : string)  = 
-    jsonDoc 
+let tryRetrieve cacheKey =
+    Database.cache.TryGet cacheKey
+    |> Option.bind(fun cacheRecord -> 
+        printfn "Retrieved %s from cache" cacheKey
+        cacheRecord.Data |> Some
+    )
 
-let raw configurationName data =
-    (data
-    |> json2columns
-    |> Hobbes.FSharp.DataStructures.DataMatrix.fromTable).ToJson()
-    |> store configurationName
-    |> json2columns
+let retrieve cacheKey =
+   (Database.cache.Get cacheKey).Data

@@ -39,9 +39,35 @@ type TransformationRecord = JsonProvider<"""{"lines" : ["","jghkhj"]}""">
 type CacheRecord = JsonProvider<"""{
     "_id" : "name",
     "TimeStamp" : "24-09-2019",
-    "Data" : "some json"
+    "Data" : {
+        "columnNames" : ["a","b"],
+        "values" : [["zcv"],[1.2],["2019-01-01"]]
+    }
 }""">
 
+type AzureDevOpsAnalyticsRecord = JsonProvider<"""{
+  "@odata.context": "https://analytics.dev.azure.com/kmddk/flowerpot/_odata/v2.0/$metadata#WorkItemRevisions(WorkItemId,WorkItemType,State,StateCategory,Iteration)",
+  "value": [
+    {
+      "WorkItemId": 77632,
+      "WorkItemType": "User Story",
+      "State": "New",
+      "StateCategory": "Proposed",
+      "Iteration": {
+        "ProjectSK": "7c0a8e77-f740-44a3-96a7-7d7ff665caaf",
+        "IterationSK": "857658df-406e-43e5-bb1b-382d229f2dea",
+        "IterationId": "857658df-406e-43e5-bb1b-382d229f2dea",
+        "IterationName": "Iteration 1",
+        "Number": 2565,
+        "IterationPath": "flowerpot\\Iteration 1",
+        "StartDate": "2019-02-13T00:00:00+01:00",
+        "EndDate": "2019-02-27T23:59:59.999+01:00",
+        "IterationLevel1": "flowerpot",
+        "IterationLevel2": "Iteration 1",
+        "Depth": 1,
+        "IsEnded": true
+      }
+    }], "@odata.nextLink":"https://analytics.dev.azure.com/"}""">
 
 type List = JsonProvider<"""{
     "total_rows": 2,
@@ -75,7 +101,6 @@ type HttpMethod =
     Get
     | Post
     | Put
-    
 type Database<'a> (databaseName, parser : string -> 'a)  =
     
     let urlWithId (id : string) = 
@@ -95,24 +120,26 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
                 databaseName
                 path
             ])
-        printfn "Requesting %s from %s" path databaseName
+        printfn "%sting %s from %s" m path databaseName
         let resp =
+            let headers =
+                [
+                    HttpRequestHeaders.BasicAuth user pwd
+                    HttpRequestHeaders.ContentType HttpContentTypes.Json
+                ]
             match body with
             None -> 
                 Http.Request(url,
                     httpMethod = m, 
                     silentHttpErrors = silentErrors,
-                    headers = [HttpRequestHeaders.BasicAuth user pwd]
+                    headers = headers
                 )
             | Some body ->
                 Http.Request(url,
                     httpMethod = m, 
                     silentHttpErrors = silentErrors, 
                     body = TextRequest body,
-                    headers = [
-                        HttpRequestHeaders.BasicAuth user pwd
-                        HttpRequestHeaders.ContentType HttpContentTypes.Json
-                    ]
+                    headers = headers
                 )
         printfn "Response status code : %d. Url: %s" resp.StatusCode resp.ResponseUrl
         resp
@@ -123,12 +150,13 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
         | Text res -> res
     let requestString httpMethod silentErrors body path = 
         request httpMethod silentErrors body path |> getBody
+    let tryRequest m = request m true
     let get = requestString Get false None
     let put body = requestString Put false (Some body) 
     let post body = requestString Post false (Some body) 
-    let tryGet = request Get true None 
-    let tryPut body = request Put true (Some body)  
-    let tryPost body = request Post true (Some body) 
+    let tryGet = tryRequest Get None 
+    let tryPut body = tryRequest Put (Some body)  
+    let tryPost body = tryRequest Post (Some body) 
     
     member __.Get id =
         get id |> parser
@@ -138,8 +166,14 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
         let body = 
             match resp.Body with
             Text s ->
-             s |> parser |> Some
-            | _ -> None
+                try
+                    s |> parser |> Some
+                with e ->
+                   eprintfn "Couldn't parse %s" s
+                   None
+            | _ -> 
+                eprintfn "Response body was binary"
+                None
         if resp.StatusCode >= 200  && resp.StatusCode <= 299 then
             body
         else
@@ -156,14 +190,18 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
                |> Seq.map(fun s -> sprintf "%A" s)
            )
            |> sprintf """{"keys" : [%s]}"""
-        (post body "_all_docs?include_docs=true"
-         |> List.Parse).Rows
-        |> Array.map(fun entry -> 
-            try
-                entry.Doc.ToString() |> parser
-            with e ->
-                failwithf "Failed loading transformations. Row: %A. Msg: %s" (entry.ToString()) e.Message
-            )
+        try
+            (post body "_all_docs?include_docs=true"
+             |> List.Parse).Rows
+            |> Array.map(fun entry -> 
+                try
+                    entry.Doc.ToString() |> parser
+                with e ->
+                    failwithf "Failed loading transformations. Row: %A. Msg: %s" (entry.ToString()) e.Message
+                )
+        with _ ->
+            eprintfn "Failed getting documents by key. POST Body: %s" body
+            reraise()
 
     member __.TableView (keys : string list) = 
         let startKey = 

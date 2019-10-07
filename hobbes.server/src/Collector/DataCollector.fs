@@ -42,7 +42,7 @@ let testDataCollector  =
 
   
    (testDataTable
-    |> DataMatrix.fromTable).ToJson()
+    |> DataMatrix.fromTable).ToJson(Column)
    
 let get source = 
    match source with

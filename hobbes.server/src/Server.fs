@@ -20,59 +20,91 @@ let private enumeratorMap f (e : System.Collections.IEnumerator) = //Shouldn't b
         | false -> acc
     aux []
       
+let stopwatch = System.Diagnostics.Stopwatch()
+stopwatch.Start()
 
-let private data configurationName =
-    
+let private verifiedAndTimed serviceName f =
     fun func (ctx : HttpContext) ->
+        let start = stopwatch.ElapsedMilliseconds
         let statusCode, body =  
             match ctx.TryGetRequestHeader "Authorization" with
             None ->    
                 eprintfn "Tried to gain access without a key"
                 403, "Unauthorized"
             | Some authToken ->
-                    if authToken |> verifyAuthToken then
-                        let data = 
-                            match cache.TryGet configurationName with
-                            None -> 
-                                let configuration = DataConfiguration.get configurationName
-                                let datasetKey =
-                                    [configuration.Source.SourceName;configuration.Source.ProjectName]
-                                let rawData =
-                                    match Rawdata.list datasetKey with
-                                    s when s |> Seq.isEmpty -> 
-                                        DataCollector.get configuration.Source |> ignore
-                                        Rawdata.list datasetKey
-                                    | data -> 
-                                        data
-
-                                let transformations = 
-                                        Transformations.load configuration.Transformations
-                                        |> Array.collect(fun t -> t.Lines)
-                                let func = Hobbes.FSharp.Compile.expressions transformations                                                                   
-                                (rawData
-                                 |> Seq.map(fun (columnName,values) -> 
-                                    columnName, values.ToSeq()
-                                                 |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
-                                 ) |> DataMatrix.fromTable
-                                 |> func).ToJson()
-                                |> Cache.store configurationName 
-                                
-                            | Some cacheRecord -> cacheRecord.Data
-                        (200, data) |> Some
-                    else
-                       None
-                    |> Option.orElseWith(fun () ->
-                        eprintfn "Tried to gain access with an invalid key. Token (%s)" authToken
-                        (403, "Unauthorized") |> Some
-                    ) |> Option.get
+                if authToken |> verifyAuthToken then
+                    f()
+                else 
+                    403, "Unauthorized"
+        let responseTime = stopwatch.ElapsedMilliseconds - start
+        printfn "[PERF] %s loaded in: %d ms" serviceName responseTime
         (setStatusCode statusCode
          >=> setBodyFromString body) func ctx
+
+let private data configurationName =
+    let executer() =
+        let cacheKey = configurationName
+        let data = 
+            match cacheKey
+                  |> Cache.tryRetrieve with
+            None ->
+                printfn "Cache miss %s" cacheKey
+                let configuration = DataConfiguration.get configurationName
+                let datasetKey =
+                    [configuration.Source.SourceName;configuration.Source.ProjectName]
+                let rawData =
+                    match Rawdata.list datasetKey with
+                    s when s |> Seq.isEmpty -> 
+                        DataCollector.get configuration.Source |> ignore
+                        Rawdata.list datasetKey
+                    | data -> 
+                        data
+
+                let transformations = 
+                        Transformations.load configuration.Transformations
+                        |> Array.collect(fun t -> t.Lines)
+                let func = Hobbes.FSharp.Compile.expressions transformations                                                                   
+                (rawData
+                 |> Seq.map(fun (columnName,values) -> 
+                    columnName, values.ToSeq()
+                                 |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
+                 ) |> DataMatrix.fromTable
+                 |> func).ToJson(Column)
+                |> Cache.store cacheKey
+            | Some data ->
+                printfn "Cache hit %s" cacheKey
+                data
+        (200, data.ToString())
+    verifiedAndTimed (sprintf "data - configuration: %s" configurationName) executer
+        
 
 let private helloWorld =
     setStatusCode 200
     >=> setBodyFromString "Hello Lucas"
 
-   
+let private sync configurationName =
+    let executer() =
+        try
+            let configuration = DataConfiguration.get configurationName
+            match configuration.Source with
+            DataConfiguration.AzureDevOps projectName ->
+                let rec _sync (url : string) = 
+                    let record = Database.AzureDevOpsAnalyticsRecord.Load url
+                    Rawdata.store configuration.Source.SourceName configuration.Source.ProjectName url (record.ToString())
+                    if System.String.IsNullOrWhiteSpace(record.OdataNextLink) |> not then
+                        _sync record.OdataNextLink
+                sprintf "https://analytics.dev.azure.com/kmddk/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=WorkITemId%%2CWorkItemType%%2CState%%2CStateCategory%%2CIteration&$filter=Iteration%%2FStartDate%%20gt%%202019-01-01Z" projectName
+                |> _sync
+                200,"Synced" 
+            | _ -> 
+                404,"No reader found" 
+        with e -> 
+            eprintfn "Couldn't sync %s. Reason: %s" configurationName e.Message
+            500, e.Message
+            
+    verifiedAndTimed (sprintf "sync - configuration: %s" configurationName) executer
+
+
 let private key token =
     let user = 
         token
@@ -112,6 +144,7 @@ let private apiRouter = router {
     get "/helloServer" helloWorld
     getf "/key/%s" key
     get "/ping" (setStatusCode 200 >=> setBodyFromString "pong")
+    getf "/sync/%s" sync
 }
 
 let private appRouter = router {

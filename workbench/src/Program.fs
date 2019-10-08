@@ -12,6 +12,8 @@ let parse stmt =
 let main args =
     if args |> Array.isEmpty then
         Tests.test()
+        printfn "Press enter to exit..."
+        System.Console.ReadLine() |> ignore
     else
         let statements = 
             match args.[0].ToLower() with

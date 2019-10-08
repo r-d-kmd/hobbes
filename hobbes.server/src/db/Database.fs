@@ -147,13 +147,13 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
                 None -> 
                     Http.Request(url,
                         httpMethod = m, 
-                        silentHttpErrors = false,
+                        silentHttpErrors = true,
                         headers = headers
                     )
                 | Some body ->
                     Http.Request(url,
                         httpMethod = m, 
-                        silentHttpErrors = false, 
+                        silentHttpErrors = true, 
                         body = TextRequest body,
                         headers = headers
                     )
@@ -161,6 +161,7 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
                 //most likely cause is that a requested view is being updated. That's a temporary problem
                 //wait a random and (likely) increasing amount of time and then try again
                 System.Threading.Thread.Sleep (100 * (System.Random().Next(count, count * 2 + 5))) 
+                printfn "Retry #%d" count
                 requester (count + 1)
             else
                 resp

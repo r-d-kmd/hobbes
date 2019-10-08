@@ -4,6 +4,9 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\hobbes.server/src\hobbes.server.fsproj">
+      <Name>hobbes.server.fsproj</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\hobbes.fsproj">
       <Name>hobbes.fsproj</Name>
     </ProjectReference>
@@ -11,6 +14,7 @@
   <ItemGroup>
     <Compile Include="production transformations/Gandalf.fs" />
     <Compile Include="production transformations/Azure.fs" />
+    <Compile Include="Tests/Tests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

@@ -5,9 +5,17 @@ open FSharp.Data
 let env name = 
     System.Environment.GetEnvironmentVariable name
 
+
+
+#if DEBUG
+let private dbServerUrl = "http://localhost:5984"
+let private user = "admin"
+let private pwd = "password"
+#else
+let private dbServerUrl = "http://db:5984"
 let private user = env "COUCHDB_USER"
 let private pwd = env "COUCHDB_PASSWORD"
-let private dbServerUrl = "http://db:5984"
+#endif
 
 type UserRecord = JsonProvider<"""{
   "_id": "org.couchdb.user:dev",
@@ -107,7 +115,12 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
         let dbUrl = dbServerUrl + "/" + databaseName
         id
         |> sprintf "%s/%s" dbUrl
-        
+     
+    let getBody (resp : HttpResponse) = 
+        match resp.Body with
+        Binary _ -> failwithf "Can't use a binary response"
+        | Text res -> res
+
     let request httpMethod silentErrors body path  =
         let m =
               match httpMethod with 
@@ -121,33 +134,43 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
                 path
             ])
         printfn "%sting %s from %s" m path databaseName
-        let resp =
-            let headers =
-                [
-                    HttpRequestHeaders.BasicAuth user pwd
-                    HttpRequestHeaders.ContentType HttpContentTypes.Json
-                ]
-            match body with
-            None -> 
-                Http.Request(url,
-                    httpMethod = m, 
-                    silentHttpErrors = silentErrors,
-                    headers = headers
-                )
-            | Some body ->
-                Http.Request(url,
-                    httpMethod = m, 
-                    silentHttpErrors = silentErrors, 
-                    body = TextRequest body,
-                    headers = headers
-                )
+        
+        let headers =
+            [
+                HttpRequestHeaders.BasicAuth user pwd
+                HttpRequestHeaders.ContentType HttpContentTypes.Json
+            ]
+        let maxRetries = 10
+        let rec requester count = 
+            let resp = 
+                match body with
+                None -> 
+                    Http.Request(url,
+                        httpMethod = m, 
+                        silentHttpErrors = false,
+                        headers = headers
+                    )
+                | Some body ->
+                    Http.Request(url,
+                        httpMethod = m, 
+                        silentHttpErrors = false, 
+                        body = TextRequest body,
+                        headers = headers
+                    )
+            if resp.StatusCode = 500 && count < maxRetries then
+                //most likely cause is that a requested view is being updated. That's a temporary problem
+                //wait a random and (likely) increasing amount of time and then try again
+                System.Threading.Thread.Sleep (100 * (System.Random().Next(count, count * 2 + 5))) 
+                requester (count + 1)
+            else
+                resp
+        let resp = requester 1
         printfn "Response status code : %d. Url: %s" resp.StatusCode resp.ResponseUrl
-        resp
+        if silentErrors || (resp.StatusCode >= 200 && resp.StatusCode < 300) then
+            resp
+        else
+            failwithf "Server error %d. Reason: %s" resp.StatusCode (resp |> getBody)
 
-    let getBody (resp : HttpResponse) = 
-        match resp.Body with
-        Binary _ -> failwithf "Can't use a binary response"
-        | Text res -> res
     let requestString httpMethod silentErrors body path = 
         request httpMethod silentErrors body path |> getBody
     let tryRequest m = request m true
@@ -168,8 +191,8 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
             Text s ->
                 try
                     s |> parser |> Some
-                with e ->
-                   eprintfn "Couldn't parse %s" s
+                with _ ->
+                   eprintfn "Couldn't parse %s" (s.Substring(0,500))
                    None
             | _ -> 
                 eprintfn "Response body was binary"
@@ -177,7 +200,8 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
         if resp.StatusCode >= 200  && resp.StatusCode <= 299 then
             body
         else
-            eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode body
+            let body = body.Value.ToString()
+            eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode (body.Substring(0,min 500 body.Length ))
             None
 
     member __.Put id body = 
@@ -218,7 +242,7 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
                     failwithf "Failed loading transformations. Row: %A. Msg: %s" (entry.ToString()) e.Message
                 )
         with _ ->
-            eprintfn "Failed getting documents by key. POST Body: %s" body
+            eprintfn "Failed getting documents by key. POST Body: %s" (body.Substring(0,500))
             reraise()
 
     member __.TableView (keys : string list) = 

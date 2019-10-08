@@ -43,7 +43,6 @@ type DataSet = JsonProvider<"""{
 
 type TransformationRecord = JsonProvider<"""{"lines" : ["","jghkhj"]}""">
 
-
 type CacheRecord = JsonProvider<"""{
     "_id" : "name",
     "TimeStamp" : "24-09-2019",
@@ -194,7 +193,7 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
                 try
                     s |> parser |> Some
                 with _ ->
-                   eprintfn "Couldn't parse %s" (s.Substring(0,500))
+                   eprintfn "Couldn't parse %s" (s.Substring(0, min 500 s.Length))
                    None
             | _ -> 
                 eprintfn "Response body was binary"
@@ -208,6 +207,8 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
 
     member __.Put id body = 
         put body id
+    member __.TryPut id body = 
+        tryPut body id
     member __.Post path body = 
         let resp = tryPost body path
         if  resp.StatusCode >= 200  && resp.StatusCode <= 299  then
@@ -224,7 +225,7 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
                     |> max 0
                 else
                     0
-            failwithf "Bad format. Doc: %s" (body.Substring(start, length))
+            failwithf "Bad format. Doc: %s" (body.Substring(start, min body.Length length))
         else
             failwith (resp |> getBody)
     member __.FilterByKeys keys = 
@@ -244,7 +245,7 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
                     failwithf "Failed loading transformations. Row: %A. Msg: %s" (entry.ToString()) e.Message
                 )
         with _ ->
-            eprintfn "Failed getting documents by key. POST Body: %s" (body.Substring(0,500))
+            eprintfn "Failed getting documents by key. POST Body: %s" (body.Substring(0,min body.Length 500))
             reraise()
 
     member __.TableView (keys : string list) = 

@@ -98,6 +98,7 @@ type List = JsonProvider<"""{
             }
         }]
     }""">
+type CouchDoc = JsonProvider<"""{"_id" : "dd","_rev":"jlkjkl"}""">
 type TableView = JsonProvider<""" {"columnNames" : ["a","b"], "values" : [[0,1,2,3,4],[0.4,1.2,2.4,3.5,4.1],["x","y","z"],["2019-01.01","2019-01.01"]]} """>
 type private DatabaseName =
     Configurations
@@ -260,10 +261,33 @@ type Database<'a> (databaseName, parser : string -> 'a)  =
                 |> List.map (sprintf "%A") 
             ) |> sprintf "[%s]"
         let path = sprintf """_design/default/_view/table/?startkey=%s&endkey=%s""" startKey endkey
-        printfn "Path used for table view %A" path
+        
         (get path |> List.Parse).Rows
         |> Array.map(fun entry -> entry.Value.ToString() |> TableView.Parse)
-
+    member __.Delete id =
+        let doc = 
+            get id
+            |> CouchDoc.Parse
+       
+        let url = 
+            System.String.Join("/",[
+                dbServerUrl
+                databaseName
+                id
+            ])
+        printfn "Deleting %s from %s" id databaseName
+        
+        let headers =
+            [
+                HttpRequestHeaders.BasicAuth user pwd
+                HttpRequestHeaders.ContentType HttpContentTypes.Json
+                HttpRequestHeaders.IfMatch doc.Rev
+            ]
+        
+        Http.Request(url,
+            httpMethod = "DELETE", 
+            headers = headers
+        )
 
 
 let configurations = Database ("configurations", ConfigurationRecord.Parse)

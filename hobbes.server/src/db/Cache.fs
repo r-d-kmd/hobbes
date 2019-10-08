@@ -4,11 +4,14 @@ let store cacheKey (data : string) =
             sprintf """{
                 "TimeStamp" : "%s",
                 "Data" : %s
-            }""" (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) data
+            }""" (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
+                 (data.Replace("\\", "\\\\")) //escape special json characters
     try
         Database.cache.Put cacheKey record |> ignore
     with e ->
         eprintfn "Failed to cahce data. Reason: %s" e.Message
+        let temp = record.Substring(0,100)
+        ()
     (Database.CacheRecord.Parse record).Data
 
 let tryRetrieve cacheKey =

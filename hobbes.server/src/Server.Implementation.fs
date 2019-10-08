@@ -54,10 +54,28 @@ let request user pwd httpMethod body url  =
             headers = headers
         )
 
+let clearTempAzureDataAndGetInitialUrl projectName =
+    let initialUrl = 
+        let selectedFields = 
+           (",", [
+             "ChangedDate"
+             "WorkITemId"
+             "WorkItemType"
+             "State"
+             "StateCategory"
+             "Iteration"
+             "LeadTimeDays"
+             "CycleTimeDays"
+           ]) |> System.String.Join
+        sprintf "https://analytics.dev.azure.com/kmddk/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s&$filter=IsLastRevisionOfDay%%20eq%%20true%%20and%%20Iteration%%2FStartDate%%20gt%%202019-01-01Z" projectName selectedFields
+    initialUrl    
+
 let sync pat configurationName =
     let configuration = DataConfiguration.get configurationName
+    
     match configuration.Source with
     DataConfiguration.AzureDevOps projectName ->
+        
         let rec _sync (url : string) = 
             let resp = 
                 url
@@ -84,21 +102,9 @@ let sync pat configurationName =
                 | None -> 500, "Couldn't parse record"
             else 
                 resp.StatusCode, (match resp.Body with Text t -> t | _ -> "")
-        let statusCode,message = 
-            let selectedFields = 
-               (",", [
-                 "ChangedDate"
-                 "WorkITemId"
-                 "WorkItemType"
-                 "State"
-                 "StateCategory"
-                 "Iteration"
-                 "LeadTimeDays"
-                 "CycleTimeDays"
-               ]) |> System.String.Join
-            sprintf "https://analytics.dev.azure.com/kmddk/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s&$filter=IsLastRevisionOfDay%%20eq%%20true%%20and%%20Iteration%%2FStartDate%%20gt%%202019-01-01Z" projectName selectedFields
-            |> _sync
-        statusCode,message
+        projectName
+        |> clearTempAzureDataAndGetInitialUrl
+        |> _sync
     | _ -> 
         404,"No reader found" 
     

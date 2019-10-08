@@ -1,8 +1,4 @@
 
-open Hobbes.DSL
-open Hobbes.Parsing.AST
-open Hobbes.FSharp
-
 let parse stmt =
     let stmt = stmt |> string
     Hobbes.Parsing.Parser.parse [stmt]

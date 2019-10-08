@@ -52,13 +52,8 @@ module Clustering =
             let groupSeries =
                 keys
                 |> Seq.map(fun ks ->
-                    try
                        ks |> List.item i
-                    with _ ->
-                       printfn "Key: %A. i: %d columns: %A" ks i columnNames
-                       reraise()
-                    )
-                |> Seq.zip grouped.RowKeys
+                ) |> Seq.zip grouped.RowKeys
                 |> series
             frame
             |> Frame.addCol

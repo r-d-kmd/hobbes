@@ -16,14 +16,7 @@ let data configurationName =
             let configuration = DataConfiguration.get configurationName
             let datasetKey =
                 [configuration.Source.SourceName;configuration.Source.ProjectName]
-            let rawData =
-                match Rawdata.list datasetKey with
-                s when s |> Seq.isEmpty -> 
-                    DataCollector.get configuration.Source |> ignore
-                    Rawdata.list datasetKey
-                | data -> 
-                    data
-
+            let rawData = Rawdata.list datasetKey
             let transformations = 
                     Transformations.load configuration.Transformations
                     |> Array.collect(fun t -> t.Lines)

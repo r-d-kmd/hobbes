@@ -14,10 +14,6 @@
     <Compile Include="db/Transformations.fs" />
     <Compile Include="db/Cache.fs" />
     <Compile Include="db/Rawdata.fs"/>
-    
-    <Compile Include="Collector/Json.fs" />
-    <Compile Include="Collector/Azure.fs" />
-    <Compile Include="Collector/DataCollector.fs" />
 
     <Compile Include="Security.fs" />
     <Compile Include="Server.Implementation.fs" />

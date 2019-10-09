@@ -111,10 +111,15 @@ let sync pat configurationName =
                 | None -> 500, "Couldn't parse record"
             else 
                 resp.StatusCode, (match resp.Body with Text t -> t | _ -> "")
-        projectName
-        |> DataConfiguration.AzureDevOps
-        |> clearTempAzureDataAndGetInitialUrl
-        |> _sync
+        let statusCode, body = 
+            projectName
+            |> DataConfiguration.AzureDevOps
+            |> clearTempAzureDataAndGetInitialUrl
+            |> _sync
+        async {
+            data configurationName |> ignore
+        } |> Async.Start
+        statusCode, body
     | _ -> 
         404,"No reader found" 
     

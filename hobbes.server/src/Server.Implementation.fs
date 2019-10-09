@@ -53,22 +53,31 @@ let request user pwd httpMethod body url  =
             body = TextRequest body,
             headers = headers
         )
-
-let clearTempAzureDataAndGetInitialUrl projectName =
+let azureFields = 
+    [
+     "ChangedDate"
+     "WorkITemId"
+     "WorkItemRevisionSK"
+     "WorkItemType"
+     "State"
+     "StateCategory"
+     "LeadTimeDays"
+     "CycleTimeDays"
+     "Iteration"
+    ]
+let private clearTempAzureDataAndGetInitialUrl (source : DataConfiguration.DataSource) =
     let initialUrl = 
         let selectedFields = 
-           (",", [
-             "ChangedDate"
-             "WorkITemId"
-             "WorkItemType"
-             "State"
-             "StateCategory"
-             "Iteration"
-             "LeadTimeDays"
-             "CycleTimeDays"
-           ]) |> System.String.Join
-        sprintf "https://analytics.dev.azure.com/kmddk/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s&$filter=IsLastRevisionOfDay%%20eq%%20true%%20and%%20Iteration%%2FStartDate%%20gt%%202019-01-01Z" projectName selectedFields
-    initialUrl    
+           (",", azureFields) |> System.String.Join
+        sprintf "https://analytics.dev.azure.com/kmddk/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s&$filter=IsLastRevisionOfDay%%20eq%%20true%%20and%%20WorkItemRevisionSK%%20gt%%20%d" source.ProjectName selectedFields
+    
+    let latestId = 
+        [source.SourceName;source.ProjectName]
+        |> Rawdata.tryLatestId
+    match latestId with
+    Some workItemRevisionId -> 
+        initialUrl workItemRevisionId
+    | None -> initialUrl 0
 
 let sync pat configurationName =
     let configuration = DataConfiguration.get configurationName
@@ -103,6 +112,7 @@ let sync pat configurationName =
             else 
                 resp.StatusCode, (match resp.Body with Text t -> t | _ -> "")
         projectName
+        |> DataConfiguration.AzureDevOps
         |> clearTempAzureDataAndGetInitialUrl
         |> _sync
     | _ -> 

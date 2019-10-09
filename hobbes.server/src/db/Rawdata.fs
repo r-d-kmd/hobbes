@@ -44,9 +44,52 @@ module Rawdata =
 
         makeJsonDoc (System.DateTime.Today.ToShortDateString()) data
         |> rawdata.Post ""
-        
-    let list datasetId = 
-        (rawdata.TableView datasetId)
+    let tryLatestId (datasetId : string list) =
+        let startKey = 
+            System.String.Join(",", datasetId) |> sprintf "[%s]"
+        let endKey = 
+            System.String.Join(",", 
+                match datasetId with
+                [source;project] -> [source;project + "a"]
+                | _ -> datasetId
+            ) |> sprintf "[%s]" 
+        try
+            (rawdata.Views.["WorkItemRevisions"].Get(WorkItemRevisionRecord.Parse,
+                                                     descending = true, 
+                                                     limit = 1 ,
+                                                     startKey = startKey,
+                                                     endKey = endKey
+             ) |> Array.head).Key
+            |> Some
+        with e ->
+           eprintfn "Failed to get last revision. Reason: %s" e.Message
+           None
+    let list (datasetId : string list) = 
+        let startKey = 
+            System.String.Join(",", datasetId) |> sprintf "[%s]"
+        let endKey = 
+            System.String.Join(",", 
+                match datasetId with
+                [source;project] -> [source;project + "a"]
+                | _ -> datasetId
+            ) |> sprintf "[%s]"
+        let rowCount = 
+            rawdata.Views.["table"].List(TableView.Parse,
+                                          startKey = startKey,
+                                          endKey = endKey,
+                                          limit = 0
+                                       ).TotalRows
+        let limitInTens = 1 //change this or change the looping conditions
+        let limit = limitInTens * 10
+        //max %limit records at a time
+        [|for i in 0..(rowCount + limit - 1) / limit ->
+            rawdata.Views.["table"].Get(TableView.Parse,
+                                              startKey = startKey,
+                                              endKey = endKey,
+                                              limit = limit,
+                                              skip = i * limit
+                                           )|]
+        |> Array.collect id
         |> Array.fold(fun (count, (map : Map<_,_>)) record ->
             let values = 
                 record.Values

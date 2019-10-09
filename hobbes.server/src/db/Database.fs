@@ -53,65 +53,65 @@ type WorkItemRevisionRecord = JsonProvider<"""
         {
             "id": "id1",
             "key": 300,
-            "value": "Proposed",
+            "value": 300,
             "doc":{
-    "WorkItemId":3833,
-    "Revision":3,
-    "RevisedDate":"2016-12-22T10:56:27.87+01:00",
-    "RevisedDateSK":20161222,
-    "DateSK":20161222,
-    "IsCurrent":false,
-    "IsLastRevisionOfDay":false,
-    "IsLastRevisionOfPeriod":"None",
-    "AnalyticsUpdatedDate":"2018-12-11T23:28:29.2066667Z",
-    "ProjectSK":"2139bb34-57e3-4d7d-a6e1-1c0542a45e29",
-    "WorkItemRevisionSK":62809820,
-    "AreaSK":"4d25b0a2-1e87-4f78-adc9-0129c4b99f94",
-    "IterationSK":"63f90684-6c1f-4ecf-9e44-6e055cd5f5b4",
-    "ChangedByUserSK":"7de04d29-b95b-4596-8cb4-8fa60f123d82",
-    "CreatedByUserSK":"349548d0-2ecd-4a1f-ae89-eaf68681d6cd",
-    "ChangedDateSK":20161222,
-    "CreatedDateSK":20161219,
-    "StateChangeDateSK":20161220,
-    "InProgressDateSK":20161220,
-    "Watermark":16800,
-    "Title":"Manage templates",
-    "WorkItemType":"Feature",
-    "ChangedDate":"2016-12-22T09:22:40.967+01:00",
-    "CreatedDate":"2016-12-19T11:19:08.42+01:00",
-    "State":"User stories created",
-    "Reason":"Moved to state User stories created",
-    "Priority":2,
-    "StackRank":1999997974.0,
-    "ValueArea":"Business",
-    "ParentWorkItemId":2536,
-    "StateCategory":"Resolved",
-    "InProgressDate":"2016-12-20T11:11:57.637+01:00",
-    "StateChangeDate":"2016-12-20T11:11:57.637+01:00",
-    "Count":1,"CommentCount":0,
-    "Agile_Gandalf_Additionalclarification":false,
-    "Iteration":{
-        "ProjectSK":"2139bb34-57e3-4d7d-a6e1-1c0542a45e29",
-        "IterationSK":"63f90684-6c1f-4ecf-9e44-6e055cd5f5b4",
-        "IterationId":"63f90684-6c1f-4ecf-9e44-6e055cd5f5b4",
-        "IterationName":"Gandalf",
-        "Number":159,
-        "IterationPath":"Gandalf",
-        "IterationLevel1":"Gandalf",
-        "Depth":0,"IsEnded":false
-    },
-    "Area": {
-        "ProjectSK":"2139bb34-57e3-4d7d-a6e1-1c0542a45e29",
-        "AreaSK":"4d25b0a2-1e87-4f78-adc9-0129c4b99f94",
-        "AreaId":"4d25b0a2-1e87-4f78-adc9-0129c4b99f94",
-        "AreaName":"PO team",
-        "Number":171,
-        "AreaPath":"Gandalf\\PO team",
-        "AreaLevel1":"Gandalf",
-        "AreaLevel2":"PO team",
-        "Depth":1
-    }
-}
+            "WorkItemId":3833,
+            "Revision":3,
+            "RevisedDate":"2016-12-22T10:56:27.87+01:00",
+            "RevisedDateSK":20161222,
+            "DateSK":20161222,
+            "IsCurrent":false,
+            "IsLastRevisionOfDay":false,
+            "IsLastRevisionOfPeriod":"None",
+            "AnalyticsUpdatedDate":"2018-12-11T23:28:29.2066667Z",
+            "ProjectSK":"2139bb34-57e3-4d7d-a6e1-1c0542a45e29",
+            "WorkItemRevisionSK":62809820,
+            "AreaSK":"4d25b0a2-1e87-4f78-adc9-0129c4b99f94",
+            "IterationSK":"63f90684-6c1f-4ecf-9e44-6e055cd5f5b4",
+            "ChangedByUserSK":"7de04d29-b95b-4596-8cb4-8fa60f123d82",
+            "CreatedByUserSK":"349548d0-2ecd-4a1f-ae89-eaf68681d6cd",
+            "ChangedDateSK":20161222,
+            "CreatedDateSK":20161219,
+            "StateChangeDateSK":20161220,
+            "InProgressDateSK":20161220,
+            "Watermark":16800,
+            "Title":"Manage templates",
+            "WorkItemType":"Feature",
+            "ChangedDate":"2016-12-22T09:22:40.967+01:00",
+            "CreatedDate":"2016-12-19T11:19:08.42+01:00",
+            "State":"User stories created",
+            "Reason":"Moved to state User stories created",
+            "Priority":2,
+            "StackRank":1999997974.0,
+            "ValueArea":"Business",
+            "ParentWorkItemId":2536,
+            "StateCategory":"Resolved",
+            "InProgressDate":"2016-12-20T11:11:57.637+01:00",
+            "StateChangeDate":"2016-12-20T11:11:57.637+01:00",
+            "Count":1,"CommentCount":0,
+            "Agile_Gandalf_Additionalclarification":false,
+            "Iteration":{
+                "ProjectSK":"2139bb34-57e3-4d7d-a6e1-1c0542a45e29",
+                "IterationSK":"63f90684-6c1f-4ecf-9e44-6e055cd5f5b4",
+                "IterationId":"63f90684-6c1f-4ecf-9e44-6e055cd5f5b4",
+                "IterationName":"Gandalf",
+                "Number":159,
+                "IterationPath":"Gandalf",
+                "IterationLevel1":"Gandalf",
+                "Depth":0,"IsEnded":false
+            },
+            "Area": {
+                "ProjectSK":"2139bb34-57e3-4d7d-a6e1-1c0542a45e29",
+                "AreaSK":"4d25b0a2-1e87-4f78-adc9-0129c4b99f94",
+                "AreaId":"4d25b0a2-1e87-4f78-adc9-0129c4b99f94",
+                "AreaName":"PO team",
+                "Number":171,
+                "AreaPath":"Gandalf\\PO team",
+                "AreaLevel1":"Gandalf",
+                "AreaLevel2":"PO team",
+                "Depth":1
+            }
+        }
     }""">
 type AzureDevOpsAnalyticsRecord = JsonProvider<"""{
   "@odata.context": "https://analytics.dev.azure.com/kmddk/flowerpot/_odata/v2.0/$metadata#WorkItemRevisions(WorkItemId,WorkItemType,State,StateCategory,Iteration)",
@@ -217,45 +217,44 @@ type ViewList<'a> =
     }
 
 type View(getter, name) = 
-    let get parser path = 
-        (getter path |> List.Parse).Rows
-        |> Array.map(fun entry -> entry.Value.ToString() |> parser)
-    let list (parser : string -> 'a) (startKey : string option) (endKey : string option) limit (descending : bool option) skip = 
-        let args =
-            System.String.Join("&",
-                [ 
-                    match  startKey, endKey  with
-                      None,None -> ()
-                      | Some key,None | None,Some key -> yield "key", key
-                      | Some startKey,Some endKey -> 
-                          yield "startKey", startKey
-                          yield "endKey", endKey
-                    match limit with
-                      None -> ()
-                      | Some l -> yield "limit", string l
-                    if descending.IsSome && descending.Value then yield "descending","true"
-                    match skip with
-                      None -> ()
-                      | Some l -> yield "skip", string l
-                ] |> List.map(fun (a,b) -> a + "=" + b))
-        let list = 
+    let _list (startKey : string option) (endKey : string option) limit (descending : bool option) skip = 
+            let args = 
+                System.String.Join("&",
+                    [ 
+                        match  startKey, endKey  with
+                          None,None -> ()
+                          | Some key,None | None,Some key -> yield "key", key
+                          | Some startKey,Some endKey -> 
+                              yield "startKey", startKey
+                              yield "endKey", endKey
+                        match limit with
+                          None -> ()
+                          | Some l -> yield "limit", string l
+                        if descending.IsSome && descending.Value then yield "descending","true"
+                        match skip with
+                          None -> ()
+                          | Some l -> yield "skip", string l
+                    ] |> List.map(fun (a,b) -> a + "=" + b))
             sprintf """_design/default/_view/%s/?%s""" name args
             |> getter 
             |> List.Parse
-
-        let rows = 
-            list.Rows
-            |> Array.map(fun entry -> entry.Value.ToString() |> parser)
-        {
-            TotalRows = list.TotalRows
-            Offset = list.Offset
-            Rows = rows
-        }
-    member __.List<'a>(parser : string -> 'a, ?startKey : string, ?endKey : string, ?limit, ?descending, ?skip) =
-        list parser startKey endKey limit descending skip
-    member __.Get<'a>(parser : string -> 'a, ?startKey : string, ?endKey : string, ?limit, ?descending, ?skip) =
-        (list parser startKey endKey limit descending skip).Rows
-
+    let list (parser : string -> 'a) (startKey : string option) (endKey : string option) (descending : bool option) = 
+        let rowCount = (_list startKey endKey None None None).TotalRows
+        let limitInTens = 1 //change this or change the looping conditions
+        let limit = limitInTens * 10
+        
+        //max %limit records at a time
+        [|for i in 0..(rowCount + limit - 1) / limit ->
+            _list startKey endKey (Some limit) None (i * limit |> Some) |]
+        |> Array.collect(fun l -> l.Rows)
+        |> Array.map(fun entry -> entry.Value.ToString() |> parser)    
+        
+    member __.List<'a>(parser : string -> 'a, ?startKey : string, ?endKey : string, ?descending) =
+        list parser startKey endKey descending
+    member __.List<'a>(parser : string -> 'a, limit, ?startKey : string, ?endKey : string, ?descending) =
+        (_list startKey endKey (Some limit) descending None).Rows
+        |> Array.map(fun entry -> entry.Value.ToString() |> parser) 
+    
 
 and Database<'a> (databaseName, parser : string -> 'a)  =
     let mutable _views : Map<string,View> = Map.empty

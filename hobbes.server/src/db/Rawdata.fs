@@ -46,21 +46,23 @@ module Rawdata =
         |> rawdata.Post ""
     let tryLatestId (datasetId : string list) =
         let startKey = 
-            System.String.Join(",", datasetId) |> sprintf "[%s]"
+            System.String.Join(",", datasetId |> List.map(sprintf "%A")) |> sprintf "[%s]"
         let endKey = 
             System.String.Join(",", 
                 match datasetId with
-                [source;project] -> [source;project + "a"]
-                | _ -> datasetId
+                  [source;project] -> [source;project + "a"]
+                  | _ -> datasetId
+                |> List.map(sprintf "%A")
             ) |> sprintf "[%s]" 
         try
-            (rawdata.Views.["WorkItemRevisions"].Get(WorkItemRevisionRecord.Parse,
-                                                     descending = true, 
-                                                     limit = 1 ,
-                                                     startKey = startKey,
-                                                     endKey = endKey
-             ) |> Array.head).Key
-            |> Some
+            let record = 
+                (rawdata.Views.["WorkItemRevisions"].List(WorkItemRevisionRecord.Parse,1,
+                                                         descending = true, 
+                                                         startKey = startKey,
+                                                         endKey = endKey
+                )
+                |> Array.head)
+            record.Value |> Some
         with e ->
            eprintfn "Failed to get last revision. Reason: %s" e.Message
            None
@@ -73,23 +75,10 @@ module Rawdata =
                 [source;project] -> [source;project + "a"]
                 | _ -> datasetId
             ) |> sprintf "[%s]"
-        let rowCount = 
-            rawdata.Views.["table"].List(TableView.Parse,
-                                          startKey = startKey,
-                                          endKey = endKey,
-                                          limit = 0
-                                       ).TotalRows
-        let limitInTens = 1 //change this or change the looping conditions
-        let limit = limitInTens * 10
-        //max %limit records at a time
-        [|for i in 0..(rowCount + limit - 1) / limit ->
-            rawdata.Views.["table"].Get(TableView.Parse,
-                                              startKey = startKey,
-                                              endKey = endKey,
-                                              limit = limit,
-                                              skip = i * limit
-                                           )|]
-        |> Array.collect id
+        rawdata.Views.["WorkItemRevisions"].List(TableView.Parse,
+                                                  startKey = startKey,
+                                                  endKey = endKey
+        )
         |> Array.fold(fun (count, (map : Map<_,_>)) record ->
             let values = 
                 record.Values

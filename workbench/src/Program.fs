@@ -17,6 +17,10 @@ let main args =
                 Some Gandalf.renaming
             | "azure.foldbysprint" ->
                 Some Azure.foldBySprint
+            | "metrics.statecountbysprint" ->
+                Some Metrics.stateCountBySprint
+            | "metrics.expandingcompletionbysprint" ->
+                Some Metrics.expandingCompletionBySprint
             | _ ->
                printfn "Didn't find statements"
                None

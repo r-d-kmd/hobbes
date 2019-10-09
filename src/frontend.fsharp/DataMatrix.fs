@@ -386,12 +386,15 @@ module DataStructures =
                         |> series
                         |> Series.mapValues(fun c -> c:> Comp)
 
-        and compileTempColumn keySeries frame defaultName exp =
-           match exp with
-           AST.ComputationExpression.ColumnName name -> name
-           | _ ->
-               frame?(defaultName) <- (compileExpression frame exp keySeries)
-               defaultName
+        and compileTempColumn defaultName exp =
+               match exp with
+               AST.ComputationExpression.ColumnName name -> 
+                   name, (fun _ _ -> ())   
+               | _ ->
+                   defaultName, 
+                       (fun frame keySeries ->
+                           frame?(defaultName) <- (compileExpression frame exp keySeries))
+                   
         
         and compileBooleanExpression exp : Series<AST.KeyType,Comp> -> Series<AST.KeyType,Comp> = 
             let binaryOp op lhs rhs =
@@ -465,8 +468,10 @@ module DataStructures =
                    
                 frame
             | AST.Pivot(rowKeyExpression,columnKeyExpression,valueExpression, reduction) ->
-                let rowkey = compileTempColumn keySeries frame "__rowkey__" rowKeyExpression
-                let columnkey = compileTempColumn keySeries frame "__columnkey__" columnKeyExpression
+                let rowkey,compiledExpressionFunc = compileTempColumn "__rowkey__" rowKeyExpression
+                compiledExpressionFunc frame keySeries
+                let columnkey,compiledExpressionFunc = compileTempColumn "__columnkey__" columnKeyExpression 
+                compiledExpressionFunc frame keySeries
 
                 frame
                 |> Frame.pivotTable 
@@ -475,7 +480,8 @@ module DataStructures =
                         |> AST.KeyType.Create)
                     (fun _ r -> (r.TryGet columnkey).ValueOrDefault |> string)
                     (fun f ->
-                          let resultsColumn = compileTempColumn keySeries f "__result__" valueExpression
+                          let resultsColumn,compiledExpressionFunc = compileTempColumn "__result__" valueExpression 
+                          compiledExpressionFunc f keySeries
                           f.GetColumn resultsColumn
                           |>(match reduction with
                              AST.Count -> 
@@ -581,6 +587,7 @@ module DataStructures =
                          | AST.Reduce reduction -> (Clustering.reduceGroup reduction)
                          | AST.Select selector ->
                              let select expression f _ grouped = 
+                                    let selectorKey, compiledExpressionFunc = compileTempColumn "__selector__" expression
                                     let cols = 
                                         grouped
                                         |> Frame.getCols
@@ -597,34 +604,21 @@ module DataStructures =
                                                 |> Series.observations
                                                 |> (Seq.head >> snd)
                                                 |> Series.map(fun k _ -> (k |> AST.KeyType.UnWrap) :?> Comp)
-                                            let selectorKey = 
-                                                match compileTempColumn keySeries subFrame "__selector__" expression with
-                                                "__selector__" as key -> key
-                                                | key -> 
-                                                    try
-                                                        let col = 
-                                                           frame.GetColumn key
-                                                           :?> Series<AST.KeyType, DateTime>
-                                                        subFrame?``__selector__`` <- 
-                                                            col |> Series.mapValues(fun v -> v.Ticks)
-                                                        "__selector__"
-                                                    with 
-                                                        :? InvalidCastException ->
-                                                            key
-                                                        | _ -> reraise()
-                                            subFrame |> f selectorKey
-                                        ) |> Seq.filter(Option.isSome)
-                                        |> Seq.map Option.get
-                                        |> Frame.ofRows
-
+                                            compiledExpressionFunc subFrame keySeries
+                                            let rowKey,_ = 
+                                                  subFrame.GetColumn selectorKey
+                                                  |> Series.observations
+                                                  |> f snd
+                                            rowKey, subFrame |> Frame.getRow rowKey
+                                        ) |> Frame.ofRows
                                     //remove the selector column    
                                     values
                                     |> Frame.sliceCols cols
                              match selector with
                              AST.MaxBy expression ->
-                                 select expression (Frame.maxRowBy)
+                                 select expression (Seq.maxBy)
                              | AST.MinBy expression ->
-                                 select expression (Frame.minRowBy)
+                                 select expression (Seq.minBy)
                      Clustering.group columnNames reducer 
             f frame
 

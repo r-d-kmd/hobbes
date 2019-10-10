@@ -19,5 +19,8 @@ let tryRetrieve cacheKey =
         cacheRecord.Data.ToString() |> Some
     )
 
+let delete id =
+    Database.cache.Delete id
+
 let retrieve cacheKey =
    (Database.cache.Get cacheKey).Data.ToString()

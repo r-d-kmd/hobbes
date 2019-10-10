@@ -6,6 +6,18 @@ open Hobbes.Server.Db
 open FSharp.Data
 open Hobbes.Server.Security
 
+let invalidateCache (conf : DataConfiguration.Configuration) =
+    let idSuffix = conf.Source.SourceName + ":" + conf.Source.ProjectName
+    let rec aux id =
+        function
+        | x :: xs -> let newId = (id + ":" + x)
+                     Cache.delete newId |> ignore
+                     aux newId xs
+        | []      -> ()
+    aux idSuffix conf.Transformations 
+    
+    200, "Cache invalidated"
+
 let data configurationName =
     let cacheKey = configurationName
     let data = 
@@ -108,9 +120,11 @@ let private clearTempAzureDataAndGetInitialUrl (source : DataConfiguration.DataS
         initialUrl workItemRevisionId
     | None -> initialUrl 0
 
+
 let sync pat configurationName =
     let configuration = DataConfiguration.get configurationName
-    
+ 
+
     match configuration.Source with
     DataConfiguration.AzureDevOps projectName ->
         
@@ -152,6 +166,7 @@ let sync pat configurationName =
     | _ -> 
         404,"No reader found" 
     
+
 let key token =
     let user = 
         token

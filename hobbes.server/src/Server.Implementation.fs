@@ -26,12 +26,20 @@ let data configurationName =
                 columnName, values.ToSeq()
                              |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
              ) |> DataMatrix.fromTable
-             |> func).ToJson(Row)
+             |> func).ToJson(Column)
             |> Cache.store cacheKey
         | Some data ->
             printfn "Cache hit %s" cacheKey
-            data
-    200,data.ToString()
+            let table = 
+                [|data.ToString() 
+                  |> TableView.Parse|]
+                |> TableView.toTable
+                |> Seq.map(fun (columnName,values) -> 
+                        columnName, values.ToSeq()
+                                     |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
+                ) |> DataMatrix.fromTable
+            table.ToJson(Row)
+    200,data
        
 let request user pwd httpMethod body url  =
     let headers =

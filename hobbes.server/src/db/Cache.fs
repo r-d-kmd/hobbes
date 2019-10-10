@@ -5,7 +5,7 @@ let store cacheKey (data : string) =
                 "TimeStamp" : "%s",
                 "Data" : %s
             }""" (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
-                 (data.Replace("\\", "\\\\")) //escape special json characters
+                 data
     try
         Database.cache.Put cacheKey record |> ignore
     with e ->

@@ -276,7 +276,7 @@ module TableView =
         ) (0,Map.empty)
         |> snd
         |> Map.toSeq
-        
+
 type HttpMethod = 
     Get
     | Post
@@ -312,13 +312,12 @@ type View(getter, name) =
             |> getter 
             |> List.Parse
     let list (parser : string -> 'a) (startKey : string option) (endKey : string option) (descending : bool option) = 
-        let rowCount = (_list startKey endKey None None None).TotalRows
-        let limitInTens = 1 //change this or change the looping conditions
-        let limit = limitInTens * 10
+        let rowCount = (_list startKey endKey None descending None).TotalRows
+        let limit = 100
         
         //max %limit records at a time
-        [|for i in 0..(rowCount + limit - 1) / limit ->
-            _list startKey endKey (Some limit) None (i * limit |> Some) |]
+        [|for i in 0..limit..(rowCount + limit - 1) ->
+            _list startKey endKey (Some limit) None (i |> Some) |]
         |> Array.collect(fun l -> l.Rows)
         |> Array.map(fun entry -> entry.Value.ToString() |> parser)    
         

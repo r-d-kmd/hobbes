@@ -12,6 +12,16 @@ let store cacheKey (data : string) =
         eprintfn "Failed to cache data. Reason: %s" e.Message
     (Database.CacheRecord.Parse record).Data.ToString()
 
+
+let createRecord cacheKey (data : string) = 
+    let record = 
+            sprintf """{
+                "TimeStamp" : "%s",
+                "Data" : %s
+            }""" (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
+                 (data.Replace("\\", "\\\\")) //escape special json characters
+    (Database.CacheRecord.Parse record).Data
+
 let tryRetrieve cacheKey =
     Database.cache.TryGet cacheKey
     |> Option.bind(fun cacheRecord -> 

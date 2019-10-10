@@ -6,6 +6,15 @@ open Hobbes.Server.Db
 open FSharp.Data
 open Hobbes.Server.Security
 
+let invalidateCache (conf : DataConfiguration.Configuration) =
+    let id = conf.Source.SourceName + ":" + conf.Source.ProjectName
+    let res =
+        cache.Views.["srcproj"].List(IdRecord.Parse, startKey = id, endKey = id)
+        |> Array.map(fun cache -> Cache.delete cache.Id)
+        |> Array.tryFind (fun resp -> resp.StatusCode < 200 || 400 >= resp.StatusCode)
+    
+    if res.IsNone then 200, "" else res.Value.StatusCode, "" 
+
 let data configurationName =
     let cacheKey = configurationName
     let data = 
@@ -17,21 +26,50 @@ let data configurationName =
             let datasetKey =
                 [configuration.Source.SourceName;configuration.Source.ProjectName]
             let rawData = Rawdata.list datasetKey
+             
             let transformations = 
-                    Transformations.load configuration.Transformations
-                    |> Array.collect(fun t -> t.Lines)
-            let func = Hobbes.FSharp.Compile.expressions transformations                                                                   
-            (rawData
-             |> Seq.map(fun (columnName,values) -> 
-                columnName, values.ToSeq()
-                             |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
-             ) |> DataMatrix.fromTable
-             |> func).ToJson(Column)
-            |> Cache.store cacheKey
+                Transformations.load configuration.Transformations
+                |> Array.fold(fun st t -> st @ [Hobbes.FSharp.Compile.expressions t.Lines]) []
+
+            
+            let nextData =  rawData
+                            |> Seq.map(fun (columnName,values) -> 
+                                               columnName, values.ToSeq()
+                                               |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
+                            ) |> DataMatrix.fromTable                                                                
+           
+                
+            let saveIntermediateResultToCache data transLength =
+                let transNames = configuration.Transformations
+                let rec aux  data name counter =
+                    match counter with
+                    | _ when counter < transLength -> 
+                        let nextData = data |> transformations.[counter]
+                        let newName = (name + ":" + transNames.[counter])
+                        async {
+                            nextData.ToJson(Column)
+                            |> Cache.store (System.String.Join(':', datasetKey) + newName)
+                            |> ignore
+                        } |> Async.Start
+                        
+                        aux (nextData) newName (counter + 1)
+                    | _ -> data.ToJson(Column)
+                aux data "" 0                                    
+                
+            saveIntermediateResultToCache nextData transformations.Length
+
         | Some data ->
             printfn "Cache hit %s" cacheKey
-            data
-    200,data.ToString()
+            let table = 
+                [|data.ToString() 
+                  |> TableView.Parse|]
+                |> TableView.toTable
+                |> Seq.map(fun (columnName,values) -> 
+                        columnName, values.ToSeq()
+                                     |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
+                ) |> DataMatrix.fromTable
+            table.ToJson(Row)
+    200,data
        
 let request user pwd httpMethod body url  =
     let headers =
@@ -79,9 +117,11 @@ let private clearTempAzureDataAndGetInitialUrl (source : DataConfiguration.DataS
         initialUrl workItemRevisionId
     | None -> initialUrl 0
 
+
 let sync pat configurationName =
     let configuration = DataConfiguration.get configurationName
-    
+ 
+
     match configuration.Source with
     DataConfiguration.AzureDevOps projectName ->
         
@@ -123,6 +163,7 @@ let sync pat configurationName =
     | _ -> 
         404,"No reader found" 
     
+
 let key token =
     let user = 
         token
@@ -139,8 +180,8 @@ let key token =
                       "roles": [],
                       "password": "%s"
                     }""" user token
-                userRecord
-                |> users.Put userId
+                (userId, userRecord)
+                |> users.Put
                 |> ignore
                 users.Get userId
                 |> Some
@@ -155,3 +196,26 @@ let key token =
         printfn "Creating api key for %s" user.Name
         let key = createToken user
         200,key
+
+let putDocument (db : Database<'a>) id body =
+    let rev = db.TryGetRev id
+    let res = if rev.IsNone then db.TryPut(id, body)
+                            else db.TryPut(id, body, rev.Value)      
+    res.StatusCode, ""
+
+let uploadDesignDocument db body =
+    putDocument db "_design/default" body |> fst
+    
+
+let initDb =
+    let dbStatusCode = ["_replicator"; "_global_changes"; "_users"; "transformations"; "rawdata"; "configurations"]
+                       |> List.map (fun n -> couch.TryPut(n, "").StatusCode)
+                       |> List.tryFind (fun sc -> sc < 200 || (400 >= sc && sc <> 412))
+
+    let designDocument = System.IO.File.ReadAllText "db\\design_documents\\design_rawdata.json"
+    let designStatusCode = uploadDesignDocument rawdata designDocument         
+
+    let designDocument2 = System.IO.File.ReadAllText "db\\design_documents\\design_cache.json"
+    let designStatusCode2 = uploadDesignDocument cache designDocument2
+
+    if dbStatusCode.IsNone then designStatusCode, "" else dbStatusCode.Value, ""          

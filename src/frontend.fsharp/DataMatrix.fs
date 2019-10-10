@@ -178,6 +178,7 @@ module DataStructures =
     type JsonTableFormat = 
         Column
         | Row
+        | Csv
     type IDataMatrix = 
         abstract Transform : AST.Expression -> IDataMatrix
         abstract Combine : IDataMatrix -> IDataMatrix
@@ -702,19 +703,25 @@ module DataStructures =
                 | AST.NoOp -> 
                     this
                     :> IDataMatrix
-            member ___.ToJson format =
+            member __.ToJson format =
                 match format with
                 Column -> 
-                    String.Join(",", frame
-                             |> toTable
-                             |> Seq.map(fun (columnName,values) -> 
-                                let valuesAsString =
-                                    System.String.Join(",", values 
-                                                            |> Seq.map serialiseValue
-                                    )
-                                sprintf """ "%s" : [%s] """ columnName valuesAsString
-                             )
-                    ) |> sprintf "{%s}"
+                    let table = 
+                        frame
+                        |> toTable
+
+                    let columnNames = 
+                        String.Join(",",table |> Seq.map (fst >> sprintf "%A")) |> sprintf "[%s]"
+
+                    let values =
+                        (",",table
+                            |> Seq.map(fun (_,values) ->
+                                System.String.Join(",", values 
+                                                        |> Seq.map serialiseValue
+                                ) |> sprintf "[%s]"
+                            )) |> String.Join |> sprintf "[%s]"
+
+                    sprintf """{"columnNames": %s, "values" : %s}""" columnNames values
                 | Row ->
                     System.String.Join(",",
                         frame
@@ -730,6 +737,21 @@ module DataStructures =
                             ) |> sprintf "{%s}"
                         )
                      ) |> sprintf "[%s]"
+                | Csv ->
+                    ("\r\n",frame
+                         |> Frame.getCols
+                         |> Series.observations
+                         |> Seq.map(fun (columnName, values) ->
+                             columnName::(values
+                                           |> Series.observationsAll
+                                           |> Seq.map(fun (_,v) -> 
+                                               match v with
+                                               None -> ""
+                                               | Some v -> v.ToString().Replace(":",";")
+                                           ) |> List.ofSeq)
+                         ) |> Seq.transpose
+                         |> Seq.map(fun s -> System.String.Join(":",s)))
+                    |> System.String.Join
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module DataMatrix =

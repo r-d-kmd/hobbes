@@ -5,4 +5,5 @@ let invalidJsonForGandalf() =
     Implementation.data "1234" |> ignore
 
 let test() = 
-    Implementation.invalidateCache  (DataConfiguration.get "1234") |> ignore
+    let x = DataConfiguration.get "_all_docs"
+    x

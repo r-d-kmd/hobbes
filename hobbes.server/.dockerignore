@@ -9,3 +9,4 @@
 **/*.fsproj
 **/*.fs
 **/*.references
+vsdbg/

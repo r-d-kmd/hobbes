@@ -178,6 +178,7 @@ module DataStructures =
     type JsonTableFormat = 
         Column
         | Row
+        | Csv
     type IDataMatrix = 
         abstract Transform : AST.Expression -> IDataMatrix
         abstract Combine : IDataMatrix -> IDataMatrix
@@ -736,6 +737,21 @@ module DataStructures =
                             ) |> sprintf "{%s}"
                         )
                      ) |> sprintf "[%s]"
+                | Csv ->
+                    ("\r\n",frame
+                         |> Frame.getCols
+                         |> Series.observations
+                         |> Seq.map(fun (columnName, values) ->
+                             columnName::(values
+                                           |> Series.observationsAll
+                                           |> Seq.map(fun (_,v) -> 
+                                               match v with
+                                               None -> ""
+                                               | Some v -> v.ToString().Replace(":",";")
+                                           ) |> List.ofSeq)
+                         ) |> Seq.transpose
+                         |> Seq.map(fun s -> System.String.Join(":",s)))
+                    |> System.String.Join
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module DataMatrix =

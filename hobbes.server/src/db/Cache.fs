@@ -5,11 +5,11 @@ let store cacheKey (data : string) =
                 "TimeStamp" : "%s",
                 "Data" : %s
             }""" (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
-                 data
+                 (data.Replace("\\","\\\\"))
     try
         Database.cache.Put cacheKey record |> ignore
     with e ->
-        eprintfn "Failed to cahce data. Reason: %s" e.Message
+        eprintfn "Failed to cache data. Reason: %s" e.Message
     (Database.CacheRecord.Parse record).Data.ToString()
 
 let tryRetrieve cacheKey =

@@ -20,14 +20,16 @@ let data configurationName =
             let transformations = 
                     Transformations.load configuration.Transformations
                     |> Array.collect(fun t -> t.Lines)
-            let func = Hobbes.FSharp.Compile.expressions transformations                                                                   
-            (rawData
-             |> Seq.map(fun (columnName,values) -> 
-                columnName, values.ToSeq()
-                             |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
-             ) |> DataMatrix.fromTable
-             |> func).ToJson(Column)
-            |> Cache.store cacheKey
+            let func = Hobbes.FSharp.Compile.expressions transformations       
+            let table =                                                             
+                rawData
+                 |> Seq.map(fun (columnName,values) -> 
+                    columnName, values.ToSeq()
+                                 |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
+                 ) |> DataMatrix.fromTable
+                 |> func
+            table.ToJson(Column) |> Cache.store cacheKey |> ignore
+            table
         | Some data ->
             printfn "Cache hit %s" cacheKey
             let table = 
@@ -38,8 +40,8 @@ let data configurationName =
                         columnName, values.ToSeq()
                                      |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
                 ) |> DataMatrix.fromTable
-            table.ToJson(Row)
-    200,data
+            table
+    200,data.ToJson(Csv)
        
 let request user pwd httpMethod body url  =
     let headers =

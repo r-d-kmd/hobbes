@@ -7,7 +7,7 @@ let store cacheKey (data : string) =
             }""" (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
                  (data.Replace("\\","\\\\"))
     try
-        Database.cache.Put cacheKey record |> ignore
+        Database.cache.Put(cacheKey, record) |> ignore
     with e ->
         eprintfn "Failed to cache data. Reason: %s" e.Message
     (Database.CacheRecord.Parse record).Data.ToString()

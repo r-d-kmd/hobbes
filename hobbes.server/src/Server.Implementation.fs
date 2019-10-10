@@ -6,6 +6,18 @@ open Hobbes.Server.Db
 open FSharp.Data
 open Hobbes.Server.Security
 
+let invalidateCache (conf : DataConfiguration.Configuration) =
+    let idSuffix = conf.Source.SourceName + ":" + conf.Source.ProjectName
+    let rec aux id =
+        function
+        | x :: xs -> let newId = (id + ":" + x)
+                     Cache.delete newId |> ignore
+                     aux newId xs
+        | []      -> ()
+    aux idSuffix conf.Transformations 
+    
+    200, "Cache invalidated"
+
 let data configurationName =
     let cacheKey = configurationName
     let data = 
@@ -17,21 +29,50 @@ let data configurationName =
             let datasetKey =
                 [configuration.Source.SourceName;configuration.Source.ProjectName]
             let rawData = Rawdata.list datasetKey
+             
             let transformations = 
-                    Transformations.load configuration.Transformations
-                    |> Array.collect(fun t -> t.Lines)
-            let func = Hobbes.FSharp.Compile.expressions transformations                                                                   
-            (rawData
-             |> Seq.map(fun (columnName,values) -> 
-                columnName, values.ToSeq()
-                             |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
-             ) |> DataMatrix.fromTable
-             |> func).ToJson(Row)
-            |> Cache.store cacheKey
+                Transformations.load configuration.Transformations
+                |> Array.fold(fun st t -> st @ [Hobbes.FSharp.Compile.expressions t.Lines]) []
+
+            
+            let nextData =  rawData
+                            |> Seq.map(fun (columnName,values) -> 
+                                               columnName, values.ToSeq()
+                                               |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
+                            ) |> DataMatrix.fromTable                                                                
+           
+                
+            let saveIntermediateResultToCache data transLength =
+                let transNames = configuration.Transformations
+                let rec aux  data name counter =
+                    match counter with
+                    | _ when counter < transLength -> 
+                        let nextData = data |> transformations.[counter]
+                        let newName = (name + ":" + transNames.[counter])
+                        async {
+                            nextData.ToJson(Column)
+                            |> Cache.store (System.String.Join(':', datasetKey) + newName)
+                            |> ignore
+                        } |> Async.Start
+                        
+                        aux (nextData) newName (counter + 1)
+                    | _ -> data.ToJson(Column)
+                aux data "" 0                                    
+                
+            saveIntermediateResultToCache nextData transformations.Length
+
         | Some data ->
             printfn "Cache hit %s" cacheKey
-            data
-    200,data.ToString()
+            let table = 
+                [|data.ToString() 
+                  |> TableView.Parse|]
+                |> TableView.toTable
+                |> Seq.map(fun (columnName,values) -> 
+                        columnName, values.ToSeq()
+                                     |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
+                ) |> DataMatrix.fromTable
+            table.ToJson(Row)
+    200,data
        
 let request user pwd httpMethod body url  =
     let headers =
@@ -79,9 +120,11 @@ let private clearTempAzureDataAndGetInitialUrl (source : DataConfiguration.DataS
         initialUrl workItemRevisionId
     | None -> initialUrl 0
 
+
 let sync pat configurationName =
     let configuration = DataConfiguration.get configurationName
-    
+ 
+
     match configuration.Source with
     DataConfiguration.AzureDevOps projectName ->
         
@@ -123,6 +166,7 @@ let sync pat configurationName =
     | _ -> 
         404,"No reader found" 
     
+
 let key token =
     let user = 
         token

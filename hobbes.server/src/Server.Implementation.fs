@@ -17,11 +17,12 @@ let data configurationName =
             let datasetKey =
                 [configuration.Source.SourceName;configuration.Source.ProjectName]
             let rawData = Rawdata.list datasetKey
+             
             let transformations = 
                 Transformations.load configuration.Transformations
-                |> Array.fold(fun st t -> Hobbes.FSharp.Compile.expressions t.Lines :: st) []
-                    //|> Array.collect(fun t -> t.Lines)
-                //let func = Hobbes.FSharp.Compile.expressions transformations  
+                |> Array.fold(fun st t -> st @ [Hobbes.FSharp.Compile.expressions t.Lines]) []
+
+            
             let nextData =  rawData
                             |> Seq.map(fun (columnName,values) -> 
                                                columnName, values.ToSeq()
@@ -29,26 +30,26 @@ let data configurationName =
                             ) |> DataMatrix.fromTable                                                                
            
                 
-            let saveIntermediateResultToCache data transLength counter =
-                let rec aux data counter =
+            let saveIntermediateResultToCache data transLength =
+                let transNames = configuration.Transformations
+                let rec aux  data name counter =
                     match counter with
-                    | _ when counter < transLength -> let nextData = data |> transformations.[counter]
-                                                      nextData.ToJson(Column)
-                                                      |> Cache.store cacheKey
-                                                      |> ignore
-                                                      aux (data) (counter + 1)
-                    | _ ->                            data.ToJson(Column)
-                                                      |> Cache.store cacheKey
-                aux data counter                                     
+                    | _ when counter < transLength -> 
+                        let nextData = data |> transformations.[counter]
+                        let newName = (name + ":" + transNames.[counter])
+                        async {
+                            nextData.ToJson(Column)
+                            |> Cache.store (System.String.Join(':', datasetKey) + newName)
+                            |> ignore
+                        } |> Async.Start
+                        
+                        aux (nextData) newName (counter + 1)
+                    | _ -> data.ToJson(Column)
+                           |> Cache.createRecord(System.String.Join(':', datasetKey) + name) 
+                aux data "" 0                                    
                 
-            saveIntermediateResultToCache nextData transformations.Length 0
-            (*(rawData
-             |> Seq.map(fun (columnName,values) -> 
-                columnName, values.ToSeq()
-                             |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
-             ) |> DataMatrix.fromTable
-             |> transformations.[0]).ToJson(Column)
-            |> Cache.store cacheKey*)
+            saveIntermediateResultToCache nextData transformations.Length
+
         | Some data ->
             printfn "Cache hit %s" cacheKey
             data

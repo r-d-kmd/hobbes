@@ -42,8 +42,8 @@ module Rawdata =
               "data": %s
             } """ recordId project source
 
-        makeJsonDoc (System.DateTime.Today.ToShortDateString()) data
-        |> rawdata.Post ""
+        ("", makeJsonDoc (System.DateTime.Today.ToShortDateString()) data)
+        |> rawdata.Post 
     let tryLatestId (datasetId : string list) =
         let startKey = 
             System.String.Join(",", datasetId |> List.map(sprintf "%A")) |> sprintf "[%s]"
@@ -75,7 +75,7 @@ module Rawdata =
                 [source;project] -> [source;project + "a"]
                 | _ -> datasetId
             ) |> sprintf "[%s]"
-        rawdata.Views.["WorkItemRevisions"].List(TableView.Parse,
+        rawdata.Views.["table"].List(TableView.Parse,
                                                   startKey = startKey,
                                                   endKey = endKey
         )

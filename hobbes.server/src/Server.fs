@@ -54,20 +54,16 @@ let private sync configurationName =
             
     verified executer
 
-let private confs name : HttpHandler =
+let private putDocument (db : Database<'a>) name =
     fun (next : HttpFunc) (ctx : HttpContext) ->
         task {
             let! body = ctx.ReadBodyFromRequestAsync()
-
-            let record = sprintf """{"id": %s, "conf": %s}""" name body
-                         |> String.filter (fun c -> (Char.IsWhiteSpace >> not) c && c <> '\\') //TODO: Escape slashes aren't removed, results in error in couchdb
-
-            let res = configurations.TryPut name record                      
-
-            return! Successful.OK res next ctx
+            return! verified (fun _ -> Implementation.putDocument db name body) next ctx
         }
-    
 
+let private initDb =
+    let (sc, body) = Implementation.initDb
+    setStatusCode sc >=> setBodyFromString body
 
 let private key token =
     let statusCode,body = Implementation.key token
@@ -79,8 +75,10 @@ let private apiRouter = router {
     getf "/data/%s" data
     getf "/key/%s" key
     get "/ping" (setStatusCode 200 >=> setBodyFromString "pong")
+    get "/init" initDb
     getf "/sync/%s" sync
-    postf "/configurations/%s" confs
+    putf "/configurations/%s" (putDocument configurations)
+    putf "/transformations/%s" (putDocument transformations)
 }
 
 let private appRouter = router {

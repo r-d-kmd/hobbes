@@ -1,7 +1,8 @@
 module Tests
+open Hobbes.Server.Db
 
 let invalidJsonForGandalf() = 
-    Implementation.data "gandalf_1" |> ignore
+    Implementation.data "1234" |> ignore
 
 let testDbInit() =
     let intiRes = Implementation.initDb

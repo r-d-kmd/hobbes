@@ -702,19 +702,25 @@ module DataStructures =
                 | AST.NoOp -> 
                     this
                     :> IDataMatrix
-            member ___.ToJson format =
+            member __.ToJson format =
                 match format with
                 Column -> 
-                    String.Join(",", frame
-                             |> toTable
-                             |> Seq.map(fun (columnName,values) -> 
-                                let valuesAsString =
-                                    System.String.Join(",", values 
-                                                            |> Seq.map serialiseValue
-                                    )
-                                sprintf """ "%s" : [%s] """ columnName valuesAsString
-                             )
-                    ) |> sprintf "{%s}"
+                    let table = 
+                        frame
+                        |> toTable
+
+                    let columnNames = 
+                        String.Join(",",table |> Seq.map (fst >> sprintf "%A")) |> sprintf "[%s]"
+
+                    let values =
+                        (",",table
+                            |> Seq.map(fun (_,values) ->
+                                System.String.Join(",", values 
+                                                        |> Seq.map serialiseValue
+                                ) |> sprintf "[%s]"
+                            )) |> String.Join |> sprintf "[%s]"
+
+                    sprintf """{"columnNames": %s, "values" : %s}""" columnNames values
                 | Row ->
                     System.String.Join(",",
                         frame

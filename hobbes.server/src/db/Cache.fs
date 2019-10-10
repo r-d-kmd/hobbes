@@ -10,8 +10,6 @@ let store cacheKey (data : string) =
         Database.cache.Put cacheKey record |> ignore
     with e ->
         eprintfn "Failed to cahce data. Reason: %s" e.Message
-        let temp = record.Substring(0,100)
-        ()
     (Database.CacheRecord.Parse record).Data
 
 let tryRetrieve cacheKey =

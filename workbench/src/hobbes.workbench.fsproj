@@ -12,8 +12,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="production transformations/Gandalf.fs" />
-    <Compile Include="production transformations/Azure.fs" />
+    <Compile Include="production transformations/*.fs" />
     <Compile Include="Tests/Tests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

@@ -15,6 +15,36 @@ let private user = env "COUCHDB_USER"
 let private pwd = env "COUCHDB_PASSWORD"
 #endif
 
+type DataValues =
+    Floats of (int * float) []
+    | Texts of (int * string) []
+    | DateTimes of (int * System.DateTime) []
+    with member x.Length 
+           with get() = 
+               match x with
+               Floats a -> a.Length
+               | Texts a -> a.Length
+               | DateTimes a -> a.Length
+         member x.Append other =
+            match x,other with
+            Floats a1, Floats a2 -> a2 |> Array.append a1 |> Floats
+            | Texts a1, Texts a2 -> a2 |> Array.append a1 |> Texts
+            | DateTimes a1,DateTimes a2 -> a2 |> Array.append a1 |> DateTimes
+            | _ -> failwithf "Incompatible types: %A %A" x other
+         member x.ToSeq() =
+            match x with
+            Floats a -> 
+                a |> Array.map(fun (i,v) -> i, box v)
+            | Texts a ->
+                a |> Array.map(fun (i,v) -> i, box v)
+            | DateTimes a ->
+                a |> Array.map(fun (i,v) -> i, box v)
+
+type DataRecord = {
+    Columns : string []
+    Values : DataValues []
+}
+
 type UserRecord = JsonProvider<"""{
   "_id": "org.couchdb.user:dev",
   "_rev": "1-39b7182af5f4dc7a72d1782d808663b1",
@@ -204,6 +234,49 @@ type private DatabaseName =
     | Cache
     | RawData
     | Users
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module TableView =
+    let toTable (tableView : TableView.Root []) =
+        tableView
+        |> Array.fold(fun (count, (map : Map<_,_>)) record ->
+            let values = 
+                record.Values
+                |> Array.map(fun raw -> 
+                   match raw.Numbers with
+                   [||] -> 
+                       match raw.Strings with
+                       [||] -> 
+                           raw.DateTimes
+                           |> Array.mapi (fun i dt -> i + count,dt)
+                           |> DateTimes
+                       | strings ->
+                           strings
+                           |> Array.mapi (fun i dt -> i + count,dt)
+                           |> Texts
+                   | numbers ->
+                       numbers
+                       |> Array.mapi(fun i n -> i + count, float n)
+                       |> Floats
+                )
+            let map = 
+               record.ColumnNames
+               |> Array.indexed
+               |> Array.fold(fun map (i,columnName) ->
+                   let columnValues = values.[i]
+                   match map |> Map.tryFind columnName with
+                   None -> map.Add(columnName, columnValues)
+                   | Some vs -> map.Add(columnName, vs.Append columnValues)
+               ) map
+            //Values can have empty cells in the end but needs to be aligned on the first element
+            let maxLength = 
+                (values
+                 |> Array.maxBy(fun a -> a.Length)).Length
+            count + maxLength, map
+        ) (0,Map.empty)
+        |> snd
+        |> Map.toSeq
+        
 type HttpMethod = 
     Get
     | Post

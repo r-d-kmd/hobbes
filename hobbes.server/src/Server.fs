@@ -16,11 +16,20 @@ let private port =
       
 let private verified f =
     fun func (ctx : HttpContext) ->
+        let authToken = 
+            let url = ctx.GetRequestUrl()
+            printfn "Requesting access to %s" url
+            match Uri(url) with
+            uri when String.IsNullOrWhiteSpace(uri.UserInfo) |> not ->
+                uri.UserInfo |> Some
+            | _ -> 
+                ctx.TryGetRequestHeader "Authorization"
+                
         let statusCode, body =  
-            match ctx.TryGetRequestHeader "Authorization" with
+            match authToken with
             None ->    
-                eprintfn "Tried to gain access without a key"
-                403, "Unauthorized"
+                    eprintfn "Tried to gain access without a key"
+                    403, "Unauthorized"
             | Some authToken ->
                 if authToken |> verifyAuthToken then
                     f ctx

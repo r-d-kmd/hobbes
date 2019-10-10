@@ -26,7 +26,7 @@ let data configurationName =
                 columnName, values.ToSeq()
                              |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
              ) |> DataMatrix.fromTable
-             |> func).ToJson(Column)
+             |> func).ToJson(Row)
             |> Cache.store cacheKey
         | Some data ->
             printfn "Cache hit %s" cacheKey

@@ -59,6 +59,8 @@ type UserRecord = JsonProvider<"""{
   "salt": "a6212b3f03511523954fbc93e7c0907d"
 }""">
 
+type Rev = JsonProvider<"""{"_rev": "osdhfoi94392h329020"}""">
+
 type ConfigurationRecord = JsonProvider<"""{
     "_id" : "name",
     "source" : "name of source such as Azure DevOps, Rally or Jira",
@@ -343,7 +345,7 @@ and Database<'a> (databaseName, parser : string -> 'a)  =
         Binary _ -> failwithf "Can't use a binary response"
         | Text res -> res
 
-    let request httpMethod silentErrors body path  =
+    let request httpMethod silentErrors body path rev  =
         let m =
               match httpMethod with 
               Get -> "GET"
@@ -359,8 +361,9 @@ and Database<'a> (databaseName, parser : string -> 'a)  =
         
         let headers =
             [
-                HttpRequestHeaders.BasicAuth user pwd
-                HttpRequestHeaders.ContentType HttpContentTypes.Json
+                yield HttpRequestHeaders.BasicAuth user pwd
+                yield HttpRequestHeaders.ContentType HttpContentTypes.Json
+                if rev |> Option.isSome then yield HttpRequestHeaders.IfMatch rev.Value
             ]
         let maxRetries = 10
         let rec requester count = 
@@ -394,15 +397,15 @@ and Database<'a> (databaseName, parser : string -> 'a)  =
         else
             failwithf "Server error %d. Reason: %s" resp.StatusCode (resp |> getBody)
 
-    let requestString httpMethod silentErrors body path = 
-        request httpMethod silentErrors body path |> getBody
-    let tryRequest m = request m true
-    let get = requestString Get false None
-    let put body = requestString Put false (Some body) 
-    let post body = requestString Post false (Some body) 
-    let tryGet = tryRequest Get None 
-    let tryPut body = tryRequest Put (Some body)  
-    let tryPost body = tryRequest Post (Some body) 
+    let requestString httpMethod silentErrors body path rev = 
+        request httpMethod silentErrors body path rev |> getBody
+    let tryRequest m rev body path = request m true body path rev
+    let get path = requestString Get false None path None
+    let put body path rev = requestString Put false (Some body) path rev 
+    let post body path = requestString Post false (Some body) path None 
+    let tryGet = tryRequest Get None None 
+    let tryPut body rev = tryRequest Put rev (Some body)  
+    let tryPost body = tryRequest Post None (Some body) 
 
     member this.AddView name =
         _views <- _views.Add(name, View(get,name))
@@ -433,11 +436,34 @@ and Database<'a> (databaseName, parser : string -> 'a)  =
             eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode (body.Substring(0,min 500 body.Length ))
             None
 
-    member __.Put id body = 
-        put body id
-    member __.TryPut id body = 
-        tryPut body id
-    member __.Post path body = 
+    member __.GetRev id =
+        (get id |> Rev.Parse).Rev        
+
+    member __.TryGetRev id = 
+        let resp = tryGet id
+        let body = 
+            match resp.Body with
+            Text s ->
+                try
+                    (s |> Rev.Parse).Rev |> Some
+                with _ ->
+                   eprintfn "Couldn't parse %s" (s.Substring(0, min 500 s.Length))
+                   None
+            | _ -> 
+                eprintfn "Response body was binary"
+                None
+        if resp.StatusCode >= 200  && resp.StatusCode <= 299 then
+            body
+        else
+            let body = body.Value.ToString()
+            eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode (body.Substring(0,min 500 body.Length ))
+            None        
+
+    member __.Put(id, body, ?rev) = 
+        put body id rev
+    member __.TryPut(id, body, ?rev) = 
+        tryPut body rev id
+    member __.Post(path, body) = 
         let resp = tryPost body path
         if  resp.StatusCode >= 200  && resp.StatusCode <= 299  then
             resp |> getBody
@@ -502,7 +528,7 @@ and Database<'a> (databaseName, parser : string -> 'a)  =
             headers = headers
         )
 
-
+let couch          = Database ("", ignore)
 let configurations = Database ("configurations", ConfigurationRecord.Parse)
 let transformations = Database ("transformations", TransformationRecord.Parse)
 let cache = 

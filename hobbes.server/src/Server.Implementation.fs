@@ -179,8 +179,8 @@ let key token =
                       "roles": [],
                       "password": "%s"
                     }""" user token
-                userRecord
-                |> users.Put userId
+                (userId, userRecord)
+                |> users.Put
                 |> ignore
                 users.Get userId
                 |> Some
@@ -195,3 +195,22 @@ let key token =
         printfn "Creating api key for %s" user.Name
         let key = createToken user
         200,key
+
+let putDocument (db : Database<'a>) id body =
+    let rev = db.TryGetRev id
+    let res = if rev.IsNone then db.TryPut(id, body)
+                            else db.TryPut(id, body, rev.Value)      
+    res.StatusCode, ""
+
+let uploadDesignDocument db body =
+    putDocument db "_design/default" body |> fst
+    
+
+let initDb =
+    let dbStatusCode = ["_replicator"; "_global_changes"; "_users"; "transformations"; "rawdata"; "configurations"]
+                       |> List.map (fun n -> couch.TryPut(n, "").StatusCode)
+                       |> List.tryFind (fun sc -> sc < 200 || (400 >= sc && sc <> 412))
+
+    let designDocument = System.IO.File.ReadAllText "db\\design_documents\\design_rawdata.json"
+    let designStatusCode = uploadDesignDocument rawdata designDocument         
+    if dbStatusCode.IsNone then designStatusCode, "" else dbStatusCode.Value, ""          

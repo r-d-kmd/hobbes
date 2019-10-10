@@ -1,0 +1,10 @@
+{
+    "_id": "_design/default",
+    "_rev": "6-59575fa96cb3ceadcc7e094500b52eba",
+    "views": {
+      "srcproj": {
+        "map": "function (doc) {\n  var srcproj = doc._id.split(\":\");\n  emit(srcproj[0] + \":\" + srcproj[1], 1);\n}"
+      }
+    },
+    "language": "javascript"
+  }

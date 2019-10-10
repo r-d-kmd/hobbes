@@ -11,8 +11,9 @@ let invalidateCache (conf : DataConfiguration.Configuration) =
     let res =
         cache.Views.["srcproj"].List(IdRecord.Parse, startKey = id, endKey = id)
         |> Array.map(fun cache -> Cache.delete cache.Id)
+        |> Array.tryFind (fun resp -> resp.StatusCode < 200 || 400 >= resp.StatusCode)
     
-    200, "Cache invalidated"
+    if res.IsNone then 200, "" else res.Value.StatusCode, "" 
 
 let data configurationName =
     let cacheKey = configurationName
@@ -213,4 +214,8 @@ let initDb =
 
     let designDocument = System.IO.File.ReadAllText "db\\design_documents\\design_rawdata.json"
     let designStatusCode = uploadDesignDocument rawdata designDocument         
+
+    let designDocument2 = System.IO.File.ReadAllText "db\\design_documents\\design_cache.json"
+    let designStatusCode2 = uploadDesignDocument cache designDocument2
+
     if dbStatusCode.IsNone then designStatusCode, "" else dbStatusCode.Value, ""          

@@ -21,6 +21,9 @@
     <None Include="db\design_documents\design_rawdata.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="db\design_documents\design_cache.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
 
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

@@ -1,9 +1,13 @@
+open FSharp.Control.Tasks.V2.ContextInsensitive
 open Saturn
+open Saturn.Controller
+open Giraffe
 open Giraffe.Core
 open Giraffe.ResponseWriters
 open Microsoft.AspNetCore.Http
 open Database
 open Hobbes.Server.Security
+open System
 
 let private port = 
     match env "port" with
@@ -41,6 +45,20 @@ let private sync configurationName =
             
     verified executer
 
+let private confs name : HttpHandler =
+    fun (next : HttpFunc) (ctx : HttpContext) ->
+        task {
+            let! body = ctx.ReadBodyFromRequestAsync()
+
+            let record = sprintf """{"id": %s, "conf": %s}""" name body
+                         |> String.filter (fun c -> (Char.IsWhiteSpace >> not) c && c <> '\\') //TODO: Escape slashes aren't removed, results in error in couchdb
+
+            let res = configurations.TryPut name record                      
+
+            return! Successful.OK res next ctx
+        }
+    
+
 
 let private key token =
     let statusCode,body = Implementation.key token
@@ -53,6 +71,7 @@ let private apiRouter = router {
     getf "/key/%s" key
     get "/ping" (setStatusCode 200 >=> setBodyFromString "pong")
     getf "/sync/%s" sync
+    postf "/configurations/%s" confs
 }
 
 let private appRouter = router {

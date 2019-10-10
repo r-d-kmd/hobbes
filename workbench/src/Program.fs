@@ -1,8 +1,4 @@
 
-open Hobbes.DSL
-open Hobbes.Parsing.AST
-open Hobbes.FSharp
-
 let parse stmt =
     let stmt = stmt |> string
     Hobbes.Parsing.Parser.parse [stmt]
@@ -21,6 +17,10 @@ let main args =
                 Some Gandalf.renaming
             | "azure.foldbysprint" ->
                 Some Azure.foldBySprint
+            | "metrics.statecountbysprint" ->
+                Some Metrics.stateCountBySprint
+            | "metrics.expandingcompletionbysprint" ->
+                Some Metrics.expandingCompletionBySprint
             | _ ->
                printfn "Didn't find statements"
                None

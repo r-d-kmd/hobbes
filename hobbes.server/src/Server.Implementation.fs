@@ -25,16 +25,37 @@ let data configurationName =
                     data
 
             let transformations = 
-                    Transformations.load configuration.Transformations
-                    |> Array.collect(fun t -> t.Lines)
-            let func = Hobbes.FSharp.Compile.expressions transformations                                                                   
-            (rawData
+                Transformations.load configuration.Transformations
+                |> Array.fold(fun st t -> Hobbes.FSharp.Compile.expressions t.Lines :: st) []
+                    //|> Array.collect(fun t -> t.Lines)
+                //let func = Hobbes.FSharp.Compile.expressions transformations  
+            let nextData =  rawData
+                            |> Seq.map(fun (columnName,values) -> 
+                                               columnName, values.ToSeq()
+                                               |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
+                            ) |> DataMatrix.fromTable                                                                
+           
+                
+            let saveIntermediateResultToCache data transLength counter =
+                let rec aux data counter =
+                    match counter with
+                    | _ when counter < transLength -> let nextData = data |> transformations.[counter]
+                                                      nextData.ToJson(Column)
+                                                      |> Cache.store cacheKey
+                                                      |> ignore
+                                                      aux (data) (counter + 1)
+                    | _ ->                            data.ToJson(Column)
+                                                      |> Cache.store cacheKey
+                aux data counter                                     
+                
+            saveIntermediateResultToCache nextData transformations.Length 0
+            (*(rawData
              |> Seq.map(fun (columnName,values) -> 
                 columnName, values.ToSeq()
                              |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
              ) |> DataMatrix.fromTable
-             |> func).ToJson(Column)
-            |> Cache.store cacheKey
+             |> transformations.[0]).ToJson(Column)
+            |> Cache.store cacheKey*)
         | Some data ->
             printfn "Cache hit %s" cacheKey
             data

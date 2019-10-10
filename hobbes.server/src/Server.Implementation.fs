@@ -45,7 +45,6 @@ let data configurationName =
                         
                         aux (nextData) newName (counter + 1)
                     | _ -> data.ToJson(Column)
-                           |> Cache.createRecord(System.String.Join(':', datasetKey) + name) 
                 aux data "" 0                                    
                 
             saveIntermediateResultToCache nextData transformations.Length

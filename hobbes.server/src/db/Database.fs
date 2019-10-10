@@ -15,6 +15,38 @@ let private user = env "COUCHDB_USER"
 let private pwd = env "COUCHDB_PASSWORD"
 #endif
 
+type DataValues =
+    Floats of (int * float) []
+    | Texts of (int * string) []
+    | DateTimes of (int * System.DateTime) []
+    with member x.Length 
+           with get() = 
+               match x with
+               Floats a -> a.Length
+               | Texts a -> a.Length
+               | DateTimes a -> a.Length
+         member x.Append other =
+            match x,other with
+            Floats a1, Floats a2 -> a2 |> Array.append a1 |> Floats
+            | Texts a1, Texts a2 -> a2 |> Array.append a1 |> Texts
+            | DateTimes a1,DateTimes a2 -> a2 |> Array.append a1 |> DateTimes
+            | _ -> failwithf "Incompatible types: %A %A" x other
+         member x.ToSeq() =
+            match x with
+            Floats a -> 
+                a |> Array.map(fun (i,v) -> i, box v)
+            | Texts a ->
+                a |> Array.map(fun (i,v) -> i, box v)
+            | DateTimes a ->
+                a |> Array.map(fun (i,v) -> i, box v)
+
+type DataRecord = {
+    Columns : string []
+    Values : DataValues []
+}
+
+type IdRecord = JsonProvider<"""{"_id": "someID"}""">
+
 type UserRecord = JsonProvider<"""{
   "_id": "org.couchdb.user:dev",
   "_rev": "1-39b7182af5f4dc7a72d1782d808663b1",
@@ -26,6 +58,8 @@ type UserRecord = JsonProvider<"""{
   "derived_key": "492c5c2855d72ae88a5ff5f70f75ddb0ef63b32f",
   "salt": "a6212b3f03511523954fbc93e7c0907d"
 }""">
+
+type Rev = JsonProvider<"""{"_rev": "osdhfoi94392h329020"}""">
 
 type ConfigurationRecord = JsonProvider<"""{
     "_id" : "name",
@@ -49,6 +83,7 @@ type CacheRecord = JsonProvider<"""{
         "values" : [["zcv"],[1.2],["2019-01-01"]]
     }
 }""">
+
 type WorkItemRevisionRecord = JsonProvider<"""
         {
             "id": "id1",
@@ -204,6 +239,49 @@ type private DatabaseName =
     | Cache
     | RawData
     | Users
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module TableView =
+    let toTable (tableView : TableView.Root []) =
+        tableView
+        |> Array.fold(fun (count, (map : Map<_,_>)) record ->
+            let values = 
+                record.Values
+                |> Array.map(fun raw -> 
+                   match raw.Numbers with
+                   [||] -> 
+                       match raw.Strings with
+                       [||] -> 
+                           raw.DateTimes
+                           |> Array.mapi (fun i dt -> i + count,dt)
+                           |> DateTimes
+                       | strings ->
+                           strings
+                           |> Array.mapi (fun i dt -> i + count,dt)
+                           |> Texts
+                   | numbers ->
+                       numbers
+                       |> Array.mapi(fun i n -> i + count, float n)
+                       |> Floats
+                )
+            let map = 
+               record.ColumnNames
+               |> Array.indexed
+               |> Array.fold(fun map (i,columnName) ->
+                   let columnValues = values.[i]
+                   match map |> Map.tryFind columnName with
+                   None -> map.Add(columnName, columnValues)
+                   | Some vs -> map.Add(columnName, vs.Append columnValues)
+               ) map
+            //Values can have empty cells in the end but needs to be aligned on the first element
+            let maxLength = 
+                (values
+                 |> Array.maxBy(fun a -> a.Length)).Length
+            count + maxLength, map
+        ) (0,Map.empty)
+        |> snd
+        |> Map.toSeq
+
 type HttpMethod = 
     Get
     | Post
@@ -239,13 +317,12 @@ type View(getter, name) =
             |> getter 
             |> List.Parse
     let list (parser : string -> 'a) (startKey : string option) (endKey : string option) (descending : bool option) = 
-        let rowCount = (_list startKey endKey None None None).TotalRows
-        let limitInTens = 1 //change this or change the looping conditions
-        let limit = limitInTens * 10
+        let rowCount = (_list startKey endKey None descending None).TotalRows
+        let limit = 100
         
         //max %limit records at a time
-        [|for i in 0..(rowCount + limit - 1) / limit ->
-            _list startKey endKey (Some limit) None (i * limit |> Some) |]
+        [|for i in 0..limit..(rowCount + limit - 1) ->
+            _list startKey endKey (Some limit) None (i |> Some) |]
         |> Array.collect(fun l -> l.Rows)
         |> Array.map(fun entry -> entry.Value.ToString() |> parser)    
         
@@ -268,7 +345,7 @@ and Database<'a> (databaseName, parser : string -> 'a)  =
         Binary _ -> failwithf "Can't use a binary response"
         | Text res -> res
 
-    let request httpMethod silentErrors body path  =
+    let request httpMethod silentErrors body path rev  =
         let m =
               match httpMethod with 
               Get -> "GET"
@@ -284,8 +361,9 @@ and Database<'a> (databaseName, parser : string -> 'a)  =
         
         let headers =
             [
-                HttpRequestHeaders.BasicAuth user pwd
-                HttpRequestHeaders.ContentType HttpContentTypes.Json
+                yield HttpRequestHeaders.BasicAuth user pwd
+                yield HttpRequestHeaders.ContentType HttpContentTypes.Json
+                if rev |> Option.isSome then yield HttpRequestHeaders.IfMatch rev.Value
             ]
         let maxRetries = 10
         let rec requester count = 
@@ -319,19 +397,21 @@ and Database<'a> (databaseName, parser : string -> 'a)  =
         else
             failwithf "Server error %d. Reason: %s" resp.StatusCode (resp |> getBody)
 
-    let requestString httpMethod silentErrors body path = 
-        request httpMethod silentErrors body path |> getBody
-    let tryRequest m = request m true
-    let get = requestString Get false None
-    let put body = requestString Put false (Some body) 
-    let post body = requestString Post false (Some body) 
-    let tryGet = tryRequest Get None 
-    let tryPut body = tryRequest Put (Some body)  
-    let tryPost body = tryRequest Post (Some body) 
+    let requestString httpMethod silentErrors body path rev = 
+        request httpMethod silentErrors body path rev |> getBody
+    let tryRequest m rev body path = request m true body path rev
+    let get path = requestString Get false None path None
+    let put body path rev = requestString Put false (Some body) path rev 
+    let post body path = requestString Post false (Some body) path None 
+    let tryGet = tryRequest Get None None 
+    let tryPut body rev = tryRequest Put rev (Some body)  
+    let tryPost body = tryRequest Post None (Some body) 
 
     member this.AddView name =
         _views <- _views.Add(name, View(get,name))
         this
+    member __.GetAllDocs =
+        get "_all_docs" |> parser
 
     member __.Get id =
         get id |> parser
@@ -356,11 +436,34 @@ and Database<'a> (databaseName, parser : string -> 'a)  =
             eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode (body.Substring(0,min 500 body.Length ))
             None
 
-    member __.Put id body = 
-        put body id
-    member __.TryPut id body = 
-        tryPut body id
-    member __.Post path body = 
+    member __.GetRev id =
+        (get id |> Rev.Parse).Rev        
+
+    member __.TryGetRev id = 
+        let resp = tryGet id
+        let body = 
+            match resp.Body with
+            Text s ->
+                try
+                    (s |> Rev.Parse).Rev |> Some
+                with _ ->
+                   eprintfn "Couldn't parse %s" (s.Substring(0, min 500 s.Length))
+                   None
+            | _ -> 
+                eprintfn "Response body was binary"
+                None
+        if resp.StatusCode >= 200  && resp.StatusCode <= 299 then
+            body
+        else
+            let body = body.Value.ToString()
+            eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode (body.Substring(0,min 500 body.Length ))
+            None        
+
+    member __.Put(id, body, ?rev) = 
+        put body id rev
+    member __.TryPut(id, body, ?rev) = 
+        tryPut body rev id
+    member __.Post(path, body) = 
         let resp = tryPost body path
         if  resp.StatusCode >= 200  && resp.StatusCode <= 299  then
             resp |> getBody
@@ -425,10 +528,13 @@ and Database<'a> (databaseName, parser : string -> 'a)  =
             headers = headers
         )
 
-
+let couch          = Database ("", ignore)
 let configurations = Database ("configurations", ConfigurationRecord.Parse)
 let transformations = Database ("transformations", TransformationRecord.Parse)
-let cache = Database ("cache", CacheRecord.Parse)
+let cache = 
+    Database("cache", CacheRecord.Parse)
+      .AddView("srcproj")
+
 let rawdata = 
     Database("rawdata", CacheRecord.Parse)
       .AddView("table")

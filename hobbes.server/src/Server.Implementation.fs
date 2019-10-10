@@ -7,14 +7,10 @@ open FSharp.Data
 open Hobbes.Server.Security
 
 let invalidateCache (conf : DataConfiguration.Configuration) =
-    let idSuffix = conf.Source.SourceName + ":" + conf.Source.ProjectName
-    let rec aux id =
-        function
-        | x :: xs -> let newId = (id + ":" + x)
-                     Cache.delete newId |> ignore
-                     aux newId xs
-        | []      -> ()
-    aux idSuffix conf.Transformations 
+    let id = conf.Source.SourceName + ":" + conf.Source.ProjectName
+    let res =
+        cache.Views.["srcproj"].List(IdRecord.Parse, startKey = id, endKey = id)
+        |> Array.map(fun cache -> Cache.delete cache.Id)
     
     200, "Cache invalidated"
 

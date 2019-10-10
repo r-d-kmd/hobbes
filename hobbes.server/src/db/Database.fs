@@ -45,6 +45,8 @@ type DataRecord = {
     Values : DataValues []
 }
 
+type IdRecord = JsonProvider<"""{"_id": "someID"}""">
+
 type UserRecord = JsonProvider<"""{
   "_id": "org.couchdb.user:dev",
   "_rev": "1-39b7182af5f4dc7a72d1782d808663b1",
@@ -79,6 +81,7 @@ type CacheRecord = JsonProvider<"""{
         "values" : [["zcv"],[1.2],["2019-01-01"]]
     }
 }""">
+
 type WorkItemRevisionRecord = JsonProvider<"""
         {
             "id": "id1",
@@ -404,6 +407,8 @@ and Database<'a> (databaseName, parser : string -> 'a)  =
     member this.AddView name =
         _views <- _views.Add(name, View(get,name))
         this
+    member __.GetAllDocs =
+        get "_all_docs" |> parser
 
     member __.Get id =
         get id |> parser
@@ -500,7 +505,10 @@ and Database<'a> (databaseName, parser : string -> 'a)  =
 
 let configurations = Database ("configurations", ConfigurationRecord.Parse)
 let transformations = Database ("transformations", TransformationRecord.Parse)
-let cache = Database ("cache", CacheRecord.Parse)
+let cache = 
+    Database("cache", CacheRecord.Parse)
+      .AddView("srcproj")
+
 let rawdata = 
     Database("rawdata", CacheRecord.Parse)
       .AddView("table")

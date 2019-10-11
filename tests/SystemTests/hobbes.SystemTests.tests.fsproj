@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\hobbes.server/src/hobbes.server.fsproj" />
+    <ProjectReference Include="..\..\src\hobbes.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="SystemTests/*.fs" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

@@ -35,6 +35,11 @@ Target.create "ReleaseBuild" (fun _ ->
 Target.create "Test" (fun _ ->
     DotNet.test (DotNet.Options.withWorkingDirectory "./tests") ""
 )
+
+Target.create "SystemTest" (fun _ ->
+    DotNet.test (DotNet.Options.withWorkingDirectory "./tests/SystemTests") ""
+)
+
 let inline (@@) p1 p2 = 
     System.IO.Path.Combine(p1,p2)
 let company = "KMD A/S"
@@ -80,6 +85,7 @@ Target.create "CopyFiles" (fun _ ->
         System.IO.File.Copy(file, System.IO.Path.Combine(netDir,System.IO.Path.GetFileName file))
     )
 )
+
 Target.create "PublishPackage" (fun _ ->
     let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "0.2.0.1"
     let myAccessKey = Environment.environVarOrDefault "key" ""
@@ -101,19 +107,25 @@ Target.create "PublishPackage" (fun _ ->
             }) "src/hobbes.nuspec"
 )
 
-Target.create "PushToDocker" (fun _ ->
-    let dockerOrg = "kmdrd"
-    let run workingDir args = 
+let run command workingDir args = 
         let arguments = 
             args |> String.split ' ' |> Arguments.OfArgs
-        RawCommand ("docker", arguments)
+        RawCommand (command, arguments)
         |> CreateProcess.fromCommand
         |> CreateProcess.withWorkingDirectory workingDir
         |> CreateProcess.ensureExitCode
         |> Proc.run
         |> ignore
-    
 
+Target.create "SystemTest" (fun _ ->
+    run "docker-compose" "." "up --build --force-recreate"
+    
+)
+
+Target.create "PushToDocker" (fun _ ->
+    let dockerOrg = "kmdrd"
+    let run = run "docker"
+    
     let files = System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllDirectories)
     printfn "Found docker files: (%A)" files
     files
@@ -140,10 +152,14 @@ open Fake.Core.TargetOperators
 "Clean"
    ==> "Build"
 
+"Test"
+   ==> "SystemTest"
+
 "Clean"
-   //==> "Test"
    ==> "ReleaseBuild"
    ==> "CopyFiles"
    ==> "PublishPackage"
+
+"ReleaseBuild" ==> "PushToDocker"
 
 Target.runOrDefaultWithArguments "Build"

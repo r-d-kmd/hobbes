@@ -293,8 +293,20 @@ type ViewList<'a> =
         Offset : int
         Rows : 'a []
     }
+type IDatabase =
+    abstract GetAllDocs<'a> : (string -> 'a) -> seq<'a>
+    abstract Get<'a> : string -> (string -> 'a) -> 'a
+    abstract TryGet : string -> (string -> 'a) -> 'a option
+    abstract GetRev : string -> string
+    abstract TryGetRev : string -> string option
+    abstract Put: string * string * string option -> string
+    abstract TryPut: string * string * string option -> HttpResponse
+    abstract Post : string * string -> string
+    abstract FilterByKeys<'a> : seq<string> -> (string -> 'a) -> seq<'a> 
+    abstract Views : unit -> Map<string,View> with get    
+    abstract Delete : string -> unit
 
-type View(getter, name) = 
+and View(getter, name) = 
     let _list (startKey : string option) (endKey : string option) limit (descending : bool option) skip = 
             let args = 
                 System.String.Join("&",
@@ -333,7 +345,7 @@ type View(getter, name) =
         |> Array.map(fun entry -> entry.Value.ToString() |> parser) 
     
 
-and Database<'a> (databaseName, parser : string -> 'a)  =
+and Database<'a> (databaseName, parser : string -> 'a) =
     let mutable _views : Map<string,View> = Map.empty
     let urlWithId (id : string) = 
         let dbUrl = dbServerUrl + "/" + databaseName
@@ -410,123 +422,138 @@ and Database<'a> (databaseName, parser : string -> 'a)  =
     member this.AddView name =
         _views <- _views.Add(name, View(get,name))
         this
-    member __.GetAllDocs =
-        get "_all_docs" |> parser
-
-    member __.Get id =
-        get id |> parser
-
-    member __.TryGet id = 
-        let resp = tryGet id
-        let body = 
-            match resp.Body with
-            Text s ->
-                try
-                    s |> parser |> Some
-                with _ ->
-                   eprintfn "Couldn't parse %s" (s.Substring(0, min 500 s.Length))
-                   None
-            | _ -> 
-                eprintfn "Response body was binary"
-                None
-        if resp.StatusCode >= 200  && resp.StatusCode <= 299 then
-            body
-        else
-            let body = body.Value.ToString()
-            eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode (body.Substring(0,min 500 body.Length ))
-            None
-
-    member __.GetRev id =
-        (get id |> Rev.Parse).Rev        
-
-    member __.TryGetRev id = 
-        let resp = tryGet id
-        let body = 
-            match resp.Body with
-            Text s ->
-                try
-                    (s |> Rev.Parse).Rev |> Some
-                with _ ->
-                   eprintfn "Couldn't parse %s" (s.Substring(0, min 500 s.Length))
-                   None
-            | _ -> 
-                eprintfn "Response body was binary"
-                None
-        if resp.StatusCode >= 200  && resp.StatusCode <= 299 then
-            body
-        else
-            let body = body.Value.ToString()
-            eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode (body.Substring(0,min 500 body.Length ))
-            None        
-
-    member __.Put(id, body, ?rev) = 
-        put body id rev
-    member __.TryPut(id, body, ?rev) = 
-        tryPut body rev id
-    member __.Post(path, body) = 
-        let resp = tryPost body path
-        if  resp.StatusCode >= 200  && resp.StatusCode <= 299  then
-            resp |> getBody
-        elif resp.StatusCode = 400 then
-            let respB = (resp |> getBody)
-            let length = 500
-            let start =
-                if (respB).Contains "Invalid JSON starting at character " then
-                    (((respB.Split("Invalid JSON starting at character ") |> Array.last).Split ' '
-                     |> Array.head).Trim()
-                    |> int)
-                    - 20
-                    |> max 0
-                else
-                    0
-            failwithf "Bad format. Doc: %s" (body.Substring(start, min body.Length length))
-        else
-            failwith (resp |> getBody)
-    member __.FilterByKeys keys = 
-        let body = 
-           System.String.Join(",", 
-               keys
-               |> Seq.map(fun s -> sprintf "%A" s)
-           )
-           |> sprintf """{"keys" : [%s]}"""
-        try
-            (post body "_all_docs?include_docs=true"
+    member this.GetAllDocs() = (this :> IDatabase).GetAllDocs<'a> parser
+    member this.Get id                  = (this :> IDatabase).Get id parser
+    member this.TryGet id               = (this :> IDatabase).TryGet id parser           
+    member this.GetRev id               = (this :> IDatabase).GetRev id               
+    member this.TryGetRev id            = (this :> IDatabase).TryGetRev id            
+    member this.Put(path,body, ?rev)    = (this :> IDatabase).Put(path,body, rev)    
+    member this.TryPut(path,body, ?rev) = (this :> IDatabase).TryPut(path,body, rev) 
+    member this.Post(path,body)         = (this :> IDatabase).Post(path,body)         
+    member this.FilterByKeys keys       = (this :> IDatabase).FilterByKeys keys parser      
+    member this.Views with get()        = (this :> IDatabase).Views       
+    member this.Delete id               = (this :> IDatabase).Delete id               
+    interface IDatabase with
+        member __.GetAllDocs parser =
+            (get "_all_docs"
              |> List.Parse).Rows
-            |> Array.map(fun entry -> 
-                try
-                    entry.Doc.ToString() |> parser
-                with e ->
-                    failwithf "Failed loading transformations. Row: %A. Msg: %s" (entry.ToString()) e.Message
-                )
-        with _ ->
-            eprintfn "Failed getting documents by key. POST Body: %s" (body.Substring(0,min body.Length 500))
-            reraise()
-    member __.Views with get() = _views
-    
-    member __.Delete id =
-        let doc = 
-            get id
-            |> CouchDoc.Parse
-       
-        let url = 
-            System.String.Join("/",[
-                dbServerUrl
-                databaseName
-                id
-            ])
-        printfn "Deleting %s from %s" id databaseName
+             |> Array.map (string >> parser)
+             |> Seq.ofArray
+
+        member __.Get id parser =
+            get id |> parser
+
+        member __.TryGet id parser = 
+            let resp = tryGet id
+            let body = 
+                match resp.Body with
+                Text s ->
+                    try
+                        s |> parser |> Some
+                    with _ ->
+                       eprintfn "Couldn't parse %s" (s.Substring(0, min 500 s.Length))
+                       None
+                | _ -> 
+                    eprintfn "Response body was binary"
+                    None
+            if resp.StatusCode >= 200  && resp.StatusCode <= 299 then
+                body
+            else
+                let body = body.Value.ToString()
+                eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode (body.Substring(0,min 500 body.Length ))
+                None
+
+        member __.GetRev id =
+            (get id |> Rev.Parse).Rev        
+
+        member __.TryGetRev id = 
+            let resp = tryGet id
+            let body = 
+                match resp.Body with
+                Text s ->
+                    try
+                        (s |> Rev.Parse).Rev |> Some
+                    with _ ->
+                       eprintfn "Couldn't parse %s" (s.Substring(0, min 500 s.Length))
+                       None
+                | _ -> 
+                    eprintfn "Response body was binary"
+                    None
+            if resp.StatusCode >= 200  && resp.StatusCode <= 299 then
+                body
+            else
+                let body = body.Value.ToString()
+                eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode (body.Substring(0,min 500 body.Length ))
+                None        
+
+        member __.Put(id, body, ?rev) = 
+            put body id rev
+        member __.TryPut(id, body, ?rev) = 
+            tryPut body rev id
+        member __.Post(path, body) = 
+            let resp = tryPost body path
+            if  resp.StatusCode >= 200  && resp.StatusCode <= 299  then
+                resp |> getBody
+            elif resp.StatusCode = 400 then
+                let respB = (resp |> getBody)
+                let length = 500
+                let start =
+                    if (respB).Contains "Invalid JSON starting at character " then
+                        (((respB.Split("Invalid JSON starting at character ") |> Array.last).Split ' '
+                         |> Array.head).Trim()
+                        |> int)
+                        - 20
+                        |> max 0
+                    else
+                        0
+                failwithf "Bad format. Doc: %s" (body.Substring(start, min body.Length length))
+            else
+                failwith (resp |> getBody)
+        member __.FilterByKeys keys parser = 
+            let body = 
+               System.String.Join(",", 
+                   keys
+                   |> Seq.map(fun s -> sprintf "%A" s)
+               )
+               |> sprintf """{"keys" : [%s]}"""
+            try
+                (post body "_all_docs?include_docs=true"
+                 |> List.Parse).Rows
+                |> Array.map(fun entry -> 
+                    try
+                        entry.Doc.ToString() |> parser
+                    with e ->
+                        failwithf "Failed loading transformations. Row: %A. Msg: %s" (entry.ToString()) e.Message
+                ) |> Seq.ofArray
+            with _ ->
+                eprintfn "Failed getting documents by key. POST Body: %s" (body.Substring(0,min body.Length 500))
+                reraise()
+        member __.Views with get() = _views
         
-        let headers =
-            [
-                HttpRequestHeaders.BasicAuth user pwd
-                HttpRequestHeaders.ContentType HttpContentTypes.Json
-                HttpRequestHeaders.IfMatch doc.Rev
-            ]
-        
-        Http.Request(url,
-            httpMethod = "DELETE", 
-            headers = headers
-        )
+        member __.Delete id =
+            let doc = 
+                get id
+                |> CouchDoc.Parse
+           
+            let url = 
+                System.String.Join("/",[
+                    dbServerUrl
+                    databaseName
+                    id
+                ])
+            printfn "Deleting %s from %s" id databaseName
+            
+            let headers =
+                [
+                    HttpRequestHeaders.BasicAuth user pwd
+                    HttpRequestHeaders.ContentType HttpContentTypes.Json
+                    HttpRequestHeaders.IfMatch doc.Rev
+                ]
+            
+            Http.Request(url,
+                httpMethod = "DELETE", 
+                headers = headers
+            ) |> ignore
 
 let couch          = Database ("", ignore)
 let configurations = Database ("configurations", ConfigurationRecord.Parse)

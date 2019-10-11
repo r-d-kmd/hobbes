@@ -5,14 +5,19 @@ let invalidJsonForGandalf() =
     Implementation.data "1234" |> ignore
 
 let testDbInit() =
-    let intiRes = Implementation.initDb
-    let transRes = Implementation.putDocument Database.transformations "trans1" """{"lines" : ["only 1=1"]}"""
-    Implementation.putDocument Database.configurations "conf1" """{
-                                                                                    "source" : "Azure DevOps",
-                                                                                    "dataset" : "flowerpot",
-                                                                                    "transformations" : ["trans1"]
-                                                                                 }""" |> ignore
-
+    match Implementation.initDb() with
+        200,_ -> 
+            match Implementation.putDocument Database.transformations """{"_id" : "trans1", "lines" : ["only 1=1"]}""" with
+            200,_ -> 
+                Implementation.putDocument Database.configurations  """{"_id" : "conf1",
+                                                                        "source" : "Azure DevOps",
+                                                                        "dataset" : "flowerpot",
+                                                                        "transformations" : ["trans1"]
+                                                                    }"""
+            | a -> a
+        | a -> a
+    |> printfn "Result: %A"
+    
 let testGetData() =
     Implementation.data "conf1"
     |> printf "%A"

@@ -18,13 +18,9 @@
     <Compile Include="Security.fs" />
     <Compile Include="Server.Implementation.fs" />
     <Compile Include="Server.fs" />
-    <None Include="db\design_documents\design_rawdata.json">
+    <None Include="db/documents/**/*.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="db\design_documents\design_cache.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

@@ -8,12 +8,8 @@ open Hobbes.Server.Security
 
 let invalidateCache (conf : DataConfiguration.Configuration) =
     let id = conf.Source.SourceName + ":" + conf.Source.ProjectName
-    let res =
-        cache.Views.["srcproj"].List(IdRecord.Parse, startKey = id, endKey = id)
-        |> Array.map(fun cache -> Cache.delete cache.Id)
-        |> Array.tryFind (fun resp -> resp.StatusCode < 200 || 400 >= resp.StatusCode)
-    
-    if res.IsNone then 200, "" else res.Value.StatusCode, "" 
+    cache.Views.["srcproj"].List(IdRecord.Parse, startKey = id, endKey = id)
+    |> Array.map(fun cache -> Cache.delete cache.Id)
 
 let data configurationName =
     let cacheKey = configurationName
@@ -29,7 +25,7 @@ let data configurationName =
              
             let transformations = 
                 Transformations.load configuration.Transformations
-                |> Array.fold(fun st t -> st @ [Hobbes.FSharp.Compile.expressions t.Lines]) []
+                |> Seq.fold(fun st t -> st @ [Hobbes.FSharp.Compile.expressions t.Lines]) []
 
             
             let nextData =  rawData
@@ -120,8 +116,7 @@ let private clearTempAzureDataAndGetInitialUrl (source : DataConfiguration.DataS
 
 let sync pat configurationName =
     let configuration = DataConfiguration.get configurationName
- 
-
+    
     match configuration.Source with
     DataConfiguration.AzureDevOps projectName ->
         
@@ -197,25 +192,61 @@ let key token =
         let key = createToken user
         200,key
 
-let putDocument (db : Database<'a>) id body =
+let putDocument (db : IDatabase) doc =
+    let id = (doc |> CouchDoc.Parse).Id
     let rev = db.TryGetRev id
-    let res = if rev.IsNone then db.TryPut(id, body)
-                            else db.TryPut(id, body, rev.Value)      
+    let res = if rev.IsNone then db.TryPut(id, doc, None)
+                            else db.TryPut(id, doc, Some rev.Value)      
     res.StatusCode, ""
 
-let uploadDesignDocument db body =
-    putDocument db "_design/default" body |> fst
+let uploadDesignDocument (db,file) =
+    async {
+        let! doc = System.IO.File.ReadAllTextAsync file |> Async.AwaitTask
+        return putDocument db doc |> fst
+    }
+
+//test if db is alive
+let ping() = 
+    couch.Get "_all_dbs"
+    200,"pong"
     
+let initDb () =
+    let dbs  = 
+        [
+            "transformations", transformations :> Database.IDatabase
+            "rawdata", rawdata :> Database.IDatabase
+            "configurations", configurations :> Database.IDatabase
+            "cache", cache :> Database.IDatabase
+        ] 
+    let systemDbs = 
+        [
+            "_replicator"
+            "_global_changes"
+            "_users"
+        ]
+    let errorCode = 
+        (dbs |> List.map fst)@systemDbs
+        |> List.map (fun n -> couch.TryPut(n, "").StatusCode)
+        |> List.tryFind (fun sc -> sc < 200 || (400 >= sc && sc <> 412))
+    (match errorCode with
+     Some errorCode ->
+        errorCode
+     | None ->
+        let dbMap = dbs |> Map.ofList
+        let errorCode = 
+            async {
+                let! results = 
+                    System.IO.Directory.EnumerateDirectories("db/documents")
+                    |> Seq.collect(fun dir -> 
+                        System.IO.Directory.EnumerateFiles(dir,"*.json")
+                        |> Seq.map(fun f -> dbMap |> Map.find (System.IO.Path.GetDirectoryName dir),f) 
+                    ) |> Seq.map uploadDesignDocument
+                    |> Async.Parallel
+                return 
+                    results
+                    |> Array.tryFind (fun sc -> sc < 200 || (400 >= sc && sc <> 412))
+            } |> Async.RunSynchronously
 
-let initDb =
-    let dbStatusCode = ["_replicator"; "_global_changes"; "_users"; "transformations"; "rawdata"; "configurations"]
-                       |> List.map (fun n -> couch.TryPut(n, "").StatusCode)
-                       |> List.tryFind (fun sc -> sc < 200 || (400 >= sc && sc <> 412))
-
-    let designDocument = System.IO.File.ReadAllText "db\\design_documents\\design_rawdata.json"
-    let designStatusCode = uploadDesignDocument rawdata designDocument         
-
-    let designDocument2 = System.IO.File.ReadAllText "db\\design_documents\\design_cache.json"
-    let designStatusCode2 = uploadDesignDocument cache designDocument2
-
-    if dbStatusCode.IsNone then designStatusCode, "" else dbStatusCode.Value, ""          
+        match errorCode with
+        None -> 200
+        | Some errorCode -> errorCode), ""

@@ -73,11 +73,13 @@ type DataSet = JsonProvider<"""{
     "some column2" : ["rowValue1", "rowValue2"]
 }""">
 
-type TransformationRecord = JsonProvider<"""{"lines" : ["","jghkhj"]}""">
+type TransformationRecord = JsonProvider<"""{"_id" : "jlk", "lines" : ["","jghkhj"]}""">
 
 type CacheRecord = JsonProvider<"""{
     "_id" : "name",
     "TimeStamp" : "24-09-2019",
+    "Source" : "lækljk",
+    "Project" : "lkjlkj",
     "Data" : {
         "columnNames" : ["a","b"],
         "values" : [["zcv"],[1.2],["2019-01-01"]]

@@ -768,3 +768,5 @@ module DataStructures =
                 frame
                 |> DataMatrix
                 :> IDataMatrix
+        let ToJson format (matrix : #IDataMatrix) =
+            matrix.ToJson format

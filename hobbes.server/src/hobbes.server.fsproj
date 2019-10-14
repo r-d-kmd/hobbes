@@ -10,8 +10,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="db/Database.fs" />
-    <Compile Include="db/DataConfiguration.fs" />
     <Compile Include="db/Transformations.fs" />
+    <Compile Include="db/DataConfiguration.fs" />
     <Compile Include="db/Cache.fs" />
     <Compile Include="db/Rawdata.fs"/>
 

@@ -6,11 +6,10 @@ open Hobbes.Server.Db
 open FSharp.Data
 open Hobbes.Server.Security
 
-let private invalidateCache (conf : DataConfiguration.Configuration) =
-    let id = conf.Source.SourceName + ":" + conf.Source.ProjectName
-    cache.Views.["srcproj"].List(IdRecord.Parse, startKey = id, endKey = id)
-    |> Array.map(fun cache -> Cache.delete cache.Id)
-
+let private invalidateCache (source : DataConfiguration.DataSource) =
+    Cache.idsBySource source
+    |> Array.map(fun cache -> Cache.delete cache.Id) 
+    
 let data configurationName =
     let configuration = DataConfiguration.get configurationName
     let uncachedTransformations, data =
@@ -24,7 +23,7 @@ let data configurationName =
             |> Option.isNone
         )  
 
-    let cachekeyPrefix = 
+    let tempConfig = 
         {
             configuration with
                 Transformations = cachedTransformations
@@ -33,33 +32,36 @@ let data configurationName =
     let transformations = 
         Transformations.load uncachedTransformations
         
-    let data = 
+    let cachedData = 
         match data with
         None -> 
             printfn "Cache miss %s" configurationName
-            let datasetKey = [configuration.Source.SourceName;configuration.Source.ProjectName]
-            Rawdata.list datasetKey
+            Rawdata.list configuration.Source
         | Some data -> data
    
-    let data = 
-        transformations
-        |> Seq.fold(fun (data, (prefix : DataConfiguration.Configuration)) transformation -> 
-            let data =  Hobbes.FSharp.Compile.expressions transformation.Lines data
-            let prefix = 
-                { prefix with
-                    Transformations = prefix.Transformations@[transformation.Id]
-                } 
-            async {
-                data.ToJson(Column)
-                |> Cache.store prefix 
-                |> ignore
-            } |> Async.Start
-            data, prefix
-        )  (data, cachekeyPrefix)
-        |> fst
-        |> DataMatrix.ToJson Csv
+    let transformedData = 
+        match transformations with
+        ts when ts |> Seq.isEmpty -> cachedData
+        | transformations ->
+            transformations
+            |> Seq.fold(fun (calculatedData, (tempConfig : DataConfiguration.Configuration)) transformation -> 
+                let transformedData =  
+                    Hobbes.FSharp.Compile.expressions transformation.Lines calculatedData
+                let tempConfig = 
+                    { tempConfig with
+                        Transformations = tempConfig.Transformations@[transformation.Id]
+                    } 
+                async {
+                    printfn "Caching transformation"
+                    transformedData.ToJson(Column)
+                    |> Cache.store tempConfig 
+                    |> ignore
+                } |> Async.Start
+                transformedData, tempConfig
+            )  (cachedData, tempConfig)
+            |> fst
 
-    200,data
+    200,transformedData |> DataMatrix.ToJson Csv
        
 let private request user pwd httpMethod body url  =
     let headers =
@@ -93,16 +95,13 @@ let private azureFields =
      "CycleTimeDays"
      "Iteration"
     ]
-let private clearTempAzureDataAndGetInitialUrl (source : DataConfiguration.DataSource) =
+let private getInitialUrl (source : DataConfiguration.DataSource) =
     let initialUrl = 
         let selectedFields = 
            (",", azureFields) |> System.String.Join
         sprintf "https://analytics.dev.azure.com/kmddk/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s&$filter=IsLastRevisionOfDay%%20eq%%20true%%20and%%20WorkItemRevisionSK%%20gt%%20%d" source.ProjectName selectedFields
     
-    let latestId = 
-        [source.SourceName;source.ProjectName]
-        |> Rawdata.tryLatestId
-    match latestId with
+    match  source |> Rawdata.tryLatestId with
     Some workItemRevisionId -> 
         initialUrl workItemRevisionId
     | None -> initialUrl 0
@@ -143,7 +142,7 @@ let sync pat configurationName =
         let statusCode, body = 
             projectName
             |> DataConfiguration.AzureDevOps
-            |> clearTempAzureDataAndGetInitialUrl
+            |> getInitialUrl
             |> _sync
         async {
             data configurationName |> ignore
@@ -186,17 +185,24 @@ let key token =
         let key = createToken user
         200,key
 
-let putDocument (db : IDatabase) doc =
-    let id = (doc |> CouchDoc.Parse).Id
-    let rev = db.TryGetRev id
-    let res = if rev.IsNone then db.TryPut(id, doc, None)
-                            else db.TryPut(id, doc, Some rev.Value)      
-    res.StatusCode, ""
+let storeTransformations doc = 
+    try
+        Transformations.store doc |> ignore
+        200,"ok"
+    with _ -> 
+        500,"internal server error"
 
-let private uploadDesignDocument (db,file) =
+let storeConfigurations doc = 
+    try
+        DataConfiguration.store doc |> ignore
+        200,"ok"
+    with _ -> 
+        500,"internal server error"
+
+let private uploadDesignDocument (handle,file) =
     async {
         let! doc = System.IO.File.ReadAllTextAsync file |> Async.AwaitTask
-        return putDocument db doc |> fst
+        return handle doc
     }
 
 //test if db is alive
@@ -205,12 +211,15 @@ let ping() =
     200,"pong"
     
 let initDb () =
-    let dbs  = 
+    let dbs = 
         [
-            "transformations", transformations :> Database.IDatabase
-            "rawdata", rawdata :> Database.IDatabase
-            "configurations", configurations :> Database.IDatabase
-            "cache", cache :> Database.IDatabase
+            "transformations", Transformations.store
+            "rawdata", (fun doc ->
+                let cacheRecord = Cache.CacheRecord.Parse doc
+                Rawdata.store cacheRecord.Source cacheRecord.Project cacheRecord.Id (cacheRecord.Data.ToString().Replace("\\","\\\\"))
+            )
+            "configurations", DataConfiguration.store
+            "cache", failwithf "Refuses to preload cache"
         ] 
     let systemDbs = 
         [
@@ -227,9 +236,9 @@ let initDb () =
         errorCode
      | None ->
         let dbMap = dbs |> Map.ofList
-        let errorCode = 
+        try
             async {
-                let! results = 
+                return!
                     System.IO.Directory.EnumerateDirectories("db/documents")
                     |> Seq.collect(fun dir -> 
                         System.IO.Directory.EnumerateFiles(dir,"*.json")
@@ -239,11 +248,9 @@ let initDb () =
                             |> Map.find dbName,f) 
                     ) |> Seq.map uploadDesignDocument
                     |> Async.Parallel
-                return 
-                    results
-                    |> Array.tryFind (fun sc -> sc < 200 || (400 >= sc && sc <> 412))
             } |> Async.RunSynchronously
-
-        match errorCode with
-        None -> 200
-        | Some errorCode -> errorCode), ""
+            |> ignore
+            200
+        with _ ->
+            500
+    )

@@ -52,18 +52,17 @@ let private sync configurationName =
         with e -> 
             eprintfn "Couldn't sync %s. Reason: %s" configurationName e.Message
             (setStatusCode 500 >=> setBodyFromString e.Message) f ctx
-    
 
-let private putDocument (db : Database<'a>) _ =
+let private putDocument (handler : string -> int * string) _ =
     fun next (ctx : HttpContext) ->
         task {
             let! body = ctx.ReadBodyFromRequestAsync()
-            return! verified (fun _ -> Implementation.putDocument db body) next ctx
+            return! verified (fun _ -> handler body) next ctx
         }
 
 let private initDb() =
-    let (sc, body) = Implementation.initDb()
-    setStatusCode sc >=> setBodyFromString body
+    let sc = Implementation.initDb()
+    setStatusCode sc >=> setBodyFromString ""
 
 let private key token =
     let statusCode,body = Implementation.key token
@@ -81,8 +80,8 @@ let private apiRouter = router {
     getf "/ping" ping
     getf "/init" initDb
     getf "/sync/%s" sync
-    putf "/configurations" (putDocument configurations)
-    putf "/transformations" (putDocument transformations)
+    putf "/configurations" (putDocument Implementation.storeConfigurations)
+    putf "/transformations" (putDocument Implementation.storeTransformations)
 }
 
 let private appRouter = router {

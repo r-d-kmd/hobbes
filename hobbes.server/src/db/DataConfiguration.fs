@@ -1,7 +1,15 @@
 namespace Hobbes.Server.Db
 
-module DataConfiguration =
+open FSharp.Data
 
+module DataConfiguration =
+    type private ConfigurationRecord = JsonProvider<"""{
+        "_id" : "name",
+        "source" : "name of source such as Azure DevOps, Rally or Jira",
+        "dataset" : "name of the dataset. Eg a project name in azure devops",
+        "transformations" : ["transformation 1", "transformation 2"]
+    }""">
+    let private db = Database.Database("configurations", ConfigurationRecord.Parse)
     type DataSource = 
         AzureDevOps of projectName: string
         | Rally of projectName : string
@@ -38,11 +46,13 @@ module DataConfiguration =
             Source : DataSource
             Transformations : string list
         }
-
+    let store doc = 
+       db.InsertOrUpdate doc
+    
     let get configurationName =
         let record = 
             configurationName
-            |> Database.configurations.Get
+            |> db.Get
        
         {
             Source = 

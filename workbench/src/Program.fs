@@ -7,7 +7,7 @@ let parse stmt =
 [<EntryPoint>]
 let main args =
     if args |> Array.isEmpty then
-        Tests.test()
+        Tests.test() |> ignore
         printfn "Press enter to exit..."
         System.Console.ReadLine() |> ignore
     else

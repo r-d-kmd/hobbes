@@ -3,7 +3,7 @@
     "_rev": "6-59575fa96cb3ceadcc7e094500b52eba",
     "views": {
       "srcproj": {
-        "map": "function (doc) {\n  var srcproj = doc._id.split(\":\");\n  emit(srcproj[0] + \":\" + srcproj[1], 1);\n}"
+        "map": "function (doc) {\n  var srcproj = [doc.Source,doc.Project];\n  emit(srcproj, doc._id);\n}"
       }
     },
     "language": "javascript"

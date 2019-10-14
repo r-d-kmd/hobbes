@@ -18,6 +18,16 @@ open Fake.Core
 open Fake.DotNet
 open Fake.DotNet.NuGet
 
+let run command workingDir args = 
+        let arguments = 
+            args |> String.split ' ' |> Arguments.OfArgs
+        RawCommand (command, arguments)
+        |> CreateProcess.fromCommand
+        |> CreateProcess.withWorkingDirectory workingDir
+        |> CreateProcess.ensureExitCode
+        |> Proc.run
+        |> ignore
+
 let build configuration workingDir =
         let args = sprintf "--output ../bin/%s --configuration %s" configuration configuration
         let result =
@@ -33,11 +43,8 @@ Target.create "ReleaseBuild" (fun _ ->
 )
 
 Target.create "Test" (fun _ ->
+    run "docker-compose" "." "up --build --force-recreate"
     DotNet.test (DotNet.Options.withWorkingDirectory "./tests") ""
-)
-
-Target.create "SystemTest" (fun _ ->
-    DotNet.test (DotNet.Options.withWorkingDirectory "./tests/SystemTests") ""
 )
 
 let inline (@@) p1 p2 = 
@@ -107,20 +114,6 @@ Target.create "PublishPackage" (fun _ ->
             }) "src/hobbes.nuspec"
 )
 
-let run command workingDir args = 
-        let arguments = 
-            args |> String.split ' ' |> Arguments.OfArgs
-        RawCommand (command, arguments)
-        |> CreateProcess.fromCommand
-        |> CreateProcess.withWorkingDirectory workingDir
-        |> CreateProcess.ensureExitCode
-        |> Proc.run
-        |> ignore
-
-Target.create "SystemTest" (fun _ ->
-    run "docker-compose" "." "up --build --force-recreate"
-    
-)
 
 Target.create "PushToDocker" (fun _ ->
     let dockerOrg = "kmdrd"
@@ -151,9 +144,6 @@ open Fake.Core.TargetOperators
 
 "Clean"
    ==> "Build"
-
-"Test"
-   ==> "SystemTest"
 
 "Clean"
    ==> "ReleaseBuild"

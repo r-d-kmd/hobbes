@@ -3,9 +3,9 @@ image: Visual Studio 2017
 
 environment:
   DOCKER_USER:
-    secure: xxxxxxx
+    secure: CbwbpNPxLV9AwhjSpIz7LA==
   DOCKER_PASS:
-    secure: yyyyyyy
+    secure: /T9ITfudL23Ga+Mz7oRaVA==
 
 install:
   - docker version
@@ -19,9 +19,9 @@ build_script:
   - fake build --target build
 
 test_script:
-  - fake build --target systemtest
+  - fake build --target test
 
-#deploy_script:
-#  - docker login -u="$env:DOCKER_USER" -p="$env:DOCKER_PASS"
-#  - fake build --target pushtodocker
+deploy_script:
+  - docker login -u="$env:DOCKER_USER" -p="$env:DOCKER_PASS"
+  - fake build --target pushtodocker
 

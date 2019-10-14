@@ -6,68 +6,62 @@ open Hobbes.Server.Db
 open FSharp.Data
 open Hobbes.Server.Security
 
-let invalidateCache (conf : DataConfiguration.Configuration) =
+let private invalidateCache (conf : DataConfiguration.Configuration) =
     let id = conf.Source.SourceName + ":" + conf.Source.ProjectName
     cache.Views.["srcproj"].List(IdRecord.Parse, startKey = id, endKey = id)
     |> Array.map(fun cache -> Cache.delete cache.Id)
 
 let data configurationName =
-    let cacheKey = configurationName
+    let configuration = DataConfiguration.get configurationName
+    let uncachedTransformations, data =
+        Cache.findUncachedTransformations configuration
+
+    let cachedTransformations = 
+        configuration.Transformations
+        |> List.filter(fun t -> 
+            uncachedTransformations 
+            |> List.tryFind(fun t' -> t = t')   
+            |> Option.isNone
+        )  
+
+    let cachekeyPrefix = 
+        {
+            configuration with
+                Transformations = cachedTransformations
+        }
+
+    let transformations = 
+        Transformations.load uncachedTransformations
+        
     let data = 
-        match cacheKey
-              |> Cache.tryRetrieve with
-        None ->
-            printfn "Cache miss %s" cacheKey
-            let configuration = DataConfiguration.get configurationName
-            let datasetKey =
-                [configuration.Source.SourceName;configuration.Source.ProjectName]
-            let rawData = Rawdata.list datasetKey
-             
-            let transformations = 
-                Transformations.load configuration.Transformations
-                |> Seq.fold(fun st t -> st @ [Hobbes.FSharp.Compile.expressions t.Lines]) []
+        match data with
+        None -> 
+            printfn "Cache miss %s" configurationName
+            let datasetKey = [configuration.Source.SourceName;configuration.Source.ProjectName]
+            Rawdata.list datasetKey
+        | Some data -> data
+   
+    let data = 
+        transformations
+        |> Seq.fold(fun (data, (prefix : DataConfiguration.Configuration)) transformation -> 
+            let data =  Hobbes.FSharp.Compile.expressions transformation.Lines data
+            let prefix = 
+                { prefix with
+                    Transformations = prefix.Transformations@[transformation.Id]
+                } 
+            async {
+                data.ToJson(Column)
+                |> Cache.store prefix 
+                |> ignore
+            } |> Async.Start
+            data, prefix
+        )  (data, cachekeyPrefix)
+        |> fst
+        |> DataMatrix.ToJson Csv
 
-            
-            let nextData =  rawData
-                            |> Seq.map(fun (columnName,values) -> 
-                                               columnName, values.ToSeq()
-                                               |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
-                            ) |> DataMatrix.fromTable                                                                
-           
-                
-            let saveIntermediateResultToCache data transLength =
-                let transNames = configuration.Transformations
-                let rec aux  data name counter =
-                    match counter with
-                    | _ when counter < transLength -> 
-                        let nextData = data |> transformations.[counter]
-                        let newName = (name + ":" + transNames.[counter])
-                        async {
-                            nextData.ToJson(Column)
-                            |> Cache.store (System.String.Join(':', datasetKey) + newName)
-                            |> ignore
-                        } |> Async.Start
-                        
-                        aux (nextData) newName (counter + 1)
-                    | _ -> data.ToJson(Column)
-                aux data "" 0                                    
-                
-            saveIntermediateResultToCache nextData transformations.Length
-
-        | Some data ->
-            printfn "Cache hit %s" cacheKey
-            let table = 
-                [|data.ToString() 
-                  |> TableView.Parse|]
-                |> TableView.toTable
-                |> Seq.map(fun (columnName,values) -> 
-                        columnName, values.ToSeq()
-                                     |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
-                ) |> DataMatrix.fromTable
-            table.ToJson(Row)
     200,data
        
-let request user pwd httpMethod body url  =
+let private request user pwd httpMethod body url  =
     let headers =
         [
             HttpRequestHeaders.BasicAuth user pwd
@@ -87,7 +81,7 @@ let request user pwd httpMethod body url  =
             body = TextRequest body,
             headers = headers
         )
-let azureFields = 
+let private azureFields = 
     [
      "ChangedDate"
      "WorkITemId"
@@ -199,7 +193,7 @@ let putDocument (db : IDatabase) doc =
                             else db.TryPut(id, doc, Some rev.Value)      
     res.StatusCode, ""
 
-let uploadDesignDocument (db,file) =
+let private uploadDesignDocument (db,file) =
     async {
         let! doc = System.IO.File.ReadAllTextAsync file |> Async.AwaitTask
         return putDocument db doc |> fst
@@ -239,7 +233,10 @@ let initDb () =
                     System.IO.Directory.EnumerateDirectories("db/documents")
                     |> Seq.collect(fun dir -> 
                         System.IO.Directory.EnumerateFiles(dir,"*.json")
-                        |> Seq.map(fun f -> dbMap |> Map.find (System.IO.Path.GetDirectoryName dir),f) 
+                        |> Seq.map(fun f -> 
+                            let dbName = System.IO.Path.GetFileName dir
+                            dbMap 
+                            |> Map.find dbName,f) 
                     ) |> Seq.map uploadDesignDocument
                     |> Async.Parallel
                 return 

@@ -6,7 +6,6 @@ module DataConfiguration =
         AzureDevOps of projectName: string
         | Rally of projectName : string
         | Jira of projectName : string
-        | TeamFoundationServer of serverUrl : string * projectName : string
         | Test
         with member 
                 x.ProjectName 
@@ -14,8 +13,7 @@ module DataConfiguration =
                         match x with
                         AzureDevOps projectName
                         | Rally projectName
-                        | Jira projectName
-                        | TeamFoundationServer(_,projectName) -> projectName
+                        | Jira projectName -> projectName
                         | Test -> System.String.Empty
              member 
                 x.SourceName 
@@ -24,8 +22,17 @@ module DataConfiguration =
                         AzureDevOps _ -> "Azure DevOps"
                         | Rally _ -> "Rally"
                         | Jira  _ -> "Jira"
-                        | TeamFoundationServer _ -> "TFS"
                         | Test  _ -> "Test"
+                        
+             static member Parse (source : string) project =
+                project
+                |> match source.ToLower() with
+                   "azure devops" -> AzureDevOps
+                   | "rally" -> Rally
+                   | "jira" -> Jira
+                   | _ -> fun _ -> Test
+                
+
     type Configuration = 
         {
             Source : DataSource
@@ -36,6 +43,7 @@ module DataConfiguration =
         let record = 
             configurationName
             |> Database.configurations.Get
+       
         {
             Source = 
                 record.Dataset
@@ -44,8 +52,7 @@ module DataConfiguration =
                     | "rally" -> Rally
                     | "jira" -> Jira
                     | _ -> failwithf "Couldn't read from source %s" record.Source)
-            Transformations = record.Transformations |> List.ofArray
-
-        }     
-        
-        
+            Transformations = 
+                record.Transformations 
+                |> List.ofArray
+        }

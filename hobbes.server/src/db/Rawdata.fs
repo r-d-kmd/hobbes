@@ -37,6 +37,7 @@ module Rawdata =
         with e ->
            eprintfn "Failed to get last revision. Reason: %s" e.Message
            None
+
     let list (datasetId : string list) = 
         let startKey = 
             System.String.Join(",", datasetId) |> sprintf "[%s]"
@@ -50,6 +51,10 @@ module Rawdata =
                                                   startKey = startKey,
                                                   endKey = endKey
         ) |> TableView.toTable
+        |> Seq.map(fun (columnName,values) -> 
+            columnName, values.ToSeq()
+            |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
+        ) |> Hobbes.FSharp.DataStructures.DataMatrix.fromTable
         
 
 

@@ -1,17 +1,13 @@
 version: 1.0.{build}
-image: Visual Studio 2017
+image: Visual Studio 2019
 
 environment:
   DOCKER_USER:
     secure: CbwbpNPxLV9AwhjSpIz7LA==
   DOCKER_PASS:
     secure: /T9ITfudL23Ga+Mz7oRaVA==
-  _DOTNET_VERSION: "3.0"
-
+  
 install:
-  - ps: "[Net.ServicePointManager]::SecurityProtocol = 'Tls12'"
-  - ps: Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile .tmp\dotnet-install.ps1
-  - ps: if ((-Not (Test-Path .tmp\dotnet\dotnet.exe)) -or (((.tmp\dotnet\dotnet.exe --version) -Join '') -ne $Env:_DOTNET_VERSION)) { .tmp\dotnet-install.ps1 -Version $Env:_DOTNET_VERSION -InstallDir .tmp\dotnet } else { $Env:path = $Env:APPVEYOR_BUILD_FOLDER + "\.tmp\dotnet\dotnet.exe;" + $Env:path }
   - docker version
   - dotnet tool install fake-cli -g
   - dotnet tool install --global --version 5.198.0 paket

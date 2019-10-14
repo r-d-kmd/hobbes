@@ -300,7 +300,7 @@ module Frontend =
             |> getColumn keysColumn
         compareColumns expected actual
 
-    [<Fact>]
+    (*[<Fact>]*)
     let ``index by``() =
         let indexColumn = "Index"
         let keysColumn = "Keys"

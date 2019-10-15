@@ -17,6 +17,7 @@ before_build:
 
 build_script: 
   - fake build --target build
+  - fake build --target builddocker
 
 test_script:
   - fake build --target test

@@ -114,14 +114,14 @@ Target.create "PublishPackage" (fun _ ->
             }) "src/hobbes.nuspec"
 )
 
+let dockerFiles = System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllDirectories)
 
-Target.create "PushToDocker" (fun _ ->
+Target.create "BuildDocker" (fun _ -> 
     let dockerOrg = "kmdrd"
     let run = run "docker"
-    
-    let files = System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllDirectories)
-    printfn "Found docker files: (%A)" files
-    files
+     
+    printfn "Found docker files: (%A)" dockerFiles
+    dockerFiles
     |> Seq.iter(fun path ->
         let workingDir = System.IO.Path.GetDirectoryName path
         
@@ -130,12 +130,26 @@ Target.create "PushToDocker" (fun _ ->
             printfn "Executing: $ docker %s" args
             run workingDir args
 
+        let tag = workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last
+        build tag
+        
+    ) 
+)
+
+Target.create "PushToDocker" (fun _ ->
+    let dockerOrg = "kmdrd"
+    let run = run "docker"
+    
+    dockerFiles
+    |> Seq.iter(fun path ->
+        let workingDir = System.IO.Path.GetDirectoryName path
+        
         let push tag = 
             let args = sprintf "push %s/hobbes:%s" dockerOrg tag
             printfn "Executing: $ docker %s" args
             run workingDir args
         let tag = workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last
-        build tag
+      
         push tag
     ) 
 )
@@ -150,6 +164,8 @@ open Fake.Core.TargetOperators
    ==> "CopyFiles"
    ==> "PublishPackage"
 
-"ReleaseBuild" ==> "PushToDocker"
+   
+"ReleaseBuild" 
+   ==> "BuildDocker"
 
 Target.runOrDefaultWithArguments "Build"

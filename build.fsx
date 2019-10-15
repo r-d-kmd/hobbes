@@ -166,6 +166,7 @@ open Fake.Core.TargetOperators
 
    
 "ReleaseBuild" 
+   ==> "CopyFiles"
    ==> "BuildDocker"
 
 Target.runOrDefaultWithArguments "Build"

@@ -15,7 +15,15 @@ let private user = env "COUCHDB_USER"
 let private pwd = env "COUCHDB_PASSWORD"
 #endif
 
-type CouchDoc = JsonProvider<"""{"_id" : "dd","_rev":"jlkjkl"}""">
+type CouchDoc = JsonProvider<"""{
+    "_id" : "dd",
+    "_rev": "jlkjkl"}""">
+
+type Viewdoc = JsonProvider<"""{
+    "_id" : "dd",
+    "key": "jens",
+    "_rev": "jlkjkl"}""">
+
 
 type UserRecord = JsonProvider<"""{
   "_id": "org.couchdb.user:dev",
@@ -159,26 +167,28 @@ type IDatabase =
     abstract Delete : string -> unit
 
 and View(getter : string -> HttpResponse, name) = 
+      
+    
     let _list (startKey : string option) (endKey : string option) limit (descending : bool option) skip = 
-            let args = 
-                System.String.Join("&",
-                    [ 
-                        match  startKey, endKey  with
-                          None,None -> ()
-                          | Some key,None | None,Some key -> yield "key", key
-                          | Some startKey,Some endKey -> 
-                              yield "startkey", startKey
-                              yield "endkey", endKey
-                        match limit with
-                          None -> ()
-                          | Some l -> yield "limit", string l
-                        if descending.IsSome && descending.Value then yield "descending","true"
-                        match skip with
-                          None -> ()
-                          | Some l -> yield "skip", string l
-                    ] |> List.map(fun (a,b) -> a + "=" + b))
-            sprintf """_design/default/_view/%s/?%s""" name args
-            |> getter 
+        let args = 
+            System.String.Join("&",
+                [ 
+                    match  startKey, endKey  with
+                      None,None -> ()
+                      | Some key,None | None,Some key -> yield "key", key
+                      | Some startKey,Some endKey -> 
+                          yield "startkey", startKey
+                          yield "endkey", endKey
+                    match limit with
+                      None -> ()
+                      | Some l -> yield "limit", string l
+                    if descending.IsSome && descending.Value then yield "descending","true"
+                    match skip with
+                      None -> ()
+                      | Some l -> yield "skip", string l
+                ] |> List.map(fun (a,b) -> a + "=" + b))
+        sprintf """_design/default/_view/%s/?%s""" name args
+        |> getter 
 
     let getListFromResponse resp =
         let body = resp |> getBody 
@@ -193,6 +203,7 @@ and View(getter : string -> HttpResponse, name) =
     
     let rowCount startKey endKey = 
         (listResult startKey endKey (Some 0) None None).TotalRows
+
 
     let list (parser : string -> 'a) (startKey : string option) (endKey : string option) (descending : bool option) = 
         let rowCount = rowCount startKey endKey
@@ -215,7 +226,8 @@ and View(getter : string -> HttpResponse, name) =
         list parser startKey endKey descending
     member __.List<'a>(parser : string -> 'a, limit, ?startKey : string, ?endKey : string, ?descending) =
         (listResult startKey endKey (Some limit) descending None).Rows
-        |> Array.map(fun entry -> entry.Value.ToString() |> parser) 
+        |> Array.map(fun entry -> entry.Value.ToString() |> parser)
+
     
 
 and Database<'a> (databaseName, parser : string -> 'a) =
@@ -405,7 +417,7 @@ and Database<'a> (databaseName, parser : string -> 'a) =
                     id
                 ])
             printfn "Deleting %s from %s" id databaseName
-            
+      
             let headers =
                 [
                     HttpRequestHeaders.BasicAuth user pwd

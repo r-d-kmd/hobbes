@@ -107,6 +107,9 @@ let idsBySource (source : DataSource) =
                                   startKey =  startKey, 
                                   endKey = endKey)
 
+let InsertOrUpdate doc = 
+    db.InsertOrUpdate doc
+
 let store configuration (data : string) =
     let cacheKey = 
         configuration 

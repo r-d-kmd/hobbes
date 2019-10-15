@@ -20,7 +20,9 @@ open Fake.DotNet.NuGet
 
 let run command workingDir args = 
     let arguments = 
-        args |> String.split ' ' |> Arguments.OfArgs
+        match args |> String.split ' ' with
+        [""] -> Arguments.Empty
+        | args -> args |> Arguments.OfArgs
     RawCommand (command, arguments)
     |> CreateProcess.fromCommand
     |> CreateProcess.withWorkingDirectory workingDir

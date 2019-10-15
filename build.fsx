@@ -29,7 +29,7 @@ let run command workingDir args =
     |> ignore
 
 let dockerFiles = System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllDirectories)
-let projFiles =System.IO.Directory.EnumerateFiles("./","*.fsproj",System.IO.SearchOption.AllDirectories)
+let projFiles = System.IO.Directory.EnumerateFiles("./","*.fsproj",System.IO.SearchOption.AllDirectories)
 
 let build configuration workingDir =
     let args = sprintf "--output ./bin/%s --configuration %s" configuration configuration
@@ -41,9 +41,11 @@ Target.create "Build" (fun _ ->
     projFiles
     |> Seq.iter(fun file ->
         let workDir = System.IO.Path.GetDirectoryName file
-        build "Debug" workDir
+        if System.IO.File.Exists(System.IO.Path.Combine(workDir,"build.fsx")) then
+            run "fake" workDir ""
+        else
+            build "Debug" workDir
     )
-    
 )
 
 Target.create "ReleaseBuild" (fun _ ->

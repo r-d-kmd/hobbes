@@ -2,7 +2,6 @@
 **/.bin/
 **/Collector/
 **/db/
-**/deploy/
 **/obj/
 **/Properties/
 **/build.fsx

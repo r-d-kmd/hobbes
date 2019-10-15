@@ -6,9 +6,7 @@ open Hobbes.Server.Db
 open FSharp.Data
 open Hobbes.Server.Security
 
-let private invalidateCache (source : DataConfiguration.DataSource) =
-    Cache.idsBySource source
-    |> Array.map(fun cache -> Cache.delete cache.Id) 
+
     
 let data configurationName =
     let configuration = DataConfiguration.get configurationName
@@ -34,7 +32,7 @@ let data configurationName =
         
     let cachedData = 
         match data with
-        None -> 
+        None ->
             printfn "Cache miss %s" configurationName
             Rawdata.list configuration.Source
         | Some data -> data

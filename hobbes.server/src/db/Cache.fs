@@ -98,14 +98,6 @@ let private createKeyFromList  (cacheKey : string list) =
 
 let private createKey (configuration : Configuration) = 
     configuration.Source.SourceName::configuration.Source.ProjectName::configuration.Transformations
-let idsBySource (source : DataSource) =
-    let startKey = 
-        sprintf """["%s","%s"]""" source.SourceName source.ProjectName
-    let endKey = 
-        sprintf """["%s","%s"]""" source.SourceName source.ProjectName
-    db.Views.[sourceView].List(Database.CouchDoc.Parse, 
-                                  startKey =  startKey, 
-                                  endKey = endKey)
 
 let InsertOrUpdate doc = 
     db.InsertOrUpdate doc
@@ -162,7 +154,9 @@ let findUncachedTransformations configuration =
         | source::project::transformations as keys->
            match keys |> tryRetrieve with
            None -> 
-               source::project::(transformations |> List.rev |> List.tail |> List.rev) |> find
+               match transformations with
+               [] -> key,None
+               | transformations -> source::project::(transformations |> List.rev |> List.tail |> List.rev) |> find
            | data -> keys, data
     match find (configuration |> createKey) with
     [],_ | [_], _ | [_;_], None -> configuration.Transformations, None
@@ -173,6 +167,20 @@ let findUncachedTransformations configuration =
             |> List.tryFind(fun t -> t = transformation)
             |> Option.isNone
         ),data
+        
+let getIds (source : DataSource) = 
+    let doc = (sprintf """_design/default/_view/srcproj/?key="%s" """ (source.SourceName + ":" + source.ProjectName))
+               .Replace("\\","\\\\")
+               |> db.Get
+    (Database.List.Parse (doc.ToString())).Rows
+
+let invalidateCache (source : DataSource) =
+    getIds source
+    |> Array.map(fun doc -> 
+                    async {
+                        delete doc.Id
+                    } |> Async.Start
+                )
 
 let retrieve (configuration : Configuration) =
    (
@@ -181,3 +189,4 @@ let retrieve (configuration : Configuration) =
        |> createKeyFromList
        |> db.Get
    ).Data.ToString()
+

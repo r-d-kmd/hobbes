@@ -32,7 +32,7 @@ let dockerFiles = System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO
 let projFiles =System.IO.Directory.EnumerateFiles("./","*.fsproj",System.IO.SearchOption.AllDirectories)
 
 let build configuration workingDir =
-    let args = sprintf "--output ../bin/%s --configuration %s" configuration configuration
+    let args = sprintf "--output ./bin/%s --configuration %s" configuration configuration
     let result =
         DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "build" args 
     if result.ExitCode <> 0 then failwithf "'dotnet %s' failed in %s" "build" workingDir

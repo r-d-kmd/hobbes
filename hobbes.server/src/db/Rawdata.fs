@@ -93,7 +93,8 @@ module Rawdata =
 
         ("", makeJsonDoc (System.DateTime.Today.ToShortDateString()) data)
         |> rawdata.Post 
-
+    let InsertOrUpdate doc = 
+        rawdata.InsertOrUpdate doc
     let tryLatestId (source : DataConfiguration.DataSource) =
         let startKey, endKey = keys source 
         try

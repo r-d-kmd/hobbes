@@ -391,8 +391,8 @@ and Database<'a> (databaseName, parser : string -> 'a) =
         member this.InsertOrUpdate doc = 
             let id = (CouchDoc.Parse doc).Id
             match id |> this.TryGetRev with
-            None -> this.Put(id, doc)
-            | Some rev -> this.Put(id, doc, rev)
+            None -> this.Post(id, doc)
+            | Some rev -> this.Put(id, doc,  rev)
         member __.Delete id =
             let doc = 
                 get id
@@ -418,5 +418,5 @@ and Database<'a> (databaseName, parser : string -> 'a) =
                 headers = headers
             ) |> ignore
 
-let couch          = Database ("", ignore)
+let couch = Database ("", ignore)
 let users = Database ("_users", UserRecord.Parse)

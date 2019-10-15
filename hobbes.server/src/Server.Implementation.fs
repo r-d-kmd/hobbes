@@ -202,6 +202,7 @@ let storeConfigurations doc =
 let private uploadDesignDocument (handle,file) =
     async {
         let! doc = System.IO.File.ReadAllTextAsync file |> Async.AwaitTask
+        if System.String.IsNullOrWhiteSpace (CouchDoc.Parse doc).Rev |> not then failwithf "With initialization documents shuoldn't have _revs %s" file
         return handle doc
     }
 
@@ -214,12 +215,9 @@ let initDb () =
     let dbs = 
         [
             "transformations", Transformations.store
-            "rawdata", (fun doc ->
-                let cacheRecord = Cache.CacheRecord.Parse doc
-                Rawdata.store cacheRecord.Source cacheRecord.Project cacheRecord.Id (cacheRecord.Data.ToString().Replace("\\","\\\\"))
-            )
+            "rawdata", Rawdata.InsertOrUpdate
             "configurations", DataConfiguration.store
-            "cache", failwithf "Refuses to preload cache"
+            "cache",Cache.InsertOrUpdate
         ] 
     let systemDbs = 
         [

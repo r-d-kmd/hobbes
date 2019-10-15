@@ -59,8 +59,60 @@ Target.create "ReleaseBuild" (fun _ ->
 )
 
 Target.create "Test" (fun _ ->
-    run "docker-compose" "." "up --build --force-recreate"
-    DotNet.test (DotNet.Options.withWorkingDirectory "./tests") ""
+    
+    let envIsRunning() = 
+        let output = 
+            RawCommand ("docker", ["ps"] |> Arguments.OfArgs)
+            |> CreateProcess.fromCommand
+            |> CreateProcess.redirectOutput
+            |> Proc.run
+    
+        let containers = 
+            output.Result.Output.Split([|"\n"|], System.StringSplitOptions.RemoveEmptyEntries)
+            |> Seq.map(fun row -> 
+                row.Split([|"\t";" "|], System.StringSplitOptions.RemoveEmptyEntries)
+                |> Array.last
+            ) |> Seq.tail
+        if containers |> Seq.tryFind(fun image -> image = "front") |> Option.isSome then
+            true
+        else
+            printfn "Containers currently runnins %A" (containers |> Seq.map (sprintf "%A"))
+            false
+        
+           
+
+    let test = 
+        let rec retry count = 
+            if count > 0 && (envIsRunning() |> not) then
+                async {
+                    do! Async.Sleep 5000
+                    return! retry (count - 1)
+                }
+            else
+                async {
+                    do! Async.Sleep 20000 //the container has started but wait until it's ready
+                    printfn "Starting testing"
+                    DotNet.test (DotNet.Options.withWorkingDirectory "./tests") ""
+                }
+        retry 24
+
+    let startEnvironment = async {
+        let workDir = "./hobbes.server"
+        run "docker-compose" "./hobbes.server" "kill"
+        run "docker-compose" "./hobbes.server" "up --build --force-recreate -d"
+    }
+
+    let tasks =
+        [ 
+          startEnvironment
+          test
+        ]
+
+    tasks
+    |> Async.Parallel
+    |> Async.RunSynchronously
+    |> ignore
+    
 )
 
 let inline (@@) p1 p2 = 

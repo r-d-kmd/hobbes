@@ -44,7 +44,7 @@ Target.create "Build" (fun _ ->
     |> Seq.iter(fun file ->
         let workDir = System.IO.Path.GetDirectoryName file
         if System.IO.File.Exists(System.IO.Path.Combine(workDir,"build.fsx")) then
-            run "fake" workDir ""
+            run "fake" workDir "build"
         else
             build "Debug" workDir
     )

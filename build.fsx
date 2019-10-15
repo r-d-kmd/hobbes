@@ -19,27 +19,43 @@ open Fake.DotNet
 open Fake.DotNet.NuGet
 
 let run command workingDir args = 
-        let arguments = 
-            args |> String.split ' ' |> Arguments.OfArgs
-        RawCommand (command, arguments)
-        |> CreateProcess.fromCommand
-        |> CreateProcess.withWorkingDirectory workingDir
-        |> CreateProcess.ensureExitCode
-        |> Proc.run
-        |> ignore
+    let arguments = 
+        match args |> String.split ' ' with
+        [""] -> Arguments.Empty
+        | args -> args |> Arguments.OfArgs
+    RawCommand (command, arguments)
+    |> CreateProcess.fromCommand
+    |> CreateProcess.withWorkingDirectory workingDir
+    |> CreateProcess.ensureExitCode
+    |> Proc.run
+    |> ignore
+
+let dockerFiles = System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllDirectories)
+let projFiles = System.IO.Directory.EnumerateFiles("./","*.fsproj",System.IO.SearchOption.AllDirectories)
 
 let build configuration workingDir =
-        let args = sprintf "--output ../bin/%s --configuration %s" configuration configuration
-        let result =
-            DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "build" args 
-        if result.ExitCode <> 0 then failwithf "'dotnet %s' failed in %s" "build" workingDir
+    let args = sprintf "--output ./bin/%s --configuration %s" configuration configuration
+    let result =
+        DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "build" args 
+    if result.ExitCode <> 0 then failwithf "'dotnet %s' failed in %s" "build" workingDir
 
 Target.create "Build" (fun _ ->
-    build "Debug" "./"
+    projFiles
+    |> Seq.iter(fun file ->
+        let workDir = System.IO.Path.GetDirectoryName file
+        if System.IO.File.Exists(System.IO.Path.Combine(workDir,"build.fsx")) then
+            run "fake" workDir "build"
+        else
+            build "Debug" workDir
+    )
 )
 
 Target.create "ReleaseBuild" (fun _ ->
-    build "Release" "./"
+    projFiles
+    |> Seq.iter(fun file ->
+        let workDir = System.IO.Path.GetDirectoryName file
+        build "Release" workDir
+    )
 )
 
 Target.create "Test" (fun _ ->
@@ -55,7 +71,7 @@ let projectName = "hobbes"
 let projectDescription = "A high level language for data transformations and calculations"
 let projectSummary = projectDescription
 let releaseNotes = "Initial release"
-let buildDir = "./bin"
+let buildDir = "./src/bin"
 let packagingRoot = "./packaging"
 let packagingDir = System.IO.Path.Combine(packagingRoot, "hobbes")
 let netDir = packagingDir @@ "lib/net45" |> System.IO.Path.GetFullPath
@@ -114,7 +130,6 @@ Target.create "PublishPackage" (fun _ ->
             }) "src/hobbes.nuspec"
 )
 
-let dockerFiles = System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllDirectories)
 
 Target.create "BuildDocker" (fun _ -> 
     let dockerOrg = "kmdrd"
@@ -132,7 +147,6 @@ Target.create "BuildDocker" (fun _ ->
 
         let tag = workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last
         build tag
-        
     ) 
 )
 
@@ -164,7 +178,6 @@ open Fake.Core.TargetOperators
    ==> "CopyFiles"
    ==> "PublishPackage"
 
-   
 "ReleaseBuild" 
    ==> "CopyFiles"
    ==> "BuildDocker"

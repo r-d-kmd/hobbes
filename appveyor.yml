@@ -14,7 +14,6 @@ install:
 
 before_build:
   - paket install
-  - mkdir "c:\projects\hobbes\hobbes.server\db"
   - mkdir "c:\projects\hobbes\hobbes.server\db\data"
 
 build_script: 

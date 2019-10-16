@@ -272,9 +272,14 @@ and Database<'a> (databaseName, parser : string -> 'a) =
                     body = TextRequest body,
                     headers = headers
                 )
-
-        printfn "Response status code : %d. Url: %s" resp.StatusCode resp.ResponseUrl
-        if silentErrors || (resp.StatusCode >= 200 && resp.StatusCode < 300) then
+        let failed = resp.StatusCode < 200 || resp.StatusCode >= 300
+        if failed then
+            eprintfn "Response status code : %d. Url: %s. Body: %s" 
+                resp.StatusCode 
+                resp.ResponseUrl
+                (resp |> getBody |> fun b -> b.Substring(0,min 500 b.Length)) 
+         
+        if silentErrors || not(failed) then
             resp
         else
             failwithf "Server error %d. Reason: %s" resp.StatusCode (resp |> getBody)

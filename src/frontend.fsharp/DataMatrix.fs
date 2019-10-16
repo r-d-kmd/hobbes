@@ -741,7 +741,8 @@ module DataStructures =
                         )
                      ) |> sprintf "[%s]"
                 | Csv ->
-                    ("\r\n",frame
+                    let rows = 
+                        frame
                          |> Frame.getCols
                          |> Series.observations
                          |> Seq.map(fun (columnName, values) ->
@@ -753,8 +754,8 @@ module DataStructures =
                                                | Some v -> v.ToString().Replace(":",";")
                                            ) |> List.ofSeq)
                          ) |> Seq.transpose
-                         |> Seq.map(fun s -> System.String.Join(":",s)))
-                    |> System.String.Join
+                         |> Seq.map(fun s -> System.String.Join(":",s))
+                    System.String.Join("\r\n",rows)
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module DataMatrix =
@@ -771,3 +772,5 @@ module DataStructures =
                 frame
                 |> DataMatrix
                 :> IDataMatrix
+        let ToJson format (matrix : #IDataMatrix) =
+            matrix.ToJson format

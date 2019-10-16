@@ -32,7 +32,7 @@ let private verified f =
                     403, "Unauthorized"
             | Some authToken ->
                 if authToken |> verifyAuthToken then
-                    f ctx
+                    f()
                 else 
                     403, "Unauthorized"
         (setStatusCode statusCode
@@ -42,30 +42,34 @@ let private data configurationName =
     verified (fun _ -> Implementation.data configurationName)
 
 let private sync configurationName =
-    let executer (ctx : HttpContext) =
+    fun f (ctx : HttpContext) ->
         try
             match ctx.TryGetRequestHeader "PAT" with
             Some pat ->
-                Implementation.sync pat configurationName
-            | None -> 403,"Unauthorized"
+                verified (fun () -> Implementation.sync pat configurationName) f ctx
+            | None -> 
+                (setStatusCode 403 >=> setBodyFromString "Unauthorized") f ctx
         with e -> 
             eprintfn "Couldn't sync %s. Reason: %s" configurationName e.Message
-            500, e.Message
-            
-    verified executer
+            (setStatusCode 500 >=> setBodyFromString e.Message) f ctx
 
-let private putDocument (db : Database<'a>) name =
-    fun (next : HttpFunc) (ctx : HttpContext) ->
+let private putDocument (handler : string -> int * string) _ =
+    fun next (ctx : HttpContext) ->
         task {
             let! body = ctx.ReadBodyFromRequestAsync()
-            return! verified (fun _ -> Implementation.putDocument db name body) next ctx
+            return! verified (fun _ -> handler body) next ctx
         }
 
-let initDb _ = 
-    let statusCode, body = Implementation.initDb()
-    setStatusCode statusCode >=> setBodyFromString body
+let private initDb() =
+    let sc = Implementation.initDb()
+    setStatusCode sc >=> setBodyFromString ""
+
 let private key token =
     let statusCode,body = Implementation.key token
+    setStatusCode statusCode >=> setBodyFromString body
+
+let private ping() = 
+    let statusCode,body = Implementation.ping()
     setStatusCode statusCode >=> setBodyFromString body
 
 let private apiRouter = router {
@@ -73,11 +77,11 @@ let private apiRouter = router {
     
     getf "/data/%s" data
     getf "/key/%s" key
-    get "/ping" (setStatusCode 200 >=> setBodyFromString "pong")
-    getf "/init"  initDb
+    getf "/ping" ping
+    getf "/init" initDb
     getf "/sync/%s" sync
-    putf "/configurations/%s" (putDocument configurations)
-    putf "/transformations/%s" (putDocument transformations)
+    putf "/configurations" (putDocument Implementation.storeConfigurations)
+    putf "/transformations" (putDocument Implementation.storeTransformations)
 }
 
 let private appRouter = router {

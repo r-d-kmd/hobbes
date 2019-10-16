@@ -17,8 +17,11 @@ module Compile =
         expressions
         |> Seq.fold(fun f' transform -> f' >> (fun (d : IDataMatrix) -> d.Transform transform)) id
         
-    let expressions lines : IDataMatrix -> IDataMatrix = 
+    let expressions (lines : #seq<string>) : IDataMatrix -> IDataMatrix = 
         let e = 
-            Parser.parse lines
-            |> parsedExpressions
+            match lines with
+            l when l |> Seq.isEmpty  -> id
+            | lines ->
+                Parser.parse lines
+                |> parsedExpressions
         fun table -> table |> e //(Why not just return e?)

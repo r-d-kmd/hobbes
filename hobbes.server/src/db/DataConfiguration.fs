@@ -1,12 +1,19 @@
 namespace Hobbes.Server.Db
 
-module DataConfiguration =
+open FSharp.Data
 
+module DataConfiguration =
+    type private ConfigurationRecord = JsonProvider<"""{
+        "_id" : "name",
+        "source" : "name of source such as Azure DevOps, Rally or Jira",
+        "dataset" : "name of the dataset. Eg a project name in azure devops",
+        "transformations" : ["transformation 1", "transformation 2"]
+    }""">
+    let private db = Database.Database("configurations", ConfigurationRecord.Parse)
     type DataSource = 
         AzureDevOps of projectName: string
         | Rally of projectName : string
         | Jira of projectName : string
-        | TeamFoundationServer of serverUrl : string * projectName : string
         | Test
         with member 
                 x.ProjectName 
@@ -14,8 +21,7 @@ module DataConfiguration =
                         match x with
                         AzureDevOps projectName
                         | Rally projectName
-                        | Jira projectName
-                        | TeamFoundationServer(_,projectName) -> projectName
+                        | Jira projectName -> projectName
                         | Test -> System.String.Empty
              member 
                 x.SourceName 
@@ -24,18 +30,30 @@ module DataConfiguration =
                         AzureDevOps _ -> "Azure DevOps"
                         | Rally _ -> "Rally"
                         | Jira  _ -> "Jira"
-                        | TeamFoundationServer _ -> "TFS"
                         | Test  _ -> "Test"
+                        
+             static member Parse (source : string) project =
+                project
+                |> match source.ToLower() with
+                   "azure devops" -> AzureDevOps
+                   | "rally" -> Rally
+                   | "jira" -> Jira
+                   | _ -> fun _ -> Test
+                
+
     type Configuration = 
         {
             Source : DataSource
             Transformations : string list
         }
-
+    let store doc = 
+       db.InsertOrUpdate doc
+    
     let get configurationName =
         let record = 
             configurationName
-            |> Database.configurations.Get
+            |> db.Get
+       
         {
             Source = 
                 record.Dataset
@@ -44,8 +62,7 @@ module DataConfiguration =
                     | "rally" -> Rally
                     | "jira" -> Jira
                     | _ -> failwithf "Couldn't read from source %s" record.Source)
-            Transformations = record.Transformations |> List.ofArray
-
-        }     
-        
-        
+            Transformations = 
+                record.Transformations 
+                |> List.ofArray
+        }

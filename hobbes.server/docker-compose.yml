@@ -17,8 +17,6 @@ services:
       - COUCHDB_PASSWORD=password
       - SERVER_PORT=8085
       - KEY_SUFFIX=2804de67ba6979c756e8759e44fe4
-    volumes:
-      - ./vsdbg:/vsdbg
   db:
     image: apache/couchdb
     container_name: db

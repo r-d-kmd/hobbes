@@ -1,0 +1,9 @@
+{
+    "_id": "_design/default",
+    "views": {
+      "srcproj": {
+        "map": "function (doc) {\n  var srcproj = [doc.Source,doc.Project];\n  emit(srcproj, doc._id);\n}"
+      }
+    },
+    "language": "javascript"
+}

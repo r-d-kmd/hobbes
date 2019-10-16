@@ -1,0 +1,12 @@
+{
+  "_id": "_design/default",
+  "views": {
+    "table": {
+      "map": "function(doc){\r\n  \r\n  var columnNames = [];\r\n  var values = [];\r\n  var map = [];\r\n  \r\n    if(doc.source == \"Azure DevOps\") {\r\n      var index = 0;\r\n      for(o in doc.data.value) {\r\n        buildMap(\"\", doc.data.value[o], index++);\r\n      }\r\n        \r\n      for(i in map) {\r\n        columnNames.push(map[i][0]);\r\n        map[i].shift();\r\n        values.push(map[i]);\r\n      }\r\n      emit([doc.source, doc.project], {\"columnNames\": columnNames, \"values\": values});\r\n    }\r\n  \r\n  function add(array, key, value, index) {\r\n    var existed = false;\r\n    for(x in array) {\r\n      if(array[x][0] == key) {\r\n        addNull(array[x], index - (array[x].length - 1));\r\n        array[x].push(value);\r\n        existed = true;\r\n      }\r\n    }\r\n    if(!existed) {\r\n      var entry = [];\r\n      entry.push(key);\r\n      addNull(entry, index)\r\n      entry.push(value);\r\n      array.push(entry);\r\n    }\r\n  }\r\n  \r\n  function addNull(array, n)\r\n  {\r\n    for(var i = 0; i < n; i++) {\r\n        array.push(null);\r\n      }\r\n  }\r\n    \r\n    function buildMap(prefix, o, index) {\r\n      for (tag in o) {\r\n        if(typeof o[tag] == 'object') buildMap(prefix + \".\" + tag, o[tag], index)\r\n        else {\r\n          var dottedName = prefix + \".\" + tag;\r\n          var name = dottedName.substring(1, dottedName.length);\r\n          add(map, name, o[tag], index);\r\n        }\r\n      }\r\n    }\r\n}"
+    },
+    "WorkItemRevisions" : {
+      "map": "function(doc){emit([doc.source,doc.project], doc._rev);}"
+    }
+  },
+  "language": "javascript"
+}

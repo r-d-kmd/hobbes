@@ -10,21 +10,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="db/Database.fs" />
-    <Compile Include="db/DataConfiguration.fs" />
     <Compile Include="db/Transformations.fs" />
+    <Compile Include="db/DataConfiguration.fs" />
     <Compile Include="db/Cache.fs" />
     <Compile Include="db/Rawdata.fs"/>
 
     <Compile Include="Security.fs" />
     <Compile Include="Server.Implementation.fs" />
     <Compile Include="Server.fs" />
-    <None Include="db\design_documents\design_rawdata.json">
+    <None Include="db/documents/**/*.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="db\design_documents\design_cache.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

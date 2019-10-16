@@ -50,35 +50,41 @@ let private sync configurationName =
             eprintfn "Couldn't sync %s. Reason: %s" configurationName e.Message
             (setStatusCode 500 >=> setBodyFromString e.Message) f ctx
 
-let private putDocument (handler : string -> int * string) _ =
+let private putDocument (handler : string -> int * string) : HttpHandler =
     fun next (ctx : HttpContext) ->
         task {
             let! body = ctx.ReadBodyFromRequestAsync()
             return! verified (fun _ -> handler body) next ctx
         }
 
-let private initDb() =
-    let sc = Implementation.initDb()
-    setStatusCode sc >=> setBodyFromString ""
+let private initDb : HttpHandler =
+    fun next ctx ->
+        task {
+          let sc = Implementation.initDb()
+          return! (setStatusCode sc >=> setBodyFromString "") next ctx
+        }
 
 let private key token =
     let statusCode,body = Implementation.key token
     setStatusCode statusCode >=> setBodyFromString body
 
-let private ping() = 
-    let statusCode,body = Implementation.ping()
-    setStatusCode statusCode >=> setBodyFromString body
+let private ping : HttpHandler =
+    fun next ctx -> 
+        task { 
+            let statusCode,body = Implementation.ping()
+            return! (setStatusCode statusCode >=> setBodyFromString body) next ctx
+        }
 
 let private apiRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
     getf "/data/%s" data
     getf "/key/%s" key
-    getf "/ping" ping
-    getf "/init" initDb
+    get "/ping" ping
+    get "/init" initDb
     getf "/sync/%s" sync
-    putf "/configurations" (putDocument Implementation.storeConfigurations)
-    putf "/transformations" (putDocument Implementation.storeTransformations)
+    put "/configurations" (putDocument Implementation.storeConfigurations)
+    put "/transformations" (putDocument Implementation.storeTransformations)
 }
 
 let private appRouter = router {

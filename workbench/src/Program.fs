@@ -65,7 +65,7 @@ let main args =
         with e -> 
             printfn "%s" e.Message
             None
-            
+
     match results with
     None -> 0
     | Some results ->
@@ -77,7 +77,6 @@ let main args =
         | Tests ->
             Workbench.Tests.test()
             |> printfn "%A"
-            0
         | PublishTransformations ->
             let environment = 
                 match results.TryGetResult Environment with
@@ -87,14 +86,20 @@ let main args =
                 match environment with
                   Development -> "http://localhost:8080"
                   | Production -> "https://hobbes.azurewebsites.net"
-                + "/transformations"
+                + "/api/transformations"
             let pat = results.GetResult PAT
             transformations()
             |> List.iter(fun transformation ->
                 Http.Request(url, 
                              httpMethod = "PUT",
                              body = TextRequest transformation,
-                             headers = [HttpRequestHeaders.BasicAuth pat ""]
+                             headers = 
+                                [
+                                   HttpRequestHeaders.BasicAuth pat ""
+                                   HttpRequestHeaders.ContentType HttpContentTypes.Json
+                                ]
                             ) |> ignore
             )
-            0
+        printfn "Press enter to exit..."
+        System.Console.ReadLine() |> ignore
+        0

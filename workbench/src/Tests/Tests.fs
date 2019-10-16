@@ -2,7 +2,8 @@ module Tests
 open Hobbes.Server.Db
 
 let invalidJsonForGandalf() = 
-    Implementation.data "1234" |> ignore
+    let configurationName = "gandalf.expandingCompletion" //"flowerpot"
+    Implementation.data configurationName |> ignore
 
 let testDbInit() =
     let intiRes = Implementation.initDb
@@ -17,6 +18,13 @@ let testGetData() =
     Implementation.data "conf1"
     |> printf "%A"
 
-let test() = 
+let getAllConfigurations() = 
     let x = DataConfiguration.get "_all_docs"
-    x
+    x |> ignore
+
+let test() = 
+    //getAllConfigurations()
+    //testDbInit()
+    invalidJsonForGandalf()
+    //testGetData()
+    

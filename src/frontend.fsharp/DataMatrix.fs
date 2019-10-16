@@ -411,9 +411,12 @@ module DataStructures =
                                 ])
                      frame
                      |> Frame.mapRowValues(fun row ->
-                         let lhs = row.GetAs<Comp> "lhs"
-                         let rhs = row.GetAs<Comp> "rhs"
-                         let res = op lhs rhs
+                         let lhs = row.TryGetAs<Comp> "lhs"
+                         let rhs = row.TryGetAs<Comp> "rhs"
+                         let res = 
+                             match lhs, rhs with
+                             OptionalValue.Missing, _ | _, OptionalValue.Missing -> false
+                             | lhs, rhs -> op lhs.Value rhs.Value
                          res :> Comp
                      )
             match exp with

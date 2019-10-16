@@ -207,10 +207,10 @@ let uploadDesignDocument db body =
     putDocument db "_design/default" body |> fst
     
 
-let initDb =
+let initDb() =
     let dbStatusCode = ["_replicator"; "_global_changes"; "_users"; "transformations"; "rawdata"; "configurations"]
                        |> List.map (fun n -> couch.TryPut(n, "").StatusCode)
-                       |> List.tryFind (fun sc -> sc < 200 || (400 >= sc && sc <> 412))
+                       |> List.tryFind (fun sc -> sc <> 412 || (sc < 300 && sc >= 200))
 
     let designDocument = System.IO.File.ReadAllText "db\\design_documents\\design_rawdata.json"
     let designStatusCode = uploadDesignDocument rawdata designDocument         

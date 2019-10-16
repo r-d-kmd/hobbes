@@ -273,10 +273,13 @@ module TableView =
                    None -> map.Add(columnName, columnValues)
                    | Some vs -> map.Add(columnName, vs.Append columnValues)
                ) map
+               
             //Values can have empty cells in the end but needs to be aligned on the first element
-            let maxLength = 
-                (values
-                 |> Array.maxBy(fun a -> a.Length)).Length
+            let maxLength =
+                if values |> Array.isEmpty then 0
+                else 
+                    (values
+                     |> Array.maxBy(fun a -> a.Length)).Length
             count + maxLength, map
         ) (0,Map.empty)
         |> snd
@@ -317,7 +320,7 @@ type View(getter, name) =
             |> getter 
             |> List.Parse
     let list (parser : string -> 'a) (startKey : string option) (endKey : string option) (descending : bool option) = 
-        let rowCount = (_list startKey endKey None descending None).TotalRows
+        let rowCount = (_list startKey endKey (Some 1) descending None).TotalRows
         let limit = 100
         
         //max %limit records at a time
@@ -332,7 +335,6 @@ type View(getter, name) =
         (_list startKey endKey (Some limit) descending None).Rows
         |> Array.map(fun entry -> entry.Value.ToString() |> parser) 
     
-
 and Database<'a> (databaseName, parser : string -> 'a)  =
     let mutable _views : Map<string,View> = Map.empty
     let urlWithId (id : string) = 

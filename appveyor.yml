@@ -24,6 +24,6 @@ test_script:
   - fake build --target test
 
 deploy_script:
-  - docker login -u="$env:DOCKER_USER" -p="$env:DOCKER_PASS"
-  - fake build --target pushtodocker
+  - sh docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}"
+  - sh fake build --target pushtodocker
 

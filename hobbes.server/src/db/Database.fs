@@ -277,7 +277,7 @@ and Database<'a> (databaseName, parser : string -> 'a) =
             eprintfn "Response status code : %d. Url: %s. Body: %s" 
                 resp.StatusCode 
                 resp.ResponseUrl
-                (resp |> getBody |> fun b -> b.Substring(0,min 500 b.Length)) 
+                (resp |> getBody |> fun b -> b.Substring(0,min 1000 b.Length)) 
          
         if silentErrors || not(failed) then
             resp

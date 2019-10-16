@@ -1,4 +1,4 @@
-module Tests
+module Workbench.Tests
 open Hobbes.Server.Db
 
 let getData conf = 

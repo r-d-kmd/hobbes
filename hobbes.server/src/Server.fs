@@ -61,10 +61,9 @@ let private putDocument (db : Database<'a>) name =
             return! verified (fun _ -> Implementation.putDocument db name body) next ctx
         }
 
-let private initDb =
-    let (sc, body) = Implementation.initDb
-    setStatusCode sc >=> setBodyFromString body
-
+let initDb _ = 
+    let statusCode, body = Implementation.initDb()
+    setStatusCode statusCode >=> setBodyFromString body
 let private key token =
     let statusCode,body = Implementation.key token
     setStatusCode statusCode >=> setBodyFromString body
@@ -75,7 +74,7 @@ let private apiRouter = router {
     getf "/data/%s" data
     getf "/key/%s" key
     get "/ping" (setStatusCode 200 >=> setBodyFromString "pong")
-    get "/init" initDb
+    getf "/init"  initDb
     getf "/sync/%s" sync
     putf "/configurations/%s" (putDocument configurations)
     putf "/transformations/%s" (putDocument transformations)

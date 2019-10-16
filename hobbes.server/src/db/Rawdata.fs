@@ -46,10 +46,12 @@ module Rawdata =
                 [source;project] -> [source;project + "a"]
                 | _ -> datasetId
             ) |> sprintf "[%s]"
-        rawdata.Views.["table"].List(TableView.Parse,
-                                                  startKey = startKey,
-                                                  endKey = endKey
-        ) |> TableView.toTable
+        let data = 
+            rawdata.Views.["table"].List(TableView.Parse,
+                                                      startKey = startKey,
+                                                      endKey = endKey
+            ) 
+        data |> TableView.toTable
         
 
 

@@ -39,8 +39,8 @@ type Expression =
              | Equal(a,b) -> sprintf " %s = %s" (a.ToString()) (b.ToString())
              | If(condition, thenBody, elseBody) ->
                  sprintf " if [%s] {%s} else {%s}" (condition.ToString()) (thenBody.ToString()) (elseBody.ToString())
-             | Or(a,b) -> sprintf " %s || %s "  (a.ToString()) (b.ToString())
-             | And(a,b) -> sprintf " %s && %s "  (a.ToString()) (b.ToString())
+             | Or(a,b) -> sprintf " (%s) || (%s) "  (a.ToString()) (b.ToString())
+             | And(a,b) -> sprintf " (%s) && (%s) "  (a.ToString()) (b.ToString())
              | NumberConstant i -> i |> string
              | Gt(a,b) ->  sprintf " %s > %s" (a.ToString()) (b.ToString())
              | Not e -> sprintf "!%s" (e.ToString())

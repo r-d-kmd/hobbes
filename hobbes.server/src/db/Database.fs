@@ -274,7 +274,7 @@ and Database<'a> (databaseName, parser : string -> 'a) =
                 )
         let failed = resp.StatusCode < 200 || resp.StatusCode >= 300
         if failed then
-            eprintfn "Response status code : %d. Url: %s. Body: %s" 
+            printfn "Response status code : %d. Url: %s. Body: %s" 
                 resp.StatusCode 
                 resp.ResponseUrl
                 (resp |> getBody |> fun b -> b.Substring(0,min 1000 b.Length)) 

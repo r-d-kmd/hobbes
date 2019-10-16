@@ -146,7 +146,12 @@ let CleanDirs dirs =
     )   
 
 Target.create "Clean" (fun _ ->
-    CleanDirs [buildDir; packagingRoot; packagingDir; netDir]
+    CleanDirs [
+        buildDir
+        packagingRoot
+        packagingDir 
+        netDir
+    ]
     
 )
 Target.create "CopyFiles" (fun _ -> 

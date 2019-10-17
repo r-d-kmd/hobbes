@@ -200,7 +200,7 @@ let storeConfigurations doc =
 let private uploadDesignDocument (handle,file) =
     async {
         let! doc = System.IO.File.ReadAllTextAsync file |> Async.AwaitTask
-        if System.String.IsNullOrWhiteSpace (CouchDoc.Parse doc).Rev |> not then failwithf "With initialization documents shuoldn't have _revs %s" file
+        if System.String.IsNullOrWhiteSpace (CouchDoc.Parse doc).Rev |> not then failwithf "Initialization documents shouldn't have _revs %s" file
         return handle doc
     }
 
@@ -226,27 +226,23 @@ let initDb () =
     let errorCode = 
         (dbs |> List.map fst)@systemDbs
         |> List.map (fun n -> couch.TryPut(n, "").StatusCode)
-        |> List.tryFind (fun sc -> sc < 200 || (400 >= sc && sc <> 412))
+        |> List.tryFind (fun sc -> sc < 200 || (400 <= sc && sc <> 412))
     (match errorCode with
      Some errorCode ->
-        errorCode
+        "error in creating dbs", errorCode
      | None ->
         let dbMap = dbs |> Map.ofList
         try
-            async {
-                return!
-                    System.IO.Directory.EnumerateDirectories("db/documents")
-                    |> Seq.collect(fun dir -> 
-                        System.IO.Directory.EnumerateFiles(dir,"*.json")
-                        |> Seq.map(fun f -> 
-                            let dbName = System.IO.Path.GetFileName dir
-                            dbMap 
-                            |> Map.find dbName,f) 
-                    ) |> Seq.map uploadDesignDocument
-                    |> Async.Parallel
-            } |> Async.RunSynchronously
-            |> ignore
-            200
-        with _ ->
-            500
+            (System.IO.Directory.EnumerateDirectories("db/documents")
+            |> Seq.collect(fun dir -> 
+                System.IO.Directory.EnumerateFiles(dir,"*.json")
+                |> Seq.map(fun f -> 
+                    let dbName = System.IO.Path.GetFileName dir
+                    dbMap 
+                    |> Map.find dbName,f) 
+            ) |> Seq.map uploadDesignDocument
+            |> Async.Parallel
+            |> Async.RunSynchronously).[0], 200
+        with e ->
+            e.Message, 500
     )

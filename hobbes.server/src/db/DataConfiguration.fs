@@ -66,3 +66,5 @@ module DataConfiguration =
                 record.Transformations 
                 |> List.ofArray
         }
+
+    let tryGetRev id = db.TryGetRev id    

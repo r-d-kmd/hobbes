@@ -42,8 +42,8 @@ let private sync configurationName =
     fun f (ctx : HttpContext) ->
         try
             match ctx.TryGetRequestHeader "PAT" with
-            Some pat ->
-                verified (fun () -> Implementation.sync pat configurationName) f ctx
+            Some azurePAT ->
+                verified (fun () -> Implementation.sync azurePAT configurationName) f ctx
             | None -> 
                 (setStatusCode 403 >=> setBodyFromString "Unauthorized") f ctx
         with e -> 

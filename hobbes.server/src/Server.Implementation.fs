@@ -197,11 +197,25 @@ let storeConfigurations doc =
     with _ -> 
         500,"internal server error"
 
-let private uploadDesignDocument (handle,file) =
+let private uploadDesignDocument (storeHandle, (hashHandle : string -> int option), file) =
     async {
         let! doc = System.IO.File.ReadAllTextAsync file |> Async.AwaitTask
         if System.String.IsNullOrWhiteSpace (CouchDoc.Parse doc).Rev |> not then failwithf "Initialization documents shouldn't have _revs %s" file
-        return handle doc
+        let designDocName = System.IO.Path.GetFileNameWithoutExtension file
+        let oldHash = designDocName
+                      |> hashHandle
+        let newDoc = (doc 
+                       |> String.filter(not << System.Char.IsWhiteSpace))
+        let newHash = newDoc.GetHashCode System.StringComparison.Ordinal //TODO "Hashcode changes when restarting program???"                  
+
+        return if oldHash.IsNone || oldHash.Value <> newHash then
+                    let id = sprintf "%s_hash" designDocName
+                    sprintf """{"_id": %A, "hash":%i }"""  id newHash
+                    |> storeHandle 
+                    |> ignore
+                    storeHandle doc
+                else 
+                    ""                                                        
     }
 
 //test if db is alive
@@ -212,10 +226,10 @@ let ping() =
 let initDb () =
     let dbs = 
         [
-            "transformations", Transformations.store
-            "rawdata", Rawdata.InsertOrUpdate
-            "configurations", DataConfiguration.store
-            "cache",Cache.InsertOrUpdate
+            "transformations", (Transformations.store, Transformations.tryGetHash)
+            "rawdata", (Rawdata.InsertOrUpdate, Rawdata.tryGetHash)
+            "configurations", (DataConfiguration.store, DataConfiguration.tryGetHash)
+            "cache", (Cache.InsertOrUpdate, Cache.tryGetHash)
         ] 
     let systemDbs = 
         [
@@ -238,8 +252,9 @@ let initDb () =
                 System.IO.Directory.EnumerateFiles(dir,"*.json")
                 |> Seq.map(fun f -> 
                     let dbName = System.IO.Path.GetFileName dir
-                    dbMap 
-                    |> Map.find dbName,f) 
+                    let handles = dbMap 
+                                  |> Map.find dbName
+                    fst handles, snd handles, f) 
             ) |> Seq.map uploadDesignDocument
             |> Async.Parallel
             |> Async.RunSynchronously).[0], 200

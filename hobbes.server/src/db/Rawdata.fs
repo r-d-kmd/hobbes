@@ -69,7 +69,7 @@ module Rawdata =
             }
         }
     }""">
-    let rawdata = 
+    let db = 
         Database.Database("rawdata", CacheRecord.Parse)
           .AddView("table")
           .AddView "WorkItemRevisions"
@@ -92,14 +92,14 @@ module Rawdata =
             } """ recordId project source
 
         ("", makeJsonDoc (System.DateTime.Today.ToShortDateString()) data)
-        |> rawdata.Post 
+        |> db.Post 
     let InsertOrUpdate doc = 
-        rawdata.InsertOrUpdate doc
+        db.InsertOrUpdate doc
     let tryLatestId (source : DataConfiguration.DataSource) =
         let startKey, endKey = keys source 
         try
             let record = 
-                (rawdata.Views.["WorkItemRevisions"].List(WorkItemRevisionRecord.Parse,1,
+                (db.Views.["WorkItemRevisions"].List(WorkItemRevisionRecord.Parse,1,
                                                          descending = true, 
                                                          startKey = startKey,
                                                          endKey = endKey
@@ -112,7 +112,7 @@ module Rawdata =
 
     let list (source : DataConfiguration.DataSource) = 
         let startKey, endKey = keys source 
-        rawdata.Views.["table"].List(TableView.parse,
+        db.Views.["table"].List(TableView.parse,
                                                   startKey = startKey,
                                                   endKey = endKey
         ) |> TableView.toTable
@@ -121,6 +121,7 @@ module Rawdata =
             |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
         ) |> Hobbes.FSharp.DataStructures.DataMatrix.fromTable
         
-    let tryGetRev id = rawdata.TryGetRev id    
+    let tryGetRev id = db.TryGetRev id  
+    let tryGetHash id = db.TryGetHash id  
 
 

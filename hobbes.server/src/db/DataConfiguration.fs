@@ -67,4 +67,5 @@ module DataConfiguration =
                 |> List.ofArray
         }
 
-    let tryGetRev id = db.TryGetRev id    
+    let tryGetRev id = db.TryGetRev id  
+    let tryGetHash id = db.TryGetHash id  

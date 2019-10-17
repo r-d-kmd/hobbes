@@ -3,26 +3,27 @@
 open Argu
 open FSharp.Data
 
-
-type ExecutionMode = 
-    Tests
-    | PublishTransformations
-
 type Environment = 
     Development
     | Production
 
 type CLIArguments =
-    | ExecutionMode of ExecutionMode 
+    Tests
+    | PublishTransformations
+    | Sync of string
     | Environment of Environment
     | PAT of string
+    | AzureToken of string
 with
     interface IArgParserTemplate with
         member s.Usage =
             match s with
-            | ExecutionMode _-> "Should the tests be run or should the transformations be published to the specified environment"
+            | Tests -> "Flags that the tests should be run"
+            | PublishTransformations -> "Publish the transformations to either development or production (set by environment)"
+            | Sync _ -> "When sync-ing a project from azure"
             | Environment _ -> "Environment to publish transformations to"
             | PAT _ -> "The Private Access Token to use when posting transformations"
+            | AzureToken _ -> "The token to use for authentication when syncronizing from Azure DevOps"
 
 let parse stmt =
     let stmt = stmt |> string
@@ -73,20 +74,34 @@ let main args =
             match results.TryGetResult ExecutionMode with
             None -> Tests
             | Some e -> e
+        let environment = 
+            match results.TryGetResult Environment with
+            None -> Development
+            | Some e -> e
+        let environmentHost = 
+            match environment with
+            Development -> "http://localhost:8080"
+            | Production -> "https://hobbes.azurewebsites.net"
         match executionMode with
         | Tests ->
             Workbench.Tests.test()
             |> printfn "%A"
+        | Sync configurationName ->
+            let pat = results.GetResult PAT
+            
+            let url = environmentHost + "/api/sync/" + configurationName
+            let azurePat = results.GetResult AzureToken
+            Http.Request(url, 
+                             httpMethod = "GET",
+                             headers = 
+                                [
+                                   HttpRequestHeaders.BasicAuth pat ""
+                                   ("PAT",azurePat)
+                                   HttpRequestHeaders.ContentType HttpContentTypes.Json
+                                ]
+                            ) |> ignore
         | PublishTransformations ->
-            let environment = 
-                match results.TryGetResult Environment with
-                None -> Development
-                | Some e -> e
-            let url = 
-                match environment with
-                  Development -> "http://localhost:8080"
-                  | Production -> "https://hobbes.azurewebsites.net"
-                + "/api/transformations"
+            let url = environmentHost+ "/api/transformations"
             let pat = results.GetResult PAT
             transformations()
             |> List.iter(fun transformation ->
@@ -100,6 +115,5 @@ let main args =
                                 ]
                             ) |> ignore
             )
-        printfn "Press enter to exit..."
-        System.Console.ReadLine() |> ignore
+        printfn "Done"
         0

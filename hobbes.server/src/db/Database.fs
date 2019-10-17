@@ -38,6 +38,7 @@ type UserRecord = JsonProvider<"""{
 }""">
 
 type Rev = JsonProvider<"""{"_rev": "osdhfoi94392h329020"}""">
+type Hash = JsonProvider<"""{"hash": "94392329020"}""">
 
 type DataSet = JsonProvider<"""{
     "some column" : ["rowValue1", "rowValue2"],
@@ -156,8 +157,12 @@ type IDatabase =
     abstract GetAllDocs<'a> : (string -> 'a) -> seq<'a>
     abstract Get<'a> : string -> (string -> 'a) -> 'a
     abstract TryGet : string -> (string -> 'a) -> 'a option
+    abstract GetRaw : string -> string
+    abstract TryGetRaw : string -> string Option
     abstract GetRev : string -> string
     abstract TryGetRev : string -> string option
+    abstract GetHash : string -> int
+    abstract TryGetHash : string -> int option
     abstract Put: string * string * string option -> string
     abstract TryPut: string * string * string option -> HttpResponse
     abstract Post : string * string -> string
@@ -299,9 +304,13 @@ and Database<'a> (databaseName, parser : string -> 'a) =
         this
     member this.GetAllDocs() = (this :> IDatabase).GetAllDocs<'a> parser
     member this.Get id                  = (this :> IDatabase).Get id parser
-    member this.TryGet id               = (this :> IDatabase).TryGet id parser           
+    member this.TryGet id               = (this :> IDatabase).TryGet id parser 
+    member private this.GetRaw id       = (this :> IDatabase).GetRaw id
+    member private this.TryGetRaw id    = (this :> IDatabase).TryGetRaw id          
     member this.GetRev id               = (this :> IDatabase).GetRev id               
-    member this.TryGetRev id            = (this :> IDatabase).TryGetRev id            
+    member this.TryGetRev id            = (this :> IDatabase).TryGetRev id
+    member this.GetHash id              = (this :> IDatabase).GetHash id               
+    member this.TryGetHash id           = (this :> IDatabase).TryGetHash id            
     member this.Put(path,body, ?rev)    = (this :> IDatabase).Put(path,body, rev)    
     member this.TryPut(path,body, ?rev) = (this :> IDatabase).TryPut(path,body, rev) 
     member this.Post(path,body)         = (this :> IDatabase).Post(path,body)         
@@ -339,19 +348,14 @@ and Database<'a> (databaseName, parser : string -> 'a) =
                 eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode (body.Substring(0,min 500 body.Length ))
                 None
 
-        member __.GetRev id =
-            (get id |> Rev.Parse).Rev        
+        member __.GetRaw id =
+            get id
 
-        member __.TryGetRev id = 
+        member __.TryGetRaw id = 
             let resp = tryGet id
             let body = 
                 match resp.Body with
-                Text s ->
-                    try
-                        (s |> Rev.Parse).Rev |> Some
-                    with _ ->
-                       eprintfn "Couldn't parse %s" (s.Substring(0, min 500 s.Length))
-                       None
+                Text s -> Some s
                 | _ -> 
                     eprintfn "Response body was binary"
                     None
@@ -360,7 +364,29 @@ and Database<'a> (databaseName, parser : string -> 'a) =
             else
                 let body = body.Value.ToString()
                 eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode (body.Substring(0,min 500 body.Length ))
-                None        
+                None                  
+
+        member __.GetRev id =
+            (__.GetRaw id |> Rev.Parse).Rev      
+
+        member __.TryGetRev id = 
+            match __.TryGetRaw id with
+            None -> None
+            | Some res -> Some (res |> Rev.Parse).Rev
+
+        member __.GetHash id =
+            (sprintf "%s_hash" id 
+             |> __.GetRaw 
+             |> Hash.Parse).Hash 
+             |> int      
+
+        member __.TryGetHash id = 
+            match __.TryGetRaw (sprintf "%s_hash" id) with
+            None -> None
+            | Some res -> (res 
+                           |> Hash.Parse).Hash 
+                           |> int
+                           |> Some                          
 
         member __.Put(id, body, ?rev) = 
             put body id rev

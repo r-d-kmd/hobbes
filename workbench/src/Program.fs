@@ -70,10 +70,6 @@ let main args =
     match results with
     None -> 0
     | Some results ->
-        let executionMode = 
-            match results.TryGetResult ExecutionMode with
-            None -> Tests
-            | Some e -> e
         let environment = 
             match results.TryGetResult Environment with
             None -> Development
@@ -82,11 +78,13 @@ let main args =
             match environment with
             Development -> "http://localhost:8080"
             | Production -> "https://hobbes.azurewebsites.net"
-        match executionMode with
-        | Tests ->
+        if results.TryGetResult Tests |> Option.isSome then
             Workbench.Tests.test()
             |> printfn "%A"
-        | Sync configurationName ->
+
+        (match results.TryGetResult Sync with
+         None -> ()
+         | Some configurationName ->
             let pat = results.GetResult PAT
             
             let url = environmentHost + "/api/sync/" + configurationName
@@ -99,8 +97,9 @@ let main args =
                                    ("PAT",azurePat)
                                    HttpRequestHeaders.ContentType HttpContentTypes.Json
                                 ]
-                            ) |> ignore
-        | PublishTransformations ->
+                            ) |> ignore)
+
+        if results.TryGetResult PublishTransformations |> Option.isSome then 
             let url = environmentHost+ "/api/transformations"
             let pat = results.GetResult PAT
             transformations()
@@ -115,5 +114,6 @@ let main args =
                                 ]
                             ) |> ignore
             )
+        
         printfn "Done"
         0

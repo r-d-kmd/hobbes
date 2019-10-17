@@ -10,3 +10,5 @@ let load (transformationIds : #seq<string>) =
    db.FilterByKeys transformationIds
 
 let store doc = db.InsertOrUpdate doc
+
+let tryGetRev id = db.TryGetRev id

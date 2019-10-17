@@ -60,8 +60,8 @@ let private putDocument (handler : string -> int * string) : HttpHandler =
 let private initDb : HttpHandler =
     fun next ctx ->
         task {
-          let sc = Implementation.initDb()
-          return! (setStatusCode sc >=> setBodyFromString "") next ctx
+          let (body, sc) = Implementation.initDb()
+          return! (setStatusCode sc >=> setBodyFromString body) next ctx
         }
 
 let private key token =

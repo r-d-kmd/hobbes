@@ -13,6 +13,8 @@ let test() =
     //getData "1234" //run these two lines of code to test caching
     //getData "5678"
     
-    cacheInvalidation "flowerpot"
+    //cacheInvalidation "flowerpot"
+
+    Implementation.initDb()
     
     

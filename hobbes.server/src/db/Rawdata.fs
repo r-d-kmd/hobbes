@@ -121,5 +121,6 @@ module Rawdata =
             |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
         ) |> Hobbes.FSharp.DataStructures.DataMatrix.fromTable
         
+    let tryGetRev id = rawdata.TryGetRev id    
 
 

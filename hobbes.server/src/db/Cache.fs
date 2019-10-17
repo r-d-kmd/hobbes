@@ -190,3 +190,5 @@ let retrieve (configuration : Configuration) =
        |> db.Get
    ).Data.ToString()
 
+let tryGetRev id = db.TryGetRev id
+

@@ -18,13 +18,10 @@ open Fake.Core
 open Fake.DotNet
 
 let serverPath = Path.getFullName "./"
-
-let clientDeployPath = Path.combine serverPath "deploy"
 let deployDir = Path.getFullName "./deploy"
 
 Target.create "Clean" (fun _ ->
-    [ deployDir
-      clientDeployPath ]
+    [ deployDir ]
     |> Shell.cleanDirs
 )
 
@@ -49,6 +46,8 @@ Target.create "Bundle" (fun _ ->
 )
 
 Target.create "BuildImage" (fun _ ->
+    if System.IO.Directory.Exists("./deploy/Server") |> not then failwith "Doh"
+    if System.IO.Directory.Exists("./deploy/Server/db") |> not then failwith "with What??"
     let arguments = "build -t hobbes ." |> String.split ' ' |> Arguments.OfArgs
     RawCommand ("docker", arguments)
     |> CreateProcess.fromCommand
@@ -62,8 +61,6 @@ open Fake.Core.TargetOperators
 "Clean" 
     ==> "Bundle" 
     ==> "Build"
-
-"Build"
     ==> "BuildImage"
 
 Target.runOrDefaultWithArguments "BuildImage"

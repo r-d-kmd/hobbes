@@ -1,7 +1,7 @@
 **/.fake/
 **/.bin/
 **/Collector/
-**/db/
+db/data/
 **/obj/
 **/Properties/
 **/build.fsx

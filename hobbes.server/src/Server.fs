@@ -56,6 +56,29 @@ let private putDocument (handler : string -> int * string) : HttpHandler =
             let! body = ctx.ReadBodyFromRequestAsync()
             return! verified (fun _ -> handler body) next ctx
         }
+let private listTransformations : HttpHandler =
+    fun next (ctx : HttpContext) ->
+        task {
+            return! verified (fun _ -> 
+                    let configurations = 
+                        Implementation.listTransformations()
+                        |> Seq.map (sprintf "%A")
+                    let body = sprintf """{"transformatinos" : [%s]}""" <| System.String.Join(",", configurations)
+                    200, body
+                ) next ctx
+        }
+        
+let private listConfigurations : HttpHandler =
+    fun next (ctx : HttpContext) ->
+        task {
+            return! verified (fun _ -> 
+                    let configurations = 
+                        Implementation.listConfigurations()
+                        |> Seq.map (sprintf "%A")
+                    let body = sprintf """{"configurations" : [%s]}""" <| System.String.Join(",", configurations)
+                    200, body
+                ) next ctx
+        }
 
 let private initDb : HttpHandler =
     fun next ctx ->
@@ -84,7 +107,9 @@ let private apiRouter = router {
     get "/init" initDb
     getf "/sync/%s" sync
     put "/configurations" (putDocument Implementation.storeConfigurations)
+    get "/configurations" listConfigurations
     put "/transformations" (putDocument Implementation.storeTransformations)
+    get "/transformations" listTransformations
 }
 
 let private appRouter = router {

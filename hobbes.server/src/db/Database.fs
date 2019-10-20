@@ -154,7 +154,8 @@ let private getBody (resp : HttpResponse) =
     | Text res -> res
 
 type IDatabase =
-    abstract GetAllDocs<'a> : (string -> 'a) -> seq<'a>
+    abstract ListIds : unit -> seq<string>
+    abstract List<'a> : (string -> 'a) -> seq<'a>
     abstract Get<'a> : string -> (string -> 'a) -> 'a
     abstract TryGet : string -> (string -> 'a) -> 'a option
     abstract GetRaw : string -> string
@@ -243,18 +244,19 @@ and Database<'a> (databaseName, parser : string -> 'a) =
         |> sprintf "%s/%s" dbUrl
      
     let request httpMethod silentErrors body path rev  =
-        let m =
+        let m,direction =
               match httpMethod with 
-              Get -> "GET"
-              | Post -> "POST"
-              | Put -> "PUT"
+              Get -> "GET", "from"
+              | Post -> "POST", "to"
+              | Put -> "PUT", "to"
         let url = 
             System.String.Join("/",[
                 dbServerUrl
                 databaseName
                 path
             ])
-        printfn "%sting %s from %s" m path databaseName
+            
+        printfn "%sting %s %s %s" m path direction databaseName
         
         let headers =
             [
@@ -302,7 +304,8 @@ and Database<'a> (databaseName, parser : string -> 'a) =
     member this.AddView name =
         _views <- _views.Add(name, View(tryGet,name))
         this
-    member this.GetAllDocs() = (this :> IDatabase).GetAllDocs<'a> parser
+    member this.ListIds() = (this :> IDatabase).ListIds()
+    member this.List() = (this :> IDatabase).List parser
     member this.Get id                  = (this :> IDatabase).Get id parser
     member this.TryGet id               = (this :> IDatabase).TryGet id parser 
     member private this.GetRaw id       = (this :> IDatabase).GetRaw id
@@ -319,12 +322,16 @@ and Database<'a> (databaseName, parser : string -> 'a) =
     member this.Delete id               = (this :> IDatabase).Delete id               
     member this.InsertOrUpdate doc      = (this :> IDatabase).InsertOrUpdate doc 
     interface IDatabase with
-        member __.GetAllDocs parser =
+        member __.ListIds() =
             (get "_all_docs"
              |> List.Parse).Rows
-             |> Array.map (string >> parser)
+             |> Array.map(fun r -> r.Id)
              |> Seq.ofArray
-
+        member __.List parser =
+            (get "_all_docs?include_docs=true"
+             |> List.Parse).Rows
+             |> Array.map(fun r -> r.Doc.ToString() |> parser)
+             |> Seq.ofArray
         member __.Get id parser =
             get id |> parser
 

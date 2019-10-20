@@ -441,7 +441,7 @@ and Database<'a> (databaseName, parser : string -> 'a) =
         member this.InsertOrUpdate doc = 
             let id = (CouchDoc.Parse doc).Id
             match id |> this.TryGetRev with
-            None -> this.Post("", doc)
+            None -> this.Put(id, doc)
             | Some rev -> this.Put(id, doc,  rev)
         member __.Delete id =
             let doc = 

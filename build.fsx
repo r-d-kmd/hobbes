@@ -187,7 +187,7 @@ Target.create "PublishPackage" (fun _ ->
             }) "src/hobbes.nuspec"
 )
 
-
+let createDockerTag dockerOrg tag = sprintf "%s/hobbes-%s" dockerOrg tag
 Target.create "BuildDocker" (fun _ -> 
     let dockerOrg = "kmdrd"
     let run = run "docker"
@@ -198,7 +198,7 @@ Target.create "BuildDocker" (fun _ ->
         let workingDir = System.IO.Path.GetDirectoryName path
         
         let build tag = 
-            let args = sprintf "build -t %s/hobbes:%s ." dockerOrg tag 
+            let args = sprintf "build -t %s ." <| createDockerTag dockerOrg tag
             printfn "Executing: $ docker %s" args
             run workingDir args
 
@@ -216,7 +216,7 @@ Target.create "PushToDocker" (fun _ ->
         let workingDir = System.IO.Path.GetDirectoryName path
         
         let push tag = 
-            let args = sprintf "push %s/hobbes:%s" dockerOrg tag
+            let args = sprintf "push %s" <| createDockerTag dockerOrg tag
             printfn "Executing: $ docker %s" args
             run workingDir args
         let tag = workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last
@@ -238,5 +238,6 @@ open Fake.Core.TargetOperators
 "ReleaseBuild" 
    ==> "CopyFiles"
    ==> "BuildDocker"
+   ==> "PushToDocker"
 
 Target.runOrDefaultWithArguments "Build"

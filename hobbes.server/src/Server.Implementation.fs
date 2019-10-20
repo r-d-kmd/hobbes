@@ -190,6 +190,12 @@ let storeTransformations doc =
     with _ -> 
         500,"internal server error"
 
+let listConfigurations() = 
+    DataConfiguration.list()
+
+let listTransformations() = 
+    Transformations.list()
+
 let storeConfigurations doc = 
     try
         DataConfiguration.store doc |> ignore
@@ -240,14 +246,16 @@ let initDb () =
     let errorCode = 
         (dbs |> List.map fst)@systemDbs
         |> List.map (fun n -> couch.TryPut(n, "").StatusCode)
-        |> List.tryFind (fun sc -> sc < 200 || (400 <= sc && sc <> 412))
+        |> List.tryFind (fun sc -> ((sc >= 200 && sc < 300) || (sc = 412)) |> not)
     (match errorCode with
      Some errorCode ->
         "error in creating dbs", errorCode
      | None ->
         let dbMap = dbs |> Map.ofList
         try
-            (System.IO.Directory.EnumerateDirectories("db/documents")
+            let documentDir = "db/documents"
+            if System.IO.Directory.Exists "db/documents" |> not then failwith "Document folder not found"
+            (System.IO.Directory.EnumerateDirectories(documentDir)
             |> Seq.collect(fun dir -> 
                 System.IO.Directory.EnumerateFiles(dir,"*.json")
                 |> Seq.map(fun f -> 
@@ -259,5 +267,6 @@ let initDb () =
             |> Async.Parallel
             |> Async.RunSynchronously).[0], 200
         with e ->
+            eprintfn "Error in init %s" e.Message
             e.Message, 500
     )

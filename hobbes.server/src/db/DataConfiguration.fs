@@ -48,7 +48,10 @@ module DataConfiguration =
         }
     let store doc = 
        db.InsertOrUpdate doc
-    
+
+    let list() = 
+        db.List()
+
     let get configurationName =
         let record = 
             configurationName

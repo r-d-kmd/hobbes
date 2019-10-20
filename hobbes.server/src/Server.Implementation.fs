@@ -51,9 +51,12 @@ let data configurationName =
                     } 
                 async {
                     printfn "Caching transformation"
-                    transformedData.ToJson(Column)
-                    |> Cache.store tempConfig 
-                    |> ignore
+                    try
+                        transformedData.ToJson(Column)
+                        |> Cache.store tempConfig 
+                        |> ignore
+                    with e ->
+                        eprintfn "Failed to cache transformation result. Message: %s" e.Message
                 } |> Async.Start
                 transformedData, tempConfig
             )  (cachedData, tempConfig)
@@ -104,6 +107,8 @@ let private getInitialUrl (source : DataConfiguration.DataSource) =
         initialUrl workItemRevisionId
     | None -> initialUrl 0
 
+let invalidateCache() = 
+    eprintfn "Missing implementation"
 
 let sync pat configurationName =
     let configuration = DataConfiguration.get configurationName
@@ -142,9 +147,12 @@ let sync pat configurationName =
             |> DataConfiguration.AzureDevOps
             |> getInitialUrl
             |> _sync
-        async {
-            data configurationName |> ignore
-        } |> Async.Start
+        if statusCode >= 200 && statusCode < 300 then 
+            async {
+                invalidateCache()
+                //TODO: this should loop through all configurations that uses this particular source
+                data configurationName |> ignore
+            } |> Async.Start
         statusCode, body
     | _ -> 
         404,"No reader found" 
@@ -192,6 +200,9 @@ let storeTransformations doc =
 
 let listConfigurations() = 
     DataConfiguration.list()
+
+let listCache() = 
+    Cache.list()
 
 let listTransformations() = 
     Transformations.list()

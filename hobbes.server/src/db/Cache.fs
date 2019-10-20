@@ -101,6 +101,9 @@ let private createKey (configuration : Configuration) =
 
 let InsertOrUpdate doc = 
     db.InsertOrUpdate doc
+    
+let list() = 
+    db.ListIds()
 
 let store configuration (data : string) =
     let cacheKey = 

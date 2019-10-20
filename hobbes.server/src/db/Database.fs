@@ -330,7 +330,7 @@ and Database<'a> (databaseName, parser : string -> 'a) =
         member __.List parser =
             (get "_all_docs?include_docs=true"
              |> List.Parse).Rows
-             |> Array.map(fun r -> r.Doc.ToString() |> parser)
+             |> Array.map(fun r -> r.Doc.JsonValue.ToString JsonSaveOptions.DisableFormatting |> parser)
              |> Seq.ofArray
         member __.Get id parser =
             get id |> parser

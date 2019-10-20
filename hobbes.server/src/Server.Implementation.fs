@@ -132,7 +132,7 @@ let sync pat configurationName =
                 match record with
                 Some record ->
                     let data = record.JsonValue.ToString JsonSaveOptions.DisableFormatting
-                    let responseText = Rawdata.store configuration.Source.SourceName configuration.Source.ProjectName url data
+                    let responseText = Rawdata.InsertOrUpdate data
                     if System.String.IsNullOrWhiteSpace(record.OdataNextLink) |> not then
                         printfn "Countinuing sync"
                         printfn "%s" record.OdataNextLink

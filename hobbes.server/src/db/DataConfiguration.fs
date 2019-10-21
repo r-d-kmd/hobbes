@@ -9,7 +9,10 @@ module DataConfiguration =
         "dataset" : "name of the dataset. Eg a project name in azure devops",
         "transformations" : ["transformation 1", "transformation 2"]
     }""">
-    let private db = Database.Database("configurations", ConfigurationRecord.Parse)
+    let private sourceView = "bySource"
+    let private db = 
+        Database.Database("configurations", ConfigurationRecord.Parse)
+                 .AddView(sourceView)
     type DataSource = 
         AzureDevOps of projectName: string
         | Rally of projectName : string
@@ -51,6 +54,16 @@ module DataConfiguration =
 
     let list() = 
         db.List()
+
+    let configurationsBySource (source : DataSource) = 
+        let startKey = 
+            sprintf """["%s","%s"]""" source.SourceName source.ProjectName
+        let endKey = 
+            sprintf """["%s","%s_"]""" source.SourceName source.ProjectName
+        db.Views.[sourceView].List(Database.CouchDoc.Parse, 
+                                  startKey =  startKey, 
+                                  endKey = endKey)
+        |> Seq.map(fun c -> c.Id)
 
     let get configurationName =
         let record = 

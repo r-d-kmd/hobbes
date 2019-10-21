@@ -78,11 +78,16 @@ let main args =
             match environment with
             Development -> "http://localhost:8080"
             | Production -> "https://hobbes.azurewebsites.net"
-        if results.TryGetResult Tests |> Option.isSome then
+            
+        let test = results.TryGetResult Tests 
+        let sync = results.TryGetResult Sync
+        let publish = results.TryGetResult PublishTransformations
+
+        if  test.IsSome || (sync.IsNone && publish.IsNone) then
             Workbench.Tests.test()
             |> printfn "%A"
 
-        (match results.TryGetResult Sync with
+        (match sync with
          None -> ()
          | Some configurationName ->
             let pat = results.GetResult PAT
@@ -99,7 +104,7 @@ let main args =
                                 ]
                             ) |> ignore)
 
-        if results.TryGetResult PublishTransformations |> Option.isSome then 
+        if publish |> Option.isSome then 
             let url = environmentHost+ "/api/transformations"
             let pat = results.GetResult PAT
             transformations()

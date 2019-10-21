@@ -102,11 +102,14 @@ let private getInitialUrl (source : DataConfiguration.DataSource) =
         let selectedFields = 
            (",", azureFields) |> System.String.Join
         sprintf "https://analytics.dev.azure.com/kmddk/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s&$filter=IsLastRevisionOfDay%%20eq%%20true%%20and%%20WorkItemRevisionSK%%20gt%%20%d" source.ProjectName selectedFields
-    
-    match  source |> Rawdata.tryLatestId with
-    Some workItemRevisionId -> 
-        initialUrl workItemRevisionId
-    | None -> initialUrl 0
+    try
+        match  source |> Rawdata.tryLatestId with
+        Some workItemRevisionId -> 
+            initialUrl workItemRevisionId
+        | None -> initialUrl 0
+    with e -> 
+        eprintfn "Failed to get latest. Message: %s" e.Message
+        initialUrl 0
 
 let invalidateCache() = 
     eprintfn "Missing implementation"
@@ -115,53 +118,70 @@ let sync pat configurationName =
     let configuration = DataConfiguration.get configurationName
     let syncId = Rawdata.createSyncStateDocument configuration.Source
     async {
-        match configuration.Source with
-        DataConfiguration.AzureDevOps projectName ->
-            
-            let rec _sync (url : string) = 
-                let resp = 
-                    url
-                    |> request pat pat "GET" None
-                if resp.StatusCode = 200 then
-                    let record = 
-                        match resp.Body with
-                        Text body ->
-                            body
-                            |> AzureDevOpsAnalyticsRecord.Parse
-                            |> Some
-                        | _ -> 
-                            None
-                    match record with
-                    Some record ->
-                        let data = record.JsonValue.ToString JsonSaveOptions.DisableFormatting
-                        let responseText = Rawdata.InsertOrUpdate data
-                        if System.String.IsNullOrWhiteSpace(record.OdataNextLink) |> not then
-                            printfn "Countinuing sync"
-                            printfn "%s" record.OdataNextLink
-                            _sync record.OdataNextLink
-                        else 
-                            200, responseText
-                    | None -> 500, "Couldn't parse record"
-                else 
-                    resp.StatusCode, (match resp.Body with Text t -> t | _ -> "")
-            let statusCode, body = 
-                projectName
-                |> DataConfiguration.AzureDevOps
-                |> getInitialUrl
-                |> _sync
-            if statusCode >= 200 && statusCode < 300 then 
-                async {
-                    invalidateCache()
-                    //TODO: this should loop through all configurations that uses this particular source
-                    data configurationName |> ignore
-                    Rawdata.setSyncCompleted configuration.Source
-                } |> Async.Start
-            else
-                eprintfn "Syncronization failed. Message: %s" body
-                Rawdata.setSyncFailed configuration.Source    
-        | _ -> 
-            eprintfn "No collector found for: %s" configuration.Source.SourceName
-            Rawdata.setSyncFailed configuration.Source
+        try
+            match configuration.Source with
+            DataConfiguration.AzureDevOps projectName ->
+                
+                let rec _sync (url : string) = 
+                    let resp = 
+                        url
+                        |> request pat pat "GET" None
+                    if resp.StatusCode = 200 then
+                        let record = 
+                            match resp.Body with
+                            Text body ->
+                                body
+                                |> AzureDevOpsAnalyticsRecord.Parse
+                                |> Some
+                            | _ -> 
+                                None
+                        match record with
+                        Some record ->
+                            let data = record.JsonValue.ToString JsonSaveOptions.DisableFormatting
+                            let rawdataRecord = Cache.createDataRecord (url.GetHashCode() |> string) configuration.Source data ["State",Cache.Synced |> string; "Url", url] 
+                            let responseText = Rawdata.InsertOrUpdate rawdataRecord
+                            if System.String.IsNullOrWhiteSpace(record.OdataNextLink) |> not then
+                                printfn "Countinuing sync"
+                                printfn "%s" record.OdataNextLink
+                                _sync record.OdataNextLink
+                            else 
+                                200, responseText
+                        | None -> 500, "Couldn't parse record"
+                    else 
+                        resp.StatusCode, (match resp.Body with Text t -> t | _ -> "")
+                let statusCode, body = 
+                    projectName
+                    |> DataConfiguration.AzureDevOps
+                    |> getInitialUrl
+                    |> _sync
+                if statusCode >= 200 && statusCode < 300 then 
+                    async {
+                        let! _ = Cache.invalidateCache configuration.Source
+                        let! _ = 
+                            let configurations = DataConfiguration.configurationsBySource configuration.Source
+                            configurations
+                            |> Seq.map(fun configuration -> 
+                                async { 
+                                    try
+                                        let statusCode, body = data configuration
+                                        if statusCode > 299 then 
+                                            eprintfn "Failed to transform data. Message: %s. Status: %d" body statusCode
+                                    with e ->
+                                        eprintfn "Failed to transform data. Message: %s" e.Message
+                                }
+                            ) |> Async.Parallel
+                        Rawdata.setSyncCompleted configuration.Source
+                    } |> Async.Start
+                else
+                    let msg = sprintf "Syncronization failed. Message: %s" body
+                    eprintfn "%s" msg
+                    Rawdata.setSyncFailed (Some msg) configuration.Source  
+            | _ -> 
+                let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
+                eprintfn "%s" msg
+                Rawdata.setSyncFailed (Some msg) configuration.Source 
+        with e ->
+            Rawdata.setSyncFailed (Some e.Message) configuration.Source
     } |> Async.Start
     200, syncId
     

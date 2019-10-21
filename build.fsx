@@ -152,8 +152,9 @@ Target.create "Clean" (fun _ ->
         packagingDir 
         netDir
     ]
-    
 )
+
+
 Target.create "CopyFiles" (fun _ -> 
     [
         "dll"
@@ -205,6 +206,14 @@ Target.create "BuildDocker" (fun _ ->
         let tag = workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last
         build tag
     ) 
+)
+
+Target.create "RestartHobbes" (fun _ ->
+    let serverDir = "./hobbes.server"
+    run "fake" (serverDir + "/src") "build"
+    run "docker-compose" serverDir "kill hobbes"
+    run "docker-compose" serverDir "rm -f hobbes"
+    run "docker-compose" serverDir "up hobbes"
 )
 
 Target.create "PushToDocker" (fun _ ->

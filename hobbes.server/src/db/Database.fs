@@ -38,7 +38,7 @@ type UserRecord = JsonProvider<"""{
 }""">
 
 type Rev = JsonProvider<"""{"_rev": "osdhfoi94392h329020"}""">
-type Hash = JsonProvider<"""{"hash": "94392329020"}""">
+type Hash = JsonProvider<"""{"hash": "9AFDC4392329020"}""">
 
 type DataSet = JsonProvider<"""{
     "some column" : ["rowValue1", "rowValue2"],
@@ -153,28 +153,8 @@ let private getBody (resp : HttpResponse) =
     Binary _ -> failwithf "Can't use a binary response"
     | Text res -> res
 
-type IDatabase =
-    abstract ListIds : unit -> seq<string>
-    abstract List<'a> : (string -> 'a) -> seq<'a>
-    abstract Get<'a> : string -> (string -> 'a) -> 'a
-    abstract TryGet : string -> (string -> 'a) -> 'a option
-    abstract GetRaw : string -> string
-    abstract TryGetRaw : string -> string Option
-    abstract GetRev : string -> string
-    abstract TryGetRev : string -> string option
-    abstract GetHash : string -> int
-    abstract TryGetHash : string -> int option
-    abstract Put: string * string * string option -> string
-    abstract TryPut: string * string * string option -> HttpResponse
-    abstract Post : string * string -> string
-    abstract InsertOrUpdate : string -> string
-    abstract FilterByKeys<'a> : seq<string> -> (string -> 'a) -> seq<'a> 
-    abstract Views : unit -> Map<string,View> with get    
-    abstract Delete : string -> unit
+type View(getter : string -> int * string, name) = 
 
-and View(getter : string -> HttpResponse, name) = 
-      
-    
     let _list (startKey : string option) (endKey : string option) limit (descending : bool option) skip = 
         let args = 
             System.String.Join("&",
@@ -196,9 +176,8 @@ and View(getter : string -> HttpResponse, name) =
         sprintf """_design/default/_view/%s/?%s""" name args
         |> getter 
 
-    let getListFromResponse resp =
-        let body = resp |> getBody 
-        if resp.StatusCode < 300 && resp.StatusCode >= 200 then
+    let getListFromResponse (statusCode,body) =
+        if statusCode < 300 && statusCode >= 200 then
             body |> List.Parse
         else
             failwithf "Error: %s" body
@@ -216,14 +195,14 @@ and View(getter : string -> HttpResponse, name) =
         let mutable limit = 100
         let rec fetch i = 
             printfn "Fetching with a page size of %d" limit
-            let resp = _list startKey endKey (Some limit) descending (i |> Some)
-            (if resp.StatusCode = 500 && limit > 1 then
+            let statusCode,body = _list startKey endKey (Some limit) descending (i |> Some)
+            (if statusCode = 500 && limit > 1 then
                 //this is usually caused by an os process time out, due to too many reccords being returned
                 //gradually shrink the page size and retry
                 limit <- limit / 2
                 fetch i
             else
-                resp |> getListFromResponse)
+                (statusCode,body) |> getListFromResponse)
         [|for i in 0..limit..(rowCount + limit - 1) ->
             fetch i |]
         |> Array.collect(fun l -> l.Rows)
@@ -262,39 +241,39 @@ and Database<'a> (databaseName, parser : string -> 'a) =
                 yield HttpRequestHeaders.ContentType HttpContentTypes.Json
                 if rev |> Option.isSome then yield HttpRequestHeaders.IfMatch rev.Value
             ]
-        let resp = 
-            match body with
-            None -> 
-                Http.Request(url,
-                    httpMethod = m, 
-                    silentHttpErrors = true,
-                    headers = headers
-                )
-            | Some body ->
-                Http.Request(url,
-                    httpMethod = m, 
-                    silentHttpErrors = true, 
-                    body = TextRequest body,
-                    headers = headers
-                )
-        let failed = resp.StatusCode < 200 || resp.StatusCode >= 300
+        let statusCode,body = 
+            try
+                let resp = 
+                    match body with
+                    None -> 
+                        Http.Request(url,
+                            httpMethod = m, 
+                            silentHttpErrors = true,
+                            headers = headers
+                        )
+                    | Some body ->
+                        Http.Request(url,
+                            httpMethod = m, 
+                            silentHttpErrors = true, 
+                            body = TextRequest body,
+                            headers = headers
+                        )
+                resp.StatusCode, resp |> getBody
+            with e ->
+                500, e.Message
+        let failed = statusCode < 200 || statusCode >= 300
         if failed then
-            printfn "Response status code : %d. Url: %s. Body: %s" 
-                resp.StatusCode 
-                resp.ResponseUrl
-                (resp |> getBody |> fun b -> b.Substring(0,min 1000 b.Length)) 
+            printfn "Response status code : %d.  Body: %s" 
+                statusCode 
+                (body.Substring(0,min 1000 body.Length)) 
          
         if isTrial || not(failed) then
-            resp
+            statusCode,body
         else
-            let requestBody = 
-                match body with
-                None -> ""
-                | Some b -> b.Substring(0,min 1000 b.Length)
-            failwithf "Server error %d. Reason: %s. Request: body %s path: %s" resp.StatusCode (resp |> getBody) requestBody path
+            failwithf "Server error %d. Reason: %s. Request path: %s" statusCode body path
 
     let requestString httpMethod silentErrors body path rev = 
-        request httpMethod silentErrors body path rev |> getBody
+        request httpMethod silentErrors body path rev |> snd
     let tryRequest m rev body path = request m true body path rev
     let get path = requestString Get false None path None
     let put body path rev = requestString Put false (Some body) path rev 
@@ -312,94 +291,65 @@ and Database<'a> (databaseName, parser : string -> 'a) =
          |> List.Parse).Rows
          |> Array.map(fun r -> r.Id)
          |> Seq.ofArray
+
     member __.List() =
         (get "_all_docs?include_docs=true"
          |> List.Parse).Rows
          |> Array.map(fun r -> r.Doc.JsonValue.ToString JsonSaveOptions.DisableFormatting |> parser)
          |> Seq.ofArray
+
     member __.Get id =
         get id |> parser
 
     member __.TryGet id = 
-        let resp = tryGet id
-        let body = 
-            match resp.Body with
-            Text s ->
-                try
-                    s |> parser |> Some
-                with _ ->
-                   eprintfn "Couldn't parse %s" (s.Substring(0, min 500 s.Length))
-                   None
-            | _ -> 
-                eprintfn "Response body was binary"
-                None
-        if resp.StatusCode >= 200  && resp.StatusCode <= 299 then
-            body
+        let statusCode,body = tryGet id
+        if statusCode >= 200  && statusCode <= 299 then
+            body |> parser |> Some
         else
-            let body = body.Value.ToString()
-            eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode (body.Substring(0,min 500 body.Length ))
-            None
-
-    member __.GetRaw id =
-        get id
-
-    member __.TryGetRaw id = 
-        let resp = tryGet id
-        let body = 
-            match resp.Body with
-            Text s -> Some s
-            | _ -> 
-                eprintfn "Response body was binary"
-                None
-        if resp.StatusCode >= 200  && resp.StatusCode <= 299 then
-            body
-        else
-            let body = body.Value.ToString()
-            eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id resp.StatusCode (body.Substring(0,min 500 body.Length ))
-            None                  
+            eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id statusCode (body.Substring(0,min 500 body.Length ))
+            None             
 
     member __.GetRev id =
-        (__.GetRaw id |> Rev.Parse).Rev      
+        (get id |> Rev.Parse).Rev      
 
     member __.TryGetRev id = 
-        __.TryGetRaw id
-        |> Option.bind(fun res ->
+        let statusCode,body = tryGet id
+        if statusCode >=200 && statusCode < 300 then
             let revision = 
-                (res |> Rev.Parse).Rev
-            if System.String.IsNullOrWhiteSpace(revision) then 
-                failwithf "Invalid revision. %s" res
+                (body |> Rev.Parse).Rev
+            (if System.String.IsNullOrWhiteSpace(revision) then 
+                failwithf "Invalid revision. %s" body)
             revision |> Some
-        )
+        else
+            None
 
         
     member __.GetHash id =
         (sprintf "%s_hash" id 
-         |> __.GetRaw 
-         |> Hash.Parse).Hash 
-         |> int      
+         |> get
+         |> Hash.Parse).Hash   
 
     member __.TryGetHash id = 
-        match __.TryGetRaw (sprintf "%s_hash" id) with
-        None -> None
-        | Some res -> (res 
-                       |> Hash.Parse).Hash 
-                       |> int
-                       |> Some                          
+        let statusCode,body = tryGet(sprintf "%s_hash" id) 
+        if statusCode >= 200 && statusCode < 300 then
+            (body 
+               |> Hash.Parse).Hash 
+               |> Some  
+        else None                        
 
     member __.Put(id, body, ?rev) = 
         put body id rev
     member __.TryPut(id, body, ?rev) = 
         tryPut body rev id
     member __.Post(path, body) = 
-        let resp = tryPost body path
-        if  resp.StatusCode >= 200  && resp.StatusCode <= 299  then
-            resp |> getBody
-        elif resp.StatusCode = 400 then
-            let respB = (resp |> getBody)
+        let statusCode,body = tryPost body path
+        if  statusCode >= 200  && statusCode <= 299  then
+           body
+        elif statusCode = 400 then
             let length = 500
             let start =
-                if (respB).Contains "Invalid JSON starting at character " then
-                    (((respB.Split("Invalid JSON starting at character ") |> Array.last).Split ' '
+                if (body).Contains "Invalid JSON starting at character " then
+                    (((body.Split("Invalid JSON starting at character ") |> Array.last).Split ' '
                      |> Array.head).Trim()
                     |> int)
                     - 20
@@ -408,7 +358,7 @@ and Database<'a> (databaseName, parser : string -> 'a) =
                     0
             failwithf "Bad format. Doc: %s" (body.Substring(start, min body.Length length))
         else
-            failwith (resp |> getBody)
+            failwith body
     member __.FilterByKeys keys = 
         let body = 
            System.String.Join(",", 

@@ -7,13 +7,35 @@ type CacheRecord = JsonProvider<"""{
     "TimeStamp" : "24-09-2019",
     "Source" : "lækljk",
     "Project" : "lkjlkj",
+    "State" : "Sync state",
     "Data" : {
         "columnNames" : ["a","b"],
         "values" : [["zcv"],[1.2],["2019-01-01"]]
     }
 }""">
 
+type SyncStatus = 
+    Synced
+    | Started
+    | Failed
+    | NotStarted
+    with override x.ToString() = 
+            match x with
+            Synced -> "synced"
+            | NotStarted -> "not started"
+            | Started -> "started"
+            | Failed -> "failed"
+         static member Parse (s:string) =
+                match s.ToLower() with
+                "synced" -> Synced
+                | "started" -> Started
+                | "failed" -> Failed
+                | "not started" -> NotStarted
+                | _ -> 
+                    eprintfn "Unknown sync state: %s" s
+                    Failed
 
+  
 type DataValues =
     Floats of (int * float) []
     | Texts of (int * string) []
@@ -105,24 +127,30 @@ let InsertOrUpdate doc =
 let list() = 
     db.ListIds()
 
-let store configuration (data : string) =
+let createCacheRecord configuration data state =
     let cacheKey = 
         configuration 
         |> createKey 
-        |> createKeyFromList
-       
-    let record = 
-            sprintf """{
+        |> createKeyFromList 
+    sprintf """{
                 "_id" : "%s",
                 "Source" : "%s",
                 "Project" : "%s",
                 "TimeStamp" : "%s",
-                "Data" : %s
-            }""" cacheKey
+                "Data" : %s,
+                "State" : %s
+            }""" (if state = Synced then cacheKey else sprintf "%s!%s" cacheKey (state.ToString()))
                  configuration.Source.SourceName
                  configuration.Source.ProjectName
                  (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
-                 (data.Replace("\\","\\\\"))
+                 data
+                 (state.ToString())
+                
+
+let store configuration (data : string) =
+
+    let record = createCacheRecord configuration (data.Replace("\\","\\\\")) Synced
+
     try
         db.InsertOrUpdate record |> ignore
     with e ->

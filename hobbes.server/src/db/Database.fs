@@ -234,8 +234,6 @@ and View(getter : string -> HttpResponse, name) =
         (listResult startKey endKey (Some limit) descending None).Rows
         |> Array.map(fun entry -> entry.Value.ToString() |> parser)
 
-    
-
 and Database<'a> (databaseName, parser : string -> 'a) =
     let mutable _views : Map<string,View> = Map.empty
     let urlWithId (id : string) = 
@@ -243,7 +241,7 @@ and Database<'a> (databaseName, parser : string -> 'a) =
         id
         |> sprintf "%s/%s" dbUrl
      
-    let request httpMethod silentErrors body path rev  =
+    let request httpMethod isTrial body (path : string) rev  =
         let m,direction =
               match httpMethod with 
               Get -> "GET", "from"
@@ -286,10 +284,14 @@ and Database<'a> (databaseName, parser : string -> 'a) =
                 resp.ResponseUrl
                 (resp |> getBody |> fun b -> b.Substring(0,min 1000 b.Length)) 
          
-        if silentErrors || not(failed) then
+        if isTrial || not(failed) then
             resp
         else
-            failwithf "Server error %d. Reason: %s" resp.StatusCode (resp |> getBody)
+            let requestBody = 
+                match body with
+                None -> ""
+                | Some b -> b.Substring(0,min 1000 b.Length)
+            failwithf "Server error %d. Reason: %s. Request: body %s path: %s" resp.StatusCode (resp |> getBody) requestBody path
 
     let requestString httpMethod silentErrors body path rev = 
         request httpMethod silentErrors body path rev |> getBody
@@ -360,10 +362,16 @@ and Database<'a> (databaseName, parser : string -> 'a) =
         (__.GetRaw id |> Rev.Parse).Rev      
 
     member __.TryGetRev id = 
-        match __.TryGetRaw id with
-        None -> None
-        | Some res -> Some (res |> Rev.Parse).Rev
+        __.TryGetRaw id
+        |> Option.bind(fun res ->
+            let revision = 
+                (res |> Rev.Parse).Rev
+            if System.String.IsNullOrWhiteSpace(revision) then 
+                failwithf "Invalid revision. %s" res
+            revision |> Some
+        )
 
+        
     member __.GetHash id =
         (sprintf "%s_hash" id 
          |> __.GetRaw 
@@ -423,9 +431,15 @@ and Database<'a> (databaseName, parser : string -> 'a) =
     member __.Views with get() = _views
     member this.InsertOrUpdate doc = 
         let id = (CouchDoc.Parse doc).Id
+        if System.String.IsNullOrWhiteSpace id then
+            failwith "Document must have a valid id"
         match id |> this.TryGetRev with
-        None -> this.Put(id, doc)
-        | Some rev -> this.Put(id, doc,  rev)
+        None ->
+            printfn "Found no rev, so assuming it's a new doc. id: %s" id
+            this.Put(id, doc)
+        | Some rev -> 
+            printfn "Found rev, going to update. id: %s. rev: %s" id rev 
+            this.Put(id, doc,  rev)
     member __.Delete id =
         let doc = 
             get id

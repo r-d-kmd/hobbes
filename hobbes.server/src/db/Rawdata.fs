@@ -80,20 +80,7 @@ module Rawdata =
         let endKey = 
             sprintf """["%s","%s_"]""" source.SourceName source.ProjectName
         startKey,endKey
-
-    let store source project recordId data  = 
-        let makeJsonDoc = 
-            sprintf """{
-              "_id" : "%s",
-              "project": "%s",
-              "source": "%s",
-              "timestamp": "%s",
-              "data": %s
-            } """ recordId project source
-
-        ("", makeJsonDoc (System.DateTime.Today.ToShortDateString()) data)
-        |> db.Post 
-
+     
     let InsertOrUpdate doc = 
         db.InsertOrUpdate doc
 
@@ -101,27 +88,21 @@ module Rawdata =
         match db.TryGet id with
         None -> NotStarted
         | Some s -> s.State |> SyncStatus.Parse
-        
-    let setSyncState state source = 
+
+    let setSyncState state message source = 
         let doc = createCacheRecord {
                                        Source = source
                                        Transformations = []
-                                    } "" state
+                                    } null state message
         db.InsertOrUpdate(doc) |> ignore
-
-    let setSyncFailed = setSyncState Failed
-    let setSyncCompleted  = setSyncState Synced
-
-    let createSyncStateDocument (source : DataConfiguration.DataSource) = 
-        let doc = createCacheRecord {
-                                       Source = source
-                                       Transformations = []
-                                    } "" Started
-        db.Post("", doc) |> ignore
         (doc |> CacheRecord.Parse).Id
 
+    let setSyncFailed message = setSyncState Failed message >> ignore
+    let setSyncCompleted = setSyncState Synced None >> ignore
+    let createSyncStateDocument = setSyncState Started None
+
     let tryLatestId (source : DataConfiguration.DataSource) =
-        let startKey, endKey = keys source 
+        let endKey, startKey = keys source //since it's descending the keys need to be reversed
         try
             let record = 
                 (db.Views.["WorkItemRevisions"].List(WorkItemRevisionRecord.Parse,1,

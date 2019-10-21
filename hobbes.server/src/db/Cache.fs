@@ -127,29 +127,41 @@ let InsertOrUpdate doc =
 let list() = 
     db.ListIds()
 
-let createCacheRecord configuration data state =
-    let cacheKey = 
-        configuration 
-        |> createKey 
-        |> createKeyFromList 
+let createDataRecord key (source : DataSource) (data : string) keyValue =
     sprintf """{
                 "_id" : "%s",
                 "Source" : "%s",
                 "Project" : "%s",
                 "TimeStamp" : "%s",
-                "Data" : %s,
-                "State" : %s
-            }""" (if state = Synced then cacheKey else sprintf "%s!%s" cacheKey (state.ToString()))
-                 configuration.Source.SourceName
-                 configuration.Source.ProjectName
+                "Data" : %s%s
+            }""" key
+                 source.SourceName
+                 source.ProjectName
                  (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
-                 data
-                 (state.ToString())
-                
+                 (if data |> isNull then "null" else data.Replace("\\","\\\\"))
+                 (match keyValue with
+                  [] -> ""
+                  | values ->
+                      System.String.Join(",",
+                          values
+                          |> Seq.map(fun (k,v) -> sprintf """%A:%A""" k v)
+                      )
+                      |> sprintf """,%s"""
+                 )
+    
+let createCacheRecord configuration (data : string) (state : SyncStatus) message =
+    let cacheKey = 
+        configuration 
+        |> createKey 
+        |> createKeyFromList
+
+    createDataRecord cacheKey configuration.Source data [
+                                                           yield "State", string state
+                                                           if message |> Option.isSome then yield "Message", message.Value]
 
 let store configuration (data : string) =
 
-    let record = createCacheRecord configuration (data.Replace("\\","\\\\")) Synced
+    let record = createCacheRecord configuration data Synced None
 
     try
         db.InsertOrUpdate record |> ignore
@@ -199,19 +211,26 @@ let findUncachedTransformations configuration =
             |> Option.isNone
         ),data
         
-let getIds (source : DataSource) = 
-    let doc = (sprintf """_design/default/_view/srcproj/?key="%s" """ (source.SourceName + ":" + source.ProjectName))
-               .Replace("\\","\\\\")
-               |> db.Get
-    (Database.List.Parse (doc.ToString())).Rows
+let private idsBySource (source : DataSource) =
+    let startKey = 
+        sprintf """["%s","%s"]""" source.SourceName source.ProjectName
+    let endKey = 
+        sprintf """["%s","%s_"]""" source.SourceName source.ProjectName
+    db.Views.[sourceView].List(Database.CouchDoc.Parse, 
+                                  startKey =  startKey, 
+                                  endKey = endKey)
 
 let invalidateCache (source : DataSource) =
-    getIds source
-    |> Array.map(fun doc -> 
-                    async {
-                        delete doc.Id
-                    } |> Async.Start
-                )
+    async {
+        let! _ = 
+            idsBySource source
+            |> Array.map(fun doc -> 
+                            async {
+                                delete doc.Id
+                            } 
+            ) |> Async.Parallel
+        return ()
+    }
 
 let retrieve (configuration : Configuration) =
    (
@@ -223,4 +242,3 @@ let retrieve (configuration : Configuration) =
 
 let tryGetRev id = db.TryGetRev id
 let tryGetHash id = db.TryGetHash id
-

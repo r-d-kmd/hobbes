@@ -38,6 +38,10 @@ let private verified f =
 let private data configurationName =
     verified (fun _ -> Implementation.data configurationName)
 
+
+let private getSyncStatus statusId =
+    verified (fun _ -> 200,Implementation.getSyncState statusId |> string)
+
 let private sync configurationName =
     fun f (ctx : HttpContext) ->
         try
@@ -124,6 +128,7 @@ let private apiRouter = router {
     put "/transformations" (putDocument Implementation.storeTransformations)
     get "/transformations" listTransformations
     get "/cache" listCache
+    getf "/status/sync/%s" getSyncStatus
 }
 
 let private appRouter = router {

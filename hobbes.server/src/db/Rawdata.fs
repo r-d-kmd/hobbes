@@ -69,7 +69,7 @@ module Rawdata =
             }
         }
     }""">
-    let db = 
+    let private db = 
         Database.Database("rawdata", CacheRecord.Parse)
           .AddView("table")
           .AddView "WorkItemRevisions"
@@ -93,8 +93,33 @@ module Rawdata =
 
         ("", makeJsonDoc (System.DateTime.Today.ToShortDateString()) data)
         |> db.Post 
+
     let InsertOrUpdate doc = 
         db.InsertOrUpdate doc
+
+    let getState id = 
+        match db.TryGet id with
+        None -> NotStarted
+        | Some s -> s.State |> SyncStatus.Parse
+        
+    let setSyncState state source = 
+        let doc = createCacheRecord {
+                                       Source = source
+                                       Transformations = []
+                                    } "" state
+        db.InsertOrUpdate(doc) |> ignore
+
+    let setSyncFailed = setSyncState Failed
+    let setSyncCompleted  = setSyncState Synced
+
+    let createSyncStateDocument (source : DataConfiguration.DataSource) = 
+        let doc = createCacheRecord {
+                                       Source = source
+                                       Transformations = []
+                                    } "" Started
+        db.Post("", doc) |> ignore
+        (doc |> CacheRecord.Parse).Id
+
     let tryLatestId (source : DataConfiguration.DataSource) =
         let startKey, endKey = keys source 
         try

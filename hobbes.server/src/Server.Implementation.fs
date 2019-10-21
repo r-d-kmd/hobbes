@@ -6,7 +6,8 @@ open Hobbes.Server.Db
 open FSharp.Data
 open Hobbes.Server.Security
 
-
+let getSyncState syncId =
+    Rawdata.getState syncId
     
 let data configurationName =
     let configuration = DataConfiguration.get configurationName
@@ -112,50 +113,57 @@ let invalidateCache() =
 
 let sync pat configurationName =
     let configuration = DataConfiguration.get configurationName
-    
-    match configuration.Source with
-    DataConfiguration.AzureDevOps projectName ->
-        
-        let rec _sync (url : string) = 
-            let resp = 
-                url
-                |> request pat pat "GET" None
-            if resp.StatusCode = 200 then
-                let record = 
-                    match resp.Body with
-                    Text body ->
-                        body
-                        |> AzureDevOpsAnalyticsRecord.Parse
-                        |> Some
-                    | _ -> 
-                        None
-                match record with
-                Some record ->
-                    let data = record.JsonValue.ToString JsonSaveOptions.DisableFormatting
-                    let responseText = Rawdata.InsertOrUpdate data
-                    if System.String.IsNullOrWhiteSpace(record.OdataNextLink) |> not then
-                        printfn "Countinuing sync"
-                        printfn "%s" record.OdataNextLink
-                        _sync record.OdataNextLink
-                    else 
-                        200, responseText
-                | None -> 500, "Couldn't parse record"
-            else 
-                resp.StatusCode, (match resp.Body with Text t -> t | _ -> "")
-        let statusCode, body = 
-            projectName
-            |> DataConfiguration.AzureDevOps
-            |> getInitialUrl
-            |> _sync
-        if statusCode >= 200 && statusCode < 300 then 
-            async {
-                invalidateCache()
-                //TODO: this should loop through all configurations that uses this particular source
-                data configurationName |> ignore
-            } |> Async.Start
-        statusCode, body
-    | _ -> 
-        404,"No reader found" 
+    let syncId = Rawdata.createSyncStateDocument configuration.Source
+    async {
+        match configuration.Source with
+        DataConfiguration.AzureDevOps projectName ->
+            
+            let rec _sync (url : string) = 
+                let resp = 
+                    url
+                    |> request pat pat "GET" None
+                if resp.StatusCode = 200 then
+                    let record = 
+                        match resp.Body with
+                        Text body ->
+                            body
+                            |> AzureDevOpsAnalyticsRecord.Parse
+                            |> Some
+                        | _ -> 
+                            None
+                    match record with
+                    Some record ->
+                        let data = record.JsonValue.ToString JsonSaveOptions.DisableFormatting
+                        let responseText = Rawdata.InsertOrUpdate data
+                        if System.String.IsNullOrWhiteSpace(record.OdataNextLink) |> not then
+                            printfn "Countinuing sync"
+                            printfn "%s" record.OdataNextLink
+                            _sync record.OdataNextLink
+                        else 
+                            200, responseText
+                    | None -> 500, "Couldn't parse record"
+                else 
+                    resp.StatusCode, (match resp.Body with Text t -> t | _ -> "")
+            let statusCode, body = 
+                projectName
+                |> DataConfiguration.AzureDevOps
+                |> getInitialUrl
+                |> _sync
+            if statusCode >= 200 && statusCode < 300 then 
+                async {
+                    invalidateCache()
+                    //TODO: this should loop through all configurations that uses this particular source
+                    data configurationName |> ignore
+                    Rawdata.setSyncCompleted configuration.Source
+                } |> Async.Start
+            else
+                eprintfn "Syncronization failed. Message: %s" body
+                Rawdata.setSyncFailed configuration.Source    
+        | _ -> 
+            eprintfn "No collector found for: %s" configuration.Source.SourceName
+            Rawdata.setSyncFailed configuration.Source
+    } |> Async.Start
+    200, syncId
     
 
 let key token =

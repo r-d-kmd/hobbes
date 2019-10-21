@@ -138,7 +138,7 @@ let sync pat configurationName =
                         match record with
                         Some record ->
                             let data = record.JsonValue.ToString JsonSaveOptions.DisableFormatting
-                            let rawdataRecord = Cache.createDataRecord (url.GetHashCode() |> string) configuration.Source data ["State",Cache.Synced |> string; "Url", url] 
+                            let rawdataRecord = Cache.createDataRecord (url |> System.Text.Encoding.UTF8.GetBytes |> System.Convert.ToBase64String) configuration.Source data ["State",Cache.Synced |> string; "Url", url] 
                             let responseText = Rawdata.InsertOrUpdate rawdataRecord
                             if System.String.IsNullOrWhiteSpace(record.OdataNextLink) |> not then
                                 printfn "Countinuing sync"
@@ -242,7 +242,16 @@ let storeConfigurations doc =
     with _ -> 
         500,"internal server error"
 
-let private uploadDesignDocument (storeHandle, (hashHandle : string -> int option), file) =
+let private uploadDesignDocument (storeHandle, (hashHandle : string -> string option), file) =
+    let hash (input : string) =
+        use md5Hash = System.Security.Cryptography.MD5.Create()
+        let data = md5Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input))
+        let sBuilder = System.Text.StringBuilder()
+        (data
+        |> Seq.fold(fun (sBuilder : System.Text.StringBuilder) d ->
+                sBuilder.Append(d.ToString("x2"))
+        ) sBuilder).ToString()
+        
     async {
         let! doc = System.IO.File.ReadAllTextAsync file |> Async.AwaitTask
         if System.String.IsNullOrWhiteSpace (CouchDoc.Parse doc).Rev |> not then failwithf "Initialization documents shouldn't have _revs %s" file
@@ -251,11 +260,12 @@ let private uploadDesignDocument (storeHandle, (hashHandle : string -> int optio
                       |> hashHandle
         let newDoc = (doc 
                        |> String.filter(not << System.Char.IsWhiteSpace))
-        let newHash = newDoc.GetHashCode System.StringComparison.Ordinal //TODO "Hashcode changes when restarting program???"                  
+                       
+        let newHash = hash newDoc                
 
         return if oldHash.IsNone || oldHash.Value <> newHash then
                     let id = sprintf "%s_hash" designDocName
-                    sprintf """{"_id": %A, "hash":%i }"""  id newHash
+                    sprintf """{"_id": %A, "hash":%A }"""  id newHash
                     |> storeHandle 
                     |> ignore
                     storeHandle doc
@@ -284,7 +294,7 @@ let initDb () =
         ]
     let errorCode = 
         (dbs |> List.map fst)@systemDbs
-        |> List.map (fun n -> couch.TryPut(n, "").StatusCode)
+        |> List.map (fun n -> couch.TryPut(n, "") |> fst)
         |> List.tryFind (fun sc -> ((sc >= 200 && sc < 300) || (sc = 412)) |> not)
     (match errorCode with
      Some errorCode ->

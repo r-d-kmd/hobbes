@@ -4,11 +4,11 @@ open FSharp.Data
 
 type CacheRecord = JsonProvider<"""{
     "_id" : "name",
-    "TimeStamp" : "24-09-2019",
-    "Source" : "lækljk",
-    "Project" : "lkjlkj",
-    "State" : "Sync state",
-    "Data" : {
+    "timeStamp" : "24-09-2019",
+    "source" : "lækljk",
+    "project" : "lkjlkj",
+    "state" : "Sync state",
+    "data" : {
         "columnNames" : ["a","b"],
         "values" : [["zcv"],[1.2],["2019-01-01"]]
     }
@@ -128,27 +128,34 @@ let list() =
     db.ListIds()
 
 let createDataRecord key (source : DataSource) (data : string) keyValue =
-    sprintf """{
-                "_id" : "%s",
-                "Source" : "%s",
-                "Project" : "%s",
-                "TimeStamp" : "%s",
-                "Data" : %s%s
-            }""" key
-                 source.SourceName
-                 source.ProjectName
-                 (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
-                 (if data |> isNull then "null" else data.Replace("\\","\\\\"))
-                 (match keyValue with
-                  [] -> ""
-                  | values ->
-                      System.String.Join(",",
-                          values
-                          |> Seq.map(fun (k,v) -> sprintf """%A:%A""" k v)
-                      )
-                      |> sprintf """,%s"""
-                 )
-    
+    let record = 
+        sprintf """{
+                    "_id" : "%s",
+                    "source" : "%s",
+                    "project" : "%s",
+                    "timeStamp" : "%s",
+                    "data" : %s%s
+                }""" key
+                     source.SourceName
+                     source.ProjectName
+                     (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
+                     (if data |> isNull then "null" else data.Replace("\\","\\\\"))
+                     (match keyValue with
+                      [] -> ""
+                      | values ->
+                          System.String.Join(",",
+                              values
+                              |> Seq.map(fun (k,v) -> sprintf """%A:%A""" k v)
+                          )
+                          |> sprintf """,%s"""
+                     )
+    let parsedRecord = record |> CacheRecord.Parse
+    //validate that the model fits expectations
+    assert(parsedRecord.Id = key)
+    assert(parsedRecord.Source = source.SourceName)
+    assert(parsedRecord.Project = source.ProjectName)
+    record
+
 let createCacheRecord configuration (data : string) (state : SyncStatus) message =
     let cacheKey = 
         configuration 
@@ -156,8 +163,8 @@ let createCacheRecord configuration (data : string) (state : SyncStatus) message
         |> createKeyFromList
 
     createDataRecord cacheKey configuration.Source data [
-                                                           yield "State", string state
-                                                           if message |> Option.isSome then yield "Message", message.Value]
+                                                           yield "state", string state
+                                                           if message |> Option.isSome then yield "message", message.Value]
 
 let store configuration (data : string) =
 
@@ -226,7 +233,7 @@ let invalidateCache (source : DataSource) =
             idsBySource source
             |> Array.map(fun doc -> 
                             async {
-                                delete doc.Id
+                                delete doc.Id |> ignore
                             } 
             ) |> Async.Parallel
         return ()

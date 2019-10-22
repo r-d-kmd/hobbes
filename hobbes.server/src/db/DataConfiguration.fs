@@ -60,12 +60,13 @@ module DataConfiguration =
             sprintf """["%s","%s"]""" source.SourceName source.ProjectName
         let endKey = 
             sprintf """["%s","%s_"]""" source.SourceName source.ProjectName
-        db.Views.[sourceView].List(Database.CouchDoc.Parse, 
+        db.Views.[sourceView].List((fun s -> s.Trim '\"'),
                                   startKey =  startKey, 
                                   endKey = endKey)
-        |> Seq.map(fun c -> c.Id)
+        
 
     let get configurationName =
+        if System.String.IsNullOrWhiteSpace configurationName then failwith "Must supply a configuration name"
         let record = 
             configurationName
             |> db.Get

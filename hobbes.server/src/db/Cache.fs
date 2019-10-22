@@ -69,9 +69,9 @@ type DataRecord = {
 type private TableView = JsonProvider<""" {"columnNames" : ["a","b"], "values" : [[0,1,2,3,4],[0.4,1.2,2.4,3.5,4.1],["x","y","z"],["2019-01.01","2019-01.01"]]} """>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module TableView =
-    let toTable (tableView : TableView.Root []) =
+    let toTable (tableView : TableView.Root list) =
         tableView
-        |> Array.fold(fun (count, (map : Map<_,_>)) record ->
+        |> List.fold(fun (count, (map : Map<_,_>)) record ->
             let values = 
                 record.Values
                 |> Array.map(fun raw -> 
@@ -181,10 +181,10 @@ let private tryRetrieve cacheKey =
     |> createKeyFromList
     |> db.TryGet 
     |> Option.bind(fun (cacheRecord : CacheRecord.Root) -> 
-        [|
+        [
             cacheRecord.Data.ToString()
             |> TableView.Parse
-        |] |> TableView.toTable
+        ] |> TableView.toTable
         |> Seq.map(fun (columnName,values) -> 
             columnName, values.ToSeq()
                         |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
@@ -231,7 +231,7 @@ let invalidateCache (source : DataSource) =
     async {
         let! _ = 
             idsBySource source
-            |> Array.map(fun doc -> 
+            |> List.map(fun doc -> 
                             async {
                                 delete doc.Id |> ignore
                             } 

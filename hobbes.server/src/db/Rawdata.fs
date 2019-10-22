@@ -57,7 +57,7 @@ module Rawdata =
                                                          endKey = endKey
                 )
             (revisions
-            |> Array.maxBy(fun record -> 
+            |> List.maxBy(fun record -> 
                 try
                    record.JsonValue.AsInteger64()
                 with e -> 

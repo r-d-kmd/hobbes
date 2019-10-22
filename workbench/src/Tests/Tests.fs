@@ -28,5 +28,5 @@ let sync configuration =
         1
 
 let test() = 
-    Implementation.initDb() |> snd
-    //sync "gandalf.expandingCompletion"
+    Implementation.initDb() |> ignore
+    sync "gandalf" //"flowerpot" 

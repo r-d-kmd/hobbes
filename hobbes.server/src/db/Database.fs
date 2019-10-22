@@ -205,7 +205,7 @@ type View(getter : string list -> ((string * string) list) option -> int * strin
 
 
     let list (parser : string -> 'a) (startKey : string option) (endKey : string option) (descending : bool option) = 
-        let mutable limit = 32
+        let mutable limit = 128
         let rec fetch i acc = 
             printfn "Fetching with a page size of %d" limit
             let statusCode,body = _list startKey endKey (Some limit) descending (i |> Some)
@@ -216,14 +216,14 @@ type View(getter : string list -> ((string * string) list) option -> int * strin
                 fetch i acc
             else
                 let result = (statusCode,body) |> getListFromResponse
+                let rowCount =  result.Rows |> Array.length |> max limit
+                let values = 
+                    match result.Value with
+                    Some v -> (v |> string)::acc
+                    | _ -> result.Rows |> Array.fold(fun acc entry -> entry.Value.ToString()::acc) acc
                 match result.TotalRows, result.Offset with
-                Some t, Some o when t = o -> acc
-                | _ ->
-                    let values = 
-                        match result.Value with
-                        Some v -> (v |> string)::acc
-                        | _ -> result.Rows |> Array.fold(fun acc entry -> entry.Value.ToString()::acc) acc
-                    fetch i values
+                Some t, Some o when t <= o + rowCount -> values
+                | _ -> fetch (i + rowCount) values
 
         fetch 0 [] |> List.map parser
     member __.List<'a>(parser : string -> 'a, ?startKey : string, ?endKey : string, ?descending) =
@@ -248,7 +248,7 @@ and Database<'a> (databaseName, parser : string -> 'a) =
             | Some qs -> 
                "?" + System.String.Join("&",
                                      qs
-                                     |> Seq.map(fun (k,v) -> sprintf "%s=%s" k (enc v))
+                                     |> Seq.map(fun (k,v) -> sprintf "%s=%s" k  v)
                )
         let m,direction =
               match httpMethod with 

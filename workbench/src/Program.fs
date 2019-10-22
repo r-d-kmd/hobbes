@@ -85,40 +85,40 @@ let main args =
 
         if  test.IsSome || (sync.IsNone && publish.IsNone) then
             Workbench.Tests.test()
-            |> printfn "%A"
-
-        (match sync with
-         None -> ()
-         | Some configurationName ->
-            let pat = results.GetResult PAT
-            
-            let url = environmentHost + "/api/sync/" + configurationName
-            let azurePat = results.GetResult AzureToken
-            Http.Request(url, 
-                             httpMethod = "GET",
-                             headers = 
-                                [
-                                   HttpRequestHeaders.BasicAuth pat ""
-                                   ("PAT",azurePat)
-                                   HttpRequestHeaders.ContentType HttpContentTypes.Json
-                                ]
-                            ) |> ignore)
-
-        if publish |> Option.isSome then 
-            let url = environmentHost+ "/api/transformations"
-            let pat = results.GetResult PAT
-            transformations()
-            |> List.iter(fun transformation ->
+        else            
+            match sync with
+            None -> 
+                if publish |> Option.isSome then 
+                    let url = environmentHost+ "/api/transformations"
+                    let pat = results.GetResult PAT
+                    transformations()
+                    |> List.iter(fun transformation ->
+                        Http.Request(url, 
+                                     httpMethod = "PUT",
+                                     body = TextRequest transformation,
+                                     headers = 
+                                        [
+                                           HttpRequestHeaders.BasicAuth pat ""
+                                           HttpRequestHeaders.ContentType HttpContentTypes.Json
+                                        ]
+                                    ) |> ignore
+                    )
+                0
+             | Some configurationName ->
+                let pat = results.GetResult PAT
+                
+                let url = environmentHost + "/api/sync/" + configurationName
+                let azurePat = results.GetResult AzureToken
                 Http.Request(url, 
-                             httpMethod = "PUT",
-                             body = TextRequest transformation,
-                             headers = 
-                                [
-                                   HttpRequestHeaders.BasicAuth pat ""
-                                   HttpRequestHeaders.ContentType HttpContentTypes.Json
-                                ]
-                            ) |> ignore
-            )
+                                 httpMethod = "GET",
+                                 headers = 
+                                    [
+                                       HttpRequestHeaders.BasicAuth pat ""
+                                       ("PAT",azurePat)
+                                       HttpRequestHeaders.ContentType HttpContentTypes.Json
+                                    ]
+                                ) |> ignore
+                0
+
+            
         
-        printfn "Done"
-        0

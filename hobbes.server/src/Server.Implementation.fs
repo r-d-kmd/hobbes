@@ -106,13 +106,22 @@ let private getInitialUrl (source : DataConfiguration.DataSource) =
         match  source |> Rawdata.tryLatestId with
         Some workItemRevisionId -> 
             initialUrl workItemRevisionId
-        | None -> initialUrl 0
+        | None -> 
+            printfn "Didn't get a work item revision id"
+            initialUrl 0L
     with e -> 
         eprintfn "Failed to get latest. Message: %s" e.Message
-        initialUrl 0
+        initialUrl 0L
 
-let invalidateCache() = 
-    eprintfn "Missing implementation"
+let private hash (input : string) =
+        use md5Hash = System.Security.Cryptography.MD5.Create()
+        let data = md5Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input))
+        let sBuilder = System.Text.StringBuilder()
+        (data
+        |> Seq.fold(fun (sBuilder : System.Text.StringBuilder) d ->
+                sBuilder.Append(d.ToString("x2"))
+        ) sBuilder).ToString()
+        
 
 let sync pat configurationName =
     let configuration = DataConfiguration.get configurationName
@@ -138,7 +147,7 @@ let sync pat configurationName =
                         match record with
                         Some record ->
                             let data = record.JsonValue.ToString JsonSaveOptions.DisableFormatting
-                            let rawdataRecord = Cache.createDataRecord (url |> System.Text.Encoding.UTF8.GetBytes |> System.Convert.ToBase64String) configuration.Source data ["State",Cache.Synced |> string; "Url", url] 
+                            let rawdataRecord = Cache.createDataRecord (url |> hash) configuration.Source data ["state",Cache.Synced |> string; "Url", url] 
                             let responseText = Rawdata.InsertOrUpdate rawdataRecord
                             if System.String.IsNullOrWhiteSpace(record.OdataNextLink) |> not then
                                 printfn "Countinuing sync"
@@ -185,7 +194,6 @@ let sync pat configurationName =
     } |> Async.Start
     200, syncId
     
-
 let key token =
     let user = 
         token
@@ -243,14 +251,7 @@ let storeConfigurations doc =
         500,"internal server error"
 
 let private uploadDesignDocument (storeHandle, (hashHandle : string -> string option), file) =
-    let hash (input : string) =
-        use md5Hash = System.Security.Cryptography.MD5.Create()
-        let data = md5Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input))
-        let sBuilder = System.Text.StringBuilder()
-        (data
-        |> Seq.fold(fun (sBuilder : System.Text.StringBuilder) d ->
-                sBuilder.Append(d.ToString("x2"))
-        ) sBuilder).ToString()
+    
         
     async {
         let! doc = System.IO.File.ReadAllTextAsync file |> Async.AwaitTask

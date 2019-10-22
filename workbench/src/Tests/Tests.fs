@@ -11,18 +11,22 @@ let cacheInvalidation configName =
 
 let sync configuration = 
     let _,key = Implementation.sync "y3cg7xrajppvd4b2wp6ahrgnsdkpf4sidtlinthcwepc2pjbzfuq" configuration
-    let mutable running = Cache.Synced <> Implementation.getSyncState key
+    let mutable state = Implementation.getSyncState key
+    let mutable running = Cache.Started = state
+    
     while running do
         printfn "Waiting for syncronization to complete"
         System.Threading.Thread.Sleep 5000
-        running <- Cache.Synced <> Implementation.getSyncState key
+        state <-  Implementation.getSyncState key
+        running <- Cache.Started = state
+
+    if state = Cache.Synced then
+        printfn "Syncronization completed succesfully"
+        0
+    else
+        eprintfn "Syncronization failed"
+        1
 
 let test() = 
-    //getData "1234" //run these two lines of code to test caching
-    //getData "5678"
-    
-    //cacheInvalidation "flowerpot"
-
-    Implementation.initDb() |> printfn "%A"
-    sync "gandalf_1" 
-    
+    Implementation.initDb() |> printfn "Init: %A"
+    sync "gandalf_1"

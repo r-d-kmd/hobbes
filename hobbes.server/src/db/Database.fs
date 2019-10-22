@@ -107,7 +107,7 @@ type AzureDevOpsAnalyticsRecord = JsonProvider<"""{
     }
 }], "@odata.nextLink":"https://analytics.dev.azure.com/"}""">
 
-type List = JsonProvider<"""{
+type List = JsonProvider<"""[{
     "total_rows": 2,
     "offset": 2,
     "rows": [
@@ -127,8 +127,14 @@ type List = JsonProvider<"""{
                 ]
             }
         }]
-    }""">
-
+    },{
+ "id": "07e9a2611a712c808bd422425c9dcda2",
+ "key": [
+  "Azure DevOps",
+  "flowerpot"
+ ],
+ "value": 90060205,
+ "doc": {}}]""", SampleIsList = true>
 
 type private DatabaseName =
     Configurations
@@ -141,6 +147,7 @@ type HttpMethod =
     Get
     | Post
     | Put
+    | Delete
 
 type ViewList<'a> = 
     {
@@ -153,28 +160,33 @@ let private getBody (resp : HttpResponse) =
     Binary _ -> failwithf "Can't use a binary response"
     | Text res -> res
 
-type View(getter : string -> int * string, name) = 
+type View(getter : string list -> ((string * string) list) option -> int * string, name) = 
 
     let _list (startKey : string option) (endKey : string option) limit (descending : bool option) skip = 
         let args = 
-            System.String.Join("&",
-                [ 
-                    match  startKey, endKey  with
-                      None,None -> ()
-                      | Some key,None | None,Some key -> yield "key", key
-                      | Some startKey,Some endKey -> 
-                          yield "startkey", startKey
-                          yield "endkey", endKey
-                    match limit with
-                      None -> ()
-                      | Some l -> yield "limit", string l
-                    if descending.IsSome && descending.Value then yield "descending","true"
-                    match skip with
-                      None -> ()
-                      | Some l -> yield "skip", string l
-                ] |> List.map(fun (a,b) -> a + "=" + b))
-        sprintf """_design/default/_view/%s/?%s""" name args
-        |> getter 
+            [ 
+                match  startKey, endKey  with
+                  None,None -> ()
+                  | Some key,None | None,Some key -> yield "key", key
+                  | Some startKey,Some endKey -> 
+                      yield "startkey", startKey
+                      yield "endkey", endKey
+                match limit with
+                  None -> ()
+                  | Some l -> yield "limit", string l
+                if descending.IsSome && descending.Value then yield "descending","true"
+                match skip with
+                  None -> ()
+                  | Some l -> yield "skip", string l
+            ] |> Some
+        let path = 
+            [
+             "_design"
+             "default"
+             "_view"
+             name
+            ]
+        getter path args
 
     let getListFromResponse (statusCode,body) =
         if statusCode < 300 && statusCode >= 200 then
@@ -188,25 +200,32 @@ type View(getter : string -> int * string, name) =
     
     let rowCount startKey endKey = 
         (listResult startKey endKey (Some 0) None None).TotalRows
+        |> Option.orElse(Some 0)
+        |> Option.get
 
 
     let list (parser : string -> 'a) (startKey : string option) (endKey : string option) (descending : bool option) = 
-        let rowCount = rowCount startKey endKey
-        let mutable limit = 100
-        let rec fetch i = 
+        let mutable limit = 32
+        let rec fetch i acc = 
             printfn "Fetching with a page size of %d" limit
             let statusCode,body = _list startKey endKey (Some limit) descending (i |> Some)
-            (if statusCode = 500 && limit > 1 then
+            if statusCode = 500 && limit > 1 then
                 //this is usually caused by an os process time out, due to too many reccords being returned
                 //gradually shrink the page size and retry
                 limit <- limit / 2
-                fetch i
+                fetch i acc
             else
-                (statusCode,body) |> getListFromResponse)
-        [|for i in 0..limit..(rowCount + limit - 1) ->
-            fetch i |]
-        |> Array.collect(fun l -> l.Rows)
-        |> Array.map(fun entry -> entry.Value.ToString() |> parser)    
+                let result = (statusCode,body) |> getListFromResponse
+                match result.TotalRows, result.Offset with
+                Some t, Some o when t = o -> acc
+                | _ ->
+                    let values = 
+                        match result.Value with
+                        Some v -> (v |> string)::acc
+                        | _ -> result.Rows |> Array.fold(fun acc entry -> entry.Value.ToString()::acc) acc
+                    fetch i values
+
+        fetch 0 [] |> List.map parser
     member __.List<'a>(parser : string -> 'a, ?startKey : string, ?endKey : string, ?descending) =
         list parser startKey endKey descending
     member __.List<'a>(parser : string -> 'a, limit, ?startKey : string, ?endKey : string, ?descending) =
@@ -215,25 +234,30 @@ type View(getter : string -> int * string, name) =
 
 and Database<'a> (databaseName, parser : string -> 'a) =
     let mutable _views : Map<string,View> = Map.empty
-    let urlWithId (id : string) = 
-        let dbUrl = dbServerUrl + "/" + databaseName
-        id
-        |> sprintf "%s/%s" dbUrl
-     
-    let request httpMethod isTrial body (path : string) rev  =
+    let request httpMethod isTrial body path rev queryString =
+        let enc (s : string) = System.Web.HttpUtility.UrlEncode s
+
+        let url = 
+            System.String.Join("/", [
+                                        dbServerUrl
+                                        databaseName
+                                    ]@(path
+                                       |> List.map enc))+
+            match queryString with
+            None -> ""
+            | Some qs -> 
+               "?" + System.String.Join("&",
+                                     qs
+                                     |> Seq.map(fun (k,v) -> sprintf "%s=%s" k (enc v))
+               )
         let m,direction =
               match httpMethod with 
               Get -> "GET", "from"
               | Post -> "POST", "to"
               | Put -> "PUT", "to"
-        let url = 
-            System.String.Join("/",[
-                dbServerUrl
-                databaseName
-                path
-            ])
+              | Delete -> "DELETE", "from"
             
-        printfn "%sting %s %s %s" m path direction databaseName
+        printfn "%sting %A %s %s" m path direction databaseName
         
         let headers =
             [
@@ -263,88 +287,29 @@ and Database<'a> (databaseName, parser : string -> 'a) =
                 500, e.Message
         let failed = statusCode < 200 || statusCode >= 300
         if failed then
-            printfn "Response status code : %d.  Body: %s" 
+            printfn "Response status code : %d.  Body: %s. Url: %s" 
                 statusCode 
                 (body.Substring(0,min 1000 body.Length)) 
+                url
          
         if isTrial || not(failed) then
             statusCode,body
         else
-            failwithf "Server error %d. Reason: %s. Request path: %s" statusCode body path
+            failwithf "Server error %d. Reason: %s. Url: %s" statusCode body url
 
-    let requestString httpMethod silentErrors body path rev = 
-        request httpMethod silentErrors body path rev |> snd
-    let tryRequest m rev body path = request m true body path rev
+    let requestString httpMethod silentErrors body path rev queryString = 
+        request httpMethod silentErrors body path rev queryString |> snd
+    let tryRequest m rev body path queryString = request m true body path rev queryString
     let get path = requestString Get false None path None
-    let put body path rev = requestString Put false (Some body) path rev 
+    let put body path rev = requestString Put false (Some body) path rev None
     let post body path = requestString Post false (Some body) path None 
     let tryGet = tryRequest Get None None 
-    let tryPut body rev = tryRequest Put rev (Some body)  
-    let tryPost body = tryRequest Post None (Some body) 
-
-    member this.AddView name =
-        _views <- _views.Add(name, View(tryGet,name))
-        this
-    
-    member __.ListIds() =
-        (get "_all_docs"
-         |> List.Parse).Rows
-         |> Array.map(fun r -> r.Id)
-         |> Seq.ofArray
-
-    member __.List() =
-        (get "_all_docs?include_docs=true"
-         |> List.Parse).Rows
-         |> Array.map(fun r -> r.Doc.JsonValue.ToString JsonSaveOptions.DisableFormatting |> parser)
-         |> Seq.ofArray
-
-    member __.Get id =
-        get id |> parser
-
-    member __.TryGet id = 
-        let statusCode,body = tryGet id
-        if statusCode >= 200  && statusCode <= 299 then
-            body |> parser |> Some
-        else
-            eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id statusCode (body.Substring(0,min 500 body.Length ))
-            None             
-
-    member __.GetRev id =
-        (get id |> Rev.Parse).Rev      
-
-    member __.TryGetRev id = 
-        let statusCode,body = tryGet id
-        if statusCode >=200 && statusCode < 300 then
-            let revision = 
-                (body |> Rev.Parse).Rev
-            (if System.String.IsNullOrWhiteSpace(revision) then 
-                failwithf "Invalid revision. %s" body)
-            revision |> Some
-        else
-            None
-
-        
-    member __.GetHash id =
-        (sprintf "%s_hash" id 
-         |> get
-         |> Hash.Parse).Hash   
-
-    member __.TryGetHash id = 
-        let statusCode,body = tryGet(sprintf "%s_hash" id) 
-        if statusCode >= 200 && statusCode < 300 then
-            (body 
-               |> Hash.Parse).Hash 
-               |> Some  
-        else None                        
-
-    member __.Put(id, body, ?rev) = 
-        put body id rev
-    member __.TryPut(id, body, ?rev) = 
-        tryPut body rev id
-    member __.Post(path, body) = 
-        let statusCode,body = tryPost body path
+    let tryPut body rev path = tryRequest Put rev (Some body) path None 
+    let tryPost body path = tryRequest Post None (Some body) path None 
+    let delete id rev = request Delete false None [id] rev None
+    let handleResponse (statusCode,body : string) = 
         if  statusCode >= 200  && statusCode <= 299  then
-           body
+            body
         elif statusCode = 400 then
             let length = 500
             let start =
@@ -359,6 +324,71 @@ and Database<'a> (databaseName, parser : string -> 'a) =
             failwithf "Bad format. Doc: %s" (body.Substring(start, min body.Length length))
         else
             failwith body
+    member this.AddView name =
+        _views <- _views.Add(name, View(tryGet,name))
+        this
+    
+    member __.ListIds() =
+        (get ["_all_docs"] None
+         |> List.Parse).Rows
+         |> Array.map(fun r -> r.Id)
+         |> Seq.ofArray
+
+    member __.List() =
+        (get ["_all_docs"] (Some ["include_docs","true"])
+         |> List.Parse).Rows
+         |> Array.map(fun r -> r.Doc.JsonValue.ToString JsonSaveOptions.DisableFormatting |> parser)
+         |> Seq.ofArray
+
+    member __.Get id =
+        get [id] None |> parser
+
+    member __.TryGet id = 
+        let statusCode,body = tryGet [id] None
+        if statusCode >= 200  && statusCode <= 299 then
+            body |> parser |> Some
+        else
+            eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id statusCode (body.Substring(0,min 500 body.Length ))
+            None             
+
+    member __.GetRev id =
+        (get id None |> Rev.Parse).Rev      
+
+    member __.TryGetRev id = 
+        let statusCode,body = tryGet id None
+        if statusCode >=200 && statusCode < 300 then
+            let revision = 
+                (body |> Rev.Parse).Rev
+            (if System.String.IsNullOrWhiteSpace(revision) then 
+                failwithf "Invalid revision. %s" body)
+            revision |> Some
+        else
+            None
+
+        
+    member __.GetHash id =
+         (get [sprintf "%s_hash" id] None
+          |> Hash.Parse).Hash   
+
+    member __.TryGetHash id = 
+        let statusCode,body = tryGet [sprintf "%s_hash" id] None
+        if statusCode >= 200 && statusCode < 300 then
+            (body 
+               |> Hash.Parse).Hash 
+               |> Some  
+        else None                        
+
+    member __.Put(id, body, ?rev) = 
+        put body [id] rev
+    member __.TryPut(id, body, ?rev) = 
+        tryPut body rev [id]
+    member __.Post(body) = 
+        tryPost body []
+        |> handleResponse
+    member __.Post(path, body) = 
+        tryPost body [path]
+        |> handleResponse
+        
     member __.FilterByKeys keys = 
         let body = 
            System.String.Join(",", 
@@ -367,7 +397,7 @@ and Database<'a> (databaseName, parser : string -> 'a) =
            )
            |> sprintf """{"keys" : [%s]}"""
         try
-            (post body "_all_docs?include_docs=true"
+            (post body ["_all_docs"] (Some ["include_docs","true"])
              |> List.Parse).Rows
             |> Array.map(fun entry -> 
                 try
@@ -383,37 +413,18 @@ and Database<'a> (databaseName, parser : string -> 'a) =
         let id = (CouchDoc.Parse doc).Id
         if System.String.IsNullOrWhiteSpace id then
             failwith "Document must have a valid id"
-        match id |> this.TryGetRev with
+        match [id] |> this.TryGetRev with
         None ->
             printfn "Found no rev, so assuming it's a new doc. id: %s" id
-            this.Put(id, doc)
+            this.Post(doc)
         | Some rev -> 
             printfn "Found rev, going to update. id: %s. rev: %s" id rev 
             this.Put(id, doc,  rev)
     member __.Delete id =
         let doc = 
-            get id
+            get [id] None
             |> CouchDoc.Parse
-       
-        let url = 
-            System.String.Join("/",[
-                dbServerUrl
-                databaseName
-                id
-            ])
-        printfn "Deleting %s from %s" id databaseName
-  
-        let headers =
-            [
-                HttpRequestHeaders.BasicAuth user pwd
-                HttpRequestHeaders.ContentType HttpContentTypes.Json
-                HttpRequestHeaders.IfMatch doc.Rev
-            ]
-        
-        Http.Request(url,
-            httpMethod = "DELETE", 
-            headers = headers
-        ) |> ignore
+        delete id (Some doc.Rev)
 
 let couch = Database ("", ignore)
 let users = Database ("_users", UserRecord.Parse)

@@ -28,5 +28,5 @@ let sync configuration =
         1
 
 let test() = 
-    Implementation.initDb() |> printfn "Init: %A"
-    sync "gandalf_1"
+    Implementation.initDb() |> ignore
+    sync "gandalf" //"flowerpot" 

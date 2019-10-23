@@ -205,15 +205,17 @@ let key token =
                 printfn "Didn't find user. %s" userId
                 let userRecord = 
                     sprintf """{
+                        "_id" : "%s",
                       "name": "%s",
                       "type": "user",
                       "roles": [],
                       "password": "%s"
-                    }""" user token
-                (userId, userRecord)
-                |> users.Put
+                    }""" userId user token
+                userRecord
+                |> users.Post
                 |> ignore
-                users.Get userId
+                users.FilterByKeys [userId]
+                |> Seq.head
                 |> Some
               | s -> s
         )

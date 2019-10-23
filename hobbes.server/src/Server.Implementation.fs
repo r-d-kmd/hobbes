@@ -7,7 +7,7 @@ open FSharp.Data
 open Hobbes.Server.Security
 
 let getSyncState syncId =
-    Rawdata.getState syncId
+    200, Rawdata.getState syncId |> string
     
 let private data configurationName =
     let configuration = DataConfiguration.get configurationName
@@ -127,7 +127,7 @@ let private hash (input : string) =
         ) sBuilder).ToString()
         
 
-let sync pat configurationName =
+let sync configurationName pat=
     let configuration = DataConfiguration.get configurationName
     let syncId = Rawdata.createSyncStateDocument configuration.Source
     async {
@@ -241,13 +241,22 @@ let storeTransformations doc =
         500,"internal server error"
 
 let listConfigurations() = 
-    DataConfiguration.list()
+    let configurations = DataConfiguration.list()
+                         |> Seq.map (sprintf "%A")
+    let body = sprintf """{"configurations" : [%s]}""" <| System.String.Join(",", configurations)
+    200, body
 
 let listCache() = 
-    Cache.list()
+    let cacheEntries = Cache.list()
+                      |> Seq.map (sprintf "%A")
+    let body = sprintf """{"cache" : [%s]}""" <| System.String.Join(",", cacheEntries)
+    200, body
 
 let listTransformations() = 
-    Transformations.list()
+    let transformations = Transformations.list()
+                          |> Seq.map (sprintf "%A")
+    let body = sprintf """{"transformations" : [%s]}""" <| System.String.Join(",", transformations)
+    200, body
 
 let storeConfigurations doc = 
     try
@@ -324,7 +333,7 @@ let initDb () =
         |> List.tryFind (fun sc -> ((sc >= 200 && sc < 300) || (sc = 412)) |> not)
     (match errorCode with
      Some errorCode ->
-        "error in creating dbs", errorCode
+        errorCode, "error in creating dbs"
      | None ->
         let dbMap = dbs |> Map.ofList
         try
@@ -341,8 +350,8 @@ let initDb () =
             ) |> Seq.map uploadDesignDocument
             |> Async.Parallel
             |> Async.RunSynchronously) |> ignore
-            "init completed", 200
+            200, "init completed"
         with e ->
             eprintfn "Error in init: %s" e.Message
-            e.Message, 500
+            500, e.Message
     )

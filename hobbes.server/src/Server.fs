@@ -35,100 +35,40 @@ let private verified f =
         (setStatusCode statusCode
          >=> setBodyFromString body) func ctx
 
-let private csv configurationName =
-    verified (fun _ -> Implementation.csv configurationName)
+let private handleRequestWithArg shouldVerify f arg : HttpHandler =
+    fun next (ctx : HttpContext) ->
+        task {
+            if shouldVerify then
+                return! verified (fun _ -> f arg) next ctx
+            else 
+                let code, body = f arg
+                return! (setStatusCode code >=> setBodyFromString body) next ctx
+        }
 
-
-let private getSyncStatus statusId =
-    verified (fun _ -> 200,Implementation.getSyncState statusId |> string)
-
-let private sync configurationName =
-    fun f (ctx : HttpContext) ->
-        try
-            match ctx.TryGetRequestHeader "PAT" with
-            Some azurePAT ->
-                verified (fun () -> Implementation.sync azurePAT configurationName) f ctx
-            | None -> 
-                (setStatusCode 403 >=> setBodyFromString "Unauthorized") f ctx
-        with e -> 
-            eprintfn "Couldn't sync %s. Reason: %s" configurationName e.Message
-            (setStatusCode 500 >=> setBodyFromString e.Message) f ctx
-
-let private putDocument (handler : string -> int * string) : HttpHandler =
+let private handleRequestWithBody shouldVerify f : HttpHandler =
     fun next (ctx : HttpContext) ->
         task {
             let! body = ctx.ReadBodyFromRequestAsync()
-            return! verified (fun _ -> handler body) next ctx
+            return! handleRequestWithArg shouldVerify f body next ctx
         }
 
-let private listCache : HttpHandler =
-    fun next (ctx : HttpContext) ->
-        task {
-            return! verified (fun _ -> 
-                    let cacheEntries = 
-                        Implementation.listCache()
-                        |> Seq.map (sprintf "%A")
-                    let body = sprintf """{"cache" : [%s]}""" <| System.String.Join(",", cacheEntries)
-                    200, body
-                ) next ctx
-        }
-
-let private listTransformations : HttpHandler =
-    fun next (ctx : HttpContext) ->
-        task {
-            return! verified (fun _ -> 
-                    let transformations = 
-                        Implementation.listTransformations()
-                        |> Seq.map (sprintf "%A")
-                    let body = sprintf """{"transformations" : [%s]}""" <| System.String.Join(",", transformations)
-                    200, body
-                ) next ctx
-        }
-
-let private listConfigurations : HttpHandler =
-    fun next (ctx : HttpContext) ->
-        task {
-            return! verified (fun _ -> 
-                    let configurations = 
-                        Implementation.listConfigurations()
-                        |> Seq.map (sprintf "%A")
-                    let body = sprintf """{"configurations" : [%s]}""" <| System.String.Join(",", configurations)
-                    200, body
-                ) next ctx
-        }
-
-let private initDb : HttpHandler =
-    fun next ctx ->
-        task {
-          let (body, sc) = Implementation.initDb()
-          return! (setStatusCode sc >=> setBodyFromString body) next ctx
-        }
-
-let private key token =
-    let statusCode,body = Implementation.key token
-    setStatusCode statusCode >=> setBodyFromString body
-
-let private ping : HttpHandler =
-    fun next ctx -> 
-        task { 
-            let statusCode,body = Implementation.ping()
-            return! (setStatusCode statusCode >=> setBodyFromString body) next ctx
-        }
+let private handleRequestWithBodyAndArg shouldVerify f arg =
+    fun next (ctx : HttpContext) -> handleRequestWithBody shouldVerify (f arg) next ctx       
 
 let private apiRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
-    getf "/csv/%s" csv
-    getf "/key/%s" key
-    get "/ping" ping
-    get "/init" initDb
-    getf "/sync/%s" sync
-    put "/configurations" (putDocument Implementation.storeConfigurations)
-    get "/configurations" listConfigurations
-    put "/transformations" (putDocument Implementation.storeTransformations)
-    get "/transformations" listTransformations
-    get "/cache" listCache
-    getf "/status/sync/%s" getSyncStatus
+    get "/ping" (handleRequestWithArg false Implementation.ping ())
+    get "/init" (handleRequestWithArg false Implementation.initDb ())
+    getf "/key/%s" (handleRequestWithArg false Implementation.key)
+    getf "/csv/%s" (handleRequestWithArg true Implementation.csv)
+    getf "/sync/%s" (handleRequestWithBodyAndArg true Implementation.sync)
+    put "/configurations" (handleRequestWithBody true Implementation.storeConfigurations)
+    get "/configurations" (handleRequestWithArg true Implementation.listConfigurations ())
+    put "/transformations" (handleRequestWithBody true Implementation.storeTransformations)
+    get "/transformations" (handleRequestWithArg true Implementation.listTransformations ())
+    get "/cache" (handleRequestWithArg true Implementation.listCache ())
+    getf "/status/sync/%s" (handleRequestWithArg true Implementation.getSyncState)
 }
 
 let private appRouter = router {

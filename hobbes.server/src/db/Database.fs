@@ -348,7 +348,6 @@ and Database<'a> (databaseName, parser : string -> 'a) =
         if statusCode >= 200  && statusCode <= 299 then
             body |> parser |> Some
         else
-            eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id statusCode (body.Substring(0,min 500 body.Length ))
             None             
 
     member __.GetRev id =
@@ -404,7 +403,7 @@ and Database<'a> (databaseName, parser : string -> 'a) =
                 try
                     entry.Doc.ToString() |> parser
                 with e ->
-                    failwithf "Failed loading transformations. Row: %A. Msg: %s" (entry.ToString()) e.Message
+                    failwithf "Failed loading. Row: %A. Msg: %s" (entry.ToString()) e.Message
             ) |> Seq.ofArray
         with _ ->
             eprintfn "Failed getting documents by key. POST Body: %s" (body.Substring(0,min body.Length 500))

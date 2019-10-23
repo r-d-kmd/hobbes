@@ -116,7 +116,7 @@ let private db =
       .AddView(sourceView)
 
 let private createKeyFromList  (cacheKey : string list) =  
-    System.String.Join(":",cacheKey) 
+    System.String.Join(":",cacheKey).ToLower()
 
 let private createKey (configuration : Configuration) = 
     configuration.Source.SourceName::configuration.Source.ProjectName::configuration.Transformations
@@ -127,7 +127,8 @@ let InsertOrUpdate doc =
 let list() = 
     db.ListIds()
 
-let createDataRecord key (source : DataSource) (data : string) keyValue =
+let createDataRecord (key : string) (source : DataSource) (data : string) keyValue =
+    let key = key.ToLower()
     let record = 
         sprintf """{
                     "_id" : "%s",

@@ -84,7 +84,8 @@ let main args =
         let publish = results.TryGetResult PublishTransformations
 
         if  test.IsSome || (sync.IsNone && publish.IsNone) then
-            Workbench.Tests.test()
+            Workbench.Tests.test() |> ignore
+            0
         else            
             match sync with
             None -> 
@@ -93,6 +94,7 @@ let main args =
                     let pat = results.GetResult PAT
                     transformations()
                     |> List.iter(fun transformation ->
+                        printfn "Creating transformation: %s" (Database.CouchDoc.Parse transformation).Id
                         Http.Request(url, 
                                      httpMethod = "PUT",
                                      body = TextRequest transformation,

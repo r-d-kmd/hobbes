@@ -110,7 +110,7 @@ module Security =
             let userInfo = 
                 user
                 |> fromB64
-            //github and asure use different formats so lets try and align them
+            //github and azure use different formats so lets try and align them
             let userText = 
                 userInfo.Replace("\"email\"", "\"Email\"").Replace("\"user\"","\"User\"").Trim().Replace(" ", ",").Trim().TrimStart('{').TrimEnd('}')
                 |> sprintf "{%s}"

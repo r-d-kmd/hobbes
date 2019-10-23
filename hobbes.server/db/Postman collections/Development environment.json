@@ -1,5 +1,5 @@
 {
-	"id": "ad54b5fb-0065-435c-8d30-9ea0e46879d0",
+	"id": "6d4b4be0-3383-43a2-8f87-a19b3caf6991",
 	"name": "Development",
 	"values": [
 		{
@@ -51,9 +51,24 @@
 			"key": "data",
 			"value": "",
 			"enabled": true
+		},
+		{
+			"key": "pat",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "userPass64",
+			"value": "YWRtaW46cGFzc3dvcmQ=",
+			"enabled": true
+		},
+		{
+			"key": "dburl",
+			"value": "localhost:5984/",
+			"enabled": true
 		}
 	],
 	"_postman_variable_scope": "environment",
-	"_postman_exported_at": "2019-10-03T20:27:19.963Z",
-	"_postman_exported_using": "Postman/7.8.0"
+	"_postman_exported_at": "2019-10-23T12:23:58.009Z",
+	"_postman_exported_using": "Postman/7.9.0"
 }

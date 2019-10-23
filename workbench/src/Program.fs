@@ -84,7 +84,8 @@ let main args =
         let publish = results.TryGetResult PublishTransformations
 
         if  test.IsSome || (sync.IsNone && publish.IsNone) then
-            Workbench.Tests.test()
+            Workbench.Tests.test() |> ignore
+            0
         else            
             match sync with
             None -> 

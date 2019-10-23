@@ -30,16 +30,9 @@ let parse stmt =
     Hobbes.Parsing.Parser.parse [stmt]
     |> Seq.exactlyOne
 
-let transformations() = 
-    let statements = 
-        [
-            "Gandalf.renaming",Gandalf.renaming
-            "Azure.foldBySprint",Azure.foldBySprint
-            "Metrics.stateCountBySprint",Metrics.stateCountBySprint
-            "Metrics.expandingCompletionBySprint",Metrics.expandingCompletionBySprint
-        ]
-    statements
-    |> List.map(fun (name,statements) ->
+let transformations = 
+    Workbench.Reflection.transformations()
+    |> Seq.map(fun (name,statements) ->
         statements
         |> List.map parse
         |> ignore
@@ -55,7 +48,8 @@ let transformations() =
             "lines" : %s
         }
         """ name
-    )
+    ) |> List.ofSeq
+
 [<EntryPoint>]
 let main args =
     let results = 
@@ -92,8 +86,8 @@ let main args =
                 if publish |> Option.isSome then 
                     let url = environmentHost+ "/api/transformations"
                     let pat = results.GetResult PAT
-                    transformations()
-                    |> List.iter(fun transformation ->
+                    transformations
+                    |> Seq.iter(fun transformation ->
                         printfn "Creating transformation: %s" (Database.CouchDoc.Parse transformation).Id
                         Http.Request(url, 
                                      httpMethod = "PUT",
@@ -121,6 +115,3 @@ let main args =
                                     ]
                                 ) |> ignore
                 0
-
-            
-        

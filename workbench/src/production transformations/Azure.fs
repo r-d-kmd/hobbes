@@ -1,7 +1,9 @@
+[<Workbench.Transformations>]
 module Azure
 
 open Hobbes.DSL
 
+[<Workbench.Transformation>]
 let foldBySprint = 
     [
         group by ["Sprint"; "WorkItemId"] => ( maxby !> "ChangedDate")

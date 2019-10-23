@@ -22,7 +22,7 @@ module Expressions =
     let private expr = opp.ExpressionParser
     
     let expressionInBrackets = 
-        spaces >>. (between (skipString "[") (skipString "]") expr) .>> spaces
+        spaces >>. (between (skipString "[" .>> spaces) (spaces >>. skipString "]") expr) .>> spaces
 
     let private computationExpression =
         // we set up an operator precedence parser for parsing the arithmetic expressions
@@ -45,9 +45,10 @@ module Expressions =
                   (fun regressionType inputs outputs -> AST.Regression(regressionType,inputs,outputs)) 
         let ``int`` = kwInt >>? expr >>= (AST.Int >> preturn) 
         let ifThisThenElse =
-            (pipe3 (kwIf >>? between (skipString "[") (skipString "]") expr .>> spaces1)
-                  (between (skipString "{") (skipString "}") expr .>> spaces1)
-                  (kwElse >>? between (skipString "{") (skipString "}") expr)
+            let expressionInCurly = spaces >>. (between (skipString "{" .>> spaces) (spaces >>. skipString "}") expr) .>> spaces
+            (pipe3 (kwIf >>? expressionInBrackets)
+                  (expressionInCurly)
+                  (kwElse >>? expressionInCurly)
                   (fun condition thenBody elseBody -> 
                       let condition = 
                           checkBooleanExp condition

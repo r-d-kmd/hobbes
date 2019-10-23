@@ -2,7 +2,7 @@ module Workbench.Tests
 open Hobbes.Server.Db
 
 let getData conf = 
-    let statusCode,res = Implementation.data conf
+    let statusCode,res = Implementation.csv conf
     res.Substring(0, min 500 res.Length) |> printf "Status: %d. %A" statusCode
     
 let cacheInvalidation configName = 

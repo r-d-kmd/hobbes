@@ -29,4 +29,4 @@ let sync configuration =
 
 let test() = 
     Implementation.initDb() |> ignore
-    sync "gandalf" //"flowerpot" 
+    getData "gandalf" //"flowerpot" 

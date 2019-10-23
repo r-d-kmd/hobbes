@@ -12,6 +12,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TransformationAttribute.fs" />
     <Compile Include="production transformations/*.fs" />
     <Compile Include="Tests/Tests.fs" />
     <Compile Include="Program.fs" />

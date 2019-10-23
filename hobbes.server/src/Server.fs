@@ -142,8 +142,15 @@ let private app = application {
     use_gzip
 }
 
-async {
-    Implementation.initDb() |> ignore
-} |> Async.Start
+let rec private init() =
+    async {
+        try
+           Implementation.initDb() |> ignore
+           printfn "DB initialized"
+        with _ ->
+           do! Async.Sleep 2000
+           init()
+    } |> Async.Start
 
+init()
 run app

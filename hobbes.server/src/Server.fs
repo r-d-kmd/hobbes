@@ -35,8 +35,8 @@ let private verified f =
         (setStatusCode statusCode
          >=> setBodyFromString body) func ctx
 
-let private data configurationName =
-    verified (fun _ -> Implementation.data configurationName)
+let private csv configurationName =
+    verified (fun _ -> Implementation.csv configurationName)
 
 
 let private getSyncStatus statusId =
@@ -118,7 +118,7 @@ let private ping : HttpHandler =
 let private apiRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
-    getf "/data/%s" data
+    getf "/csv/%s" csv
     getf "/key/%s" key
     get "/ping" ping
     get "/init" initDb
@@ -141,5 +141,9 @@ let private app = application {
     memory_cache
     use_gzip
 }
+
+async {
+    Implementation.initDb() |> ignore
+} |> Async.Start
 
 run app

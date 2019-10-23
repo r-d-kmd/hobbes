@@ -377,7 +377,8 @@ and Database<'a> (databaseName, parser : string -> 'a) =
                |> Hash.Parse).Hash 
                |> Some  
         else None                        
-
+    member __.Put(path, body, ?rev) = 
+        put body path rev
     member __.Put(id, body, ?rev) = 
         put body [id] rev
     member __.TryPut(id, body, ?rev) = 

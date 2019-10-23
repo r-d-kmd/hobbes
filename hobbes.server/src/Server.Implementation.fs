@@ -9,7 +9,7 @@ open Hobbes.Server.Security
 let getSyncState syncId =
     Rawdata.getState syncId
     
-let data configurationName =
+let private data configurationName =
     let configuration = DataConfiguration.get configurationName
     let uncachedTransformations, data =
         Cache.findUncachedTransformations configuration
@@ -62,9 +62,13 @@ let data configurationName =
                 transformedData, tempConfig
             )  (cachedData, tempConfig)
             |> fst
+    200,transformedData 
 
-    200,transformedData |> DataMatrix.ToJson Csv
-       
+let csv configuration = 
+    let status, data = data configuration
+    status,data 
+           |> DataMatrix.ToJson Csv
+
 let private request user pwd httpMethod body url  =
     let headers =
         [
@@ -172,9 +176,9 @@ let sync pat configurationName =
                             |> Seq.map(fun configuration -> 
                                 async { 
                                     try
-                                        let statusCode, body = data configuration
+                                        let statusCode, _ = data configuration
                                         if statusCode > 299 then 
-                                            eprintfn "Failed to transform data. Message: %s. Status: %d" body statusCode
+                                            eprintfn "Failed to transform data. Status: %d" statusCode
                                     with e ->
                                         eprintfn "Failed to transform data. Message: %s" e.Message
                                 }
@@ -199,7 +203,7 @@ let key token =
         token
         |> tryParseUser
         |> Option.bind(fun (user,token) -> 
-              let userId = sprintf "org.couchdb.user%%3A%s" user
+              let userId = sprintf "org.couchdb.user:%s" user
               match users.TryGet userId with
               None ->
                 printfn "Didn't find user. %s" userId
@@ -280,8 +284,27 @@ let private uploadDesignDocument (storeHandle, (hashHandle : string -> string op
 let ping() = 
     couch.Get "_all_dbs"
     200,"pong"
-    
+
+[<Literal>]
+let private SettingsPath = """./db/documents/settings.json"""
+type private Settings = FSharp.Data.JsonProvider<SettingsPath>
+
 let initDb () =
+    let configurationBase = "_node/_local/_config"
+    let settingsDb = Database(configurationBase,id)
+    Settings.Load SettingsPath
+    |> Array.iter(fun setting ->
+         let value =
+            setting.Value.Number
+            |> Option.bind(string >> Some)
+            |> Option.orElse(setting.Value.String)
+            |> Option.get
+            |> sprintf "%A"
+         settingsDb.Put([
+                          setting.Area
+                          setting.Name
+                        ], value) |> printfn "Old value: %s"
+    )
     let dbs = 
         [
             "transformations", (Transformations.store, Transformations.tryGetHash)

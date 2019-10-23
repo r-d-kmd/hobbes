@@ -60,7 +60,7 @@ Target.create "Restart"(fun _ ->
     let compose = run "docker-compose" "."
     compose "kill hobbes"
     compose "rm -f hobbes"
-    compose "up hobbes"
+    compose "up"
 )
 
 Target.create "BuildImage" (fun _ ->

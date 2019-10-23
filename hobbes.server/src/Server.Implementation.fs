@@ -199,9 +199,9 @@ let key token =
         token
         |> tryParseUser
         |> Option.bind(fun (user,token) -> 
-              let userId = sprintf "org.couchdb.user%%3A%s" user
+              let userId = sprintf "org.couchdb.user:%s" user
               match users.TryGet userId with
-              None ->
+              None  ->
                 printfn "Didn't find user. %s" userId
                 let userRecord = 
                     sprintf """{
@@ -217,7 +217,7 @@ let key token =
                 users.FilterByKeys [userId]
                 |> Seq.head
                 |> Some
-              | s -> s
+              | s -> s 
         )
 
     match user with
@@ -317,8 +317,9 @@ let initDb () =
                     fst handles, snd handles, f) 
             ) |> Seq.map uploadDesignDocument
             |> Async.Parallel
-            |> Async.RunSynchronously).[0], 200
+            |> Async.RunSynchronously) |> ignore
+            "init completed", 200
         with e ->
-            eprintfn "Error in init %s" e.Message
+            eprintfn "Error in init: %s" e.Message
             e.Message, 500
     )

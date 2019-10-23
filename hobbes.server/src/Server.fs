@@ -68,7 +68,7 @@ let private listCache : HttpHandler =
                     let cacheEntries = 
                         Implementation.listCache()
                         |> Seq.map (sprintf "%A")
-                    let body = sprintf """{"configurations" : [%s]}""" <| System.String.Join(",", cacheEntries)
+                    let body = sprintf """{"cache" : [%s]}""" <| System.String.Join(",", cacheEntries)
                     200, body
                 ) next ctx
         }
@@ -80,7 +80,7 @@ let private listTransformations : HttpHandler =
                     let transformations = 
                         Implementation.listTransformations()
                         |> Seq.map (sprintf "%A")
-                    let body = sprintf """{"transformatinos" : [%s]}""" <| System.String.Join(",", transformations)
+                    let body = sprintf """{"transformations" : [%s]}""" <| System.String.Join(",", transformations)
                     200, body
                 ) next ctx
         }

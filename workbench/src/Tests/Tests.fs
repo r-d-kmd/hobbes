@@ -27,6 +27,11 @@ let sync configuration =
         eprintfn "Syncronization failed"
         1
 
+let generateKey token =
+    Implementation.key token
+
+
 let test() = 
-    Implementation.initDb() |> ignore
-    sync "gandalf" //"flowerpot" 
+    //Implementation.initDb() |> ignore
+    //sync "gandalf" //"flowerpot" 
+    generateKey "eyJFbWFpbCI6Imx1eF8tNEBob3RtYWlsLmNvbSIsIlVzZXIiOiJMdXhUaGVEdWRlIn0=%7C1571816785%7C5Cz1qRYApfqiHk3kn1lJjhYTio4="

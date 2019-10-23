@@ -14,8 +14,19 @@ nuget Fake.DotNet.Cli //"
 
 open Fake.Core
 open Fake.IO
-open Fake.Core
 open Fake.DotNet
+
+let run command workingDir args = 
+    let arguments = 
+        match args |> String.split ' ' with
+        [""] -> Arguments.Empty
+        | args -> args |> Arguments.OfArgs
+    RawCommand (command, arguments)
+    |> CreateProcess.fromCommand
+    |> CreateProcess.withWorkingDirectory workingDir
+    |> CreateProcess.ensureExitCode
+    |> Proc.run
+    |> ignore
 
 let serverPath = Path.getFullName "./"
 let deployDir = Path.getFullName "./deploy"
@@ -45,6 +56,13 @@ Target.create "Bundle" (fun _ ->
     runDotNet publishArgs serverPath ""
 )
 
+Target.create "Restart"(fun _ ->
+    let compose = run "docker-compose" "."
+    compose "kill hobbes"
+    compose "rm -f hobbes"
+    compose "up hobbes"
+)
+
 Target.create "BuildImage" (fun _ ->
     if System.IO.Directory.Exists("./deploy/Server") |> not then failwith "Doh"
     if System.IO.Directory.Exists("./deploy/Server/db") |> not then failwith "with What??"
@@ -62,5 +80,6 @@ open Fake.Core.TargetOperators
     ==> "Bundle" 
     ==> "Build"
     ==> "BuildImage"
+    ==> "Restart"
 
 Target.runOrDefaultWithArguments "BuildImage"

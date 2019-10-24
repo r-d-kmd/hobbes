@@ -1,9 +1,9 @@
-[<Workbench.Transformations>]
-module Gandalf
+[<Workbench.Transformations(Workbench.Project.Gandalf)>]
+module Transformations.Gandalf
 
 open Hobbes.DSL
 
-[<Workbench.Transformation>]
+[<Workbench.Transformation 0 >]
 let renaming = 
     [
         only ((!> "WorkItemType" == "User Story") .|| (!> "WorkItemType" == "Bug"))

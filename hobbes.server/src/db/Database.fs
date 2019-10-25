@@ -350,6 +350,9 @@ and Database<'a> (databaseName, parser : string -> 'a) =
 
     member __.Get id =
         get [id] None |> parser
+        
+    member __.Get path =
+        get path None |> parser
 
     member __.TryGet id = 
         let statusCode,body = tryGet [id] None

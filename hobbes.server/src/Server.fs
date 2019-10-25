@@ -38,6 +38,13 @@ let private verified f =
 let private csv configurationName =
     verified (fun _ -> Implementation.csv configurationName)
 
+
+let private getSetting (area, setting) : HttpHandler =
+    verified (fun _ -> Implementation.setting area setting)
+
+let private setSetting (area, setting, value) : HttpHandler =
+    verified (fun _ -> Implementation.configure area setting value)
+
 let private deleteDb name=
     verified (fun _ -> 
         couch.Delete name
@@ -148,6 +155,8 @@ let private apiRouter = router {
     get "/list/cache" listCache
     get "/list/rawdata" listRaw
     getf "/status/sync/%s" getSyncStatus
+    getf "/admin/settings/%s/%s" getSetting
+    putf "/admin/configure/%s/%s/%s" setSetting
 }
 
 let private appRouter = router {

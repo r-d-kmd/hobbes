@@ -69,6 +69,24 @@ let csv configuration =
     status,data 
            |> DataMatrix.ToJson Csv
 
+let setting area setting =
+    200,couch.Get [
+                "_node"
+                "_local"
+                "_config"
+                area
+                setting
+    ]
+
+let configure area setting value =
+    200,couch.Put ([
+                "_node"
+                "_local"
+                "_config"
+                area
+                setting
+    ],value)
+
 let private request user pwd httpMethod body url  =
     let headers =
         [
@@ -151,8 +169,9 @@ let sync pat configurationName =
                         match record with
                         Some record ->
                             let data = record.JsonValue.ToString JsonSaveOptions.DisableFormatting
-                            let rawdataRecord = Cache.createDataRecord (url |> hash) configuration.Source data ["state",Cache.Synced |> string; "Url", url] 
+                            let rawdataRecord = Cache.createDataRecord (url |> hash) configuration.Source data ["Url", url] 
                             let responseText = Rawdata.InsertOrUpdate rawdataRecord
+                            Rawdata.updateSync (url |> sprintf "inserted record. %s") configuration.Source
                             if System.String.IsNullOrWhiteSpace(record.OdataNextLink) |> not then
                                 printfn "Countinuing sync"
                                 printfn "%s" record.OdataNextLink
@@ -254,7 +273,6 @@ let storeConfigurations doc =
 
 let private uploadDesignDocument (storeHandle, (hashHandle : string -> string option), file) =
     
-        
     async {
         let! doc = System.IO.File.ReadAllTextAsync file |> Async.AwaitTask
         if System.String.IsNullOrWhiteSpace (CouchDoc.Parse doc).Rev |> not then failwithf "Initialization documents shouldn't have _revs %s" file
@@ -278,7 +296,7 @@ let private uploadDesignDocument (storeHandle, (hashHandle : string -> string op
 
 //test if db is alive
 let ping() = 
-    couch.Get "_all_dbs"
+    couch.Get "_all_dbs" |> ignore
     200,"pong"
 
 [<Literal>]
@@ -337,10 +355,12 @@ let initDb () =
             ) |> Seq.map uploadDesignDocument
             |> Async.Parallel
             |> Async.RunSynchronously) |> ignore
+
             Transformations.compactAndClean()
             Rawdata.compactAndClean()
             DataConfiguration.compactAndClean()
             Cache.compactAndClean()
+
             "init completed", 200
         with e ->
             eprintfn "Error in init: %s" e.Message

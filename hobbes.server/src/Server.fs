@@ -38,6 +38,10 @@ let private verified f =
 let private csv configurationName =
     verified (fun _ -> Implementation.csv configurationName)
 
+let private deleteDb name=
+    verified (fun _ -> 
+        couch.Delete name
+    )
 
 let private getSyncStatus statusId =
     verified (fun _ -> 200,Implementation.getSyncState statusId |> string)

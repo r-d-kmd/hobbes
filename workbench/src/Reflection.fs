@@ -97,9 +97,38 @@ module Reflection =
         |> Seq.collect (collect)
         |> Seq.map snd
        
-
+    let private createConfiguration (transformations : Map<_,_>) (configurationContainer : System.Type)  =
+        configurationContainer
+        |> getPropertiesdWithAttribute<Quotations.Expr<Transformation list>,ConfigurationAttribute>
+        |> Seq.map(fun (att,(name, expr)) ->
+            let rec readQuotation =
+                function
+                    PropertyGet(_,prop,_) -> 
+                        [prop]
+                    | NewUnionCase (_,exprs) -> //this is also the pattern for a list
+                        exprs
+                        |> List.collect(readQuotation)
+                    | _ -> 
+                        failwithf "Expected a transformation %A" expr
+            let transformationsProperties = 
+                readQuotation expr
+            let trans = 
+                transformationsProperties
+                |> List.map(fun transformationProperty ->
+                    transformationProperty.DeclaringType.Name + "." + transformationProperty.Name
+                )
+            {
+                Id = (att.Project |> Project.string) + "." + name
+                Source = 
+                    (configurationContainer
+                     |> tryGetAttribute<ConfigurationsAttribute> 
+                     |> Option.get).Source
+                Project = att.Project
+                Transformations = transformations.[att.Project] @ trans
+            }
+        ) |> List.ofSeq
     let configurations() =
-        let types = getTypesWithAttribute<ConfigurationsAttribute>()
+        let types = getTypesWithAttribute<ConfigurationsAttribute>() |> List.ofSeq
         let transformations = 
             getTypesWithAttribute<TransformationsAttribute>()
             |> Seq.map(fun t -> 
@@ -114,26 +143,7 @@ module Reflection =
             |> Map.ofSeq
 
         types
-        |> Seq.map(fun t -> 
-            t
-            |> getPropertiesdWithAttribute<Quotations.Expr<Transformation>,ConfigurationAttribute>
-            |> Seq.map(fun (att,(name, expr)) ->
-                let transformation = 
-                    match expr with
-                    PropertyGet(_,prop,_) -> 
-                        prop
-                    | _ -> failwith "Expected a transformation"
-                {
-                    Id = name
-                    Source = 
-                        (t 
-                         |> tryGetAttribute<ConfigurationsAttribute> 
-                         |> Option.get).Source
-                    Project = att.Project
-                    Transformations = transformations.[att.Project] @ [transformation.DeclaringType.Name + "." + transformation.Name]
-                }
-            )
-        )|> Seq.collect id
+        |> Seq.map(createConfiguration transformations)|> Seq.collect id
        
         
         

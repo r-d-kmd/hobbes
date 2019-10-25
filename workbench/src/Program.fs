@@ -30,9 +30,10 @@ let parse stmt =
     let stmt = stmt |> string
     Hobbes.Parsing.Parser.parse [stmt]
     |> Seq.exactlyOne
-
+    
 [<EntryPoint>]
 let main args =
+   
     let results = 
         try
             let parser = ArgumentParser.Create<CLIArguments>(programName = "workbench")
@@ -65,7 +66,8 @@ let main args =
             match sync with
             None -> 
                 if publish |> Option.isSome then 
-                    let url = environmentHost+ "/api/transformations"
+                    let urlTransformations = environmentHost + "/api/transformations"
+                    let urlConfigurations = environmentHost + "/api/configurations"
                     let pat = results.GetResult PAT
                     let transformations = 
                         Workbench.Reflection.transformations()
@@ -99,11 +101,25 @@ let main args =
                                  (c.Project |> Workbench.Project.string)
                                  (System.String.Join(",",c.Transformations |> Seq.map(sprintf "%A")))
                         ) 
-                    configurations
-                    |> Seq.append transformations 
+                    
+                    transformations 
                     |> Seq.iter(fun doc ->
-                        printfn "Creating transformation/configuration: %s" (Database.CouchDoc.Parse doc).Id
-                        Http.Request(url, 
+                        printfn "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
+                        Http.Request(urlTransformations, 
+                                     httpMethod = "PUT",
+                                     body = TextRequest doc,
+                                     headers = 
+                                        [
+                                           HttpRequestHeaders.BasicAuth pat ""
+                                           HttpRequestHeaders.ContentType HttpContentTypes.Json
+                                        ]
+                                    ) |> ignore
+                    )
+                    configurations
+                     
+                    |> Seq.iter(fun doc ->
+                        printfn "Creating configurations: %s" (Database.CouchDoc.Parse doc).Id
+                        Http.Request(urlConfigurations, 
                                      httpMethod = "PUT",
                                      body = TextRequest doc,
                                      headers = 

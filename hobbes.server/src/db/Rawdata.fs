@@ -72,7 +72,7 @@ module Rawdata =
 
     let list() = 
         db.ListIds()
-        
+
     let getMatrix (source : DataConfiguration.DataSource) = 
         let startKey, endKey = keys source 
         db.Views.["table"].List(TableView.parse,
@@ -88,3 +88,4 @@ module Rawdata =
     let tryGetHash id = db.TryGetHash id  
 
 
+    let compactAndClean() = db.CompactAndClean()

@@ -239,7 +239,7 @@ let storeTransformations doc =
         200,"ok"
     with _ -> 
         500,"internal server error"
-        
+
 let listConfigurations = DataConfiguration.list
 let listCache = Cache.list
 let listRaw = Rawdata.list
@@ -337,6 +337,10 @@ let initDb () =
             ) |> Seq.map uploadDesignDocument
             |> Async.Parallel
             |> Async.RunSynchronously) |> ignore
+            Transformations.compactAndClean()
+            Rawdata.compactAndClean()
+            DataConfiguration.compactAndClean()
+            Cache.compactAndClean()
             "init completed", 200
         with e ->
             eprintfn "Error in init: %s" e.Message

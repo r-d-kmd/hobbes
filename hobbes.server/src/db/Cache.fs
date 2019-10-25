@@ -250,3 +250,4 @@ let retrieve (configuration : Configuration) =
 
 let tryGetRev id = db.TryGetRev id
 let tryGetHash id = db.TryGetHash id
+let compactAndClean() = db.CompactAndClean()

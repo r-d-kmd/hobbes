@@ -17,3 +17,5 @@ let tryGetHash id = db.TryGetHash id
 
 let list() = 
    db.List()
+
+let compactAndClean() = db.CompactAndClean()

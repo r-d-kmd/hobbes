@@ -73,6 +73,18 @@ let private listCache : HttpHandler =
                 ) next ctx
         }
 
+let private listRaw : HttpHandler =
+    fun next (ctx : HttpContext) ->
+        task {
+            return! verified (fun _ -> 
+                    let cacheEntries = 
+                        Implementation.listRaw()
+                        |> Seq.map (sprintf "%A")
+                    let body = sprintf """{"data" : [%s]}""" <| System.String.Join(",", cacheEntries)
+                    200, body
+                ) next ctx
+        }
+
 let private listTransformations : HttpHandler =
     fun next (ctx : HttpContext) ->
         task {
@@ -123,11 +135,14 @@ let private apiRouter = router {
     get "/ping" ping
     get "/init" initDb
     getf "/sync/%s" sync
+
     put "/configurations" (putDocument Implementation.storeConfigurations)
-    get "/configurations" listConfigurations
     put "/transformations" (putDocument Implementation.storeTransformations)
-    get "/transformations" listTransformations
-    get "/cache" listCache
+    
+    get "/list/configurations" listConfigurations
+    get "/list/transformations" listTransformations
+    get "/list/cache" listCache
+    get "/list/rawdata" listRaw
     getf "/status/sync/%s" getSyncStatus
 }
 

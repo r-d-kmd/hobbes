@@ -70,7 +70,10 @@ module Rawdata =
            eprintfn "Failed to get last revision. Reason: %s." e.Message 
            None
 
-    let list (source : DataConfiguration.DataSource) = 
+    let list() = 
+        db.ListIds()
+        
+    let getMatrix (source : DataConfiguration.DataSource) = 
         let startKey, endKey = keys source 
         db.Views.["table"].List(TableView.parse,
                                                   startKey = startKey,

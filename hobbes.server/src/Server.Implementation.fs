@@ -35,7 +35,7 @@ let private data configurationName =
         match data with
         None ->
             printfn "Cache miss %s" configurationName
-            Rawdata.list configuration.Source
+            Rawdata.getMatrix configuration.Source
         | Some data -> data
    
     let transformedData = 
@@ -239,15 +239,11 @@ let storeTransformations doc =
         200,"ok"
     with _ -> 
         500,"internal server error"
-
-let listConfigurations() = 
-    DataConfiguration.list()
-
-let listCache() = 
-    Cache.list()
-
-let listTransformations() = 
-    Transformations.list()
+        
+let listConfigurations = DataConfiguration.list
+let listCache = Cache.list
+let listRaw = Rawdata.list
+let listTransformations = Transformations.list
 
 let storeConfigurations doc = 
     try

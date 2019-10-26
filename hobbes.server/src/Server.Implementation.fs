@@ -338,7 +338,7 @@ let initDb () =
         |> List.tryFind (fun sc -> ((sc >= 200 && sc < 300) || (sc = 412)) |> not)
     (match errorCode with
      Some errorCode ->
-        "error in creating dbs", errorCode
+        errorCode,"error in creating dbs"
      | None ->
         let dbMap = dbs |> Map.ofList
         try
@@ -361,8 +361,8 @@ let initDb () =
             DataConfiguration.compactAndClean()
             Cache.compactAndClean()
 
-            "init completed", 200
+            200,"init completed"
         with e ->
             eprintfn "Error in init: %s" e.Message
-            e.Message, 500
+            500,e.Message
     )

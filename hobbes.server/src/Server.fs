@@ -123,7 +123,7 @@ let private listConfigurations : HttpHandler =
 let private initDb : HttpHandler =
     fun next ctx ->
         task {
-          let (body, sc) = Implementation.initDb()
+          let (sc, body) = Implementation.initDb()
           return! (setStatusCode sc >=> setBodyFromString body) next ctx
         }
 

@@ -307,6 +307,14 @@ and Database<'a> (databaseName, parser : string -> 'a) =
     let tryPut body rev path = tryRequest Put rev (Some body) path None 
     let tryPost body path = tryRequest Post None (Some body) path None 
     let delete id rev = request Delete false None [id] rev None
+    
+    let databaseOperation operationName argument =
+        let path = 
+           match argument with
+           None -> [operationName]
+           | Some a -> [operationName;a]
+        requestString Post false None path None
+
     let handleResponse (statusCode,body : string) = 
         if  statusCode >= 200  && statusCode <= 299  then
             body
@@ -342,13 +350,15 @@ and Database<'a> (databaseName, parser : string -> 'a) =
 
     member __.Get id =
         get [id] None |> parser
+        
+    member __.Get path =
+        get path None |> parser
 
     member __.TryGet id = 
         let statusCode,body = tryGet [id] None
         if statusCode >= 200  && statusCode <= 299 then
             body |> parser |> Some
         else
-            eprintfn "Failed to get %s. StatusCode: %d. Body: %A" id statusCode (body.Substring(0,min 500 body.Length ))
             None             
 
     member __.GetRev id =
@@ -421,11 +431,26 @@ and Database<'a> (databaseName, parser : string -> 'a) =
         | Some rev -> 
             printfn "Found rev, going to update. id: %s. rev: %s" id rev 
             this.Put(id, doc,  rev)
+
+    member __.Compact() = 
+        databaseOperation "_compact"  None
+    
+    member __.CompactDesign() = 
+        databaseOperation "_compact" (Some "default")
+    
+    member __.ViewClenaup() = 
+        databaseOperation "_view_cleanup" None
+
+    member this.CompactAndClean() = 
+        this.Compact() |> ignore
+        this.CompactDesign() |> ignore
+        this.ViewClenaup() |> ignore
+    
     member __.Delete id =
         let doc = 
             get [id] None
             |> CouchDoc.Parse
         delete id (Some doc.Rev)
-
-let couch = Database ("", ignore)
+        
 let users = Database ("_users", UserRecord.Parse)
+let couch = Database ("", id)

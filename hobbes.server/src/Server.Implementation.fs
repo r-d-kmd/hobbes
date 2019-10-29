@@ -35,7 +35,7 @@ let private data configurationName =
         match data with
         None ->
             printfn "Cache miss %s" configurationName
-            Rawdata.list configuration.Source
+            Rawdata.getMatrix configuration.Source
         | Some data -> data
    
     let transformedData = 
@@ -68,6 +68,24 @@ let csv configuration =
     let status, data = data configuration
     status,data 
            |> DataMatrix.ToJson Csv
+
+let setting (area, setting) =
+    200,couch.Get [
+                "_node"
+                "_local"
+                "_config"
+                area
+                setting
+    ]
+
+let configure (area, setting, value) =
+    200,couch.Put ([
+                "_node"
+                "_local"
+                "_config"
+                area
+                setting
+    ],value)
 
 let private request user pwd httpMethod body url  =
     let headers =
@@ -151,8 +169,9 @@ let sync configurationName pat=
                         match record with
                         Some record ->
                             let data = record.JsonValue.ToString JsonSaveOptions.DisableFormatting
-                            let rawdataRecord = Cache.createDataRecord (url |> hash) configuration.Source data ["state",Cache.Synced |> string; "Url", url] 
+                            let rawdataRecord = Cache.createDataRecord (url |> hash) configuration.Source data ["Url", url] 
                             let responseText = Rawdata.InsertOrUpdate rawdataRecord
+                            Rawdata.updateSync (url |> sprintf "inserted record. %s") configuration.Source
                             if System.String.IsNullOrWhiteSpace(record.OdataNextLink) |> not then
                                 printfn "Countinuing sync"
                                 printfn "%s" record.OdataNextLink
@@ -258,6 +277,12 @@ let listTransformations() =
     let body = sprintf """{"transformations" : [%s]}""" <| System.String.Join(",", transformations)
     200, body
 
+let listRawdata() = 
+    let rawdata = Rawdata.list()
+                          |> Seq.map (sprintf "%A")
+    let body = sprintf """{"rawdata" : [%s]}""" <| System.String.Join(",", rawdata)
+    200, body
+
 let storeConfigurations doc = 
     try
         DataConfiguration.store doc |> ignore
@@ -267,7 +292,6 @@ let storeConfigurations doc =
 
 let private uploadDesignDocument (storeHandle, (hashHandle : string -> string option), file) =
     
-        
     async {
         let! doc = System.IO.File.ReadAllTextAsync file |> Async.AwaitTask
         if System.String.IsNullOrWhiteSpace (CouchDoc.Parse doc).Rev |> not then failwithf "Initialization documents shouldn't have _revs %s" file
@@ -291,7 +315,7 @@ let private uploadDesignDocument (storeHandle, (hashHandle : string -> string op
 
 //test if db is alive
 let ping() = 
-    couch.Get "_all_dbs"
+    couch.Get "_all_dbs" |> ignore
     200,"pong"
 
 [<Literal>]
@@ -333,7 +357,7 @@ let initDb () =
         |> List.tryFind (fun sc -> ((sc >= 200 && sc < 300) || (sc = 412)) |> not)
     (match errorCode with
      Some errorCode ->
-        errorCode, "error in creating dbs"
+        errorCode,"error in creating dbs"
      | None ->
         let dbMap = dbs |> Map.ofList
         try
@@ -350,8 +374,14 @@ let initDb () =
             ) |> Seq.map uploadDesignDocument
             |> Async.Parallel
             |> Async.RunSynchronously) |> ignore
-            200, "init completed"
+
+            Transformations.compactAndClean()
+            Rawdata.compactAndClean()
+            DataConfiguration.compactAndClean()
+            Cache.compactAndClean()
+
+            200,"init completed"
         with e ->
             eprintfn "Error in init: %s" e.Message
-            500, e.Message
+            500,e.Message
     )

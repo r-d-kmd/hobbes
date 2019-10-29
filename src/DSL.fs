@@ -42,11 +42,11 @@ type Expression =
              | Or(a,b) -> sprintf " (%s) || (%s) "  (a.ToString()) (b.ToString())
              | And(a,b) -> sprintf " (%s) && (%s) "  (a.ToString()) (b.ToString())
              | NumberConstant i -> i |> string
-             | Gt(a,b) ->  sprintf " %s > %s" (a.ToString()) (b.ToString())
-             | Not e -> sprintf "!%s" (e.ToString())
+             | Gt(a,b) ->  sprintf " (%s) > (%s)" (a.ToString()) (b.ToString())
+             | Not e -> sprintf "!(%s)" (e.ToString())
              | Keys -> "keys"
              | DateTimeConstant d -> sprintf "\'%s\'" (d.ToString(culture))
-           |> sprintf "(%s)" 
+           
          static member private ParseStringOrDate (stringOrDate : string) = 
             match System.DateTime.TryParse(stringOrDate) with
             true, v  -> DateTimeConstant v
@@ -122,15 +122,17 @@ type Statements =
                 sprintf """rename column "%s" "%s" """ orgColumn newColumn
            | Pivot(exp1,exp2,r, exp3) ->
               sprintf "pivot [%s] [%s] -> %s [%s]" (exp1.ToString()) (exp2.ToString()) (r |> toString) ((exp3.ToString()))
-           | Slice(Rows,_) -> "slice rows"
+           | Slice(Rows,rows) -> 
+               System.String.Join(" ", rows |> List.map (sprintf """ "%s" """))
+               |> sprintf "slice rows %s"
            | Slice(Columns,columns) -> 
                System.String.Join(" ", columns |> List.map (sprintf """ "%s" """))
                |> sprintf "slice columns %s"
            | Dense(Rows) -> "dense rows"
            | Dense(Columns) -> "dense columns"
            | Sort(name) -> sprintf """sort by column "%s" """ name
-           | Index(exp) -> sprintf """index rows by %s """ (exp.ToString())
-           | Only exp -> sprintf "only %s" (exp.ToString())
+           | Index(exp) -> sprintf """index rows by (%s) """ (exp.ToString())
+           | Only exp -> sprintf "only (%s)" (exp.ToString())
                
 let by = ()
 

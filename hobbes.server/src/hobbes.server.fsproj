@@ -14,6 +14,7 @@
     <Compile Include="db/DataConfiguration.fs" />
     <Compile Include="db/Cache.fs" />
     <Compile Include="db/Rawdata.fs"/>
+    <Compile Include="db/Log.fs"/>
 
     <Compile Include="Security.fs" />
     <Compile Include="Server.Implementation.fs" />

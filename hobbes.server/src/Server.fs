@@ -64,11 +64,15 @@ let private apiRouter = router {
     getf "/csv/%s" (handleRequestWithArg true Implementation.csv)
     getf "/sync/%s" (handleRequestWithBodyAndArg true Implementation.sync)
     put "/configurations" (handleRequestWithBody true Implementation.storeConfigurations)
-    get "/configurations" (handleRequestWithArg true Implementation.listConfigurations ())
     put "/transformations" (handleRequestWithBody true Implementation.storeTransformations)
-    get "/transformations" (handleRequestWithArg true Implementation.listTransformations ())
-    get "/cache" (handleRequestWithArg true Implementation.listCache ())
+    get "/list/configurations" (handleRequestWithArg true Implementation.listConfigurations ())
+    get "/list/transformations" (handleRequestWithArg true Implementation.listTransformations ())
+    get "/list/cache" (handleRequestWithArg true Implementation.listCache ())
+    get "/list/rawdata" (handleRequestWithArg true Implementation.listRawdata ())
     getf "/status/sync/%s" (handleRequestWithArg true Implementation.getSyncState)
+
+    getf "/admin/settings/%s/%s" (handleRequestWithArg true Implementation.setting)
+    putf "/admin/configure/%s/%s/%s" (handleRequestWithArg true Implementation.configure)
 }
 
 let private appRouter = router {
@@ -82,8 +86,15 @@ let private app = application {
     use_gzip
 }
 
-async {
-    Implementation.initDb() |> ignore
-} |> Async.Start
+let rec private init() =
+    async {
+        try
+           Implementation.initDb() |> ignore
+           printfn "DB initialized"
+        with _ ->
+           do! Async.Sleep 2000
+           init()
+    } |> Async.Start
 
+init()
 run app

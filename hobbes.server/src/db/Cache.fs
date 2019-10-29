@@ -18,18 +18,21 @@ type SyncStatus =
     Synced
     | Started
     | Failed
+    | Updated
     | NotStarted
     with override x.ToString() = 
             match x with
             Synced -> "synced"
             | NotStarted -> "not started"
             | Started -> "started"
+            | Updated -> "updated"
             | Failed -> "failed"
          static member Parse (s:string) =
                 match s.ToLower() with
                 "synced" -> Synced
                 | "started" -> Started
                 | "failed" -> Failed
+                | "updated" -> Updated
                 | "not started" -> NotStarted
                 | _ -> 
                     eprintfn "Unknown sync state: %s" s
@@ -116,7 +119,7 @@ let private db =
       .AddView(sourceView)
 
 let private createKeyFromList  (cacheKey : string list) =  
-    System.String.Join(":",cacheKey) 
+    System.String.Join(":",cacheKey).ToLower()
 
 let private createKey (configuration : Configuration) = 
     configuration.Source.SourceName::configuration.Source.ProjectName::configuration.Transformations
@@ -127,7 +130,8 @@ let InsertOrUpdate doc =
 let list() = 
     db.ListIds()
 
-let createDataRecord key (source : DataSource) (data : string) keyValue =
+let createDataRecord (key : string) (source : DataSource) (data : string) keyValue =
+    let key = key.ToLower()
     let record = 
         sprintf """{
                     "_id" : "%s",
@@ -249,3 +253,4 @@ let retrieve (configuration : Configuration) =
 
 let tryGetRev id = db.TryGetRev id
 let tryGetHash id = db.TryGetHash id
+let compactAndClean() = db.CompactAndClean()

@@ -98,7 +98,7 @@ module Frontend =
         )                                     
 
     [<Fact>]
-    let SimpleIfExpressiont() =
+    let ``Simple If Expression``() =
         let matchState = "Completed"
         let parsedStatements = 
             create (column "Test") (If (!> "State" == matchState) (Then 1.) (Else 2.))
@@ -116,7 +116,7 @@ module Frontend =
         compareColumns expected actual
 
     [<Fact>]
-    let NestedIfExpression() =
+    let ``Nested If Expression``() =
         let matchState = "Completed"
         let nestedMatchState = "Ready"
         let parsedStatements = 

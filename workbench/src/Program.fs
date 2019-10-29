@@ -2,6 +2,7 @@
 
 open Argu
 open FSharp.Data
+open Microsoft.FSharp.Quotations.Patterns
 
 type Environment = 
     Development
@@ -29,35 +30,10 @@ let parse stmt =
     let stmt = stmt |> string
     Hobbes.Parsing.Parser.parse [stmt]
     |> Seq.exactlyOne
-
-let transformations() = 
-    let statements = 
-        [
-            "Gandalf.renaming",Gandalf.renaming
-            "Azure.foldBySprint",Azure.foldBySprint
-            "Metrics.stateCountBySprint",Metrics.stateCountBySprint
-            "Metrics.expandingCompletionBySprint",Metrics.expandingCompletionBySprint
-        ]
-    statements
-    |> List.map(fun (name,statements) ->
-        statements
-        |> List.map parse
-        |> ignore
-        
-        System.String.Join(",",
-            statements
-            |> List.map (fun stmt ->
-               (stmt |> string).Replace("\"", "\\\"") |> sprintf "\n  %A"
-            )
-        ) |> sprintf "[%s\n]"
-        |> sprintf """{
-            "_id" : "%s",
-            "lines" : %s
-        }
-        """ name
-    )
+    
 [<EntryPoint>]
 let main args =
+   
     let results = 
         try
             let parser = ArgumentParser.Create<CLIArguments>(programName = "workbench")
@@ -90,13 +66,62 @@ let main args =
             match sync with
             None -> 
                 if publish |> Option.isSome then 
-                    let url = environmentHost+ "/api/transformations"
+                    let urlTransformations = environmentHost + "/api/transformations"
+                    let urlConfigurations = environmentHost + "/api/configurations"
                     let pat = results.GetResult PAT
-                    transformations()
-                    |> List.iter(fun transformation ->
-                        Http.Request(url, 
+                    let transformations = 
+                        Workbench.Reflection.transformations()
+                        |> Seq.map(fun (name,statements) ->
+                            statements
+                            |> List.map parse
+                            |> ignore
+                            
+                            System.String.Join(",",
+                                statements
+                                |> List.map (fun stmt ->
+                                   (stmt |> string).Replace("\"", "\\\"") |> sprintf "\n  %A"
+                                )
+                            ) |> sprintf "[%s\n]"
+                            |> sprintf """{
+                                "_id" : "%s",
+                                "lines" : %s
+                            }
+                            """ name
+                        )
+                    let configurations = 
+                        Workbench.Reflection.configurations()
+                        |> Seq.map(fun c ->
+                            sprintf """{
+                                "_id" : "%s",
+                                "source" : "%s",
+                                "dataset" : "%s",
+                                "transformations" : [%s]
+                            }""" c.Id
+                                 (c.Source |> Workbench.Source.string)
+                                 (c.Project |> Workbench.Project.string)
+                                 (System.String.Join(",",c.Transformations |> Seq.map(sprintf "%A")))
+                        ) 
+                    
+                    transformations 
+                    |> Seq.iter(fun doc ->
+                        printfn "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
+                        Http.Request(urlTransformations, 
                                      httpMethod = "PUT",
-                                     body = TextRequest transformation,
+                                     body = TextRequest doc,
+                                     headers = 
+                                        [
+                                           HttpRequestHeaders.BasicAuth pat ""
+                                           HttpRequestHeaders.ContentType HttpContentTypes.Json
+                                        ]
+                                    ) |> ignore
+                    )
+                    configurations
+                     
+                    |> Seq.iter(fun doc ->
+                        printfn "Creating configurations: %s" (Database.CouchDoc.Parse doc).Id
+                        Http.Request(urlConfigurations, 
+                                     httpMethod = "PUT",
+                                     body = TextRequest doc,
                                      headers = 
                                         [
                                            HttpRequestHeaders.BasicAuth pat ""
@@ -120,6 +145,3 @@ let main args =
                                     ]
                                 ) |> ignore
                 0
-
-            
-        

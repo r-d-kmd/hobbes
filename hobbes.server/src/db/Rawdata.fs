@@ -46,6 +46,7 @@ module Rawdata =
 
     let setSyncFailed message = setSyncState Failed message >> ignore
     let setSyncCompleted = setSyncState Synced None >> ignore
+    let updateSync event = setSyncState Updated (Some event) >> ignore
     let createSyncStateDocument = setSyncState Started None
 
     let tryLatestId (source : DataConfiguration.DataSource) =
@@ -53,8 +54,7 @@ module Rawdata =
         try
             let revisions =  
                 db.Views.["WorkItemRevisions"].List(WorkItemRevisionRecord.Parse,
-                                                         startKey = startKey,
-                                                         endKey = endKey
+                                                         startKey = startKey
                 )
             (revisions
             |> List.maxBy(fun record -> 
@@ -70,11 +70,13 @@ module Rawdata =
            eprintfn "Failed to get last revision. Reason: %s." e.Message 
            None
 
-    let list (source : DataConfiguration.DataSource) = 
+    let list = 
+        db.ListIds
+
+    let getMatrix (source : DataConfiguration.DataSource) = 
         let startKey, endKey = keys source 
         db.Views.["table"].List(TableView.parse,
-                                                  startKey = startKey,
-                                                  endKey = endKey
+                                                  startKey = startKey
         ) |> TableView.toTable
         |> Seq.map(fun (columnName,values) -> 
             columnName, values.ToSeq()
@@ -84,4 +86,4 @@ module Rawdata =
     let tryGetRev id = db.TryGetRev id  
     let tryGetHash id = db.TryGetHash id  
 
-
+    let compactAndClean = db.CompactAndClean

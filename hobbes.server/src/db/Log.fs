@@ -11,9 +11,36 @@ type LogRecord = JsonProvider<"""{"_id" : "jlk",
 
 let private db = Database.Database ("log", LogRecord.Parse)
 
-let InsertOrUpdate doc = db.InsertOrUpdate doc
+type LogType = 
+    Info
+    | Debug
+    | Error
+    | Unknown
+    with override x.ToString() = 
+            match x with
+            Info      -> "info"
+            | Debug   -> "debug"
+            | Error   -> "error"
+            | Unknown -> "unknown"
+         static member Parse (s:string) =
+                match s.ToLower() with
+                "info"      -> Info
+                | "debug"   -> Debug
+                | "error"   -> Error
+                | "unknown" -> Unknown
+                | _         -> 
+                            eprintfn "Unknown sync state: %s" s
+                            Unknown
 
-let tryGetRev id = db.TryGetRev id
+let log timeStampID (logType : LogType) requestID msg stacktrace =
+   let doc = sprintf """{"timestamp" : "%s",
+                         "type" : "%A",
+                         "requestID" : "%i",
+                         "msg" : "%s",
+                         "stacktrace" : "%s"}""" timeStampID logType requestID msg stacktrace
+   db.Post doc |> ignore             
+
+let InsertOrUpdate doc = db.InsertOrUpdate doc
 
 let tryGetHash id = db.TryGetHash id
 

@@ -335,7 +335,7 @@ let initDb () =
             "rawdata", (Rawdata.InsertOrUpdate, Rawdata.tryGetHash)
             "configurations", (DataConfiguration.store, DataConfiguration.tryGetHash)
             "cache", (Cache.InsertOrUpdate, Cache.tryGetHash)
-            "log", (Log.InsertOrUpdate, Cache.tryGetHash)
+            "log", (Log.InsertOrUpdate, Log.tryGetHash)
         ] 
     let systemDbs = 
         [
@@ -349,7 +349,9 @@ let initDb () =
         |> List.tryFind (fun sc -> ((sc >= 200 && sc < 300) || (sc = 412)) |> not)
     (match errorCode with
      Some errorCode ->
-        errorCode,"error in creating dbs"
+        let msg = "INIT: error in creating dbs"
+        Log.log "timestampID" Log.LogType.Error -1 msg "Unavailable"
+        errorCode, msg
      | None ->
         let dbMap = dbs |> Map.ofList
         try
@@ -371,8 +373,11 @@ let initDb () =
             Rawdata.compactAndClean()
             DataConfiguration.compactAndClean()
             Cache.compactAndClean()
+            Log.compactAndClean()
 
-            200,"init completed"
+            let msg = "init completed"
+            Log.log "timestampID" Log.LogType.Info -1 msg "Not applicable"
+            200,msg
         with e ->
             eprintfn "Error in init: %s" e.Message
             500,e.Message

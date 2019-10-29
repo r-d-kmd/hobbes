@@ -7,7 +7,7 @@ open FSharp.Data
 open Hobbes.Server.Security
 
 let getSyncState syncId =
-    200, Rawdata.getState syncId |> string
+    200, (Rawdata.getState syncId).ToString()
     
 let private data configurationName =
     let configuration = DataConfiguration.get configurationName
@@ -259,29 +259,20 @@ let storeTransformations doc =
     with _ -> 
         500,"internal server error"
 
+let formatDBList name list =
+    let stringList = list
+                     |> Seq.map (sprintf "%A")
+    let body = sprintf """{"%s" : [%s]}""" <| name <| System.String.Join(",", stringList)
+    200, body    
+
 let listConfigurations() = 
-    let configurations = DataConfiguration.list()
-                         |> Seq.map (sprintf "%A")
-    let body = sprintf """{"configurations" : [%s]}""" <| System.String.Join(",", configurations)
-    200, body
-
+    DataConfiguration.list() |> formatDBList "configurations"
 let listCache() = 
-    let cacheEntries = Cache.list()
-                      |> Seq.map (sprintf "%A")
-    let body = sprintf """{"cache" : [%s]}""" <| System.String.Join(",", cacheEntries)
-    200, body
-
+    Cache.list() |> formatDBList "cache"
 let listTransformations() = 
-    let transformations = Transformations.list()
-                          |> Seq.map (sprintf "%A")
-    let body = sprintf """{"transformations" : [%s]}""" <| System.String.Join(",", transformations)
-    200, body
-
+    Transformations.list() |> formatDBList "transformations"
 let listRawdata() = 
-    let rawdata = Rawdata.list()
-                          |> Seq.map (sprintf "%A")
-    let body = sprintf """{"rawdata" : [%s]}""" <| System.String.Join(",", rawdata)
-    200, body
+    Rawdata.list() |> formatDBList "rawdata"           
 
 let storeConfigurations doc = 
     try
@@ -344,6 +335,7 @@ let initDb () =
             "rawdata", (Rawdata.InsertOrUpdate, Rawdata.tryGetHash)
             "configurations", (DataConfiguration.store, DataConfiguration.tryGetHash)
             "cache", (Cache.InsertOrUpdate, Cache.tryGetHash)
+            "log", (Log.InsertOrUpdate, Cache.tryGetHash)
         ] 
     let systemDbs = 
         [

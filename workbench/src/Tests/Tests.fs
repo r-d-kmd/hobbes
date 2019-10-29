@@ -11,13 +11,17 @@ let cacheInvalidation configName =
 
 let sync configuration = 
     let _,key = Implementation.sync "y3cg7xrajppvd4b2wp6ahrgnsdkpf4sidtlinthcwepc2pjbzfuq" configuration
-    let mutable state = Implementation.getSyncState key
+    let mutable state = Implementation.getSyncState key 
+                        |> snd
+                        |> Cache.SyncStatus.Parse
     let mutable running = Cache.Started = state
     
     while running do
         printfn "Waiting for syncronization to complete"
         System.Threading.Thread.Sleep 5000
         state <-  Implementation.getSyncState key
+                  |> snd
+                  |> Cache.SyncStatus.Parse
         running <- Cache.Started = state
 
     if state = Cache.Synced then

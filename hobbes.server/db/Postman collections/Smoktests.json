@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "f5ef177b-1d3a-427d-93b1-927d473df340",
+		"_postman_id": "005481b0-f4b7-40a1-84f3-f3afe6ba20b9",
 		"name": "Smoktests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -173,12 +173,13 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{front}}/api/configurations",
+					"raw": "{{front}}/api/list/configurations",
 					"host": [
 						"{{front}}"
 					],
 					"path": [
 						"api",
+						"list",
 						"configurations"
 					]
 				}
@@ -343,12 +344,13 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{front}}/api/transformations",
+					"raw": "{{front}}/api/list/transformations",
 					"host": [
 						"{{front}}"
 					],
 					"path": [
 						"api",
+						"list",
 						"transformations"
 					]
 				}
@@ -679,12 +681,13 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{front}}/api/cache",
+					"raw": "{{front}}/api/list/cache",
 					"host": [
 						"{{front}}"
 					],
 					"path": [
 						"api",
+						"list",
 						"cache"
 					]
 				}

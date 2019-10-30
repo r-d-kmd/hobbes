@@ -4,7 +4,50 @@ open Cache
 open FSharp.Data
 
 module Rawdata =
-    
+        
+    type AzureDevOpsAnalyticsRecord = JsonProvider<"""{
+      "@odata.context": "https://analytics.dev.azure.com/kmddk/flowerpot/_odata/v2.0/$metadata#WorkItemRevisions(WorkItemId,WorkItemType,State,StateCategory,Iteration)",
+      "value": [
+        {
+        "WorkItemId":3833,
+        "RevisedDate":"2016-12-22T10:56:27.87+01:00",
+        "IsCurrent":false,
+        "IsLastRevisionOfDay":false,
+        "WorkItemRevisionSK":62809820,
+        "Title":"Manage templates",
+        "WorkItemType":"Feature",
+        "ChangedDate":"2016-12-22T09:22:40.967+01:00",
+        "CreatedDate":"2016-12-19T11:19:08.42+01:00",
+        "State":"User stories created",
+        "Priority":2,
+        "StateCategory":"Resolved",
+        "LeadTimeDays" : 200.1,
+        "CycleTimeDays" : 9080.122,
+        "Iteration":{
+            "IterationName":"Gandalf",
+            "Number":159,
+            "IterationPath":"Gandalf",
+            "IterationLevel1":"Gandalf",
+            "IterationLevel2":"Gandalf",
+            "IterationLevel3":"Gandalf",
+            "IterationLevel4":"Gandalf"
+        }},{
+        "WorkItemId":3833,
+        "WorkItemRevisionSK":62809820,
+        "Title":"Manage templates",
+        "WorkItemType":"Feature",
+        "Iteration":{
+            "IterationName":"Gandalf",
+            "Number":159,
+            "IterationPath":"Gandalf"
+        }},{
+            "WorkItemId":3833,
+            "WorkItemRevisionSK":62809820,
+            "Title":"Manage templates",
+            "WorkItemType":"Feature"
+        }
+    ], "@odata.nextLink":"https://analytics.dev.azure.com/"}""">
+
     type private WorkItemRevisionRecord = JsonProvider<"""
         {
              "id": "07e9a2611a712c808bd422425c9dcda2",
@@ -14,6 +57,8 @@ module Rawdata =
              ],
              "value": 90060205
     }""">
+
+    type private RawList = JsonProvider<"""["id_a","id_b"]""">
     let private db = 
         Database.Database("rawdata", CacheRecord.Parse)
           .AddView("table")
@@ -22,9 +67,7 @@ module Rawdata =
     let keys (source : DataConfiguration.DataSource) = 
         let startKey = 
             sprintf """["%s","%s"]""" source.SourceName source.ProjectName
-        let endKey = 
-            sprintf """["%s","%s_"]""" source.SourceName source.ProjectName
-        startKey,endKey
+        startKey
      
     let InsertOrUpdate doc = 
         db.InsertOrUpdate doc
@@ -36,21 +79,21 @@ module Rawdata =
             let state = s.State 
             state |> SyncStatus.Parse
 
-    let setSyncState state message source = 
+    let setSyncState state message revision source = 
         let doc = createCacheRecord {
                                        Source = source
                                        Transformations = []
-                                    } null state message
+                                    } null state message revision
         db.InsertOrUpdate(doc) |> ignore
         (doc |> CacheRecord.Parse).Id
 
-    let setSyncFailed message = setSyncState Failed message >> ignore
-    let setSyncCompleted = setSyncState Synced None >> ignore
-    let updateSync event = setSyncState Updated (Some event) >> ignore
-    let createSyncStateDocument = setSyncState Started None
+    let setSyncFailed message revision = setSyncState Failed (Some message) (Some revision) >> ignore
+    let setSyncCompleted revision = setSyncState Synced None (Some revision) >> ignore
+    let updateSync event revision = setSyncState Updated (Some event) (Some revision) >> ignore
+    let createSyncStateDocument revision = setSyncState Started None (Some revision)
 
     let tryLatestId (source : DataConfiguration.DataSource) =
-        let startKey, endKey = keys source
+        let startKey = keys source
         try
             let revisions =  
                 db.Views.["WorkItemRevisions"].List(WorkItemRevisionRecord.Parse,
@@ -73,15 +116,31 @@ module Rawdata =
     let list = 
         db.ListIds
 
-    let getMatrix (source : DataConfiguration.DataSource) = 
-        let startKey, endKey = keys source 
-        db.Views.["table"].List(TableView.parse,
-                                                  startKey = startKey
-        ) |> TableView.toTable
-        |> Seq.map(fun (columnName,values) -> 
-            columnName, values.ToSeq()
-            |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
-        ) |> Hobbes.FSharp.DataStructures.DataMatrix.fromTable
+    type private Table = JsonProvider<"""{
+          "total_rows": 2,
+          "offset": 0,
+          "rows": [
+            {
+              "id": "azure devops:flowerpot",
+              "key": [
+                "Azure DevOps",
+                "flowerpot"
+              ],
+              "value": "azure devops:flowerpot"
+            }
+          ]
+        }""">
+
+    let bySource source = 
+        let key = keys source
+        let keys = db.Views.["table"].List(Table.Parse, startKey = key)
+        let docs = db.FilterByKeys keys
+        docs
+        |> Seq.collect(fun s -> 
+            match s.JsonValue.Properties() |> Seq.tryFind(fun (n,_) -> n = "data") with
+            Some _ -> (s.Data.ToString() 
+                       |> AzureDevOpsAnalyticsRecord.Parse).Value
+            | None -> [||])
         
     let tryGetRev id = db.TryGetRev id  
     let tryGetHash id = db.TryGetHash id  

@@ -8,9 +8,10 @@ type CacheRecord = JsonProvider<"""{
     "source" : "lækljk",
     "project" : "lkjlkj",
     "state" : "Sync state",
+    "revision" : "lkjlkj",
     "data" : {
         "columnNames" : ["a","b"],
-        "values" : [["zcv"],[1.2],["2019-01-01"]]
+        "values" : [["zcv","lkj"],[1.2,3.45],["2019-01-01","2019-01-01"]]
     }
 }""">
 
@@ -69,10 +70,10 @@ type DataRecord = {
     Values : DataValues []
 }
 
-type private TableView = JsonProvider<""" {"columnNames" : ["a","b"], "values" : [[0,1,2,3,4],[0.4,1.2,2.4,3.5,4.1],["x","y","z"],["2019-01.01","2019-01.01"]]} """>
+type private CachedDate = JsonProvider<""" {"columnNames" : ["a","b"], "values" : [[0,1,2,3,4],[0.4,1.2,2.4,3.5,4.1],["x","y","z"],["2019-01.01","2019-01.01"]]} """>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module TableView =
-    let toTable (tableView : TableView.Root list) =
+    let toTable (tableView : CachedDate.Root list) =
         tableView
         |> List.fold(fun (count, (map : Map<_,_>)) record ->
             let values = 
@@ -112,7 +113,7 @@ module TableView =
         |> snd
         |> Map.toSeq
     let parse s = 
-        TableView.Parse s
+        CachedDate.Parse s
 let private sourceView = "srcproj"
 let private db = 
     Database.Database("cache", CacheRecord.Parse)
@@ -133,7 +134,7 @@ let list() =
 let createDataRecord (key : string) (source : DataSource) (data : string) keyValue =
     let key = key.ToLower()
     let record = 
-        sprintf """{
+        (sprintf """{
                     "_id" : "%s",
                     "source" : "%s",
                     "project" : "%s",
@@ -143,6 +144,7 @@ let createDataRecord (key : string) (source : DataSource) (data : string) keyVal
                      source.SourceName
                      source.ProjectName
                      (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
+
                      (if data |> isNull then "null" else data.Replace("\\","\\\\"))
                      (match keyValue with
                       [] -> ""
@@ -152,27 +154,29 @@ let createDataRecord (key : string) (source : DataSource) (data : string) keyVal
                               |> Seq.map(fun (k,v) -> sprintf """%A:%A""" k v)
                           )
                           |> sprintf """,%s"""
-                     )
+                     ))
     let parsedRecord = record |> CacheRecord.Parse
+
     //validate that the model fits expectations
     assert(parsedRecord.Id = key)
     assert(parsedRecord.Source = source.SourceName)
     assert(parsedRecord.Project = source.ProjectName)
+
     record
 
-let createCacheRecord configuration (data : string) (state : SyncStatus) message =
+let createCacheRecord configuration (data : string) (state : SyncStatus) message cacheRevision =
     let cacheKey = 
         configuration 
         |> createKey 
         |> createKeyFromList
-
     createDataRecord cacheKey configuration.Source data [
+                                                           if cacheRevision |> Option.isSome then yield "revision", string cacheRevision.Value
                                                            yield "state", string state
                                                            if message |> Option.isSome then yield "message", message.Value]
 
-let store configuration (data : string) =
+let store configuration cacheRevision (data : string) =
 
-    let record = createCacheRecord configuration data Synced None
+    let record = createCacheRecord configuration data Synced None (Some cacheRevision)
 
     try
         db.InsertOrUpdate record |> ignore
@@ -187,7 +191,7 @@ let private tryRetrieve cacheKey =
     |> Option.bind(fun (cacheRecord : CacheRecord.Root) -> 
         [
             cacheRecord.Data.ToString()
-            |> TableView.Parse
+            |> TableView.parse
         ] |> TableView.toTable
         |> Seq.map(fun (columnName,values) -> 
             columnName, values.ToSeq()
@@ -197,8 +201,9 @@ let private tryRetrieve cacheKey =
         |> Some
     )
 
-let delete id =
-    db.Delete id
+let delete =
+    db.Delete
+
 
 let findUncachedTransformations configuration =
     let rec find key =
@@ -225,23 +230,24 @@ let findUncachedTransformations configuration =
 let private idsBySource (source : DataSource) =
     let startKey = 
         sprintf """["%s","%s"]""" source.SourceName source.ProjectName
-    let endKey = 
-        sprintf """["%s","%s_"]""" source.SourceName source.ProjectName
-    db.Views.[sourceView].List(Database.CouchDoc.Parse, 
-                                  startKey =  startKey, 
-                                  endKey = endKey)
+    db.Views.[sourceView].List(CacheRecord.Parse, 
+                                  startKey =  startKey)
 
-let invalidateCache (source : DataSource) =
+let invalidateCache (source : DataSource) cacheRevision =
     async {
         let! _ = 
-            idsBySource source
+            idsBySource source 
             |> List.map(fun doc -> 
                             async {
-                                delete doc.Id |> ignore
+                                if doc.Revision = cacheRevision then
+                                    delete doc.Id |> ignore
                             } 
             ) |> Async.Parallel
         return ()
     }
+
+let retrieveRaw key = 
+    db.Get [key]
 
 let retrieve (configuration : Configuration) =
    (

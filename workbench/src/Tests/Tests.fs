@@ -10,23 +10,12 @@ let cacheInvalidation configName =
     |> Cache.invalidateCache
 
 let sync configuration = 
-    let _,key = Implementation.sync "y3cg7xrajppvd4b2wp6ahrgnsdkpf4sidtlinthcwepc2pjbzfuq" configuration
-    let mutable state = Implementation.getSyncState key
-    let mutable running = Cache.Started = state
+    let _,key = Hobbes.Server.Readers.AzureDevOps.sync "y3cg7xrajppvd4b2wp6ahrgnsdkpf4sidtlinthcwepc2pjbzfuq" "gandalf" "abcd"
+    printfn "sync key: %s" key
     
-    while running do
-        printfn "Waiting for syncronization to complete"
-        System.Threading.Thread.Sleep 5000
-        state <-  Implementation.getSyncState key
-        running <- Cache.Started = state
-
-    if state = Cache.Synced then
-        printfn "Syncronization completed succesfully"
-        0
-    else
-        eprintfn "Syncronization failed"
-        1
 
 let test() = 
-    Implementation.initDb() |> ignore
-    getData "gandalf" //"flowerpot" 
+    //Implementation.initDb() |> ignore
+    //sync "flowerpot.State.stateBySprint" //"gandalf.State.expandingCompletionBySprint" 
+    getData (*"flowerpot.State.stateBySprint"*) "gandalf.State.expandingCompletionBySprint"
+    

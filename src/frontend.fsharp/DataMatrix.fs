@@ -638,7 +638,9 @@ module DataStructures =
             | :? bool as b -> b |> string
             | :? int as i -> i |> string
             | :? float as f -> f |> string
+            | :? decimal as d -> d |> string
             | :? DateTime as d -> sprintf """ "%s" """ (d.ToString())
+            | :? DateTimeOffset as d -> sprintf """ "%s" """ (d.ToString())
             | _ -> sprintf "%A" value
 
         member private ___.Columns 
@@ -760,7 +762,17 @@ module DataStructures =
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module DataMatrix =
         let empty = DataMatrix(Frame([],[]))
-            
+        let fromRows rows = 
+            let frame = 
+                rows
+                |> Seq.map(fun (rowKey, values) ->
+                    rowKey =>
+                     (values |> series)
+                ) |> series
+                |> Frame.ofRows
+            frame
+            |> DataMatrix
+            :> IDataMatrix
         let fromTable table =
                 let frame = 
                     table
@@ -772,5 +784,5 @@ module DataStructures =
                 frame
                 |> DataMatrix
                 :> IDataMatrix
-        let ToJson format (matrix : #IDataMatrix) =
+        let toJson format (matrix : #IDataMatrix) =
             matrix.ToJson format

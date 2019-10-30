@@ -42,8 +42,10 @@ module DataConfiguration =
                    | "rally" -> Rally
                    | "jira" -> Jira
                    | _ -> fun _ -> Test
-                
-
+    
+    //TODO: Should be able to depend on other configuratiuons
+    //with the result of the transformations of either to be joined together on the index
+    //and potential transformations to be applied to the result of the join
     type Configuration = 
         {
             Source : DataSource
@@ -57,12 +59,9 @@ module DataConfiguration =
 
     let configurationsBySource (source : DataSource) = 
         let startKey = 
-            sprintf """["%s","%s"]""" source.SourceName source.ProjectName
-        let endKey = 
-            sprintf """["%s","%s_"]""" source.SourceName source.ProjectName
+            sprintf """["%s","%s"]""" (source.SourceName.ToLower()) (source.ProjectName.ToLower())
         db.Views.[sourceView].List((fun s -> s.Trim '\"'),
-                                  startKey =  startKey, 
-                                  endKey = endKey)
+                                  startKey =  startKey)
         
 
     let get configurationName =

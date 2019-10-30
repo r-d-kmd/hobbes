@@ -43,23 +43,33 @@ type Configuration =
         Transformations : string list 
     }
 
+[<System.AttributeUsage(System.AttributeTargets.Property, 
+                        Inherited = false, 
+                        AllowMultiple = true)>]
 type TransformationAttribute(order : int) =
     inherit System.Attribute()
     member __.Order with get() = order
 
 
+[<System.AttributeUsage(System.AttributeTargets.Class, 
+                        Inherited = false)>]
 type TransformationsAttribute(project : Project) =
     inherit System.Attribute()
     member __.Project with get() = project
 
+[<System.AttributeUsage(System.AttributeTargets.Class, 
+                        Inherited = false)>]
 type ConfigurationsAttribute(source : Source) =
     inherit System.Attribute()
     member __.Source with get() = source
 
+[<System.AttributeUsage(System.AttributeTargets.Property, 
+                         Inherited = false, 
+                         AllowMultiple = true)>]
 type ConfigurationAttribute(project : Project) =
     inherit System.Attribute()
     member __.Project with get() = project
-
+ 
 type Transformation = Hobbes.DSL.Statements list
 module Reflection =
     let tryGetAttribute<'a> (m:System.Reflection.MemberInfo) : 'a option= 
@@ -83,8 +93,11 @@ module Reflection =
         let att = typeof<'att>
         let props = t.GetProperties(flags)
         props |> filterByAttribute att
-        |> Seq.map(fun prop -> 
-           prop.GetCustomAttributes(att,false) |> Array.head :?> 'att, (prop.DeclaringType.Name + "." + prop.Name, prop.GetValue(null) :?> 'a)
+        |> Seq.collect(fun prop -> 
+           prop.GetCustomAttributes(att,false)
+           |> Array.map(fun a -> 
+               a :?> 'att, (prop.DeclaringType.Name + "." + prop.Name, prop.GetValue(null) :?> 'a)
+           )
         )
 
     let private isTransformtion (f : System.Reflection.FieldInfo) =
@@ -124,7 +137,10 @@ module Reflection =
                      |> tryGetAttribute<ConfigurationsAttribute> 
                      |> Option.get).Source
                 Project = att.Project
-                Transformations = transformations.[att.Project] @ trans
+                Transformations = 
+                    match transformations |> Map.tryFind att.Project with
+                    None -> trans
+                    | Some t -> t @ trans
             }
         ) |> List.ofSeq
     let configurations() =

@@ -5,10 +5,23 @@ open Database
 open Hobbes.Server.Db
 open FSharp.Data
 open Hobbes.Server.Security
+open Deedle
 
 let getSyncState syncId =
     Rawdata.getState syncId
-    
+
+let private hash (input : string) =
+        use md5Hash = System.Security.Cryptography.MD5.Create()
+        let data = md5Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input))
+        let sBuilder = System.Text.StringBuilder()
+        (data
+        |> Seq.fold(fun (sBuilder : System.Text.StringBuilder) d ->
+                sBuilder.Append(d.ToString("x2"))
+        ) sBuilder).ToString()        
+
+let cacheRevision (source : DataConfiguration.DataSource) = 
+        sprintf "%s:%s:%d" source.SourceName source.ProjectName (System.DateTime.Now.Ticks) |> hash
+
 let private data configurationName =
     let configuration = DataConfiguration.get configurationName
     let uncachedTransformations, data =
@@ -35,9 +48,16 @@ let private data configurationName =
         match data with
         None ->
             printfn "Cache miss %s" configurationName
-            Rawdata.getMatrix configuration.Source
+            match configuration.Source with
+            DataConfiguration.AzureDevOps projectName ->
+                let rows  = 
+                    Hobbes.Server.Readers.AzureDevOps.readCached projectName
+                    |> List.ofSeq
+                rows
+                |> DataMatrix.fromRows
+            | _ -> failwith "Unknown source"
         | Some data -> data
-   
+    let cacheRevision = cacheRevision configuration.Source
     let transformedData = 
         match transformations with
         ts when ts |> Seq.isEmpty -> cachedData
@@ -54,7 +74,7 @@ let private data configurationName =
                     printfn "Caching transformation"
                     try
                         transformedData.ToJson(Column)
-                        |> Cache.store tempConfig 
+                        |> Cache.store tempConfig cacheRevision
                         |> ignore
                     with e ->
                         eprintfn "Failed to cache transformation result. Message: %s" e.Message
@@ -67,7 +87,7 @@ let private data configurationName =
 let csv configuration = 
     let status, data = data configuration
     status,data 
-           |> DataMatrix.ToJson Csv
+           |> DataMatrix.toJson Csv
 
 let setting area setting =
     200,couch.Get [
@@ -107,88 +127,20 @@ let private request user pwd httpMethod body url  =
             body = TextRequest body,
             headers = headers
         )
-let private azureFields = 
-    [
-     "ChangedDate"
-     "WorkITemId"
-     "WorkItemRevisionSK"
-     "WorkItemType"
-     "State"
-     "StateCategory"
-     "LeadTimeDays"
-     "CycleTimeDays"
-     "Iteration"
-    ]
-let private getInitialUrl (source : DataConfiguration.DataSource) =
-    let initialUrl = 
-        let selectedFields = 
-           (",", azureFields) |> System.String.Join
-        sprintf "https://analytics.dev.azure.com/kmddk/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s&$filter=IsLastRevisionOfDay%%20eq%%20true%%20and%%20WorkItemRevisionSK%%20gt%%20%d" source.ProjectName selectedFields
-    try
-        match  source |> Rawdata.tryLatestId with
-        Some workItemRevisionId -> 
-            initialUrl workItemRevisionId
-        | None -> 
-            printfn "Didn't get a work item revision id"
-            initialUrl 0L
-    with e -> 
-        eprintfn "Failed to get latest. Message: %s" e.Message
-        initialUrl 0L
 
-let private hash (input : string) =
-        use md5Hash = System.Security.Cryptography.MD5.Create()
-        let data = md5Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input))
-        let sBuilder = System.Text.StringBuilder()
-        (data
-        |> Seq.fold(fun (sBuilder : System.Text.StringBuilder) d ->
-                sBuilder.Append(d.ToString("x2"))
-        ) sBuilder).ToString()
-        
-
-let sync pat configurationName =
+let sync azureToken configurationName =
     let configuration = DataConfiguration.get configurationName
-    let syncId = Rawdata.createSyncStateDocument configuration.Source
+    let cacheRevision = cacheRevision configuration.Source
+    let syncId = Rawdata.createSyncStateDocument cacheRevision configuration.Source
     async {
         try
             match configuration.Source with
             DataConfiguration.AzureDevOps projectName ->
-                
-                let rec _sync (url : string) = 
-                    let resp = 
-                        url
-                        |> request pat pat "GET" None
-                    if resp.StatusCode = 200 then
-                        let record = 
-                            match resp.Body with
-                            Text body ->
-                                body
-                                |> AzureDevOpsAnalyticsRecord.Parse
-                                |> Some
-                            | _ -> 
-                                None
-                        match record with
-                        Some record ->
-                            let data = record.JsonValue.ToString JsonSaveOptions.DisableFormatting
-                            let rawdataRecord = Cache.createDataRecord (url |> hash) configuration.Source data ["Url", url] 
-                            let responseText = Rawdata.InsertOrUpdate rawdataRecord
-                            Rawdata.updateSync (url |> sprintf "inserted record. %s") configuration.Source
-                            if System.String.IsNullOrWhiteSpace(record.OdataNextLink) |> not then
-                                printfn "Countinuing sync"
-                                printfn "%s" record.OdataNextLink
-                                _sync record.OdataNextLink
-                            else 
-                                200, responseText
-                        | None -> 500, "Couldn't parse record"
-                    else 
-                        resp.StatusCode, (match resp.Body with Text t -> t | _ -> "")
-                let statusCode, body = 
-                    projectName
-                    |> DataConfiguration.AzureDevOps
-                    |> getInitialUrl
-                    |> _sync
+              
+                let statusCode,body = Hobbes.Server.Readers.AzureDevOps.sync azureToken projectName cacheRevision
                 if statusCode >= 200 && statusCode < 300 then 
                     async {
-                        let! _ = Cache.invalidateCache configuration.Source
+                        let! _ = Cache.invalidateCache configuration.Source cacheRevision
                         let! _ = 
                             let configurations = DataConfiguration.configurationsBySource configuration.Source
                             configurations
@@ -202,18 +154,18 @@ let sync pat configurationName =
                                         eprintfn "Failed to transform data. Message: %s" e.Message
                                 }
                             ) |> Async.Parallel
-                        Rawdata.setSyncCompleted configuration.Source
+                        Rawdata.setSyncCompleted cacheRevision configuration.Source 
                     } |> Async.Start
                 else
                     let msg = sprintf "Syncronization failed. Message: %s" body
                     eprintfn "%s" msg
-                    Rawdata.setSyncFailed (Some msg) configuration.Source  
+                    Rawdata.setSyncFailed msg cacheRevision configuration.Source  
             | _ -> 
                 let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
                 eprintfn "%s" msg
-                Rawdata.setSyncFailed (Some msg) configuration.Source 
+                Rawdata.setSyncFailed msg cacheRevision  configuration.Source 
         with e ->
-            Rawdata.setSyncFailed (Some e.Message) configuration.Source
+            Rawdata.setSyncFailed e.Message cacheRevision configuration.Source
     } |> Async.Start
     200, syncId
     
@@ -299,6 +251,9 @@ let ping() =
     couch.Get "_all_dbs" |> ignore
     200,"pong"
 
+let delete databaseName =
+    couch.Delete databaseName
+    
 [<Literal>]
 let private SettingsPath = """./db/documents/settings.json"""
 type private Settings = FSharp.Data.JsonProvider<SettingsPath>

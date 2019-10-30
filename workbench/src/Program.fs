@@ -61,7 +61,8 @@ let main args =
 
         if  test.IsSome || (sync.IsNone && publish.IsNone) then
             Workbench.Tests.test() |> ignore
-            0
+            printfn "Press enter to exit..."
+            System.Console.ReadLine().Length
         else            
             match sync with
             None -> 

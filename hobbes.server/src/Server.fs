@@ -47,7 +47,7 @@ let private setSetting (area, setting, value) : HttpHandler =
 
 let private deleteDb name=
     verified (fun _ -> 
-        couch.Delete name
+        Implementation.delete name
     )
 
 let private getSyncStatus statusId =
@@ -154,9 +154,11 @@ let private apiRouter = router {
     get "/list/transformations" listTransformations
     get "/list/cache" listCache
     get "/list/rawdata" listRaw
+    
     getf "/status/sync/%s" getSyncStatus
     getf "/admin/settings/%s/%s" getSetting
     putf "/admin/configure/%s/%s/%s" setSetting
+    deletef "/admin/delete/%s" deleteDb
 }
 
 let private appRouter = router {

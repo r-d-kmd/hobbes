@@ -8,7 +8,7 @@ open Hobbes.Server.Security
 open Deedle
 
 let getSyncState syncId =
-    Rawdata.getState syncId
+    200, (Rawdata.getState syncId).ToString()
 
 let private hash (input : string) =
         use md5Hash = System.Security.Cryptography.MD5.Create()
@@ -89,7 +89,7 @@ let csv configuration =
     status,data 
            |> DataMatrix.toJson Csv
 
-let setting area setting =
+let setting (area, setting) =
     200,couch.Get [
                 "_node"
                 "_local"
@@ -98,7 +98,7 @@ let setting area setting =
                 setting
     ]
 
-let configure area setting value =
+let configure (area, setting, value) =
     200,couch.Put ([
                 "_node"
                 "_local"
@@ -211,10 +211,20 @@ let storeTransformations doc =
     with _ -> 
         500,"internal server error"
 
-let listConfigurations = DataConfiguration.list
-let listCache = Cache.list
-let listRaw = Rawdata.list
-let listTransformations = Transformations.list
+let formatDBList name list =
+    let stringList = list
+                     |> Seq.map (sprintf "%A")
+    let body = sprintf """{"%s" : [%s]}""" <| name <| System.String.Join(",", stringList)
+    200, body    
+
+let listConfigurations() = 
+    DataConfiguration.list() |> formatDBList "configurations"
+let listCache() = 
+    Cache.list() |> formatDBList "cache"
+let listTransformations() = 
+    Transformations.list() |> formatDBList "transformations"
+let listRawdata() = 
+    Rawdata.list() |> formatDBList "rawdata"           
 
 let storeConfigurations doc = 
     try
@@ -280,6 +290,7 @@ let initDb () =
             "rawdata", (Rawdata.InsertOrUpdate, Rawdata.tryGetHash)
             "configurations", (DataConfiguration.store, DataConfiguration.tryGetHash)
             "cache", (Cache.InsertOrUpdate, Cache.tryGetHash)
+            "log", (Log.InsertOrUpdate, Log.tryGetHash)
         ] 
     let systemDbs = 
         [
@@ -293,7 +304,9 @@ let initDb () =
         |> List.tryFind (fun sc -> ((sc >= 200 && sc < 300) || (sc = 412)) |> not)
     (match errorCode with
      Some errorCode ->
-        errorCode,"error in creating dbs"
+        let msg = "INIT: error in creating dbs"
+        Log.log "timestampID" Log.LogType.Error -1 msg "Unavailable"
+        errorCode, msg
      | None ->
         let dbMap = dbs |> Map.ofList
         try
@@ -315,8 +328,11 @@ let initDb () =
             Rawdata.compactAndClean()
             DataConfiguration.compactAndClean()
             Cache.compactAndClean()
+            Log.compactAndClean()
 
-            200,"init completed"
+            let msg = "init completed"
+            Log.log "timestampID" Log.LogType.Info -1 msg "Not applicable"
+            200,msg
         with e ->
             eprintfn "Error in init: %s" e.Message
             500,e.Message

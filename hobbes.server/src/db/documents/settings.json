@@ -7,5 +7,9 @@
         "name": "log",
         "value": "info",
         "area": "log"
+    }, {
+        "name" : "os_process_limit",
+        "value" : 10,
+        "area" : "query_server_config"
     }
 ]

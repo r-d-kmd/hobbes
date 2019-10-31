@@ -332,9 +332,9 @@ let initDb () =
             Log.compactAndClean()
 
             let msg = "init completed"
-            Log.log "timestampID" Log.LogType.Info -1 msg "Not applicable"
+            Log.log "timestampID" Log.LogType.Info -1 msg null
             200,msg
         with e ->
-            eprintfn "Error in init: %s" e.Message
+            Log.log "timeStampID" Log.LogType.Error -1 (sprintf "Error in init: %s" e.Message) null
             500,e.Message
     )

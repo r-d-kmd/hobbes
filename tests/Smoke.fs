@@ -13,7 +13,3 @@ module Smoke =
         //Testing explicitly gives better error messages for those two cases
         Assert.True(status >= 200 && status < 300)
         
-
-    [<Fact>]
-    let ping() = 
-        Assert.Equal((200,"pong"),Implementation.ping())

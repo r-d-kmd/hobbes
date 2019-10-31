@@ -259,8 +259,8 @@ let private uploadDesignDocument (storeHandle, (hashHandle : string -> string op
 //return application info as a sign that all is well
 let ping() = 
     let app = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application
-    let version = app.ApplicationVersion
-    200,sprintf """{"AppVersion": %A}""" version
+    
+    200,sprintf """{"appVersion": "%s", "runtimeFramework" : "%s", "appName" : "%s"}""" app.ApplicationVersion app.RuntimeFramework.FullName app.ApplicationName
 
 let delete databaseName =
     couch.Delete databaseName

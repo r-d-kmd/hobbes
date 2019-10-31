@@ -6,6 +6,15 @@ environment:
     secure: CbwbpNPxLV9AwhjSpIz7LA==
   DOCKER_PASS:
     secure: /T9ITfudL23Ga+Mz7oRaVA==
+
+dotnet_csproj:
+  patch: true
+  file: '**\hobbes.server.fsproj'
+  version: '{version}'
+  package_version: '{version}'
+  assembly_version: '{version}'
+  file_version: '{version}'
+  informational_version: '{version}'
   
 install:
   - docker version

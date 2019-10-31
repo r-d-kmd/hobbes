@@ -256,10 +256,11 @@ let private uploadDesignDocument (storeHandle, (hashHandle : string -> string op
                     ""                                                        
     }
 
-//test if db is alive
+//return application info as a sign that all is well
 let ping() = 
-    couch.Get "_all_dbs" |> ignore
-    200,"pong"
+    let app = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application
+    let version = app.ApplicationVersion
+    200,sprintf """{"AppVersion": %A}""" version
 
 let delete databaseName =
     couch.Delete databaseName

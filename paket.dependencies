@@ -16,6 +16,7 @@ nuget Fake.IO.FileSystem
 nuget FSharp.Data
 nuget FParsec
 nuget FSharp.Interop.Dynamic 4.0.3.130
+nuget Microsoft.Extensions.PlatformAbstractions
 nuget Microsoft.VisualStudio.Services.Client
 nuget Saturn
 nuget Giraffe

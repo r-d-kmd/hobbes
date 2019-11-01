@@ -145,6 +145,7 @@ type View(getter : string list -> ((string * string) list) option -> int * strin
     let list (parser : string -> 'a) (startKey : string option) (endKey : string option) (descending : bool option) = 
         let mutable limit = 128
         let rec fetch i acc = 
+            
             printfn "Fetching with a page size of %d" limit
             let statusCode,body = _list startKey endKey (Some limit) descending (i |> Some)
             if statusCode = 500 && limit > 1 then

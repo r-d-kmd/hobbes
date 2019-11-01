@@ -31,14 +31,22 @@ type LogType =
                 | _         -> 
                             eprintfn "Unknown sync state: %s" s
                             Unknown
-
-let log timeStampID (logType : LogType) requestID msg stacktrace =
+let private writeLogMessage timeStampID (logType : LogType) requestID msg stacktrace =
    let doc = sprintf """{"timestamp" : "%s",
                          "type" : "%A",
                          "requestID" : "%i",
                          "msg" : "%s",
                          "stacktrace" : "%s"}""" timeStampID logType requestID msg stacktrace
-   db.Post doc |> ignore             
+   db.Post doc |> ignore
+
+let log msg =
+    writeLogMessage null Info -1 msg null
+    
+let error msg stacktrace = 
+    writeLogMessage null Error -1 msg stacktrace
+
+let debug msg =
+     writeLogMessage null Debug -1 msg null
 
 let InsertOrUpdate doc = db.InsertOrUpdate doc
 

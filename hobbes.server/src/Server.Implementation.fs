@@ -177,7 +177,7 @@ let key token =
               let userId = sprintf "org.couchdb.user:%s" user
               match users.TryGet userId with
               None  ->
-                printfn "Didn't find user. %s" userId
+                Log.log  (sprintf "Didn't find user. %s" userId)
                 let userRecord = 
                     sprintf """{
                         "_id" : "%s",
@@ -306,7 +306,7 @@ let initDb () =
     (match errorCode with
      Some errorCode ->
         let msg = "INIT: error in creating dbs"
-        Log.log "timestampID" Log.LogType.Error -1 msg "Unavailable"
+        Log.error msg null
         errorCode, msg
      | None ->
         let dbMap = dbs |> Map.ofList
@@ -332,9 +332,9 @@ let initDb () =
             Log.compactAndClean()
 
             let msg = "init completed"
-            Log.log "timestampID" Log.LogType.Info -1 msg null
+            Log.log msg
             200,msg
         with e ->
-            Log.log "timeStampID" Log.LogType.Error -1 (sprintf "Error in init: %s" e.Message) null
+            Log.log (sprintf "Error in init: %s" e.Message)
             500,e.Message
     )

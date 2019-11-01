@@ -2,7 +2,7 @@
 
 open Argu
 open FSharp.Data
-open Microsoft.FSharp.Quotations.Patterns
+open Hobbes.Server.Db
 
 type Environment = 
     Development
@@ -10,7 +10,7 @@ type Environment =
 
 type CLIArguments =
     Tests
-    | PublishTransformations
+    | Publish
     | Sync of string
     | Environment of Environment
     | PAT of string
@@ -20,7 +20,7 @@ with
         member s.Usage =
             match s with
             | Tests -> "Flags that the tests should be run"
-            | PublishTransformations -> "Publish the transformations to either development or production (set by environment)"
+            | Publish -> "Publish the transformations to either development or production (set by environment)"
             | Sync _ -> "When sync-ing a project from azure"
             | Environment _ -> "Environment to publish transformations to"
             | PAT _ -> "The Private Access Token to use when posting transformations"
@@ -57,7 +57,7 @@ let main args =
             
         let test = results.TryGetResult Tests 
         let sync = results.TryGetResult Sync
-        let publish = results.TryGetResult PublishTransformations
+        let publish = results.TryGetResult Publish
 
         if  test.IsSome || (sync.IsNone && publish.IsNone) then
             Workbench.Tests.test() |> ignore

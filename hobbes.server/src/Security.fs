@@ -1,6 +1,6 @@
 namespace Hobbes.Server
 
-open Database
+open Hobbes.Server.Db.Database
 open System.Security.Cryptography
 open System.IO
 

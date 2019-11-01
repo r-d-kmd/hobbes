@@ -1,11 +1,10 @@
 module Implementation
 
 open Hobbes.FSharp.DataStructures
-open Database
+open Hobbes.Server.Db.Database
 open Hobbes.Server.Db
 open FSharp.Data
 open Hobbes.Server.Security
-open Deedle
 
 let getSyncState syncId =
     200, (Rawdata.getState syncId).ToString()
@@ -291,7 +290,7 @@ let initDb () =
             "rawdata", (Rawdata.InsertOrUpdate, Rawdata.tryGetHash)
             "configurations", (DataConfiguration.store, DataConfiguration.tryGetHash)
             "cache", (Cache.InsertOrUpdate, Cache.tryGetHash)
-            "log", (Log.InsertOrUpdate, Log.tryGetHash)
+            "log", ((fun _ -> failwith "won't work for log"), (fun _ -> failwith "won't work for log"))
         ] 
     let systemDbs = 
         [
@@ -306,7 +305,7 @@ let initDb () =
     (match errorCode with
      Some errorCode ->
         let msg = "INIT: error in creating dbs"
-        Log.error msg
+        Log.error null msg
         errorCode, msg
      | None ->
         let dbMap = dbs |> Map.ofList
@@ -329,7 +328,6 @@ let initDb () =
             Rawdata.compactAndClean()
             DataConfiguration.compactAndClean()
             Cache.compactAndClean()
-            Log.compactAndClean()
 
             let msg = "init completed"
             Log.log msg

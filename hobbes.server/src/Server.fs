@@ -2,7 +2,7 @@ open FSharp.Control.Tasks.V2.ContextInsensitive
 open Saturn
 open Giraffe
 open Microsoft.AspNetCore.Http
-open Database
+open Hobbes.Server.Db.Database
 open Hobbes.Server.Security
 open System
 

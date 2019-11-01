@@ -147,7 +147,7 @@ namespace Hobbes.Server.Db
                 let mutable limit = 128
                 let rec fetch i acc = 
                     
-                    printfn "Fetching with a page size of %d" limit
+                    Log.debugf "Fetching with a page size of %d" limit
                     let statusCode,body = _list startKey endKey (Some limit) descending (i |> Some)
                     if statusCode = 500 && limit > 1 then
                         //this is usually caused by an os process time out, due to too many reccords being returned
@@ -197,7 +197,7 @@ namespace Hobbes.Server.Db
                       | Put -> "PUT", "to"
                       | Delete -> "DELETE", "from"
                     
-                printfn "%sting %A %s %s" m path direction databaseName
+                Log.debugf "%sting %A %s %s" m path direction databaseName
                 
                 let headers =
                     [
@@ -227,7 +227,7 @@ namespace Hobbes.Server.Db
                         500, e.Message
                 let failed = statusCode < 200 || statusCode >= 300
                 if failed then
-                    printfn "Response status code : %d.  Body: %s. Url: %s" 
+                    Log.debugf "Response status code : %d.  Body: %s. Url: %s" 
                         statusCode 
                         (body.Substring(0,min 1000 body.Length)) 
                         url
@@ -356,8 +356,8 @@ namespace Hobbes.Server.Db
                         with e ->
                             failwithf "Failed loading. Row: %A. Msg: %s" (entry.ToString()) e.Message
                     ) |> Seq.ofArray
-                with _ ->
-                    eprintfn "Failed getting documents by key. POST Body: %s" (body.Substring(0,min body.Length 500))
+                with e ->
+                    Log.errorf e.StackTrace "Failed getting documents by key.Message: %s POST Body: %s" e.Message (body.Substring(0,min body.Length 500))
                     reraise()
             member __.Views with get() = _views
             member this.InsertOrUpdate doc = 
@@ -369,7 +369,7 @@ namespace Hobbes.Server.Db
                     Log.debugf "Found no rev, so assuming it's a new doc. id: %s" id
                     this.Post(doc)
                 | Some rev -> 
-                    printfn "Found rev, going to update. id: %s. rev: %s" id rev 
+                    Log.debugf "Found rev, going to update. id: %s. rev: %s" id rev 
                     this.Put(id, doc,  rev)
 
             member __.Compact() = 

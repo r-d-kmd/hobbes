@@ -15,11 +15,11 @@
   </ItemGroup>
   <ItemGroup>    
     <Compile Include="db/Database.fs" />
+    <Compile Include="db/Log.fs"/>
     <Compile Include="db/Transformations.fs" />
     <Compile Include="db/DataConfiguration.fs" />
     <Compile Include="db/Cache.fs" />
     <Compile Include="db/Rawdata.fs"/>
-    <Compile Include="db/Log.fs"/>
     <Compile Include="Readers/*.fs" />
     <Compile Include="Security.fs" />
     <Compile Include="Server.Implementation.fs" />

@@ -199,7 +199,7 @@ Target.create "BuildDocker" (fun _ ->
         let workingDir = System.IO.Path.GetDirectoryName path
         
         let build tag = 
-            let args = sprintf "build -t %s ." <| createDockerTag dockerOrg tag
+            let args = sprintf "build -t %s --platform linux ." <| createDockerTag dockerOrg tag
             printfn "Executing: $ docker %s" args
             run workingDir args
 

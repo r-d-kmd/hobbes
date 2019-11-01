@@ -66,7 +66,7 @@ Target.create "Restart"(fun _ ->
 Target.create "BuildImage" (fun _ ->
     if System.IO.Directory.Exists("./deploy/Server") |> not then failwith "Doh"
     if System.IO.Directory.Exists("./deploy/Server/db") |> not then failwith "with What??"
-    let arguments = "build -t hobbes ." |> String.split ' ' |> Arguments.OfArgs
+    let arguments = "build -t hobbes --platform linux ." |> String.split ' ' |> Arguments.OfArgs
     RawCommand ("docker", arguments)
     |> CreateProcess.fromCommand
     |> CreateProcess.withWorkingDirectory "../"

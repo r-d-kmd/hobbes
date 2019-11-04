@@ -2,6 +2,7 @@ module Implementation
 
 open Hobbes.FSharp.DataStructures
 open Hobbes.Server.Db.Database
+open Hobbes.Server.Db.Log
 open Hobbes.Server.Db
 open FSharp.Data
 open Hobbes.Server.Security
@@ -203,7 +204,7 @@ let key token =
         eprintfn "No user token. Tried with %s" token 
         403,"Unauthorized"
     | Some (user) ->
-        printfn "Creating api key for %s" user.Name
+        printfn "Creating api key for %s " user.Name
         let key = createToken user
         200,key
 
@@ -231,13 +232,13 @@ let listRawdata() =
     Rawdata.list() |> formatDBList "rawdata"           
 
 let listLog() = 
-    System.String.Join(",",Log.list()
-                            |> Seq.map(fun record -> 
-                                let logRecord = LogRecord.Parse record
-                                sprintf "[%s] %s %s" logRecord.Type logRecord.Message (match logRecord.Stacktrace with
-                                                                                       None -> ""
-                                                                                       | Some st -> sprintf "\n%s" st)
-                            )) |> formatDBList "logEntries"
+    Log.list()
+    |> Seq.map(fun record -> 
+        let logRecord = LogRecord.Parse record
+        sprintf "[%s] %s %s" logRecord.Type logRecord.Message (match logRecord.Stacktrace with
+                                                               None -> ""
+                                                               | Some st -> sprintf "\n%s" st)
+    ) |> formatDBList "logEntries"
 
 let storeConfigurations doc = 
     try
@@ -284,7 +285,7 @@ type private Settings = FSharp.Data.JsonProvider<SettingsPath>
 
 let initDb () =
     let configurationBase = "_node/_local/_config"
-    let settingsDb = Database(configurationBase,id)
+    let settingsDb = Database(configurationBase,id, Log.loggerInstance)
     Settings.Load SettingsPath
     |> Array.iter(fun setting ->
          let value =

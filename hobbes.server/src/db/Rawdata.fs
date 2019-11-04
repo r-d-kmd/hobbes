@@ -60,7 +60,7 @@ module Rawdata =
 
     type private RawList = JsonProvider<"""["id_a","id_b"]""">
     let private db = 
-        Database.Database("rawdata", CacheRecord.Parse)
+        Database.Database("rawdata", CacheRecord.Parse, Log.loggerInstance)
           .AddView("table")
           .AddView "WorkItemRevisions"
 

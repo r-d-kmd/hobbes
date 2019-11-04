@@ -233,11 +233,15 @@ let listRawdata() =
 
 let listLog() = 
     Log.list()
-    |> Seq.map(fun record -> 
-        let logRecord = LogRecord.Parse record
-        sprintf "[%s] %s %s" logRecord.Type logRecord.Message (match logRecord.Stacktrace with
-                                                               None -> ""
-                                                               | Some st -> sprintf "\n%s" st)
+    |> Seq.map LogRecord.Parse
+    |> Seq.filter(fun record -> record.Type <> "requestTiming")
+    |> Seq.sortByDescending(fun record -> record.Timestamp)
+    |> Seq.map(fun logRecord ->
+        let st = 
+            match logRecord.Stacktrace with
+            None -> ""
+            | Some st -> sprintf "\n%s" st
+        sprintf "%s - [%s] %s %s" (logRecord.Timestamp.ToString()) logRecord.Type logRecord.Message st
     ) |> formatDBList "logEntries"
 
 let storeConfigurations doc = 

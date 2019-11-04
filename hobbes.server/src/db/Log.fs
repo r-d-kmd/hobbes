@@ -107,11 +107,11 @@ module Log =
             member __.Log _   = ()
             member __.Error stackTrace msg = error stackTrace msg
             member __.Debug _ = ()
-            member __.Logf<'a> (_ : Database.LogFormatter<'a>)  = 
-                kprintf ignore (Database.LogFormatter<'a> "")
+            member __.Logf<'a> (format : Database.LogFormatter<'a>)  = 
+                ksprintf ignore format
             member __.Errorf<'a> stackTrace (format : Database.LogFormatter<'a>) = errorf stackTrace format
-            member __.Debugf<'a>  (_ : Database.LogFormatter<'a>)  = 
-                kprintf ignore (Database.LogFormatter<'a> "")
+            member __.Debugf<'a>  (format : Database.LogFormatter<'a>)  = 
+                ksprintf ignore format
         }
     do
         let db = Database.Database("log", LogRecord.Parse, ignoreLogging)

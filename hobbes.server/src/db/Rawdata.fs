@@ -74,10 +74,8 @@ module Rawdata =
 
     let getState id = 
         match db.TryGet id with
-        None -> NotStarted
-        | Some s -> 
-            let state = s.State 
-            state |> SyncStatus.Parse
+        None -> "not stated"
+        | Some s -> s.ToString()
 
     let setSyncState state message revision source = 
         let doc = createCacheRecord {

@@ -150,7 +150,7 @@ module AzureDevOps =
     //TODO should be async and in parallel-ish
     let sync azureToken projectName cacheRevision = 
         let source = DataConfiguration.AzureDevOps projectName
-        let rec _read (url : string) : unit  = 
+        let rec _read hashes (url : string) : unit  = 
             let resp = 
                 url
                 |> request azureToken azureToken "GET" None
@@ -162,23 +162,32 @@ module AzureDevOps =
                         |> Some
                     | _ -> 
                         None
+                let rawId =  (url |> hash)
+                let hashes = rawId::hashes
                 body
                 |> Option.bind(fun body -> 
                     if body |> isEmpty |> not then
-                        let rawId =  (url |> hash)
-                        let rawdataRecord = Cache.createDataRecord rawId source body ["Url", url] 
+                        
+                        let rawdataRecord = Cache.createDataRecord rawId source body [
+                                                                                        "url", url
+                                                                                        "recordCount", hashes 
+                                                                                                       |> List.length 
+                                                                                                       |> string
+                                                                                        "hashes", System.String.Join(",", hashes) 
+                                                                                                  |> sprintf "[%s]"
+                                                                                     ] 
                         Rawdata.InsertOrUpdate rawdataRecord |> ignore     
                     body
                     |> tryNextLink
                 ) |> Option.map(fun nextlink ->   
                        printfn "Continuing with %s" nextlink
-                       _read nextlink
+                       _read hashes nextlink
                 ) |> ignore
             else 
                 eprintfn "StatusCode: %d. Message: %s" resp.StatusCode (match resp.Body with Text t -> t | _ -> "")
                 
         projectName
         |> getInitialUrl
-        |> _read 
+        |> _read []
         
         200,"ok"

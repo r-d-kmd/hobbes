@@ -394,13 +394,15 @@ namespace Hobbes.Server.Db
                 
         let users = Database ("_users", UserRecord.Parse)
         let couch = Database ("", id)
-        type LogRecord = JsonProvider<"""{"_id" : "jlk",
+        type LogRecord = JsonProvider<"""[{"_id" : "jlk",
                                          "timestamp" : "timestampId",
                                          "type" : "info|debug|error",
-                                         "requestID" : "2342",
-                                         "msg" : "This is a message",
-                                         "stacktrace" : "This is a stacktrace"}""">
+                                         "message" : "This is a message",
+                                         "stacktrace" : "This is a stacktrace"}, {"_id" : "jlk",
+                                         "timestamp" : "timestampId",
+                                         "type" : "info|debug|error",
+                                         "message" : "This is a message"}]""", SampleIsList=true>
 
-        let private db = Database ("log", LogRecord.Parse)
         do
-            Log.logger <- db.Post >> ignore
+            let log = Database ("log", LogRecord.Parse)
+            Log.loggerAndList <- (log.Post >> ignore, log.List >> (Seq.map string))

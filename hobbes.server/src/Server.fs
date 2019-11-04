@@ -39,10 +39,11 @@ let private apiRouter = router {
     get "/list/transformations" (Implementation.listTransformations |> Routing.verified "list/transformations" )
     get "/list/cache" (Implementation.listCache |> Routing.verified "list/cache")
     get "/list/rawdata" (Implementation.listRawdata |> Routing.verified "list/rawdata")
+    get "/list/log" (Implementation.listLog |> Routing.verified "list/log")
     getf "/status/sync/%s" (Implementation.getSyncState |> Routing.skipContext |> Routing.verifiedWithArgs  "status/sync")
     getf "/admin/settings/%s/%s" ( Implementation.setting |> Routing.skipContext |> Routing.verifiedWithArgs "admin/settings")
     putf "/admin/settings/%s/%s/%s" (Implementation.configure |> Routing.skipContext  |> Routing.verifiedWithArgs "admin/settings")
-}
+} 
 
 let private appRouter = router {
     forward "" apiRouter

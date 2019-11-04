@@ -3,6 +3,7 @@ open Saturn
 open Giraffe
 open Microsoft.AspNetCore.Http
 open Hobbes.Server.Db.Database
+open Hobbes.Server.Db
 open Hobbes.Server.Security
 open System
 
@@ -10,9 +11,13 @@ let private port =
     match env "port" with
     null -> 8085
     | p -> int p
-      
-let private verified f =
-    fun func (ctx : HttpContext) ->
+
+let watch = 
+    let w = Diagnostics.Stopwatch()
+    w.Start()
+    w
+
+let private verify (ctx : HttpContext) =
         let authToken = 
             let url = ctx.GetRequestUrl()
             printfn "Requesting access to %s" url
@@ -22,69 +27,86 @@ let private verified f =
             | _ -> 
                 ctx.TryGetRequestHeader "Authorization"
                 
-        let statusCode, body =  
-            match authToken with
-            None ->    
-                    eprintfn "Tried to gain access without a key"
-                    403, "Unauthorized"
-            | Some authToken ->
-                if authToken |> verifyAuthToken then
-                    f()
-                else 
-                    403, "Unauthorized"
-        (setStatusCode statusCode
-         >=> setBodyFromString body) func ctx
-
-let private sync configurationName =
-    fun f (ctx : HttpContext) ->
+        authToken
+        |> Option.bind(fun authToken ->
+            if authToken |> verifyAuthToken then
+                Some authToken
+            else 
+                None
+        ) |> Option.isSome
+           
+let private sync (ctx : HttpContext) configurationName =
         try
             match ctx.TryGetRequestHeader "PAT" with
-            Some azurePAT ->
-                verified (fun () -> Implementation.sync azurePAT configurationName) f ctx
-            | None -> 
-                (setStatusCode 403 >=> setBodyFromString "Unauthorized") f ctx
+            Some azurePAT -> Implementation.sync azurePAT configurationName
+            | None ->  403, "Unauthorized"
         with e -> 
-            eprintfn "Couldn't sync %s. Reason: %s" configurationName e.Message
-            (setStatusCode 500 >=> setBodyFromString e.Message) f ctx
+            Log.errorf e.StackTrace "Couldn't sync %s. Reason: %s" configurationName e.Message
+            500, e.Message
 
-let private handleRequestWithArg shouldVerify f arg : HttpHandler =
-    fun next (ctx : HttpContext) ->
-        task {
-            if shouldVerify then
-                return! verified (fun _ -> f arg) next ctx
-            else 
-                let code, body = f arg
+type Request = 
+    Verified of name : string
+    | Unverified of name: string
+
+let rec private execute (request : Request) f : HttpHandler =
+    match request with
+    | Unverified name ->
+        fun next (ctx : HttpContext) ->
+            task {
+                let start = watch.ElapsedMilliseconds
+                let code, body = f ctx
+                let ``end`` = watch.ElapsedMilliseconds
+                Log.timed name (start - ``end``)
                 return! (setStatusCode code >=> setBodyFromString body) next ctx
-        }
+            }
+    | Verified name ->
+        let f ctx = 
+            if verify ctx then
+                f ctx
+            else
+                403, "Unauthorized"
+        execute (Unverified name) f
 
-let private handleRequestWithBody shouldVerify f : HttpHandler =
+                    
+let withArgs (request : Request) f args =  
+    execute request (fun context -> f context args)
+
+let verified name f = execute (name |> Verified) (fun ctx -> f())
+let unverified name = execute (name |> Unverified)    
+let verifiedWithArgs name = (name |> Verified |> withArgs) 
+let unverifiedWithArgs name = (name |> Unverified |> withArgs)
+let withBody name f args : HttpHandler = 
     fun next (ctx : HttpContext) ->
         task {
             let! body = ctx.ReadBodyFromRequestAsync()
-            return! handleRequestWithArg shouldVerify f body next ctx
-        }
+            let f = f body
+            return! ((withArgs (Verified name) (f) args) next ctx)
+        } 
 
-let private handleRequestWithBodyAndArg shouldVerify f arg =
-    fun next (ctx : HttpContext) -> handleRequestWithBody shouldVerify (f arg) next ctx       
+let withBodyNoArgs name f : HttpHandler = 
+    withBody name (fun body _ -> fun _ -> f body) ()
+
+let skipContext f ctx = f
 
 let private apiRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
-    get "/ping" (handleRequestWithArg false Implementation.ping ())
-    get "/init" (handleRequestWithArg false Implementation.initDb ())
-    getf "/key/%s" (handleRequestWithArg false Implementation.key)
-    getf "/csv/%s" (handleRequestWithArg true Implementation.csv)
-    getf "/sync/%s" (handleRequestWithBodyAndArg true Implementation.sync)
-    put "/configurations" (handleRequestWithBody true Implementation.storeConfigurations)
-    put "/transformations" (handleRequestWithBody true Implementation.storeTransformations)
-    get "/list/configurations" (handleRequestWithArg true Implementation.listConfigurations ())
-    get "/list/transformations" (handleRequestWithArg true Implementation.listTransformations ())
-    get "/list/cache" (handleRequestWithArg true Implementation.listCache ())
-    get "/list/rawdata" (handleRequestWithArg true Implementation.listRawdata ())
-    getf "/status/sync/%s" (handleRequestWithArg true Implementation.getSyncState)
+    get "/ping" (("ping" |> unverified) (ignore >> Implementation.ping))
+    get "/init" (("initDb" |> verified) (ignore >> Implementation.initDb))
+    
+    getf "/key/%s" (Implementation.key |> skipContext |> unverifiedWithArgs "key")
+    getf "/csv/%s" (skipContext Implementation.csv |> verifiedWithArgs "csv" ) 
+    getf "/sync/%s" ( sync |> verifiedWithArgs "sync" )
 
-    getf "/admin/settings/%s/%s" (handleRequestWithArg true Implementation.setting)
-    putf "/admin/configure/%s/%s/%s" (handleRequestWithArg true Implementation.configure)
+    put "/configurations" (Implementation.storeConfigurations |> withBodyNoArgs "configurations")
+    put "/transformations" (Implementation.storeTransformations |> withBodyNoArgs "transformations")
+    get "/list/configurations" (Implementation.listConfigurations  |> verified "list/configurations")
+    get "/list/transformations" (Implementation.listTransformations |> verified "list/transformations" )
+    get "/list/cache" (Implementation.listCache |> verified "list/cache")
+    get "/list/rawdata" (Implementation.listRawdata |> verified "list/rawdata")
+    getf "/status/sync/%s" (skipContext Implementation.getSyncState |> verifiedWithArgs  "status/sync")
+    getf "/admin/settings/%s/%s" ( skipContext Implementation.setting |> verifiedWithArgs "admin/settings")
+    putf "/admin/settings/%s/%s/%s" (skipContext Implementation.configure |> verifiedWithArgs "admin/settings")
 }
 
 let private appRouter = router {

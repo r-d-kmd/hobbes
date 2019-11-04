@@ -64,3 +64,15 @@ module Log =
  
     let debugf format =
         ksprintf ( writeLogMessage Debug null) format
+
+    let timed requestName (ms : int64) = 
+        let doc = sprintf """{"timestamp" : "%s",
+                             "type" : "requestTiming",
+                             "requestName" : "%s",
+                             "executionTime" : %d}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) requestName ms
+        async {
+            try
+                doc |> logger
+            with e ->
+                eprintfn "Failedto insert timed event in log. %s. Message: %s StackTRace %s" doc e.Message e.StackTrace
+        } |> Async.Start

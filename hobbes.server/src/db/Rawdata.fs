@@ -104,13 +104,13 @@ module Rawdata =
                 try
                    record.JsonValue.AsInteger64()
                 with e -> 
-                   eprintfn "Failed to get revision from record. Reason: %s. Record: %s" e.Message <| record.ToString()
+                   Log.errorf e.StackTrace "Failed to get revision from record. Reason: %s. Record: %s" e.Message <| record.ToString()
                    -1L
                 )
             ).JsonValue.AsInteger64()
             |> Some
         with e ->
-           eprintfn "Failed to get last revision. Reason: %s." e.Message 
+           Log.errorf e.StackTrace "Failed to get last revision. Reason: %s." e.Message 
            None
 
     let list = 

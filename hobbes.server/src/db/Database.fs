@@ -400,14 +400,18 @@ namespace Hobbes.Server.Db
                     get [id] None
                     |> CouchDoc.Parse
                 delete id (Some doc.Rev)
+        open FSharp.Core.Printf
         let private consoleLogger =
                 { new ILog with
                     member __.Log msg   = printfn "%s" msg
                     member __.Error stackTrace msg = eprintfn "%s StackTrace: \n %s" msg stackTrace
                     member __.Debug msg = printfn "%s" msg
-                    member __.Logf<'a> _  = Unchecked.defaultof<'a>
-                    member __.Errorf<'a> _ _ = Unchecked.defaultof<'a>
-                    member __.Debugf<'a> _ = Unchecked.defaultof<'a>
+                    member __.Logf<'a> (format : LogFormatter<'a>) = 
+                        kprintf ignore format 
+                    member __.Errorf<'a> _ (format : LogFormatter<'a>) = 
+                        kprintf ignore format
+                    member __.Debugf<'a> (format : LogFormatter<'a>) = 
+                        kprintf ignore format
                 }    
         let users = Database ("_users", UserRecord.Parse, consoleLogger)
         let couch = Database ("", id, consoleLogger)

@@ -137,20 +137,24 @@ let sync azureToken configurationName =
             DataConfiguration.AzureDevOps projectName ->
               
                 let statusCode,body = Hobbes.Server.Readers.AzureDevOps.sync azureToken projectName cacheRevision
+                Log.logf "Sync finised with statusCode %d and result %s" statusCode body
                 if statusCode >= 200 && statusCode < 300 then 
                     async {
+                        Log.debug "Invalidating cache"
                         let! _ = Cache.invalidateCache configuration.Source cacheRevision
+                        Log.debug "Recalculating"
                         let! _ = 
                             let configurations = DataConfiguration.configurationsBySource configuration.Source
                             configurations
                             |> Seq.map(fun configuration -> 
                                 async { 
                                     try
+                                        Log.debugf "Getting data for configuration: %s" configuration
                                         let statusCode, _ = data configuration
                                         if statusCode > 299 then 
-                                            eprintfn "Failed to transform data. Status: %d" statusCode
+                                            Log.errorf null "Failed to transform data. Status: %d" statusCode
                                     with e ->
-                                        eprintfn "Failed to transform data. Message: %s" e.Message
+                                        Log.errorf e.StackTrace "Failed to transform data. Message: %s" e.Message
                                 }
                             ) |> Async.Parallel
                         Rawdata.setSyncCompleted cacheRevision configuration.Source 
@@ -222,8 +226,18 @@ let listCache() =
     Cache.list() |> formatDBList "cache"
 let listTransformations() = 
     Transformations.list() |> formatDBList "transformations"
+
 let listRawdata() = 
     Rawdata.list() |> formatDBList "rawdata"           
+
+let listLog() = 
+    System.String.Join(",",Log.list()
+                            |> Seq.map(fun record -> 
+                                let logRecord = LogRecord.Parse record
+                                sprintf "[%s] %s %s" logRecord.Type logRecord.Message (match logRecord.Stacktrace with
+                                                                                       None -> ""
+                                                                                       | Some st -> sprintf "\n%s" st)
+                            )) |> formatDBList "logEntries"
 
 let storeConfigurations doc = 
     try

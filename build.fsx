@@ -76,7 +76,7 @@ Target.create "Test" (fun _ ->
         if containers |> Seq.tryFind(fun image -> image = "hobbes") |> Option.isSome then
             true
         else
-            printfn "Containers currently runnins %A" (containers |> Seq.map (sprintf "%A"))
+            printfn "Containers currently running %A" (containers |> Seq.map (sprintf "%A"))
             false
         
            

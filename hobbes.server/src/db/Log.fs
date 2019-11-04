@@ -2,7 +2,10 @@ namespace Hobbes.Server.Db
 
 module Log =
     //need to make it possible to bootstrap the logger, since the db is also using the logger
-    let mutable logger = eprintfn "%s"
+    let mutable loggerAndList : (string -> unit) * (unit -> seq<string>) = eprintfn "%s", fun () -> Seq.empty
+    let _logger() = fst loggerAndList
+    let _list() = snd loggerAndList
+    
     open FSharp.Core.Printf
 
     type LogType = 
@@ -31,7 +34,7 @@ module Log =
 #if DEBUG
         Debug
 #else
-        Error
+        Debug
 #endif
 
     let private writeLogMessage (logType : LogType) stacktrace msg =
@@ -42,7 +45,7 @@ module Log =
         async {
            try
               if logType >= logLevel then
-                  doc |> logger
+                  doc |> _logger()
            with e ->
                eprintfn "Failedto insert log doc %s. Message: %s StackTRace %s" doc e.Message e.StackTrace
         } |> Async.Start
@@ -72,7 +75,10 @@ module Log =
                              "executionTime" : %d}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) requestName ms
         async {
             try
-                doc |> logger
+                doc |> _logger()
             with e ->
                 eprintfn "Failedto insert timed event in log. %s. Message: %s StackTRace %s" doc e.Message e.StackTrace
         } |> Async.Start
+
+    let list() = 
+        _list()()

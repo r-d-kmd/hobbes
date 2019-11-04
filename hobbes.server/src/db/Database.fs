@@ -1,7 +1,16 @@
 namespace Hobbes.Server.Db
+    open FSharp.Data
     module Database =
-
-        open FSharp.Data
+        type Logger = string -> unit
+        type LogFormatter<'a> = Printf.StringFormat<'a,unit>
+        type ILog =
+            abstract Log : string -> unit
+            abstract Error : string -> string -> unit
+            abstract Debug : string -> unit
+            abstract Logf<'a> : LogFormatter<'a> -> 'a
+            abstract Errorf<'a> : string -> LogFormatter<'a> -> 'a
+            abstract Debugf<'a> : LogFormatter<'a> -> 'a
+        
 
         let env name = 
             System.Environment.GetEnvironmentVariable name
@@ -99,7 +108,7 @@ namespace Hobbes.Server.Db
             Binary _ -> failwithf "Can't use a binary response"
             | Text res -> res
 
-        type View(getter : string list -> ((string * string) list) option -> int * string, name) = 
+        type View(getter : string list -> ((string * string) list) option -> int * string, name, log : ILog) = 
 
             let _list (startKey : string option) (endKey : string option) limit (descending : bool option) skip = 
                 let args = 
@@ -147,7 +156,7 @@ namespace Hobbes.Server.Db
                 let mutable limit = 128
                 let rec fetch i acc = 
                     
-                    Log.debugf "Fetching with a page size of %d" limit
+                    log.Debugf "Fetching with a page size of %d" limit
                     let statusCode,body = _list startKey endKey (Some limit) descending (i |> Some)
                     if statusCode = 500 && limit > 1 then
                         //this is usually caused by an os process time out, due to too many reccords being returned
@@ -172,7 +181,7 @@ namespace Hobbes.Server.Db
                 (listResult startKey endKey (Some limit) descending None).Rows
                 |> Array.map(fun entry -> entry.Value.ToString() |> parser)
 
-        and Database<'a> (databaseName, parser : string -> 'a) =
+        and Database<'a> (databaseName, parser : string -> 'a, log : ILog) =
             let mutable _views : Map<string,View> = Map.empty
             let request httpMethod isTrial body path rev queryString =
                 let enc (s : string) = System.Web.HttpUtility.UrlEncode s
@@ -197,7 +206,7 @@ namespace Hobbes.Server.Db
                       | Put -> "PUT", "to"
                       | Delete -> "DELETE", "from"
                     
-                Log.debugf "%sting %A %s %s" m path direction databaseName
+                log.Debugf "%sting %A %s %s" m path direction databaseName
                 
                 let headers =
                     [
@@ -227,7 +236,7 @@ namespace Hobbes.Server.Db
                         500, e.Message
                 let failed = statusCode < 200 || statusCode >= 300
                 if failed then
-                    Log.debugf "Response status code : %d.  Body: %s. Url: %s" 
+                    log.Debugf "Response status code : %d.  Body: %s. Url: %s" 
                         statusCode 
                         (body.Substring(0,min 1000 body.Length)) 
                         url
@@ -273,7 +282,7 @@ namespace Hobbes.Server.Db
                 else
                     failwith body
             member this.AddView name =
-                _views <- _views.Add(name, View(tryGet,name))
+                _views <- _views.Add(name, View(tryGet,name,log))
                 this
             
             member __.ListIds() =
@@ -357,7 +366,7 @@ namespace Hobbes.Server.Db
                             failwithf "Failed loading. Row: %A. Msg: %s" (entry.ToString()) e.Message
                     ) |> Seq.ofArray
                 with e ->
-                    Log.errorf e.StackTrace "Failed getting documents by key.Message: %s POST Body: %s" e.Message (body.Substring(0,min body.Length 500))
+                    log.Errorf e.StackTrace "Failed getting documents by key.Message: %s POST Body: %s" e.Message (body.Substring(0,min body.Length 500))
                     reraise()
             member __.Views with get() = _views
             member this.InsertOrUpdate doc = 
@@ -366,10 +375,10 @@ namespace Hobbes.Server.Db
                     failwith "Document must have a valid id"
                 match [id] |> this.TryGetRev with
                 None ->
-                    Log.debugf "Found no rev, so assuming it's a new doc. id: %s" id
+                    log.Debugf "Found no rev, so assuming it's a new doc. id: %s" id
                     this.Post(doc)
                 | Some rev -> 
-                    Log.debugf "Found rev, going to update. id: %s. rev: %s" id rev 
+                    log.Debugf "Found rev, going to update. id: %s. rev: %s" id rev 
                     this.Put(id, doc,  rev)
 
             member __.Compact() = 
@@ -391,18 +400,15 @@ namespace Hobbes.Server.Db
                     get [id] None
                     |> CouchDoc.Parse
                 delete id (Some doc.Rev)
-                
-        let users = Database ("_users", UserRecord.Parse)
-        let couch = Database ("", id)
-        type LogRecord = JsonProvider<"""[{"_id" : "jlk",
-                                         "timestamp" : "timestampId",
-                                         "type" : "info|debug|error",
-                                         "message" : "This is a message",
-                                         "stacktrace" : "This is a stacktrace"}, {"_id" : "jlk",
-                                         "timestamp" : "timestampId",
-                                         "type" : "info|debug|error",
-                                         "message" : "This is a message"}]""", SampleIsList=true>
-
-        do
-            let log = Database ("log", LogRecord.Parse)
-            Log.loggerAndList <- (log.Post >> ignore, log.List >> (Seq.map string))
+        let private consoleLogger =
+                { new ILog with
+                    member __.Log msg   = printfn "%s" msg
+                    member __.Error stackTrace msg = eprintfn "%s StackTrace: \n %s" msg stackTrace
+                    member __.Debug msg = printfn "%s" msg
+                    member __.Logf<'a> _  = Unchecked.defaultof<'a>
+                    member __.Errorf<'a> _ _ = Unchecked.defaultof<'a>
+                    member __.Debugf<'a> _ = Unchecked.defaultof<'a>
+                }    
+        let users = Database ("_users", UserRecord.Parse, consoleLogger)
+        let couch = Database ("", id, consoleLogger)
+       

@@ -1,13 +1,18 @@
 namespace Hobbes.Server.Db
+open FSharp.Data
 
 module Log =
-    //need to make it possible to bootstrap the logger, since the db is also using the logger
-    let mutable loggerAndList : (string -> unit) * (unit -> seq<string>) = eprintfn "%s", fun () -> Seq.empty
-    let _logger() = fst loggerAndList
-    let _list() = snd loggerAndList
-    
-    open FSharp.Core.Printf
+   
 
+    open FSharp.Core.Printf
+    type LogRecord = JsonProvider<"""[{"_id" : "jlk",
+                                         "timestamp" : "timestampId",
+                                         "type" : "info|debug|error",
+                                         "message" : "This is a message",
+                                         "stacktrace" : "This is a stacktrace"}, {"_id" : "jlk",
+                                         "timestamp" : "timestampId",
+                                         "type" : "info|debug|error",
+                                         "message" : "This is a message"}]""", SampleIsList=true>
     type LogType = 
         Info
         | Debug
@@ -36,6 +41,10 @@ module Log =
 #else
         Debug
 #endif
+    
+    let mutable private _logger = eprintf "%A" 
+    let mutable private _list : unit -> seq<string> = fun () -> Seq.empty
+    
 
     let private writeLogMessage (logType : LogType) stacktrace msg =
         let doc = sprintf """{"timestamp" : "%s",
@@ -45,7 +54,7 @@ module Log =
         async {
            try
               if logType >= logLevel then
-                  doc |> _logger()
+                  doc |>_logger
            with e ->
                eprintfn "Failedto insert log doc %s. Message: %s StackTRace %s" doc e.Message e.StackTrace
         } |> Async.Start
@@ -75,10 +84,34 @@ module Log =
                              "executionTime" : %d}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) requestName ms
         async {
             try
-                doc |> _logger()
+                doc |> _logger
             with e ->
                 eprintfn "Failedto insert timed event in log. %s. Message: %s StackTRace %s" doc e.Message e.StackTrace
         } |> Async.Start
 
     let list() = 
-        _list()()
+        _list()
+
+    let loggerInstance = 
+        { new Database.ILog with
+            member __.Log msg   = log msg
+            member __.Error stackTrace msg = error stackTrace msg
+            member __.Debug msg = debug msg
+            member __.Logf<'a> (format : Database.LogFormatter<'a>)  = logf format  
+            member __.Errorf<'a> stackTrace (format : Database.LogFormatter<'a>) = errorf stackTrace format
+            member __.Debugf<'a>  (format : Database.LogFormatter<'a>) = debugf format
+        }
+
+    let ignoreLogging =
+        { new Database.ILog with
+            member __.Log _   = ()
+            member __.Error stackTrace msg = error stackTrace msg
+            member __.Debug _ = ()
+            member __.Logf<'a> _  = Unchecked.defaultof<'a>
+            member __.Errorf<'a> stackTrace (format : Database.LogFormatter<'a>) = errorf stackTrace format
+            member __.Debugf<'a>  _ = Unchecked.defaultof<'a>
+        }
+    do
+        let db = Database.Database("log", LogRecord.Parse, ignoreLogging)
+        _logger <- db.Post >> ignore
+        _list <- db.List >> Seq.map string

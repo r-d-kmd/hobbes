@@ -117,7 +117,7 @@ namespace Hobbes.Server.Db
                 CachedDate.Parse s
         let private sourceView = "srcproj"
         let private db = 
-            Database.Database("cache", CacheRecord.Parse)
+            Database.Database("cache", CacheRecord.Parse, Log.loggerInstance)
               .AddView(sourceView)
 
         let private createKeyFromList  (cacheKey : string list) =  

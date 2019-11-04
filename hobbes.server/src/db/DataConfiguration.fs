@@ -11,7 +11,7 @@ module DataConfiguration =
     }""">
     let private sourceView = "bySource"
     let private db = 
-        Database.Database("configurations", ConfigurationRecord.Parse)
+        Database.Database("configurations", ConfigurationRecord.Parse, Log.loggerInstance)
                  .AddView(sourceView)
     type DataSource = 
         AzureDevOps of projectName: string

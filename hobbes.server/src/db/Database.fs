@@ -138,8 +138,10 @@ namespace Hobbes.Server.Db
 
             let getListFromResponse (statusCode,body) =
                 if statusCode < 300 && statusCode >= 200 then
+                    log.Debug "Parsing list result"
                     body |> List.Parse
                 else
+                    log.Errorf null "Error when fetching list: %s" body
                     failwithf "Error: %s" body
             
             let listResult  (startKey : string option) (endKey : string option) limit (descending : bool option) skip =
@@ -159,7 +161,7 @@ namespace Hobbes.Server.Db
                     log.Debugf "Fetching with a page size of %d" limit
                     let statusCode,body = _list startKey endKey (Some limit) descending (i |> Some)
                     if statusCode = 500 && limit > 1 then
-                        //this is usually caused by an os process time out, due to too many reccords being returned
+                        //this is usually caused by an os process time out, due to too many records being returned
                         //gradually shrink the page size and retry
                         limit <- limit / 2
                         fetch i acc

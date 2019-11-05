@@ -17,6 +17,9 @@
     <Compile Include="Configurations/*.fs" />
     <Compile Include="Tests/Tests.fs" />
     <Compile Include="Program.fs" />
+    <None Include="*.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

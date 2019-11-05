@@ -12,3 +12,4 @@ deploy/
 hobbes.server/db/data
 docker-compose.prod.yml
 *.user
+workbench.json

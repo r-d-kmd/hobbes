@@ -2,14 +2,13 @@ namespace Hobbes.Server.Db
 open FSharp.Data
 
 module Log =
-   
-
     open FSharp.Core.Printf
     type LogRecord = JsonProvider<"""[{"_id" : "jlk",
                                          "timestamp" : "timestampId",
                                          "type" : "info|debug|error",
                                          "message" : "This is a message",
-                                         "stacktrace" : "This is a stacktrace"}, {"_id" : "jlk",
+                                         "stacktrace" : "This is a stacktrace"}, 
+                                      {"_id" : "jlk",
                                          "timestamp" : "timestampId",
                                          "type" : "info|debug|error",
                                          "message" : "This is a message"}]""", SampleIsList=true>
@@ -45,12 +44,25 @@ module Log =
     let mutable private _logger = eprintf "%A" 
     let mutable private _list : unit -> seq<string> = fun () -> Seq.empty
     
+    let private jsonify (str : string) =
+        match str with
+        null -> null
+        | _ ->
+            str.Replace("\"","'")
+               .Replace("\\","\\\\")
+               .Replace("\n","\\n")
+               .Replace("\r","\\r")
+               .Replace("\t","\\t")
 
     let private writeLogMessage (logType : LogType) stacktrace (msg : string) =
         let doc = sprintf """{"timestamp" : "%s",
                              "type" : "%A",
                              "stacktrace" : "%s",
-                             "message" : "%s"}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) logType stacktrace (msg.Replace("\"","'").Replace("\\","\\\\"))
+                             "message" : "%s"}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) logType (stacktrace |> jsonify) (msg |> jsonify)
+#if DEBUG
+        //let's print log messages to console when running locally
+        printfn "%s. \nStackTrace: %A" msg stacktrace
+#else        
         async {
            try
               if logType >= logLevel then
@@ -58,7 +70,7 @@ module Log =
            with e ->
                eprintfn "Failedto insert log doc %s. Message: %s StackTRace %s" doc e.Message e.StackTrace
         } |> Async.Start
- 
+#endif
     let log msg =
         writeLogMessage Info null msg
  
@@ -81,12 +93,12 @@ module Log =
         let doc = sprintf """{"timestamp" : "%s",
                              "type" : "requestTiming",
                              "requestName" : "%s",
-                             "executionTime" : %d}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) requestName ms
+                             "executionTime" : %d}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) (requestName |> jsonify) ms
         async {
             try
                 doc |> _logger
             with e ->
-                eprintfn "Failedto insert timed event in log. %s. Message: %s StackTRace %s" doc e.Message e.StackTrace
+                eprintfn "Failedto insert timed event in log. %s. Message: %s StackTrace %s" doc e.Message e.StackTrace
         } |> Async.Start
 
     let list() = 

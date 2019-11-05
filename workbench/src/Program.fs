@@ -13,8 +13,6 @@ type CLIArguments =
     | Publish
     | Sync of string
     | Environment of Environment
-    | PAT of string
-    | AzureToken of string
 with
     interface IArgParserTemplate with
         member s.Usage =
@@ -23,14 +21,14 @@ with
             | Publish -> "Publish the transformations to either development or production (set by environment)"
             | Sync _ -> "When sync-ing a project from azure"
             | Environment _ -> "Environment to publish transformations to"
-            | PAT _ -> "The Private Access Token to use when posting transformations"
-            | AzureToken _ -> "The token to use for authentication when syncronizing from Azure DevOps"
 
 let parse stmt =
     let stmt = stmt |> string
     Hobbes.Parsing.Parser.parse [stmt]
     |> Seq.exactlyOne
-    
+
+type WorkbenchSettings = FSharp.Data.JsonProvider<"""workbench.json""">
+
 [<EntryPoint>]
 let main args =
    
@@ -46,14 +44,15 @@ let main args =
     match results with
     None -> 0
     | Some results ->
-        let environment = 
+        let settings = 
             match results.TryGetResult Environment with
-            None -> Development
-            | Some e -> e
-        let environmentHost = 
-            match environment with
-            Development -> "http://localhost:8080"
-            | Production -> "https://hobbes.azurewebsites.net"
+            None -> WorkbenchSettings.GetSample().Development
+            | Some e -> 
+               match e with
+               Development -> 
+                   WorkbenchSettings.GetSample().Development
+               | Production -> 
+                   WorkbenchSettings.GetSample().Production
             
         let test = results.TryGetResult Tests 
         let sync = results.TryGetResult Sync
@@ -67,9 +66,9 @@ let main args =
             match sync with
             None -> 
                 if publish |> Option.isSome then 
-                    let urlTransformations = environmentHost + "/api/transformations"
-                    let urlConfigurations = environmentHost + "/api/configurations"
-                    let pat = results.GetResult PAT
+                    let urlTransformations = settings.Host + "/api/transformations"
+                    let urlConfigurations = settings.Host + "/api/configurations"
+                    let pat = settings.Hobbes
                     let transformations = 
                         Workbench.Reflection.transformations()
                         |> Seq.map(fun (name,statements) ->
@@ -132,10 +131,10 @@ let main args =
                     )
                 0
              | Some configurationName ->
-                let pat = results.GetResult PAT
+                let pat = settings.Hobbes
                 
-                let url = environmentHost + "/api/sync/" + configurationName
-                let azurePat = results.GetResult AzureToken
+                let url = settings.Host + "/api/sync/" + configurationName
+                let azurePat = settings.Azure
                 Http.Request(url, 
                                  httpMethod = "GET",
                                  headers = 

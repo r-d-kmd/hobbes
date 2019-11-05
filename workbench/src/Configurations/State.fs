@@ -5,6 +5,25 @@ module State =
   
   [<Workbench.Configuration(Workbench.Project.Flowerpot)>]
   [<Workbench.Configuration(Workbench.Project.Gandalf)>]
+  let onlyUserStories =
+      <@
+          [
+            Transformations.General.onlyUserStory
+          ]
+      @>
+  
+  [<Workbench.Configuration(Workbench.Project.Flowerpot)>]
+  [<Workbench.Configuration(Workbench.Project.Gandalf)>]
+  let userStoriesFoldedBySprint =
+      <@
+          [
+            Transformations.General.onlyUserStory
+            Transformations.General.foldBySprint
+          ]
+      @>
+
+  [<Workbench.Configuration(Workbench.Project.Flowerpot)>]
+  [<Workbench.Configuration(Workbench.Project.Gandalf)>]
   let stateBySprint =
       <@
           [

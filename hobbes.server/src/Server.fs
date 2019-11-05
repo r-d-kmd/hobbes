@@ -29,11 +29,11 @@ let private apiRouter = router {
     get "/ping" ((ignore >> Implementation.ping) |> Routing.unverified "ping" ) 
     getf "/key/%s" (Implementation.key |> Routing.skipContext |> Routing.unverifiedWithArgs "key")
     
-    get "/init" ((ignore >> Implementation.initDb) |> Routing.verified "initDb") 
+    get "/init" ((ignore >> Implementation.initDb) |> Routing.unverified "initDb") 
     getf "/csv/%s" (Implementation.csv |> Routing.skipContext |> Routing.verifiedWithArgs "csv" ) 
     getf "/sync/%s" ( sync |> Routing.verifiedWithArgs "sync" )
 
-    put "/configurations" (Implementation.storeConfigurations |>Routing.withBodyNoArgs "configurations")
+    put "/configurations" (Implementation.storeConfigurations |> Routing.withBodyNoArgs "configurations")
     put "/transformations" (Implementation.storeTransformations |> Routing.withBodyNoArgs "transformations")
     get "/list/configurations" (Implementation.listConfigurations  |> Routing.verified "list/configurations")
     get "/list/transformations" (Implementation.listTransformations |> Routing.verified "list/transformations" )

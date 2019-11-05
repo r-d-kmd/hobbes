@@ -11,10 +11,11 @@ let cacheInvalidation configName =
 
 let sync configuration = 
     let _,key = Hobbes.Server.Readers.AzureDevOps.sync "y3cg7xrajppvd4b2wp6ahrgnsdkpf4sidtlinthcwepc2pjbzfuq" "gandalf" "abcd"
-    printfn "sync key: %s" key
+    printfn "sync key: %s" key    
     
 let test() = 
     //Implementation.initDb() |> ignore
     //sync "flowerpot.State.stateBySprint" //"gandalf.State.expandingCompletionBySprint" 
-    getData (*"flowerpot.State.stateBySprint"*) "gandalf.State.expandingCompletionBySprint"
+    //getData (*"flowerpot.State.stateBySprint"*) "gandalf.State.expandingCompletionBySprint"
+    getData "test"
     

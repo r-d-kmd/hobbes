@@ -134,6 +134,7 @@ namespace Hobbes.Server.Db
                      "_view"
                      name
                     ]
+                log.Debugf "Fetching view %A?%A " path args
                 getter path args
 
             let getListFromResponse (statusCode,body) =
@@ -157,8 +158,6 @@ namespace Hobbes.Server.Db
             let list (parser : string -> 'a) (startKey : string option) (endKey : string option) (descending : bool option) = 
                 let mutable limit = 128
                 let rec fetch i acc = 
-                    
-                    log.Debugf "Fetching with a page size of %d" limit
                     let statusCode,body = _list startKey endKey (Some limit) descending (i |> Some)
                     if statusCode = 500 && limit > 1 then
                         //this is usually caused by an os process time out, due to too many records being returned

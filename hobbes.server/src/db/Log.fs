@@ -46,11 +46,11 @@ module Log =
     let mutable private _list : unit -> seq<string> = fun () -> Seq.empty
     
 
-    let private writeLogMessage (logType : LogType) stacktrace msg =
+    let private writeLogMessage (logType : LogType) stacktrace (msg : string) =
         let doc = sprintf """{"timestamp" : "%s",
                              "type" : "%A",
                              "stacktrace" : "%s",
-                             "message" : "%s"}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) logType stacktrace msg
+                             "message" : "%s"}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) logType stacktrace (msg.Replace("\"","'").Replace("\\","\\\\"))
         async {
            try
               if logType >= logLevel then

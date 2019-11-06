@@ -55,6 +55,7 @@ let main args =
                      match "WORKBENCH_ENVIRONMENT" |> Database.env with
                      null -> failwith "No settings file and no env var"
                      | s -> 
+                         printf "Using env var setting. %A" s
                          s 
                          |> JsonValue.Parse
                          |> WorkbenchSettings.Development

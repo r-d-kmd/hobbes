@@ -30,7 +30,7 @@ module DataConfiguration =
                 x.SourceName 
                     with get() =
                         match x with
-                        AzureDevOps _ -> "Azure DevOps"
+                        AzureDevOps _ -> "azure devops"
                         | Rally _ -> "Rally"
                         | Jira  _ -> "Jira"
                         | Test  _ -> "Test"

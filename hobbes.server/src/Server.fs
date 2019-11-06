@@ -33,11 +33,15 @@ let private apiRouter = router {
 
     put "/configurations" (Implementation.storeConfigurations |> Routing.withBodyNoArgs "configurations")
     put "/transformations" (Implementation.storeTransformations |> Routing.withBodyNoArgs "transformations")
+
     get "/list/configurations" (Implementation.listConfigurations  |> Routing.verified "list/configurations")
     get "/list/transformations" (Implementation.listTransformations |> Routing.verified "list/transformations" )
     get "/list/cache" (Implementation.listCache |> Routing.verified "list/cache")
     get "/list/rawdata" (Implementation.listRawdata |> Routing.verified "list/rawdata")
     get "/list/log" (Implementation.listLog |> Routing.verified "list/log")
+
+    deletef "/raw/%s" (Rawdata.delete |> Routing.skipContext |> Routing.verifiedWithArgs "raw" )
+    deletef "/cache/%s" (Cache.delete |> Routing.skipContext |> Routing.verifiedWithArgs "cache" )
     getf "/status/sync/%s" (Implementation.getSyncState |> Routing.skipContext |> Routing.verifiedWithArgs  "status/sync")
     getf "/admin/settings/%s/%s" ( Implementation.setting |> Routing.skipContext |> Routing.verifiedWithArgs "admin/settings")
     putf "/admin/settings/%s/%s/%s" (Implementation.configure |> Routing.skipContext  |> Routing.verifiedWithArgs "admin/settings")

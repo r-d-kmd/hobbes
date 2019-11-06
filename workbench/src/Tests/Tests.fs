@@ -16,5 +16,5 @@ let sync configuration =
 let test() = 
     //Implementation.initDb() |> ignore
     //sync "flowerpot.State.stateBySprint" //"gandalf.State.expandingCompletionBySprint" 
-    getData (*"flowerpot.State.stateBySprint"*) "gandalf.State.expandingCompletionBySprint"
+    getData (*"flowerpot.State.stateBySprint"*) "flowerpot.State.expandingCompletionBySprint"
     

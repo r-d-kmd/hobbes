@@ -631,11 +631,13 @@ module DataStructures =
             |> Frame.cols
             |> Series.observations
             |> Seq.map(fun (columnName, values) -> columnName, values |> Series.observations)
+            |> Seq.filter(fun (_,values) -> values |> Seq.isEmpty |> not)
 
         let serialiseValue (_,value : obj) = 
             match value with
             :? string as s -> sprintf """ "%s" """ s
-            | :? bool as b -> b |> string
+            | :? bool as b -> 
+                    if b then "true" else "false"
             | :? int as i -> i |> string
             | :? float as f -> f |> string
             | :? decimal as d -> d |> string

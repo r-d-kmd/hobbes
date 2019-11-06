@@ -56,7 +56,8 @@ module AzureDevOps =
                 match value with
                 | null -> "null"
                 | :? string as s -> sprintf """ "%s" """ s
-                | :? bool as b -> b |> string
+                | :? bool as b -> 
+                    if b then "true" else "false"
                 | :? int as i -> i |> string
                 | :? float as f -> f |> string
                 | :? decimal as d -> d |> string
@@ -115,37 +116,45 @@ module AzureDevOps =
             projectName 
             |> DataConfiguration.AzureDevOps 
             |> Rawdata.bySource
-        raw
-        |> Seq.mapi(fun index row ->
-            let inline asObj m = 
-                match m with
-                Some v -> v |> box
-                | None -> null
-            Hobbes.Parsing.AST.KeyType.Create index,
-                match row.Iteration with
-                  Some iteration ->
+        let rows = 
+            raw
+            |> Seq.mapi(fun index row ->
+                let asObj =
+                    function 
+                        Some v -> 
+                            v |> box
+                        | None -> 
+                            null
+
+                let iterationProperties =
+                    match row.Iteration with
+                    Some iteration ->
+                        [
+                           "Iteration.IterationLevel1" => asObj iteration.IterationLevel1 
+                           "Iteration.IterationLevel2" => asObj iteration.IterationLevel2 
+                           "Iteration.IterationLevel3" => asObj iteration.IterationLevel3 
+                           "Iteration.IterationLevel4" => asObj iteration.IterationLevel4 
+                        ]
+                    | None -> 
+                        []
+                let properties = 
                     [
-                       "Iteration.IterationLevel1" => asObj iteration.IterationLevel1 
-                       "Iteration.IterationLevel2" => asObj iteration.IterationLevel2 
-                       "Iteration.IterationLevel3" => asObj iteration.IterationLevel3 
-                       "Iteration.IterationLevel4" => asObj iteration.IterationLevel4 
+                         "RevisedDate" => asObj row.RevisedDate
+                         "WorkItemId" =>  box row.WorkItemId 
+                         "IsLastRevisionOfDay"  => asObj row.IsLastRevisionOfDay
+                         "Title" =>  box row.Title 
+                         "ChangedDate" => asObj row.ChangedDate 
+                         "WorkItemType" =>  box row.WorkItemType 
+                         "CreatedDate" =>asObj row.ChangedDate 
+                         "State" => asObj row.State 
+                         "StateCategory" =>asObj row.StateCategory 
+                         "Priority" => asObj row.Priority 
+                         "LeadTimeDays" => asObj row.LeadTimeDays 
+                         "CycleTimeDays" => asObj row.CycleTimeDays 
                     ]
-                  | None -> []
-                |> List.append [
-                                     "RevisedDate" => asObj row.RevisedDate
-                                     "WorkItemId" =>  box row.WorkItemId 
-                                     "IsLastRevisionOfDay"  => asObj row.IsLastRevisionOfDay
-                                     "Title" =>  box row.Title 
-                                     "ChangedDate" => asObj row.ChangedDate 
-                                     "WorkItemType" =>  box row.WorkItemType 
-                                     "CreatedDate" =>asObj row.ChangedDate 
-                                     "State" => asObj row.State 
-                                     "StateCategory" =>asObj row.StateCategory 
-                                     "Priority" => asObj row.Priority 
-                                     "LeadTimeDays" => asObj row.LeadTimeDays 
-                                     "CycleTimeDays" => asObj row.CycleTimeDays 
-                                 ]
-        )
+                Hobbes.Parsing.AST.KeyType.Create index,(iterationProperties@properties)
+            )
+        rows
 
     //TODO should be async and in parallel-ish
     let sync azureToken projectName cacheRevision = 

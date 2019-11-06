@@ -303,11 +303,11 @@ let initDb () =
     )
     let dbs = 
         [
-            "transformations", (Transformations.store, Transformations.tryGetHash)
-            "rawdata", (Rawdata.InsertOrUpdate, Rawdata.tryGetHash)
-            "configurations", (DataConfiguration.store, DataConfiguration.tryGetHash)
-            "cache", (Cache.InsertOrUpdate, Cache.tryGetHash)
-            "log", ((fun _ -> failwith "won't work for log"), (fun _ -> failwith "won't work for log"))
+            "transformations"
+            "rawdata"
+            "configurations"
+            "cache"
+            "log"
         ] 
     let systemDbs = 
         [
@@ -316,7 +316,7 @@ let initDb () =
             "_users"
         ]
     let errorCode = 
-        (dbs |> List.map fst)@systemDbs
+        dbs@systemDbs
         |> List.map (fun n -> couch.TryPut(n, "") |> fst)
         |> List.tryFind (fun sc -> ((sc >= 200 && sc < 300) || (sc = 412)) |> not)
     (match errorCode with
@@ -325,7 +325,6 @@ let initDb () =
         Log.error null msg
         errorCode, msg
      | None ->
-        let dbMap = dbs |> Map.ofList
         try
             let documentDir = "db/documents"
             if System.IO.Directory.Exists "db/documents" |> not then failwith "Document folder not found"
@@ -334,9 +333,12 @@ let initDb () =
                 System.IO.Directory.EnumerateFiles(dir,"*.json")
                 |> Seq.map(fun f -> 
                     let dbName = System.IO.Path.GetFileName dir
-                    let handles = dbMap 
-                                  |> Map.find dbName
-                    fst handles, snd handles, f) 
+                    let db = Database(dbName, CouchDoc.Parse, ignoreLogging)
+                    let insertOrUpdate =
+                        db.InsertOrUpdate
+                    let tryGetHash = db.TryGetHash
+                    insertOrUpdate, tryGetHash, f
+                ) 
             ) |> Seq.map uploadDesignDocument
             |> Async.Parallel
             |> Async.RunSynchronously) |> ignore

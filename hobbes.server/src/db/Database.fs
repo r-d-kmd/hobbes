@@ -207,7 +207,7 @@ namespace Hobbes.Server.Db
                       | Put -> "PUT", "to"
                       | Delete -> "DELETE", "from"
                     
-                log.Debugf "%sting %A %s %s" m path direction databaseName
+                log.Debugf "%sting %A %s %s" m url direction databaseName
                 
                 let headers =
                     [

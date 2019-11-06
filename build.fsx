@@ -208,6 +208,10 @@ Target.create "BuildDocker" (fun _ ->
     ) 
 )
 
+Target.create "Publish" (fun _ -> 
+    run "dotnet" "./workbench/src" "run -- --publish" 
+)
+
 Target.create "RestartHobbes" (fun _ ->
     let serverDir = "./hobbes.server"
     run "fake" (serverDir + "/src") "build"
@@ -248,5 +252,6 @@ open Fake.Core.TargetOperators
    ==> "CopyFiles"
    ==> "BuildDocker"
    ==> "PushToDocker"
+   ==> "Publish"
 
 Target.runOrDefaultWithArguments "Build"

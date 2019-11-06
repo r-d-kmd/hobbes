@@ -136,8 +136,12 @@ module Rawdata =
         docs
         |> Seq.collect(fun s -> 
             match s.JsonValue.Properties() |> Seq.tryFind(fun (n,_) -> n = "data") with
-            Some _ -> (s.Data.ToString() 
-                       |> AzureDevOpsAnalyticsRecord.Parse).Value
+            Some _ -> 
+                let data = s.Data.ToString() 
+                let value = 
+                    (data 
+                     |> AzureDevOpsAnalyticsRecord.Parse).Value
+                value
             | None -> [||])
         
     let tryGetRev id = db.TryGetRev id  

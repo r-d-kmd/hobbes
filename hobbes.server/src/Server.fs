@@ -3,8 +3,6 @@ open Giraffe
 open Microsoft.AspNetCore.Http
 open Hobbes.Server.Db.Database
 open Hobbes.Server.Db
-open Hobbes.Server.Security
-open System
 
 let private port = 
     match env "port" with

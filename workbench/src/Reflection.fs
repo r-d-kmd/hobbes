@@ -1,7 +1,6 @@
 namespace Workbench
 
 open Microsoft.FSharp.Quotations.Patterns
-open Hobbes.Server.Db.DataConfiguration
 
 type Project =
     Gandalf = 3
@@ -110,7 +109,12 @@ module Reflection =
         |> Seq.collect (collect)
         |> Seq.map snd
        
-    let private createConfiguration (transformations : Map<_,_>) (configurationContainer : System.Type)  =
+    let private createConfiguration (sourceTransformations : Map<_,_>) (projectTransformations : Map<_,_>) (configurationContainer : System.Type)  =
+        let source = 
+            match configurationContainer |> tryGetAttribute<ConfigurationsAttribute> with
+            None -> Source.Test
+            | Some c -> c.Source
+
         configurationContainer
         |> getPropertiesdWithAttribute<Quotations.Expr<Transformation list>,ConfigurationAttribute>
         |> Seq.map(fun (att,(name, expr)) ->
@@ -118,9 +122,13 @@ module Reflection =
                 function
                     PropertyGet(_,prop,_) -> 
                         [prop]
-                    | NewUnionCase (_,exprs) -> //this is also the pattern for a list
-                        exprs
-                        |> List.collect(readQuotation)
+                    | NewUnionCase (_,exprs) ->
+                        let elements =  //this is also the pattern for a list
+                            exprs
+                            |> List.fold(fun res expr ->
+                                res@(readQuotation expr)
+                            ) [] 
+                        elements
                     | _ -> 
                         failwithf "Expected a transformation %A" expr
             let transformationsProperties = 
@@ -130,6 +138,15 @@ module Reflection =
                 |> List.map(fun transformationProperty ->
                     transformationProperty.DeclaringType.Name + "." + transformationProperty.Name
                 )
+            let projectTrans =
+                match projectTransformations |> Map.tryFind att.Project with
+                None -> []
+                | Some t -> t 
+
+            let sourceTrans =
+                match sourceTransformations |> Map.tryFind source with
+                None -> []
+                | Some t -> t
             {
                 Id = (att.Project |> Project.string) + "." + name
                 Source = 
@@ -138,14 +155,12 @@ module Reflection =
                      |> Option.get).Source
                 Project = att.Project
                 Transformations = 
-                    match transformations |> Map.tryFind att.Project with
-                    None -> trans
-                    | Some t -> t @ trans
+                   projectTrans@sourceTrans@trans
             }
         ) |> List.ofSeq
     let configurations() =
         let types = getTypesWithAttribute<ConfigurationsAttribute>() |> List.ofSeq
-        let transformations = 
+        let projectTransformations = 
             getTypesWithAttribute<TransformationsAttribute>()
             |> Seq.map(fun t -> 
                 (t 
@@ -157,9 +172,10 @@ module Reflection =
                 |> List.ofSeq
             )
             |> Map.ofSeq
-
+        //need to find these
+        let sourceTranformations = Map.empty
         types
-        |> Seq.map(createConfiguration transformations)|> Seq.collect id
+        |> Seq.map(createConfiguration sourceTranformations projectTransformations)|> Seq.collect id
        
         
         

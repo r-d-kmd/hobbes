@@ -27,7 +27,7 @@ let parse stmt =
     Hobbes.Parsing.Parser.parse [stmt]
     |> Seq.exactlyOne
 
-type WorkbenchSettings = FSharp.Data.JsonProvider<"""workbench.json""">
+type WorkbenchSettings = FSharp.Data.JsonProvider<"""{"development" : {"host": "lkjlkj", "hobbes" : "lkjlkj", "azure" : "jlkjlkj" }, "production" : {"host": "lkjlkj", "hobbes" : "lkjlkj", "azure" : "jlkjlkj" }}""">
 
 [<EntryPoint>]
 let main args =
@@ -46,7 +46,12 @@ let main args =
     | Some results ->
         let settings = 
             match results.TryGetResult Environment with
-            None -> WorkbenchSettings.GetSample().Development
+            None -> 
+                let settingsFile = "workbench.json"
+                if System.IO.File.Exists  settingsFile then 
+                    (settingsFile |> WorkbenchSettings.Load).Development
+                else
+                     "WORKBENCH_ENVIRONMENT" |> Database.env |> JsonValue.Parse |> WorkbenchSettings.Development
             | Some e -> 
                match e with
                Development -> 

@@ -55,7 +55,6 @@ let main args =
                      match "WORKBENCH_ENVIRONMENT" |> Database.env with
                      null -> failwith "No settings file and no env var"
                      | s -> 
-                         printf "Using env var setting. %A" s
                          s 
                          |> JsonValue.Parse
                          |> WorkbenchSettings.Development
@@ -79,6 +78,7 @@ let main args =
             match sync with
             None -> 
                 if publish |> Option.isSome then 
+                    printfn "Using host: %s" settings.Host
                     let urlTransformations = settings.Host + "/api/transformations"
                     let urlConfigurations = settings.Host + "/api/configurations"
                     let pat = settings.Hobbes
@@ -117,7 +117,8 @@ let main args =
                     
                     transformations 
                     |> Seq.iter(fun doc ->
-                        printfn "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id 
+                        printfn "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
+
                         Http.Request(urlTransformations, 
                                      httpMethod = "PUT",
                                      body = TextRequest doc,

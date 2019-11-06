@@ -27,9 +27,9 @@ let private apiRouter = router {
     get "/ping" ((ignore >> Implementation.ping) |> Routing.unverified "ping" ) 
     getf "/key/%s" (Implementation.key |> Routing.skipContext |> Routing.unverifiedWithArgs "key")
     
-    get "/init" ((ignore >> Implementation.initDb) |> Routing.unverified "initDb") 
     getf "/csv/%s" (Implementation.csv |> Routing.skipContext |> Routing.verifiedWithArgs "csv" ) 
     getf "/sync/%s" ( sync |> Routing.verifiedWithArgs "sync" )
+    getf "/raw/%s" (Rawdata.get |> Routing.skipContext |> Routing.verifiedWithArgs "raw" )
 
     put "/configurations" (Implementation.storeConfigurations |> Routing.withBodyNoArgs "configurations")
     put "/transformations" (Implementation.storeTransformations |> Routing.withBodyNoArgs "transformations")

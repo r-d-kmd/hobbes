@@ -6,6 +6,8 @@ environment:
     secure: CbwbpNPxLV9AwhjSpIz7LA==
   DOCKER_PASS:
     secure: /T9ITfudL23Ga+Mz7oRaVA==
+  WORKBENCH_ENVIRONMENT:
+    secure: VeWoaKDYLSvaT7Twdm5oF+4K7uh7R/0/CRQdv8PNPpUR1bArdSFLj2cYSxFRYd1sa7lztDWzOweGZEkl6ufUGPKDi3NWZdDv0CcwrpWHboEMYKYr/4/cbbX/kYsILdqH8gpP7C99G/r1gcLk/qmofRouRlSowkfpREmwboNCEalhkJxcoOmLP90Bj9+1I3tergY+RMOYK1ZJF52zYIcp7Ie0Oe3Q24qNCfbIBGqXvqokU7LPWeZyLh+qPrATOl3sTPZcWySH185yHNAs62y9/2v2OiDSsSiRwmQQyDmEfruDf3PpObXCrrPvhhUJN+0yL0yAvePhPwxhf7tqEuiHf8SBhcsgeKQKbhVpYwWDmE3y+kaVZY+CsWRezTVq2e77
 
 dotnet_csproj:
   patch: true
@@ -38,5 +40,5 @@ after_test:
 
 deploy_script:
   - docker login -u="%DOCKER_USER%" -p="%DOCKER_PASS%"
-  - fake build --target pushtodocker
+  - fake build --target Publish
 

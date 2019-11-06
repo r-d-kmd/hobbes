@@ -45,19 +45,26 @@ let main args =
     None -> 0
     | Some results ->
         let settings = 
+            let settingsFile = "workbench.json"
             match results.TryGetResult Environment with
             None -> 
-                let settingsFile = "workbench.json"
+                
                 if System.IO.File.Exists  settingsFile then 
                     (settingsFile |> WorkbenchSettings.Load).Development
                 else
-                     "WORKBENCH_ENVIRONMENT" |> Database.env |> JsonValue.Parse |> WorkbenchSettings.Development
+                     match "WORKBENCH_ENVIRONMENT" |> Database.env with
+                     null -> failwith "No settings file and no env var"
+                     | s -> 
+                         s 
+                         |> JsonValue.Parse
+                         |> WorkbenchSettings.Development
             | Some e -> 
+               let settings = (settingsFile |> WorkbenchSettings.Load)
                match e with
                Development -> 
-                   WorkbenchSettings.GetSample().Development
+                   settings.Development
                | Production -> 
-                   WorkbenchSettings.GetSample().Production
+                   settings.Production
             
         let test = results.TryGetResult Tests 
         let sync = results.TryGetResult Sync
@@ -109,7 +116,7 @@ let main args =
                     
                     transformations 
                     |> Seq.iter(fun doc ->
-                        printfn "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
+                        printfn "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id 
                         Http.Request(urlTransformations, 
                                      httpMethod = "PUT",
                                      body = TextRequest doc,

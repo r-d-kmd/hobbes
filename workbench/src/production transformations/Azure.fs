@@ -1,4 +1,4 @@
-[<Workbench.Transformations(Workbench.Project.General)>]
+[<Workbench.Transformations(Workbench.Project.AzureDevOps)>]
 module Transformations.Azure
 
 open Hobbes.DSL

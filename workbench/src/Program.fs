@@ -114,10 +114,6 @@ let main args =
             let rawKeys = 
                 (prod.Host + listRawdataPath |> getString prod.Hobbes
                  |> RawdataKeyList.Parse).Rawdata
-                |> Array.filter(fun key -> 
-                     RawdataKeyList.GetSample().Rawdata |> Array.tryFind(fun k' -> k' = key) |> Option.isNone
-                     && (key.Contains(':') |> not)
-                )
 
             let db = Database.Database("rawdata",ignore,Database.consoleLogger)
             rawKeys
@@ -131,9 +127,7 @@ let main args =
             let configurations = 
                 (prod.Host + listTransformationsPath |> getString prod.Hobbes
                  |> TransformationList.Parse).Transformations
-                |> Array.filter(fun doc -> 
-                     TransformationList.GetSample().Transformations |> Array.tryFind(fun d' -> d'.Id = doc.Id) |> Option.isNone
-                ) |> Array.map(fun doc -> doc.ToString().Replace("_rev","prodRev"))
+                |> Array.map(fun doc -> doc.ToString().Replace("_rev","prodRev"))
             configurations
             |> Array.iter(db.InsertOrUpdate >> ignore)
 
@@ -141,9 +135,7 @@ let main args =
             let configurations = 
                 (prod.Host + listConfigPath |> getString prod.Hobbes
                  |> ConfigurationsList.Parse).Configurations
-                |> Array.filter(fun doc -> 
-                     ConfigurationsList.GetSample().Configurations |> Array.tryFind(fun d' -> d'.Id = doc.Id) |> Option.isNone
-                )|> Array.map(fun doc -> doc.ToString().Replace("_rev","prodRev"))
+                |> Array.map(fun doc -> doc.ToString().Replace("\"_rev\"","\"prodRev\""))
             configurations
             |> Array.iter(db.InsertOrUpdate >> ignore)
             0
@@ -156,8 +148,8 @@ let main args =
             None -> 
                 if publish |> Option.isSome then 
                     printfn "Using host: %s" settings.Host
-                    let urlTransformations = settings.Host + listTransformationsPath
-                    let urlConfigurations = settings.Host + listConfigPath
+                    let urlTransformations = settings.Host + "/api/admin/transformation"
+                    let urlConfigurations = settings.Host + "/api/admin/configurations"
                     let pat = settings.Hobbes
                     let transformations = 
                         Workbench.Reflection.transformations()

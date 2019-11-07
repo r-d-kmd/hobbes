@@ -38,7 +38,7 @@ module Log =
 #if DEBUG
         Debug
 #else
-        Debug
+        Error
 #endif
     
     let mutable private _logger = eprintf "%A" 
@@ -68,7 +68,7 @@ module Log =
               if logType >= logLevel then
                   doc |>_logger
            with e ->
-               eprintfn "Failedto insert log doc %s. Message: %s StackTRace %s" doc e.Message e.StackTrace
+               eprintfn "Failed to insert log doc %s. Message: %s StackTRace %s" doc e.Message e.StackTrace
         } |> Async.Start
 #endif
     let log msg =

@@ -14,6 +14,7 @@ let stateCountBySprint =
 let expandingCompletionBySprint =
     [
         slice columns ["Sprint";"Done"]
+        sort by "Sprint" 
         create (column "Total Completed") (expanding Hobbes.Parsing.AST.Sum (!> "Done"))
         
     ]

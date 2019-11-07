@@ -104,13 +104,15 @@ let main args =
         let sync = results.TryGetResult Sync
         let publish = results.TryGetResult Publish
         let backsync = results.TryGetResult BackSync
-
+        let listTransformationsPath = "/api/admin/list/transformations"
+        let listConfigPath = "/api/admin/list/configurations"
+        let listRawdataPath = "/api/admin/list/rawdata"
         if backsync.IsSome && System.IO.File.Exists settingsFile then
             let settings = WorkbenchSettings.Load settingsFile
             let prod = settings.Production
 
             let rawKeys = 
-                (prod.Host + "/api/list/rawdata" |> getString prod.Hobbes
+                (prod.Host + listRawdataPath |> getString prod.Hobbes
                  |> RawdataKeyList.Parse).Rawdata
                 |> Array.filter(fun key -> 
                      RawdataKeyList.GetSample().Rawdata |> Array.tryFind(fun k' -> k' = key) |> Option.isNone
@@ -121,13 +123,13 @@ let main args =
             rawKeys
             |> Array.iter(fun key ->
                 let doc = 
-                    prod.Host + "/api/raw/" + key |> getString prod.Hobbes
+                    prod.Host + "/api/admin/raw/" + key |> getString prod.Hobbes
                 doc.Replace("_rev","prodRev") |> db.InsertOrUpdate |> ignore
             )
 
             let db = Database.Database("transformations",ignore,Database.consoleLogger)
             let configurations = 
-                (prod.Host + "/api/list/transformations" |> getString prod.Hobbes
+                (prod.Host + listTransformationsPath |> getString prod.Hobbes
                  |> TransformationList.Parse).Transformations
                 |> Array.filter(fun doc -> 
                      TransformationList.GetSample().Transformations |> Array.tryFind(fun d' -> d'.Id = doc.Id) |> Option.isNone
@@ -137,7 +139,7 @@ let main args =
 
             let db = Database.Database("configurations",ignore,Database.consoleLogger)
             let configurations = 
-                (prod.Host + "/api/list/configurations" |> getString prod.Hobbes
+                (prod.Host + listConfigPath |> getString prod.Hobbes
                  |> ConfigurationsList.Parse).Configurations
                 |> Array.filter(fun doc -> 
                      ConfigurationsList.GetSample().Configurations |> Array.tryFind(fun d' -> d'.Id = doc.Id) |> Option.isNone
@@ -154,8 +156,8 @@ let main args =
             None -> 
                 if publish |> Option.isSome then 
                     printfn "Using host: %s" settings.Host
-                    let urlTransformations = settings.Host + "/api/transformations"
-                    let urlConfigurations = settings.Host + "/api/configurations"
+                    let urlTransformations = settings.Host + listTransformationsPath
+                    let urlConfigurations = settings.Host + listConfigPath
                     let pat = settings.Hobbes
                     let transformations = 
                         Workbench.Reflection.transformations()
@@ -222,7 +224,7 @@ let main args =
              | Some configurationName ->
                 let pat = settings.Hobbes
                 
-                let url = settings.Host + "/api/sync/" + configurationName
+                let url = settings.Host + "/api/data/sync/" + configurationName
                 let azurePat = settings.Azure
                 Http.Request(url, 
                                  httpMethod = "GET",

@@ -5,17 +5,28 @@ module AzureDevOps =
     open Deedle
     open Hobbes.Server.Db
 
+    let inline private asObj v =
+        match v with
+        Some v -> 
+            v |> box
+        | None -> 
+            null
+
     let private azureFields = 
         [
-         "ChangedDate"
-         "WorkITemId"
-         "WorkItemRevisionSK"
-         "WorkItemType"
-         "State"
-         "StateCategory"
-         "LeadTimeDays"
-         "CycleTimeDays"
-         "Iteration"
+             "RevisedDate" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.RevisedDate
+             "WorkItemId" =>  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemId 
+             "IsLastRevisionOfDay"  => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.IsLastRevisionOfDay
+             "Title" =>  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.Title 
+             "ChangedDate" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
+             "WorkItemType" =>  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemType 
+             "CreatedDate" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
+             "State" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.State 
+             "StateCategory" =>fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.StateCategory 
+             "Priority" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.Priority 
+             "LeadTimeDays" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.LeadTimeDays 
+             "CycleTimeDays" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.CycleTimeDays          
+             "WorkItemRevisionSK" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemRevisionSk
         ]
 
     let tryNextLink (data : string) = 
@@ -68,8 +79,8 @@ module AzureDevOps =
     let private getInitialUrl projectName =
         let initialUrl = 
             let selectedFields = 
-               (",", azureFields) |> System.String.Join
-            sprintf "https://analytics.dev.azure.com/kmddk/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s&$filter=IsLastRevisionOfDay%%20eq%%20true%%20and%%20WorkItemRevisionSK%%20gt%%20%d" projectName selectedFields
+               (",", azureFields |> List.map fst) |> System.String.Join
+            sprintf "https://analytics.dev.azure.com/kmddk/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s,Iteration&$filter=IsLastRevisionOfDay%%20eq%%20true%%20and%%20WorkItemRevisionSK%%20gt%%20%d" projectName selectedFields
         try
             match  DataConfiguration.AzureDevOps projectName |> Rawdata.tryLatestId with
             Some workItemRevisionId -> 
@@ -119,13 +130,6 @@ module AzureDevOps =
         let rows = 
             raw
             |> Seq.mapi(fun index row ->
-                let asObj =
-                    function 
-                        Some v -> 
-                            v |> box
-                        | None -> 
-                            null
-
                 let iterationProperties =
                     match row.Iteration with
                     Some iteration ->
@@ -138,20 +142,10 @@ module AzureDevOps =
                     | None -> 
                         []
                 let properties = 
-                    [
-                         "RevisedDate" => asObj row.RevisedDate
-                         "WorkItemId" =>  box row.WorkItemId 
-                         "IsLastRevisionOfDay"  => asObj row.IsLastRevisionOfDay
-                         "Title" =>  box row.Title 
-                         "ChangedDate" => asObj row.ChangedDate 
-                         "WorkItemType" =>  box row.WorkItemType 
-                         "CreatedDate" =>asObj row.ChangedDate 
-                         "State" => asObj row.State 
-                         "StateCategory" =>asObj row.StateCategory 
-                         "Priority" => asObj row.Priority 
-                         "LeadTimeDays" => asObj row.LeadTimeDays 
-                         "CycleTimeDays" => asObj row.CycleTimeDays 
-                    ]
+                    azureFields
+                    |> List.map(fun (name, getter) ->
+                        name, getter row
+                    )
                 Hobbes.Parsing.AST.KeyType.Create index,(iterationProperties@properties)
             )
         rows

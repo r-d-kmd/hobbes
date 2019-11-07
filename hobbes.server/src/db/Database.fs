@@ -402,7 +402,7 @@ namespace Hobbes.Server.Db
                     |> CouchDoc.Parse
                 delete id (Some doc.Rev)
         open FSharp.Core.Printf
-        let private consoleLogger =
+        let consoleLogger =
                 { new ILog with
                     member __.Log msg   = printfn "%s" msg
                     member __.Error stackTrace msg = eprintfn "%s StackTrace: \n %s" msg stackTrace

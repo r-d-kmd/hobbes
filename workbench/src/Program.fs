@@ -12,6 +12,7 @@ type CLIArguments =
     Tests
     | Publish
     | Sync of string
+    | BackSync
     | Environment of Environment
 with
     interface IArgParserTemplate with
@@ -21,14 +22,47 @@ with
             | Publish -> "Publish the transformations to either development or production (set by environment)"
             | Sync _ -> "When sync-ing a project from azure"
             | Environment _ -> "Environment to publish transformations to"
+            | BackSync _ -> "Used to sync fromproduction to development"
 
 let parse stmt =
     let stmt = stmt |> string
     Hobbes.Parsing.Parser.parse [stmt]
     |> Seq.exactlyOne
 
-type WorkbenchSettings = FSharp.Data.JsonProvider<"""{"development" : {"host": "lkjlkj", "hobbes" : "lkjlkj", "azure" : "jlkjlkj" }, "production" : {"host": "lkjlkj", "hobbes" : "lkjlkj", "azure" : "jlkjlkj" }}""">
+let getString pat url  = 
+    Http.RequestString(url, 
+                 httpMethod = "GET",
+                 headers = 
+                    [
+                       HttpRequestHeaders.BasicAuth pat ""
+                       HttpRequestHeaders.ContentType HttpContentTypes.Json
+                    ]
+    )
 
+type WorkbenchSettings = FSharp.Data.JsonProvider<"""{"development" : {"host": "lkjlkj", "hobbes" : "lkjlkj", "azure" : "jlkjlkj" }, "production" : {"host": "lkjlkj", "hobbes" : "lkjlkj", "azure" : "jlkjlkj" }}""">
+type RawdataKeyList = JsonProvider<"""{"rawdata" : ["_design/default","default_hash"]}""">
+type ConfigurationsList = JsonProvider<"""{"configurations" : [{
+  "_id": "_design/default",
+  "_rev": "1-0a33cc75bce4cd13e58611618da4cc1d",
+  "views": {
+    "bySource": {
+      "map": "function (doc) {\n             var srcproj = [doc.source,doc.dataset];\n emit(srcproj, doc._id);\n}"
+    }
+  },
+  "language": "javascript"
+},{
+  "_id": "default_hash",
+  "_rev": "1-49ed2bec0b6f1907f91f3937fcc94f4a",
+  "hash": "ff87ad355ebd038ec8c78794f3278d9a"
+}]}""">
+type TransformationList = JsonProvider<"""{"transformations" : [{
+  "_id": "Azure.stateRenaming",
+  "_rev": "1-5f2b13ecbffefca7c484833cdd2e9e38",
+  "lines": [
+    "rename column \"State\" \"DetailedState\" ",
+    "create column \"State\" ( if [  \"StateCategory\"  =  'Proposed' ] { 'Todo' } else { if [  \"StateCategory\"  =  'InProgress' ] { 'Doing' } else { 'Done' }})"
+  ]
+}]}""">
 [<EntryPoint>]
 let main args =
    
@@ -44,8 +78,8 @@ let main args =
     match results with
     None -> 0
     | Some results ->
+        let settingsFile = "workbench.json"
         let settings = 
-            let settingsFile = "workbench.json"
             match results.TryGetResult Environment with
             None -> 
                 
@@ -69,8 +103,49 @@ let main args =
         let test = results.TryGetResult Tests 
         let sync = results.TryGetResult Sync
         let publish = results.TryGetResult Publish
+        let backsync = results.TryGetResult BackSync
 
-        if  test.IsSome || (sync.IsNone && publish.IsNone) then
+        if backsync.IsSome && System.IO.File.Exists settingsFile then
+            let settings = WorkbenchSettings.Load settingsFile
+            let prod = settings.Production
+
+            let rawKeys = 
+                (prod.Host + "/api/list/rawdata" |> getString prod.Hobbes
+                 |> RawdataKeyList.Parse).Rawdata
+                |> Array.filter(fun key -> 
+                     RawdataKeyList.GetSample().Rawdata |> Array.tryFind(fun k' -> k' = key) |> Option.isNone
+                     && (key.Contains(':') |> not)
+                )
+
+            let db = Database.Database("rawdata",ignore,Database.consoleLogger)
+            rawKeys
+            |> Array.iter(fun key ->
+                let doc = 
+                    prod.Host + "/api/raw/" + key |> getString prod.Hobbes
+                doc.Replace("_rev","prodRev") |> db.InsertOrUpdate |> ignore
+            )
+
+            let db = Database.Database("transformations",ignore,Database.consoleLogger)
+            let configurations = 
+                (prod.Host + "/api/list/transformations" |> getString prod.Hobbes
+                 |> TransformationList.Parse).Transformations
+                |> Array.filter(fun doc -> 
+                     TransformationList.GetSample().Transformations |> Array.tryFind(fun d' -> d'.Id = doc.Id) |> Option.isNone
+                ) |> Array.map(fun doc -> doc.ToString().Replace("_rev","prodRev"))
+            configurations
+            |> Array.iter(db.InsertOrUpdate >> ignore)
+
+            let db = Database.Database("configurations",ignore,Database.consoleLogger)
+            let configurations = 
+                (prod.Host + "/api/list/configurations" |> getString prod.Hobbes
+                 |> ConfigurationsList.Parse).Configurations
+                |> Array.filter(fun doc -> 
+                     ConfigurationsList.GetSample().Configurations |> Array.tryFind(fun d' -> d'.Id = doc.Id) |> Option.isNone
+                )|> Array.map(fun doc -> doc.ToString().Replace("_rev","prodRev"))
+            configurations
+            |> Array.iter(db.InsertOrUpdate >> ignore)
+            0
+        elif  test.IsSome || (sync.IsNone && publish.IsNone) then
             Workbench.Tests.test() |> ignore
             printfn "Press enter to exit..."
             System.Console.ReadLine().Length

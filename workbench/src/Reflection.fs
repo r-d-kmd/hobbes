@@ -1,37 +1,43 @@
 namespace Workbench
 
 open Microsoft.FSharp.Quotations.Patterns
-
-type Project =
-    Gandalf = 3
-    | Momentum = 2
-    | Flowerpot = 1
-    | General = 0
-
 type Source = 
     AzureDevOps = 1
     | Rally = 2
     | Jira = 3
     | Test = 4
 
+type Project =
+    AzureDevOps = 4
+    | Gandalf = 3
+    | Momentum = 2
+    | Flowerpot = 1
+    | General = 0
+
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Project =
     let string (s: Project) =
-        match s |> int with
-        3 -> "gandalf"
-        | 2 -> "momentum"
-        | 1 -> "flowerpot"
-        | 0 -> "general"
+        match s with
+        Project.Gandalf -> "gandalf"
+        | Project.Momentum -> "momentum"
+        | Project.Flowerpot -> "flowerpot"
+        | Project.AzureDevOps -> "azuredevops"
         | _ -> failwith "Can't happen"
+    let sourceProject (p : Project)=
+       match p with
+       Project.Gandalf 
+       | Project.Momentum | Project.Flowerpot | Project.AzureDevOps -> Project.AzureDevOps
+       | _ -> failwith "Shouldn't happen"
         
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Source =
     let string (s: Source) =
-        match s |> int with
-        1 -> "azure devops"
-        | 2 -> "rally"
-        | 3 -> "jira"
-        | 4 -> "test"
+        match s with
+        Source.AzureDevOps -> "azure devops"
+        | Source.Rally -> "rally"
+        | Source.Jira -> "jira"
+        | Source.Test -> "test"
         | _ -> failwith "Can't happen"
 
 type Configuration = 
@@ -109,7 +115,7 @@ module Reflection =
         |> Seq.collect (collect)
         |> Seq.map snd
        
-    let private createConfiguration (sourceTransformations : Map<_,_>) (projectTransformations : Map<_,_>) (configurationContainer : System.Type)  =
+    let private createConfiguration (projectTransformations : Map<_,_>) (configurationContainer : System.Type)  =
         let source = 
             match configurationContainer |> tryGetAttribute<ConfigurationsAttribute> with
             None -> Source.Test
@@ -144,7 +150,7 @@ module Reflection =
                 | Some t -> t 
 
             let sourceTrans =
-                match sourceTransformations |> Map.tryFind source with
+                match projectTransformations |> Map.tryFind (att.Project |> Project.sourceProject) with
                 None -> []
                 | Some t -> t
             {
@@ -172,10 +178,8 @@ module Reflection =
                 |> List.ofSeq
             )
             |> Map.ofSeq
-        //need to find these
-        let sourceTranformations = Map.empty
         types
-        |> Seq.map(createConfiguration sourceTranformations projectTransformations)|> Seq.collect id
+        |> Seq.map(createConfiguration projectTransformations)|> Seq.collect id
        
         
         

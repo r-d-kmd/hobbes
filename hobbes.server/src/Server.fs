@@ -20,8 +20,8 @@ let private sync (ctx : HttpContext) configurationName =
 let adminRouter = 
     router {
         pipe_through Routing.verifiedPipe
-        put "/configurations" (Implementation.storeConfigurations |> Routing.withBodyNoArgs "configurations")
-        put "/transformations" (Implementation.storeTransformations |> Routing.withBodyNoArgs "transformations")
+        put "/configuration" (Implementation.storeConfigurations |> Routing.withBodyNoArgs "configuration")
+        put "/transformation" (Implementation.storeTransformations |> Routing.withBodyNoArgs "transformation")
         get "/list/configurations" (Implementation.listConfigurations  |> Routing.noArgs "list/configurations")
         get "/list/transformations" (Implementation.listTransformations |> Routing.noArgs "list/transformations" )
         get "/list/cache" (Implementation.listCache |> Routing.noArgs "list/cache")

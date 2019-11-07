@@ -17,39 +17,48 @@ let private sync (ctx : HttpContext) configurationName =
         with e -> 
             Log.errorf e.StackTrace "Couldn't sync %s. Reason: %s" configurationName e.Message
             500, e.Message
+let adminRouter = 
+    router {
+        pipe_through Routing.verifiedPipe
+        put "/configurations" (Implementation.storeConfigurations |> Routing.withBodyNoArgs "configurations")
+        put "/transformations" (Implementation.storeTransformations |> Routing.withBodyNoArgs "transformations")
+        get "/list/configurations" (Implementation.listConfigurations  |> Routing.noArgs "list/configurations")
+        get "/list/transformations" (Implementation.listTransformations |> Routing.noArgs "list/transformations" )
+        get "/list/cache" (Implementation.listCache |> Routing.noArgs "list/cache")
+        get "/list/rawdata" (Implementation.listRawdata |> Routing.noArgs "list/rawdata")
+        get "/list/log" (Implementation.listLog |> Routing.noArgs "list/log")
+        deletef "/raw/%s" (Rawdata.delete |> Routing.skipContext |> Routing.withArgs "raw" )
+        deletef "/cache/%s" (Cache.delete |> Routing.skipContext |> Routing.withArgs "cache" )
+        getf "/settings/%s/%s" ( Implementation.setting |> Routing.skipContext |> Routing.withArgs "admin/settings")
+        putf "/settings/%s/%s/%s" (Implementation.configure |> Routing.skipContext  |> Routing.withArgs "admin/settings")
+    }
+    
+let statusRouter = 
+    router {
+        pipe_through Routing.verifiedPipe
+        getf "/sync/%s" (Implementation.getSyncState |> Routing.skipContext |> Routing.withArgs  "status/sync")
+    }
+
+let dataRouter = 
+    router {
+        pipe_through Routing.verifiedPipe
+        getf "/csv/%s" (Implementation.csv |> Routing.skipContext |> Routing.withArgs "csv" ) 
+        getf "/sync/%s" ( sync |> Routing.withArgs "sync" )
+        getf "/raw/%s" (Rawdata.get |> Routing.skipContext |> Routing.withArgs "raw" )
+    }
 
 //TODO We should split this in multiple sub routers
 //See Saturn best practices for advice
 //TODO Use pipelines to do the verification
-let private apiRouter = router {
+let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
-    get "/ping" ((ignore >> Implementation.ping) |> Routing.unverified "ping" ) 
-    getf "/key/%s" (Implementation.key |> Routing.skipContext |> Routing.unverifiedWithArgs "key")
-    
-    getf "/csv/%s" (Implementation.csv |> Routing.skipContext |> Routing.verifiedWithArgs "csv" ) 
-    getf "/sync/%s" ( sync |> Routing.verifiedWithArgs "sync" )
-    getf "/raw/%s" (Rawdata.get |> Routing.skipContext |> Routing.verifiedWithArgs "raw" )
-
-    put "/configurations" (Implementation.storeConfigurations |> Routing.withBodyNoArgs "configurations")
-    put "/transformations" (Implementation.storeTransformations |> Routing.withBodyNoArgs "transformations")
-
-    get "/list/configurations" (Implementation.listConfigurations  |> Routing.verified "list/configurations")
-    get "/list/transformations" (Implementation.listTransformations |> Routing.verified "list/transformations" )
-    get "/list/cache" (Implementation.listCache |> Routing.verified "list/cache")
-    get "/list/rawdata" (Implementation.listRawdata |> Routing.verified "list/rawdata")
-    get "/list/log" (Implementation.listLog |> Routing.verified "list/log")
-
-    deletef "/raw/%s" (Rawdata.delete |> Routing.skipContext |> Routing.verifiedWithArgs "raw" )
-    deletef "/cache/%s" (Cache.delete |> Routing.skipContext |> Routing.verifiedWithArgs "cache" )
-    getf "/status/sync/%s" (Implementation.getSyncState |> Routing.skipContext |> Routing.verifiedWithArgs  "status/sync")
-    getf "/admin/settings/%s/%s" ( Implementation.setting |> Routing.skipContext |> Routing.verifiedWithArgs "admin/settings")
-    putf "/admin/settings/%s/%s/%s" (Implementation.configure |> Routing.skipContext  |> Routing.verifiedWithArgs "admin/settings")
+    get "/ping" ((ignore >> Implementation.ping) |> Routing.noArgs "ping" ) 
+    getf "/key/%s" (Implementation.key |> Routing.skipContext |> Routing.withArgs "key")
+    forward "/admin" adminRouter
+    forward "/status" statusRouter
+    forward "/data" dataRouter
 } 
-
-let private appRouter = router {
-    forward "" apiRouter
-}
 
 let private app = application {
     url (sprintf "http://0.0.0.0:%d/" port)

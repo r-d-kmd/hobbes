@@ -12,8 +12,21 @@ namespace Hobbes.Server.Db
             "revision" : "lkjlkj",
             "data" : {
                 "columnNames" : ["a","b"],
-                "values" : [["zcv","lkj"],[1.2,3.45],["2019-01-01","2019-01-01"]]
-            }
+                "values" : [["zcv","lkj"],[1.2,3.45],["2019-01-01","2019-01-01"]],
+                "meta" : [{},
+                          {
+                            "sumOfsquaredSums" : 89.0909,
+                            "sampleSize" : 890,
+                            "mean" : 678655.9898,
+                            "median" : 778.99
+                          },{
+                            "sumOfsquaredSums" : 89.0909,
+                            "sampleSize" : 890,
+                            "mean" : 678655.9898,
+                            "median" : 778.99
+                          }
+                ]
+            } 
         }""">
 
         type SyncStatus = 

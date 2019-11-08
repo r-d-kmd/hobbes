@@ -149,7 +149,7 @@ let main args =
                 if publish |> Option.isSome then 
                     printfn "Using host: %s" settings.Host
                     let urlTransformations = settings.Host + "/api/admin/transformation"
-                    let urlConfigurations = settings.Host + "/api/admin/configurations"
+                    let urlConfigurations = settings.Host + "/api/admin/configuration"
                     let pat = settings.Hobbes
                     let transformations = 
                         Workbench.Reflection.transformations()

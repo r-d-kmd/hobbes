@@ -7,11 +7,6 @@ nuget Fake.DotNet.NuGet
 nuget Fake.IO.FileSystem
 nuget Fake.DotNet.Cli //"
 
-#load "../../packages/documentation/FSharp.Formatting/FSharp.Formatting.fsx"
-
-open FSharp.Literate
-open System.IO
-
 #if !FAKE
 #r "netstandard"
 #r "Facades/netstandard" // https://github.com/ionide/ionide-vscode-fsharp/issues/839#issuecomment-396296095
@@ -78,13 +73,6 @@ Target.create "BuildImage" (fun _ ->
     |> CreateProcess.ensureExitCode
     |> Proc.run
     |> ignore
-)
-
-Target.create "Document" (fun _ ->
-    let source = __SOURCE_DIRECTORY__
-    let template = Path.Combine(source, "template.html")
-    let script = Path.Combine(source, "../documentaion/references.fsx")
-    Literate.ProcessScriptFile(script, template)
 )
 
 open Fake.Core.TargetOperators

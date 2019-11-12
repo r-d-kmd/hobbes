@@ -15,6 +15,7 @@ nuget Fake.DotNet.NuGet
 nuget Fake.IO.FileSystem
 nuget FSharp.Data
 nuget FParsec
+nuget FSharp.Formatting
 nuget FSharp.Interop.Dynamic 4.0.3.130
 nuget Microsoft.Extensions.PlatformAbstractions
 nuget Microsoft.VisualStudio.Services.Client
@@ -31,4 +32,9 @@ group test
     nuget xUnit
     nuget Microsoft.NET.Test.SDK
     nuget microsoft.testplatform.testhost
-    nuget xunit.runner.visualstudio
+    nuget xunit.runner.VisualStudio
+
+group documentation
+    source https://www.nuget.org/api/v2
+    framework: auto-detect
+    nuget FSharp.Formatting

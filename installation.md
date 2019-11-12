@@ -1,4 +1,4 @@
-#Tools needed to be installed to run the hobbes server
+# Tools needed to be installed to run the hobbes server
 
 The following actions must be performed
 

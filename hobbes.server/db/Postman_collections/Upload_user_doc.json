@@ -1,0 +1,58 @@
+{
+	"info": {
+		"_postman_id": "022aeab1-92f2-4ca0-b2bf-3a54d292e9d0",
+		"name": "Upload_user_doc",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Upload user doc for pat",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "{{couch_password}}",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "{{couch_user}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"_id\": \"org.couchdb.user:LuxTheDude\",\n  \"name\": \"LuxTheDude\",\n  \"type\": \"user\",\n  \"roles\": [],\n  \"password_scheme\": \"pbkdf2\",\n  \"iterations\": 10,\n  \"derived_key\": \"4a263022aa5ec5202772d059ebd7531488d4b598\",\n  \"salt\": \"cf573584f594f2574bc79b0f3c002b26\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{dburl}}/_users",
+					"host": [
+						"{{dburl}}"
+					],
+					"path": [
+						"_users"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

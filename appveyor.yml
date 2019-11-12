@@ -37,7 +37,7 @@ test_script:
 
 after_test:
   - npm install -s -g --unicode=false newman
-  - newman run --disable-unicode .\hobbes.server\db\Postman_collections\Smoktests.json -e .\hobbes.server\db\Postman_collections\Production_environment.json
+  - newman run ./hobbes.server/db/Postman_collections/Smoktests.json -e ./hobbes.server/db/Postman_collections/Development_environment.json
 
 deploy_script:
   - docker login -u="%DOCKER_USER%" -p="%DOCKER_PASS%"

@@ -13,7 +13,7 @@ namespace Hobbes.Server.Db
             "data" : {
                 "columnNames" : ["a","b"],
                 "values" : [["zcv","lkj"],[1.2,3.45],["2019-01-01","2019-01-01"]]
-            }
+            } 
         }""">
 
         type SyncStatus = 
@@ -257,7 +257,3 @@ namespace Hobbes.Server.Db
                |> createKeyFromList
                |> db.Get
            ).Data.ToString()
-
-        let tryGetRev id = db.TryGetRev id
-        let tryGetHash id = db.TryGetHash id
-        let compactAndClean() = db.CompactAndClean()

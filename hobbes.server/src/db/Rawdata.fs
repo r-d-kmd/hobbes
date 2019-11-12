@@ -143,13 +143,9 @@ module Rawdata =
                      |> AzureDevOpsAnalyticsRecord.Parse).Value
                 value
             | None -> [||])
+            
     let get (id : string) = 
         200, (db.Get id).ToString()
     
     let delete (id : string) = 
         200, (db.Delete id).ToString()
-        
-    let tryGetRev id = db.TryGetRev id  
-    let tryGetHash id = db.TryGetHash id  
-
-    let compactAndClean = db.CompactAndClean

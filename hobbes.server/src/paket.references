@@ -2,3 +2,6 @@ Saturn
 Giraffe
 FSharp.Data
 Microsoft.Extensions.PlatformAbstractions
+
+group documentation
+    FSharp.Formatting

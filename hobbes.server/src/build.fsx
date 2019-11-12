@@ -64,22 +64,15 @@ Target.create "Restart"(fun _ ->
 )
 
 Target.create "BuildImage" (fun _ ->
-    let dockerCommand args =
-        RawCommand ("docker", args)
+    if System.IO.Directory.Exists("./deploy/Server") |> not then failwith "Doh"
+    if System.IO.Directory.Exists("./deploy/Server/db") |> not then failwith "with What??"
+    let arguments = "build -t hobbes --platform linux ." |> String.split ' ' |> Arguments.OfArgs
+    RawCommand ("docker", arguments)
         |> CreateProcess.fromCommand
         |> CreateProcess.withWorkingDirectory "../"
         |> CreateProcess.ensureExitCode
         |> Proc.run
         |> ignore
-
-    if System.IO.Directory.Exists("./deploy/Server") |> not then failwith "Doh"
-    if System.IO.Directory.Exists("./deploy/Server/db") |> not then failwith "with What??"
-    let arguments = "build -t hobbes --platform linux ." |> String.split ' ' |> Arguments.OfArgs
-    dockerCommand arguments
-    let arguments = "build ./front" |> String.split ' ' |> Arguments.OfArgs
-    dockerCommand arguments
-    let arguments = "build ./oauth" |> String.split ' ' |> Arguments.OfArgs
-    dockerCommand arguments
 )
 
 open Fake.Core.TargetOperators

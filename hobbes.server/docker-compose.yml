@@ -59,4 +59,3 @@ services:
     depends_on:
       - hobbes
       - db
-      - oauth

@@ -35,8 +35,8 @@ build_script:
 
 test_script:
   - fake build --target test
-  - newman run ./hobbes.server/db/Postman_collections/Upload_user_doc.json -e ./hobbes.server/db/Postman_collections/Development_environment.json
-  - newman run ./hobbes.server/db/Postman_collections/Smoktests.json -e ./hobbes.server/db/Postman_collections/Development_environment.json --env-var "pat=%HOBBES_PAT%"
+  - newman run https://www.getpostman.com/collections/104879d31a04f9746c95 -e ./hobbes.server/db/Postman_collections/Development_environment.json
+  - newman run https://www.getpostman.com/collections/6210ae9e0859e8483817 -e ./hobbes.server/db/Postman_collections/Development_environment.json --env-var "pat=%HOBBES_PAT%"
 
 deploy_script:
   - docker login -u="%DOCKER_USER%" -p="%DOCKER_PASS%"

@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "6e0435ba-3e78-4ecd-b02e-44278e49f308",
+		"_postman_id": "0d29f13a-d5b8-4e7e-9147-20304a3d00f4",
 		"name": "Smoktests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -53,7 +53,6 @@
 			},
 			"response": []
 		},
-		
 		{
 			"name": "Test csv",
 			"event": [
@@ -108,10 +107,10 @@
 							"    requestDelete_(url, 0);",
 							"}",
 							"",
-							"requestDelete('configurations/test');",
-							"requestDelete('transformations/test');",
-							"requestDelete('rawdata/test');",
-							"requestDelete('cache/azure devops:testset:test');",
+							"requestDelete('/configurations/test');",
+							"requestDelete('/transformations/test');",
+							"requestDelete('/rawdata/test');",
+							"requestDelete('/cache/azure devops:testset:test');",
 							"",
 							""
 						],
@@ -161,7 +160,7 @@
 							"        \"project\": \"testset\",",
 							"        \"source\": \"azure devops\",",
 							"        \"timestamp\": \"01/01/1970\",",
-							"        \"Url\": \"fake-url\",",
+							"        \"url\": \"fake-url\",",
 							"        \"data\": ",
 							"        {",
 							"            \"@odata.context\": \"https://www.test.test2\",",
@@ -214,9 +213,9 @@
 							"        }",
 							"    };",
 							"    ",
-							"sendRequest('rawdata', data);",
-							"sendRequest('transformations', trans);",
-							"sendRequest('configurations', conf);"
+							"sendRequest('/rawdata', data);",
+							"sendRequest('/transformations', trans);",
+							"sendRequest('/configurations', conf);"
 						],
 						"type": "text/javascript"
 					}
@@ -290,7 +289,7 @@
 							"    };",
 							"}",
 							"",
-							"getRequest =  createRequest('configurations/test', 'GET');",
+							"getRequest =  createRequest('/configurations/test', 'GET');",
 							"              ",
 							"pm.test(\"Document put succesfully\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -304,7 +303,7 @@
 							"        if(err) {",
 							"            console.log(err);",
 							"        } else if(res.code == 200) {",
-							"                removeRequest =  getRequest =  createRequest('configurations/test', 'DELETE', res.json()._rev);",
+							"                removeRequest =  getRequest =  createRequest('/configurations/test', 'DELETE', res.json()._rev);",
 							"                pm.sendRequest(removeRequest, function(err, res) {});",
 							"        }",
 							"    });",
@@ -352,14 +351,14 @@
 					"raw": "{\r\n    \"_id\" : \"test\",\r\n    \"source\" : \"name of source such as Azure DevOps, Rally or Jira\",\r\n    \"dataset\" : \"name of the dataset. Eg a project name in azure devops\",\r\n    \"transformations\" : [\"transformation 1\", \"transformation 2\"]\r\n}"
 				},
 				"url": {
-					"raw": "{{front}}/api/admin/configurations",
+					"raw": "{{front}}/api/admin/configuration",
 					"host": [
 						"{{front}}"
 					],
 					"path": [
 						"api",
 						"admin",
-						"configurations"
+						"configuration"
 					]
 				}
 			},
@@ -390,7 +389,7 @@
 							"    };",
 							"}",
 							"",
-							"getRequest = createRequest('transformations/test1', 'GET');",
+							"getRequest = createRequest('/transformations/test1', 'GET');",
 							"              ",
 							"pm.test(\"Document put succesfully\", function() {",
 							"    pm.response.to.have.status(200);",
@@ -404,7 +403,7 @@
 							"        if(err) {",
 							"            console.log(err);",
 							"        } else if(res.code == 200) {",
-							"            removeRequest = createRequest('transformations/test1', 'DELETE', res.json()._rev);",
+							"            removeRequest = createRequest('/transformations/test1', 'DELETE', res.json()._rev);",
 							"            pm.sendRequest(removeRequest, function(err, res) {});",
 							"        }",
 							"    });",
@@ -450,14 +449,14 @@
 					}
 				},
 				"url": {
-					"raw": "{{front}}/api/admin/transformations",
+					"raw": "{{front}}/api/admin/transformation",
 					"host": [
 						"{{front}}"
 					],
 					"path": [
 						"api",
 						"admin",
-						"transformations"
+						"transformation"
 					]
 				}
 			},
@@ -502,7 +501,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{front}}/api/admin/list/admin/configurations",
+					"raw": "{{front}}/api/admin/list/configurations",
 					"host": [
 						"{{front}}"
 					],

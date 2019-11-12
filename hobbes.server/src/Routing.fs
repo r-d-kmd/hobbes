@@ -3,7 +3,6 @@ open FSharp.Control.Tasks.V2.ContextInsensitive
 open Saturn
 open Giraffe
 open Microsoft.AspNetCore.Http
-open Hobbes.Server.Db.Database
 open Hobbes.Server.Db
 open Hobbes.Server.Security
 open System
@@ -13,10 +12,6 @@ let private watch =
     let w = Diagnostics.Stopwatch()
     w.Start()
     w
-
-type Request = 
-    Verified of name : string
-    | Unverified of name: string
 
 let private verify (ctx : HttpContext) =
         let authToken = 
@@ -36,11 +31,8 @@ let private verify (ctx : HttpContext) =
                 None
         ) |> Option.isSome
            
-
-let rec private execute (request : Request) f : HttpHandler =
-    match request with
-    | Unverified name ->
-        fun next (ctx : HttpContext) ->
+let rec private execute name f : HttpHandler =
+    fun next (ctx : HttpContext) ->
             task {
                 let start = watch.ElapsedMilliseconds
                 let code, body = f ctx
@@ -48,27 +40,18 @@ let rec private execute (request : Request) f : HttpHandler =
                 Log.timed name (start - ``end``)
                 return! (setStatusCode code >=> setBodyFromString body) next ctx
             }
-    | Verified name ->
-        let f ctx = 
-            if verify ctx then
-                f ctx
-            else
-                403, "Unauthorized"
-        execute (Unverified name) f
-                    
-let withArgs (request : Request) f args =  
-    execute request (fun context -> f context args)
 
-let verified name f = execute (name |> Verified) (fun ctx -> f())
-let unverified name = execute (name |> Unverified)    
-let verifiedWithArgs name = (name |> Verified |> withArgs) 
-let unverifiedWithArgs name = (name |> Unverified |> withArgs)
+let noArgs name f = execute name (fun ctx -> f())
+
+let withArgs name f args =  
+    execute name (fun context -> f context args)
+
 let withBody name f args : HttpHandler = 
     fun next (ctx : HttpContext) ->
         task {
             let! body = ctx.ReadBodyFromRequestAsync()
             let f = f body
-            return! ((withArgs (Verified name) (f) args) next ctx)
+            return! ((withArgs name (f) args) next ctx)
         } 
 
 let withBodyNoArgs name f : HttpHandler = 
@@ -79,11 +62,9 @@ let skipContext f _ = f
 let verifiedPipe = 
     pipeline {
         plug (fun next ctx -> 
-                task { 
-                    return
-                        if verify ctx then
-                            ctx |> Some
-                        else
-                            failwith "Unauthorized"
-                })
+                if verify ctx then
+                    (setStatusCode 200) next ctx
+                else
+                    (setStatusCode 403 >=> setBodyFromString "unauthorized") next ctx
+            )
     }

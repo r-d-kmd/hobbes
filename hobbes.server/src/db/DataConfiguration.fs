@@ -51,6 +51,7 @@ module DataConfiguration =
             Source : DataSource
             Transformations : string list
         }
+
     let store doc = 
        db.InsertOrUpdate doc
 
@@ -82,7 +83,3 @@ module DataConfiguration =
                 record.Transformations 
                 |> List.ofArray
         }
-
-    let tryGetRev id = db.TryGetRev id  
-    let tryGetHash id = db.TryGetHash id  
-    let compactAndClean() = db.CompactAndClean()

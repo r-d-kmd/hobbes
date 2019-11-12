@@ -249,27 +249,30 @@ let storeConfigurations doc =
     with _ -> 
         500,"internal server error"
 
-let private uploadDesignDocument (storeHandle, (hashHandle : string -> string option), file) =
+let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
     
     async {
         let! doc = System.IO.File.ReadAllTextAsync file |> Async.AwaitTask
         if System.String.IsNullOrWhiteSpace (CouchDoc.Parse doc).Rev |> not then failwithf "Initialization documents shouldn't have _revs %s" file
         let designDocName = System.IO.Path.GetFileNameWithoutExtension file
         let oldHash = designDocName
-                      |> hashHandle
+                      |> db.TryGetHash
         let newDoc = (doc 
                        |> String.filter(not << System.Char.IsWhiteSpace))
                        
         let newHash = hash newDoc                
 
-        return if oldHash.IsNone || oldHash.Value <> newHash then
-                    let id = sprintf "%s_hash" designDocName
-                    sprintf """{"_id": %A, "hash":%A }"""  id newHash
-                    |> storeHandle 
-                    |> ignore
-                    storeHandle doc
-                else 
-                    ""                                                        
+        let res = 
+            if oldHash.IsNone || oldHash.Value <> newHash then
+                let id = sprintf "%s_hash" designDocName
+                sprintf """{"_id": %A, "hash":%A }"""  id newHash
+                |> db.InsertOrUpdate 
+                |> ignore
+                db.InsertOrUpdate doc
+            else 
+                ""
+        db.CompactAndClean()
+        return res
     }
 
 //return application info as a sign that all is well
@@ -337,16 +340,11 @@ let initDb () =
                     let insertOrUpdate =
                         db.InsertOrUpdate
                     let tryGetHash = db.TryGetHash
-                    insertOrUpdate, tryGetHash, f
+                    db, f
                 ) 
             ) |> Seq.map uploadDesignDocument
             |> Async.Parallel
             |> Async.RunSynchronously) |> ignore
-
-            Transformations.compactAndClean()
-            Rawdata.compactAndClean()
-            DataConfiguration.compactAndClean()
-            Cache.compactAndClean()
 
             let msg = "init completed"
             Log.log msg

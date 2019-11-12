@@ -116,11 +116,6 @@ module Reflection =
         |> Seq.map snd
        
     let private createConfiguration (projectTransformations : Map<_,_>) (configurationContainer : System.Type)  =
-        let source = 
-            match configurationContainer |> tryGetAttribute<ConfigurationsAttribute> with
-            None -> Source.Test
-            | Some c -> c.Source
-
         configurationContainer
         |> getPropertiesdWithAttribute<Quotations.Expr<Transformation list>,ConfigurationAttribute>
         |> Seq.map(fun (att,(name, expr)) ->
@@ -129,7 +124,8 @@ module Reflection =
                     PropertyGet(_,prop,_) -> 
                         [prop]
                     | NewUnionCase (_,exprs) ->
-                        let elements =  //this is also the pattern for a list
+                        //this is also the pattern for a list
+                        let elements =  
                             exprs
                             |> List.fold(fun res expr ->
                                 res@(readQuotation expr)

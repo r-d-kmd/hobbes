@@ -23,6 +23,7 @@ install:
   - docker version
   - dotnet tool install fake-cli -g
   - dotnet tool install --global --version 5.198.0 paket
+  - npm install -s -g --unicode=false newman
 
 before_build:
   - paket install
@@ -34,10 +35,8 @@ build_script:
 
 test_script:
   - fake build --target test
-
-after_test:
-  - npm install -s -g --unicode=false newman
-  - newman run ./hobbes.server/db/Postman_collections/Smoktests.json -e ./hobbes.server/db/Postman_collections/Development_environment.json
+  - newman run ./hobbes.server/db/Postman_collections/Upload_user_doc.json -e ./hobbes.server/db/Postman_collections/Development_environment.json
+  - newman run ./hobbes.server/db/Postman_collections/Smoktests.json -e ./hobbes.server/db/Postman_collections/Development_environment.json --env-var "pat=%HOBBES_PAT%"
 
 deploy_script:
   - docker login -u="%DOCKER_USER%" -p="%DOCKER_PASS%"

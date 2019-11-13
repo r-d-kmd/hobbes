@@ -4,25 +4,22 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\hobbes.fsproj">
+    <ProjectReference Include="..\..\..\src\hobbes.fsproj">
       <Name>hobbes.fsproj</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="db/Database.fs" />
     <Compile Include="db/Log.fs" />
+    <Compile Include="db/Raw.fs" />
     <Compile Include="db/Transformations.fs" />
-    <Compile Include="db/DataConfiguration.fs" />
-    <Compile Include="db/Cache.fs" />
-    <Compile Include="db/Rawdata.fs" />
+    <Compile Include="db/Uniform.fs" />
     <None Include="db/documents/**/*.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Compile Include="Readers/*.fs" />
-    <Compile Include="Security.fs" />
-    <Compile Include="Routing.fs" />
     <Compile Include="Server.Implementation.fs" />
+    <Compile Include="Routing.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
-  <Import Project="..\..\.paket\Paket.Restore.targets" />
+  <Import Project="..\..\..\.paket\Paket.Restore.targets" />
 </Project>

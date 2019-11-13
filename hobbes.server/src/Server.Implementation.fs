@@ -322,7 +322,7 @@ let initDb () =
         dbs@systemDbs
         |> List.map (fun n -> couch.TryPut(n, "") |> fst)
         |> List.tryFind (fun sc -> ((sc >= 200 && sc < 300) || (sc = 412)) |> not)
-    (match errorCode with
+    match errorCode with
      Some errorCode ->
         let msg = "INIT: error in creating dbs"
         Log.error null msg
@@ -330,7 +330,7 @@ let initDb () =
      | None ->
         try
             let documentDir = "db/documents"
-            if System.IO.Directory.Exists "db/documents" |> not then failwith "Document folder not found"
+            if System.IO.Directory.Exists documentDir |> not then failwith "Document folder not found"
             (System.IO.Directory.EnumerateDirectories(documentDir)
             |> Seq.collect(fun dir -> 
                 System.IO.Directory.EnumerateFiles(dir,"*.json")
@@ -346,10 +346,9 @@ let initDb () =
             |> Async.Parallel
             |> Async.RunSynchronously) |> ignore
 
-            let msg = "init completed"
+            let msg = "Init completed"
             Log.log msg
             200,msg
         with e ->
             Log.errorf e.StackTrace "Error in init: %s" e.Message
             500,e.Message
-    )

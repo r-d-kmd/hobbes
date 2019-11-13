@@ -54,8 +54,7 @@ services:
       - internal
       - front
     ports:
-      - 8443:443
-      - 8976:80
+      - 8976:4012
     depends_on:
       - hobbes
       - db

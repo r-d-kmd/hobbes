@@ -102,7 +102,7 @@ let main args =
             
         let test = results.TryGetResult Tests 
         let sync = results.TryGetResult Sync
-        let publish = results.TryGetResult Publish
+        let publish = Some Publish //results.TryGetResult Publish
         let backsync = results.TryGetResult BackSync
         let listTransformationsPath = "/api/admin/list/transformations"
         let listConfigPath = "/api/admin/list/configurations"

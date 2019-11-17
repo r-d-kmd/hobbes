@@ -105,6 +105,27 @@ module Reflection =
            )
         )
 
+    let rec readQuotation =
+        function
+            PropertyGet(_,prop,_) -> 
+                [prop :> System.Reflection.MemberInfo]
+            | NewUnionCase (_,exprs) ->
+                //this is also the pattern for a list
+                let elements =  
+                    exprs
+                    |> List.collect(fun expr ->
+                        (readQuotation expr)
+                    )
+                elements
+            | Sequential(head,tail) ->
+                readQuotation(head)@(readQuotation tail)
+            | Lambda(_,expr) ->
+                readQuotation expr
+            | Call(_,method,_) -> 
+                [method]
+            | expr -> 
+                failwithf "Didn't understand expression: %A" expr
+                
     let private isTransformtion (f : System.Reflection.FieldInfo) =
         f.GetCustomAttributes(typeof<TransformationAttribute>,false) |> Seq.isEmpty |> not
         
@@ -114,29 +135,17 @@ module Reflection =
         types
         |> Seq.collect (collect)
         |> Seq.map snd
-       
+
     let private createConfiguration (projectTransformations : Map<_,_>) (configurationContainer : System.Type)  =
         configurationContainer
         |> getPropertiesdWithAttribute<Quotations.Expr<Transformation list>,ConfigurationAttribute>
         |> Seq.map(fun (att,(name, expr)) ->
-            let rec readQuotation =
-                function
-                    PropertyGet(_,prop,_) -> 
-                        [prop]
-                    | NewUnionCase (_,exprs) ->
-                        //this is also the pattern for a list
-                        let elements =  
-                            exprs
-                            |> List.fold(fun res expr ->
-                                res@(readQuotation expr)
-                            ) [] 
-                        elements
-                    | _ -> 
-                        failwithf "Expected a transformation %A" expr
+            
             let transformationsProperties = 
                 readQuotation expr
+                |> List.filter(fun t -> t.GetType() = typeof<System.Reflection.PropertyInfo>)
             let trans = 
-                transformationsProperties
+                (transformationsProperties)
                 |> List.map(fun transformationProperty ->
                     transformationProperty.DeclaringType.Name + "." + transformationProperty.Name
                 )

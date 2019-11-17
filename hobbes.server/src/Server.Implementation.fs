@@ -6,7 +6,13 @@ open Hobbes.Server.Db.Log
 open Hobbes.Server.Db
 open FSharp.Data
 open Hobbes.Server.Security
+open Routing
 
+[<Literal>]
+let private SettingsPath = """./db/documents/settings.json"""
+type private Settings = FSharp.Data.JsonProvider<SettingsPath>
+
+[<RouteHandler "/sync/%s">] 
 let getSyncState syncId =
     200, (Rawdata.getState syncId).ToString()
 
@@ -49,9 +55,9 @@ let private data configurationName =
         None ->
             printfn "Cache miss %s" configurationName
             match configuration.Source with
-            DataConfiguration.AzureDevOps projectName ->
+            DataConfiguration.AzureDevOps(account,projectName) ->
                 let rows  = 
-                    Hobbes.Server.Readers.AzureDevOps.readCached projectName
+                    Hobbes.Server.Readers.AzureDevOps.readCached (account,projectName)
                     |> List.ofSeq
                 rows
                 |> DataMatrix.fromRows
@@ -84,11 +90,13 @@ let private data configurationName =
             |> fst
     200,transformedData 
 
+[<Routing.RouteHandler("/csv/%s")>]
 let csv configuration = 
+    printfn "Getting csv for '%A'" configuration
     let status, data = data configuration
     status,data 
            |> DataMatrix.toJson Csv
-
+[<Routing.RouteHandler("/settings/%s/%s")>]
 let setting (area, setting) =
     200,couch.Get [
                 "_node"
@@ -98,14 +106,26 @@ let setting (area, setting) =
                 setting
     ]
 
-let configure (area, setting, value) =
+let configure (setting : Settings.Root) =
+    let value = 
+        match setting.Value.Number with
+
+        Some n -> n.ToString()
+        | _ -> sprintf "%A" setting.Value.String.Value
     200,couch.Put ([
                 "_node"
                 "_local"
                 "_config"
-                area
-                setting
+                setting.Area
+                setting.Name
     ],value)
+
+[<Routing.RouteHandler("/settings", Routing.HttpMethods.Put)>]
+let configureStr (settings) =
+    (settings
+     |>sprintf "[%s]"
+     |> Settings.Parse).[0]
+    |> configure
 
 let private request user pwd httpMethod body url  =
     let headers =
@@ -128,16 +148,22 @@ let private request user pwd httpMethod body url  =
             headers = headers
         )
 
-let sync azureToken configurationName =
+[<RouteHandler "/raw/%s" >]
+let getRaw id =
+    Rawdata.get id
+
+[<RouteHandler "/sync/%s" >]
+let sync configurationName =
+    let azureToken = env "AZURE_TOKEN"
     let configuration = DataConfiguration.get configurationName
     let cacheRevision = cacheRevision configuration.Source
     let syncId = Rawdata.createSyncStateDocument cacheRevision configuration.Source
     async {
         try
             match configuration.Source with
-            DataConfiguration.AzureDevOps projectName ->
+            DataConfiguration.AzureDevOps(account,projectName) ->
               
-                let statusCode,body = Hobbes.Server.Readers.AzureDevOps.sync azureToken projectName cacheRevision
+                let statusCode,body = Hobbes.Server.Readers.AzureDevOps.sync azureToken (account,projectName) cacheRevision
                 Log.logf "Sync finised with statusCode %d and result %s" statusCode body
                 if statusCode >= 200 && statusCode < 300 then 
                     Log.debug "Invalidating cache"
@@ -171,6 +197,7 @@ let sync azureToken configurationName =
     } |> Async.Start
     200, syncId
     
+[<RouteHandler "/key/%s" >] 
 let key token =
     let user = 
         token
@@ -206,6 +233,7 @@ let key token =
         let key = createToken user
         200,key
 
+[<RouteHandler("/transformation")>]
 let storeTransformations doc = 
     try
         Transformations.store doc |> ignore
@@ -219,16 +247,23 @@ let formatDBList name list =
     let body = sprintf """{"%s" : [%s]}""" <| name <| System.String.Join(",", stringList)
     200, body    
 
+[<RouteHandler("/list/configurations")>]
 let listConfigurations() = 
     DataConfiguration.list() |> formatDBList "configurations"
+
+[<RouteHandler("/list/cache")>]
 let listCache() = 
     Cache.list() |> formatDBList "cache"
+    
+[<RouteHandler("/list/transformations")>]
 let listTransformations() = 
     Transformations.list() |> formatDBList "transformations"
-
+    
+[<RouteHandler("/list/rawdata")>]
 let listRawdata() = 
     Rawdata.list() |> formatDBList "rawdata"           
 
+[<RouteHandler "/list/log" >]
 let listLog() = 
     Log.list()
     |> Seq.map LogRecord.Parse
@@ -242,12 +277,21 @@ let listLog() =
         sprintf "%s - [%s] %s %s" (logRecord.Timestamp.ToString()) logRecord.Type logRecord.Message st
     ) |> formatDBList "logEntries"
 
+[<RouteHandler("/configuration")>]
 let storeConfigurations doc = 
     try
         DataConfiguration.store doc |> ignore
         200,"ok"
     with _ -> 
         500,"internal server error"
+
+[<RouteHandler("/raw/%s", HttpMethods.Delete)>]
+let deleteRaw (id : string) = 
+    Rawdata.delete id
+
+[<RouteHandler("/cache/%s", HttpMethods.Delete)>]
+let deleteCache (id : string) = 
+    Cache.delete id
 
 let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
     
@@ -275,7 +319,7 @@ let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
         return res
     }
 
-//return application info as a sign that all is well
+[<RouteHandler "/ping" >] 
 let ping() = 
     let app = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application
     
@@ -283,14 +327,9 @@ let ping() =
 
 let delete databaseName =
     couch.Delete databaseName
-    
-[<Literal>]
-let private SettingsPath = """./db/documents/settings.json"""
-type private Settings = FSharp.Data.JsonProvider<SettingsPath>
 
 let initDb () =
-    let configurationBase = "_node/_local/_config"
-    let settingsDb = Database(configurationBase,id, Log.loggerInstance)
+    
     Settings.Load SettingsPath
     |> Array.iter(fun setting ->
          let value =
@@ -298,11 +337,7 @@ let initDb () =
             |> Option.bind(string >> Some)
             |> Option.orElse(setting.Value.String)
             |> Option.get
-            |> sprintf "%A"
-         settingsDb.Put([
-                          setting.Area
-                          setting.Name
-                        ], value) |> printfn "Old value: %s"
+         configure(setting) |> ignore
     )
     let dbs = 
         [

@@ -22,8 +22,8 @@
     <Compile Include="db/Rawdata.fs"/>
     <Compile Include="Readers/*.fs" />
     <Compile Include="Security.fs" />
-    <Compile Include="Server.Implementation.fs" />
     <Compile Include="Routing.fs" />
+    <Compile Include="Server.Implementation.fs" />
     <Compile Include="Server.fs" />
     <None Include="db/documents/**/*.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

@@ -79,7 +79,15 @@ module Data =
                 |> fst
         transformedData 
 
-    [<Get ("/csv/%s")>]
+    [<Get ("/csv/%s", 
+           """column1:column2:column3
+"some value":0:"2019-11-01" 
+:3:"2019-08-11"
+""",
+           """The csv endpoint returns the data for the configuration specified as the sole argument
+The data is colon seperated. The configuration includes what data source to use and what transformations to apply.
+The results can be freely cached and usually are
+           """)>]
     let csv configuration = 
         debugf "Getting csv for '%A'" configuration
         let data = data configuration

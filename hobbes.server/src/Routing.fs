@@ -100,13 +100,14 @@ type HttpMethods =
 [<AttributeUsage(AttributeTargets.Method, 
                         Inherited = false, 
                         AllowMultiple = false)>]
-type RouteHandlerAttribute(path:string, verb : HttpMethods) =
+//[<AbstractClass>] 
+type RouteHandlerAttribute internal (path:string, verb : HttpMethods) =
     inherit Attribute()
     member __.Path with get() = path
     member __.Verb with get() = verb
     new (path) = RouteHandlerAttribute(path,HttpMethods.Default)
 
-    
+//[]
 let tryGetAttribute<'a> (m:Reflection.MemberInfo) : 'a option= 
     match m.GetCustomAttributes(typeof<'a>,false) with
     [||] -> None

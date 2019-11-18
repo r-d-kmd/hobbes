@@ -22,6 +22,7 @@
     <Compile Include="Security.fs" />
     <Compile Include="Routing.fs" />
     <Compile Include="Server.Implementation.fs" />
+    <Compile Include="Services/Admin.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

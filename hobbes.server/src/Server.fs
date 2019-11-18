@@ -8,22 +8,7 @@ let private port =
     null -> 8085
     | p -> int p
 
-open Routing  
-
-
-let statusRouter = 
-    router {
-        pipe_through verifiedPipe
-        withArg <@ getSyncState @>
-    }
-
-let dataRouter = 
-    router {
-        pipe_through verifiedPipe
-        withArg <@ csv @> 
-        withArg <@sync@>
-        withArg <@ getRaw @>
-    }
+open Routing 
 
 let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
@@ -31,8 +16,8 @@ let private appRouter = router {
     fetch <@ ping @> 
     withArg <@ key @>
     collect "/admin"
-    forward "/status" statusRouter
-    forward "/data" dataRouter
+    collect "/status"
+    collect "/data"
 } 
 
 let private app = application {

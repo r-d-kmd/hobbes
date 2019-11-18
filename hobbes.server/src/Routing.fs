@@ -100,9 +100,11 @@ type HttpMethods =
 [<AttributeUsage(AttributeTargets.Class, 
                         Inherited = false, 
                         AllowMultiple = false)>]
-type RouteAreaAttribute(path : string) = 
+type RouteAreaAttribute(path : string, shouldAuthenticate : bool) = 
     inherit Attribute()
     member __.Path with get() = path
+    member __.ShouldAuthenticate with get() = shouldAuthenticate
+    new(path) = RouteAreaAttribute(path, true)
 
 [<AbstractClass>] 
 [<AttributeUsage(AttributeTargets.Method, 
@@ -271,13 +273,24 @@ type RouterBuilder with
 
     [<CustomOperation "collect">]
     member this.Collect(state, areaPath : string) : RouterState =
-        let routes = 
+        let routes, state = 
             let areas = getTypesWithAttribute<RouteAreaAttribute>() 
+            let state = 
+                match
+                    areas
+                    |> Seq.tryFind(fun a -> 
+                        (a.GetCustomAttributes(typeof<RouteAreaAttribute>, false) |> Array.head :?> RouteAreaAttribute).ShouldAuthenticate
+                    ) with
+                None -> state
+                | Some _ ->
+                    this.PipeThrough(state, verifiedPipe)
+            
             if areas |> Seq.isEmpty then failwithf "Found no modules for %s" areaPath
             areas
             |> Seq.collect(fun area ->
                 area |> getMethodsWithAttribute<RouteHandlerAttribute>
-            )
+            ), state
+
         routes
         |> Seq.fold(fun state (att, method) ->
             let noOfArgs = 

@@ -50,7 +50,13 @@ let private data configurationName =
                 rows
                 |> DataMatrix.fromRows
             | _ -> failwith "Unknown source"
-        | Some data -> data
+        | Some data -> 
+            data
+            |> Seq.map(fun (columnName,values) -> 
+                    columnName, values
+                                |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
+            ) 
+            |> DataMatrix.fromTable
     let cacheRevision = cacheRevision configuration.Source
     let transformedData = 
         match transformations with

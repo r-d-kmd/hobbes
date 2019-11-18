@@ -20,25 +20,11 @@ let private sync (ctx : HttpContext) configurationName =
            // Log.errorf e.StackTrace "Couldn't sync %s. Reason: %s" configurationName e.Message
             500, e.Message
     
-let statusRouter = 
-    router {
-        getf "/sync/%s" (Implementation.getSyncState |> Routing.skipContext |> Routing.withArgs  "status/sync")
-    }
-
-let dataRouter = 
-    router {
-        getf "/csv/%s" (Implementation.csv |> Routing.skipContext |> Routing.withArgs "csv" ) 
-        getf "/sync/%s" ( sync |> Routing.withArgs "sync" )
-        getf "/raw/%s" (Implementation.getRaw |> Routing.skipContext |> Routing.withArgs "raw" )
-    }
-
 let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
     get "/ping" ((ignore >> Implementation.ping) |> Routing.noArgs "ping" )
     get "/init" ((ignore >> Implementation.initDb) |> Routing.noArgs "init") 
-    forward "/status" statusRouter
-    forward "/data" dataRouter
 } 
 
 let private app = application {

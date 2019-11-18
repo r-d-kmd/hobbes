@@ -1,8 +1,6 @@
 open Saturn
 open Giraffe
-open Microsoft.AspNetCore.Http
 open Hobbes.Server.Db.Database
-open Hobbes.Server.Db
 open Implementation
 
 let private port = 
@@ -12,21 +10,6 @@ let private port =
 
 open Routing  
 
-let adminRouter = 
-   router {
-        withBody <@ storeTransformations @>
-        fetch    <@ listConfigurations@>
-        fetch    <@ listTransformations @>
-        fetch    <@ listCache @>
-        fetch    <@ listRawdata @>
-        fetch    <@ listLog @> 
-
-        withArg  <@ deleteRaw @>
-        withArg  <@ deleteCache @>
-        withArgs <@ setting @>
-        withBody <@ configureStr @>
-        withBody <@storeConfigurations@>
-    }
 
 let statusRouter = 
     router {
@@ -47,7 +30,7 @@ let private appRouter = router {
     
     fetch <@ ping @> 
     withArg <@ key @>
-    forward "/admin" adminRouter
+    collect "/admin"
     forward "/status" statusRouter
     forward "/data" dataRouter
 } 
@@ -62,7 +45,7 @@ let private app = application {
 let rec private init() =
     async {
         try
-           initDb() |> ignore
+           Hobbes.Server.Services.Admin.initDb() |> ignore
            printfn "DB initialized"
         with _ ->
            do! Async.Sleep 2000

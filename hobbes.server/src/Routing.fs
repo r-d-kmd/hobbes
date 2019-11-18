@@ -96,24 +96,65 @@ type HttpMethods =
     | Post = 2
     | Put = 3
     | Delete = 4
-    | Default = 0
+
+[<AttributeUsage(AttributeTargets.Class, 
+                        Inherited = false, 
+                        AllowMultiple = false)>]
+type RouteAreaAttribute(path : string) = 
+    inherit Attribute()
+    member __.Path with get() = path
+
+[<AbstractClass>] 
 [<AttributeUsage(AttributeTargets.Method, 
                         Inherited = false, 
                         AllowMultiple = false)>]
-//[<AbstractClass>] 
-type RouteHandlerAttribute internal (path:string, verb : HttpMethods) =
+type RouteHandlerAttribute internal (path:string, verb : HttpMethods, result : string, description : string) =
     inherit Attribute()
     member __.Path with get() = path
     member __.Verb with get() = verb
-    new (path) = RouteHandlerAttribute(path,HttpMethods.Default)
+    member this.HasBody 
+        with get() = 
+            this.Body |> isNull |> not
+    abstract Body : string with get
 
-//[]
+[<AttributeUsage(AttributeTargets.Method, 
+                        Inherited = false, 
+                        AllowMultiple = false)>]
+type GetAttribute(path : string, result, description) = 
+    inherit RouteHandlerAttribute(path, HttpMethods.Get, result, description)
+    new(path) = GetAttribute(path,null, null)
+    override __.Body with get() = null
+
+[<AttributeUsage(AttributeTargets.Method, 
+                        Inherited = false, 
+                        AllowMultiple = false)>]
+type PutAttribute(path : string, body : string, result, description) = 
+    inherit RouteHandlerAttribute(path, HttpMethods.Put, result, description)
+    new(path, body) = PutAttribute(path,body, null, null)
+    override __.Body with get() = body
+
+[<AttributeUsage(AttributeTargets.Method, 
+                        Inherited = false, 
+                        AllowMultiple = false)>]
+type PostAttribute(path : string, body : string, result, description) = 
+    inherit RouteHandlerAttribute(path, HttpMethods.Post, result, description)
+    new(path, body) = PostAttribute(path,body, null, null)
+    override __.Body with get() = body 
+
+[<AttributeUsage(AttributeTargets.Method, 
+                        Inherited = false, 
+                        AllowMultiple = false)>]
+type DeleteAttribute(path : string, result, description) = 
+    inherit RouteHandlerAttribute(path, HttpMethods.Delete, result, description)
+    new(path) = DeleteAttribute(path, null, null)
+    override __.Body with get() = null
+
 let tryGetAttribute<'a> (m:Reflection.MemberInfo) : 'a option= 
     match m.GetCustomAttributes(typeof<'a>,false) with
     [||] -> None
     | a -> a |> Array.head :?> 'a |> Some
 
-let hasAttribute t (m:#System.Reflection.MemberInfo) =
+let hasAttribute t (m:#Reflection.MemberInfo) =
     m.GetCustomAttributes(t,false) |> Seq.isEmpty |> not
  
 let private filterByAttribute attributeType (types : seq<#System.Reflection.MemberInfo>) =
@@ -124,15 +165,15 @@ let private  getTypesWithAttribute<'a>() =
     Reflection.Assembly.GetExecutingAssembly().GetTypes()
     |> filterByAttribute att
 
-let private getPropertiesdWithAttribute<'a,'att> (t: System.Type) =
+let private getMethodsWithAttribute<'att> (t: System.Type) =
     let flags = Reflection.BindingFlags.Static ||| Reflection.BindingFlags.Public
     let att = typeof<'att>
-    let props = t.GetProperties(flags)
+    let props = t.GetMethods(flags)
     props |> filterByAttribute att
     |> Seq.collect(fun prop -> 
        prop.GetCustomAttributes(att,false)
        |> Array.map(fun a -> 
-           a :?> 'att, (prop.DeclaringType.Name + "." + prop.Name, prop.GetValue(null) :?> 'a)
+           a :?> 'att, prop
        )
     )
 
@@ -149,23 +190,17 @@ type RouterBuilder with
             path, method, att.Verb
         | membr -> failwithf "Don't know what to do with %A" membr 
 
-    
-    [<CustomOperation("withBody")>]
-    member this.PutWithBody(state, action : Expr<string -> int * string>) : RouterState =
-        let path,method,verb = this.FindMethodAndPath action
-        let f body = 
-            method.Invoke(null, [|body|]) :?> int * string
-        match verb with
-        HttpMethods.Post ->
-            this.Post(state, path,(f |> withBodyNoArgs path))
-        | HttpMethods.Put | HttpMethods.Default -> 
-            this.Put(state, path,(f |> withBodyNoArgs path))
-        | _ -> failwithf "Body is not allowed for verb : %A" verb
+    member private __.SafeCall (method : Reflection.MethodInfo) (args : obj []) = 
+        try
+            method.Invoke(null, args) :?> (int * string)
+        with e ->
+            Log.debugf "Invocation failed: %s. Method name: %s. Parameters: %s " e.Message method.Name (System.String.Join(",",method.GetParameters() |> Array.map(fun p -> p.Name)))
+            500, "Invocation error"
 
     member private this.GenerateRouteWithArgs state (f : 'a -> int * string) path verb = 
         let pathf = PrintfFormat<_,_,_,_,'a>(path)
         match verb with 
-        HttpMethods.Get | HttpMethods.Default ->
+        HttpMethods.Get ->
             this.GetF(state, pathf,(f |> withArgs path))
         | HttpMethods.Post ->
             this.PostF(state, pathf,(f |> withArgs path))
@@ -174,40 +209,90 @@ type RouterBuilder with
         | HttpMethods.Delete ->
             this.DeleteF(state, pathf,(f |> withArgs path))
         | _ -> failwithf "Don't know the verb: %A" verb
+    
+    member this.LocalFetch(state, path, method : Reflection.MethodInfo) = 
+        let f = 
+           fun next ctx ->
+                let status,body = 
+                    this.SafeCall method [||]
+                (setStatusCode status >=> setBodyFromString body) next ctx
 
+        this.Get(state,path,f)
+
+    member private this.LocalWithArg(state, path, verb, method : Reflection.MethodInfo) = 
+        let f (arg1 : 'a) = 
+            this.SafeCall method [|arg1|]
+        this.GenerateRouteWithArgs state f path verb
+
+    member private this.LocalWithArgs(state, path, verb, method : System.Reflection.MethodInfo) = 
+        let f (arg1 : 'a, arg2 : 'b) = 
+            this.SafeCall method [|arg1;arg2|]
+        this.GenerateRouteWithArgs state f path verb
+
+    member private this.LocalWithArgs3(state, path, verb, method : System.Reflection.MethodInfo) = 
+        let f (arg1 : 'a, arg2 : 'b, arg3 : 'c) = 
+            this.SafeCall method [|arg1;arg2;arg3|]
+        this.GenerateRouteWithArgs state f path verb
+
+    member private this.LocalWithBody(state, path, verb, method) = 
+        let f body = 
+            this.SafeCall method [|body|]
+        match verb with
+        HttpMethods.Post ->
+            this.Post(state, path,(f |> withBodyNoArgs path))
+        | HttpMethods.Put -> 
+            this.Put(state, path,(f |> withBodyNoArgs path))
+        | _ -> failwithf "Body is not allowed for verb : %A" verb
+
+    [<CustomOperation("withBody")>]
+    member this.WithBody(state, action : Expr<string -> int * string>) : RouterState =
+        let path,method,verb = this.FindMethodAndPath action
+        this.LocalWithBody(state,path,verb,method)
 
     [<CustomOperation("fetch")>]
     member this.Fetch(state, action : Expr<unit -> int * string>) : RouterState =
        let path,method,_ = this.FindMethodAndPath action
-       let f = 
-           fun next ctx ->
-                let status,body =  (method.Invoke(null, [||]) :?> (int * string))
-                (setStatusCode status >=> setBodyFromString body) next ctx
-               
-              
-       this.Get(state,path,f)
+       this.LocalFetch(state, path, method)
 
     [<CustomOperation("withArg")>]
-    member this.PutWithArg(state, action : Expr<'a -> int * string>) : RouterState =
+    member this.WithArg(state, action : Expr<'a -> int * string>) : RouterState =
         let path,method,verb = this.FindMethodAndPath action
-        let f (args : 'a) = 
-            (method.Invoke(null, [|args|]) :?> (int * string))
-        this.GenerateRouteWithArgs state f path verb
+        this.LocalWithArg(state,path, verb, method)
         
     [<CustomOperation("withArgs")>]
-    member this.PutWithArgs(state, action : Expr<('a * 'b) -> int * string>) : RouterState =
+    member this.WithArgs(state, action : Expr<('a * 'b) -> int * string>) : RouterState =
         let path,method,verb = this.FindMethodAndPath action
-        let f (arg1 : 'a, arg2 : 'b) = 
-            try
-                (method.Invoke(null, [|arg1;arg2|]) :?> (int * string))
-            with e ->
-                printfn "Invocation failed: %s. Method name: %s. Parameters: %s " e.Message method.Name (System.String.Join(",",method.GetParameters() |> Array.map(fun p -> p.Name)))
-                reraise()
-        this.GenerateRouteWithArgs state f path verb
+        this.LocalWithArgs(state,path, verb, method)
     
     [<CustomOperation("withArgs3")>]
-    member this.PutWithArgs3(state, action : Expr<('a*'b*'c) -> int * string>) : RouterState =
+    member this.WithArgs3(state, action : Expr<('a*'b*'c) -> int * string>) : RouterState =
         let path,method,verb = this.FindMethodAndPath action
-        let f (arg1 : 'a, arg2 : 'b, arg3 : 'c) = 
-            (method.Invoke(null, [|arg1;arg2;arg3|]) :?> (int * string))
-        this.GenerateRouteWithArgs state f path verb
+        this.LocalWithArgs3(state,path, verb, method)
+
+    [<CustomOperation "collect">]
+    member this.Collect(state, areaPath : string) : RouterState =
+        let routes = 
+            let areas = getTypesWithAttribute<RouteAreaAttribute>() 
+            if areas |> Seq.isEmpty then failwithf "Found no modules for %s" areaPath
+            areas
+            |> Seq.collect(fun area ->
+                area |> getMethodsWithAttribute<RouteHandlerAttribute>
+            )
+        routes
+        |> Seq.fold(fun state (att, method) ->
+            let noOfArgs = 
+                //%% is a single % escaped. All other % are an argument. Split on % thus results
+                //in an array with one more elements than there are %-args
+                att.Path.Replace("%%", "").Split('%', StringSplitOptions.RemoveEmptyEntries).Length - 1
+            let path = areaPath + att.Path
+            if att.HasBody then
+                this.LocalWithBody(state,path,att.Verb, method)
+            else
+                match noOfArgs with
+                0 -> this.LocalFetch(state, path, method)
+                | 1 -> this.LocalWithArg(state, path, att.Verb, method)
+                | 2 -> this.LocalWithArgs(state, path, att.Verb, method)
+                | 3 -> this.LocalWithArgs3(state, path, att.Verb, method)
+                | _ -> failwithf "Don't know how to handle the arguments of %s" att.Path
+        ) state
+        

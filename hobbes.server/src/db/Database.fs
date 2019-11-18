@@ -11,7 +11,16 @@ namespace Hobbes.Server.Db
             abstract Errorf<'a> : string -> LogFormatter<'a> -> 'a
             abstract Debugf<'a> : LogFormatter<'a> -> 'a
         
-
+        
+        let hash (input : string) =
+            use md5Hash = System.Security.Cryptography.MD5.Create()
+            let data = md5Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input))
+            let sBuilder = System.Text.StringBuilder()
+            (data
+            |> Seq.fold(fun (sBuilder : System.Text.StringBuilder) d ->
+                    sBuilder.Append(d.ToString("x2"))
+            ) sBuilder).ToString()  
+            
         let env name = 
             System.Environment.GetEnvironmentVariable name
 

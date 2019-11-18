@@ -10,6 +10,8 @@ environment:
     secure: YxlOCsSIWCrx3tPfgCsU0kZK2Jk8FUoLOGoAUU0F8MTMf5DMAi7Fml3sCqYsFvjQ7+/afn7s8N+bhukqec85rM2RvpTnNERfoiqi1gmgoUBZ78lQZsrbK3HxzSPOnue77BYvwzdwYK1rgBe5Z9CwtrfbJZo6VqrL1OSH8t3RgqF+3+ejwGbw0BLVzrdLGFlydV5/Y6P0lsnmZzynMr7OScFHx+rqiSXNrUhwPBQ0DgYkg2MvkGhrnegvZZi31HfjOWEpXE2/NKZQ7YAhm6UaGDh/IcQZp//YcBVv8IIPoBR0af8xuazFQpfqgr58GCuQoAd38kUlNccwzuE8gmrJOHPGzvV/uosqfNAzYp5Ff6F4Vm49ZCP3CtwcopbRjXnRCdmMksxio1ILF2HxaMzSODqs/TMFY86RRLNpG52rZoA=
   HOBBES_PAT:
     secure: FMSdnVu01kCl/h3wLYiJfrZh9g8XCScl5sT98lVFr8KakwD9C5Lsqs01fn4o7DwX7zu+voHMzTqJ+eE+eTP/j63LoH5DHq81hW2w0Rq6EOEXg1EAUolVHsVerSUAXzfpwnvRHzagS9pD6MX7/n7813lHo9vFL4lIZeqmc1oK/eFy4trd2cGfwbrgxFY2NZnzpzY2R9vVHTCiIJuDS33BuQ==
+  PM_APIKEY:
+    secure: ujCKbQHfvl9fiBouXlRQH1hq59pHNBKj+CyfDaowaVTxQm67QvpmG6HuVEgcmRvkwDwjVIjOo8IEe7X/fmwRKKLb1eYv8yUd4YSJ+T36Md0=
 dotnet_csproj:
   patch: true
   file: '**\hobbes.server.fsproj'
@@ -35,8 +37,8 @@ build_script:
 
 test_script:
   - fake build --target test
-  - newman run https://www.getpostman.com/collections/104879d31a04f9746c95 -e ./hobbes.server/db/Postman_collections/Development_environment.json
-  - newman run https://www.getpostman.com/collections/6210ae9e0859e8483817 -e ./hobbes.server/db/Postman_collections/Development_environment.json --env-var "pat=%HOBBES_PAT%"
+#  - newman run https://api.getpostman.com/collections/4127812-d535bce5-ad9a-4346-acb4-311c8443c478?apikey=%PM_APIKEY% -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=%PM_APIKEY%
+#  - newman run https://api.getpostman.com/collections/4127812-6897eb74-f670-405e-80f6-b005fc2f8e1c?apikey=%PM_APIKEY% -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=%PM_APIKEY% --env-var "pat=%HOBBES_PAT%"
 
 deploy_script:
   - docker login -u="%DOCKER_USER%" -p="%DOCKER_PASS%"

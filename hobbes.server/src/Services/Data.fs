@@ -94,11 +94,17 @@ The results can be freely cached and usually are
         200,data 
         |> DataMatrix.toJson Csv
 
-    [<Get "/raw/%s" >]
+    [<Get ("/raw/%s",
+           "{}",
+           "This endpoint returns the raw data identified by the provided id. It's solely meant for debugging and should be considered unstable") >]
     let getRaw id =
         Rawdata.get id
 
-    [<Get "/sync/%s" >]
+    
+    [<Get ("/sync/%s",
+           "{}",
+           """For configurations that do not automatically trigger a syncronazation, this endpoint can be used to trigger a data syncronization. 
+A syncronization invalidates all caches for that particular dataset and rebuilds the caches again when the syncronization is complete""") >]
     let sync configurationName =
         let azureToken = env "AZURE_TOKEN"
         let configuration = DataConfiguration.get configurationName

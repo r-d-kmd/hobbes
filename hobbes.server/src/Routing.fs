@@ -146,9 +146,9 @@ type PostAttribute(path : string, body : string, result, description) =
 [<AttributeUsage(AttributeTargets.Method, 
                         Inherited = false, 
                         AllowMultiple = false)>]
-type DeleteAttribute(path : string, result, description) = 
-    inherit RouteHandlerAttribute(path, HttpMethods.Delete, result, description)
-    new(path) = DeleteAttribute(path, null, null)
+type DeleteAttribute(path : string, description) = 
+    inherit RouteHandlerAttribute(path, HttpMethods.Delete, null, description)
+    new(path) = DeleteAttribute(path, null)
     override __.Body with get() = null
 
 let tryGetAttribute<'a> (m:Reflection.MemberInfo) : 'a option= 

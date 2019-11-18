@@ -5,7 +5,9 @@ open Routing
 
 [<RouteArea "/status">]
 module Status =
-    [<Get "/sync/%s">] 
+    [<Get ("/sync/%s", 
+           "{}", 
+           "Returns the status of the sync operation specified.")>] 
     let getSyncState syncId =
         200, (Rawdata.getState syncId).ToString()
       

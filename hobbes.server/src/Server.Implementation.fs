@@ -6,7 +6,7 @@ open Hobbes.Server.Db.Log
 open Hobbes.Server.Db
 open FSharp.Data
 open Hobbes.Server.Security
-open Routing
+open Hobbes.Server.Routing
 
 [<Get "/key/%s" >] 
 let key token =

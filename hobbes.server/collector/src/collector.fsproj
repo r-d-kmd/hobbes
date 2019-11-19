@@ -4,6 +4,7 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../src/Reflection.fs" />
     <Compile Include="../../src/db/Database.fs" />
     <Compile Include="../../src/db/Log.fs" />
     <Compile Include="../../src/db/DataConfiguration.fs" />

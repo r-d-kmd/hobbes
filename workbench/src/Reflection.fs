@@ -1,6 +1,7 @@
 namespace Workbench
 
-open Microsoft.FSharp.Quotations.Patterns
+open Hobbes.Server.Reflection
+
 type Source = 
     AzureDevOps = 1
     | Rally = 2
@@ -77,55 +78,7 @@ type ConfigurationAttribute(project : Project) =
  
 type Transformation = Hobbes.DSL.Statements list
 module Reflection =
-    let tryGetAttribute<'a> (m:System.Reflection.MemberInfo) : 'a option= 
-        match m.GetCustomAttributes(typeof<'a>,false) with
-        [||] -> None
-        | a -> a |> Array.head :?> 'a |> Some
-
-    let hasAttribute t (m:#System.Reflection.MemberInfo) =
-        m.GetCustomAttributes(t,false) |> Seq.isEmpty |> not
-     
-    let private filterByAttribute attributeType (types : seq<#System.Reflection.MemberInfo>) =
-        types |> Seq.filter(hasAttribute attributeType)
-
-    let private  getTypesWithAttribute<'a>() =
-        let att = typeof<'a> 
-        System.Reflection.Assembly.GetExecutingAssembly().GetTypes()
-        |> filterByAttribute att
-
-    let private getPropertiesdWithAttribute<'a,'att> (t: System.Type) =
-        let flags = System.Reflection.BindingFlags.Static ||| System.Reflection.BindingFlags.Public
-        let att = typeof<'att>
-        let props = t.GetProperties(flags)
-        props |> filterByAttribute att
-        |> Seq.collect(fun prop -> 
-           prop.GetCustomAttributes(att,false)
-           |> Array.map(fun a -> 
-               a :?> 'att, (prop.DeclaringType.Name + "." + prop.Name, prop.GetValue(null) :?> 'a)
-           )
-        )
-
-    let rec readQuotation =
-        function
-            PropertyGet(_,prop,_) -> 
-                [prop :> System.Reflection.MemberInfo]
-            | NewUnionCase (_,exprs) ->
-                //this is also the pattern for a list
-                let elements =  
-                    exprs
-                    |> List.collect(fun expr ->
-                        (readQuotation expr)
-                    )
-                elements
-            | Sequential(head,tail) ->
-                readQuotation(head)@(readQuotation tail)
-            | Lambda(_,expr) ->
-                readQuotation expr
-            | Call(_,method,_) -> 
-                [method]
-            | expr -> 
-                failwithf "Didn't understand expression: %A" expr
-                
+    
     let private isTransformtion (f : System.Reflection.FieldInfo) =
         f.GetCustomAttributes(typeof<TransformationAttribute>,false) |> Seq.isEmpty |> not
         

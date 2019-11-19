@@ -23,8 +23,8 @@ let private sync (ctx : HttpContext) configurationName =
 let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
-    get "/ping" ((ignore >> Implementation.ping) |> Routing.noArgs "ping" )
-    get "/init" ((ignore >> Implementation.initDb) |> Routing.noArgs "init") 
+    get "/ping" ((ignore >> Implementation.ping) |> Hobbes.Server.Routing.noArgs "ping" )
+    get "/init" ((ignore >> Implementation.initDb) |> Hobbes.Server.Routing.noArgs "init") 
 } 
 
 let private app = application {

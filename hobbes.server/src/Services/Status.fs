@@ -1,7 +1,7 @@
 namespace Hobbes.Server.Services
 
 open Hobbes.Server.Db
-open Routing
+open Hobbes.Server.Routing
 
 [<RouteArea "/status">]
 module Status =

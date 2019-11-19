@@ -97,7 +97,7 @@ Target.create "Test" (fun _ ->
     let startEnvironment = async {
         let workDir = "./hobbes.server"
         run "docker-compose" workDir "kill"
-        run "docker-compose" workDir "up --abort-on-container-exit hobbes db front"
+        run "docker-compose" workDir "up -d hobbes db front"
     }
 
     let tasks =

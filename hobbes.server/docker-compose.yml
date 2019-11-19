@@ -48,6 +48,8 @@ services:
     build:
         context: ./front
         dockerfile: Dockerfile
+        args:
+          platform: linux
     networks: 
       - internal
       - front

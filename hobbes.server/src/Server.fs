@@ -1,20 +1,19 @@
 open Saturn
 open Giraffe
 open Hobbes.Server.Db.Database
-open Implementation
 
 let private port = 
     match env "port" with
     null -> 8085
     | p -> int p
 
-open Routing 
+open Hobbes.Server.Routing 
 
 let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
-    fetch <@ ping @> 
-    withArg <@ key @>
+    fetch <@ Implementation.ping @> 
+    withArg <@ Implementation.key @>
     collect "/admin"
     collect "/status"
     collect "/data"

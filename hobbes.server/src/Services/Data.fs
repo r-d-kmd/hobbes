@@ -3,7 +3,7 @@ namespace Hobbes.Server.Services
 open Hobbes.Server.Db.Database
 open Hobbes.Server.Db.Log
 open Hobbes.Server.Db
-open Routing
+open Hobbes.Server.Routing
 open Hobbes.FSharp.DataStructures
 
 [<RouteArea "/data">]

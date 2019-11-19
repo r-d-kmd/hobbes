@@ -201,7 +201,7 @@ Target.create "BuildDocker" (fun _ ->
             printfn "Executing: $ docker %s" args
             run workingDir args
 
-        let tag = workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last
+        let tag = (workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last).ToLower()
         build tag
     ) 
 )

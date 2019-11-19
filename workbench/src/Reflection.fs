@@ -9,10 +9,13 @@ type Source =
     | Test = 4
 
 type Project =
-    AzureDevOps = 4
-    | Gandalf = 3
-    | Momentum = 2
-    | Flowerpot = 1
+    EzEnergy = 7
+    | Gandalf = 6
+    | Momentum = 5
+    | Flowerpot = 4
+    | Jira = 3
+    | AzureDevOps = 2
+    | Rally = 1
     | General = 0
 
 

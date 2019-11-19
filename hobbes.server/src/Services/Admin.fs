@@ -11,7 +11,7 @@ module Admin =
     let private SettingsPath = """./db/documents/settings.json"""
     type private Settings = FSharp.Data.JsonProvider<SettingsPath>
 
-    [<Get ("/settings/%s/%s", """ "log" """, "Gets the value of a specific setting. This is meant for debugging and should be considered unstable")>]
+    [<Get ("/settings/%s/%s")>]
     let setting (area, setting) =
         200,couch.Get [
                     "_node" 
@@ -41,7 +41,7 @@ module Admin =
                            ],value)
         ) (200, "not started")
 
-    [<Put ("/settings", "hobbes.server/src/db/documents/settings.json", """ "log" """, "Can be used for reconfiguring of the couch db. This is only meant for trouble shooting and should generally not be used")>]
+    [<Put ("/settings", true)>]
     let configureStr (settings : string) =
         let settings = 
             if settings.Trim().StartsWith("[") then
@@ -53,7 +53,7 @@ module Admin =
         |> Settings.Parse
         |> configure
 
-    [<Put ("/transformation","{}", "", "Stores the transformation provided. The ID of the transformation can be referenced in a configuration and will then be applied to the data")>]
+    [<Put ("/transformation",true)>]
     let storeTransformations doc = 
         try
             Transformations.store doc |> ignore
@@ -67,23 +67,23 @@ module Admin =
         let body = sprintf """{"%s" : [%s]}""" <| name <| System.String.Join(",", stringList)
         200, body    
 
-    [<Get ("/list/configurations","{}", "Lists all configurations. It's meant for debugging and should be considered unstable")>]
+    [<Get ("/list/configurations")>]
     let listConfigurations() = 
         DataConfiguration.list() |> formatDBList "configurations"
 
-    [<Get ("/list/cache", "{}", "Meant for debuging and should be considered unstable. A list of all cache ids are returned")>]
+    [<Get ("/list/cache")>]
     let listCache() = 
         Cache.list() |> formatDBList "cache"
         
-    [<Get ("/list/transformations", "{}", "Meant for debuging and should be considered unstable. A list of all transformations are returned")>]
+    [<Get ("/list/transformations")>]
     let listTransformations() = 
         Transformations.list() |> formatDBList "transformations"
         
-    [<Get ("/list/rawdata", "{}", "Meant for debuging and should be considered unstable. A list of all rawdata ids are returned")>]
+    [<Get ("/list/rawdata")>]
     let listRawdata() = 
         Rawdata.list() |> formatDBList "rawdata"           
 
-    [<Get("/list/log", "{}", "Returns the entire application log") >]
+    [<Get("/list/log")>]
     let listLog() = 
         Log.list()
         |> Seq.map LogRecord.Parse
@@ -97,7 +97,7 @@ module Admin =
             sprintf "%s - [%s] %s %s" (logRecord.Timestamp.ToString()) logRecord.Type logRecord.Message st
         ) |> formatDBList "logEntries"
 
-    [<Put ("/configuration","{}", "", "A configuration is a object specifying a data source and a series of transformation to be applied to the specified data. The configuration name/id is used as the argument when retrieving data with a data endpoint")>]
+    [<Put ("/configuration",true)>]
     let storeConfigurations doc = 
         try
             DataConfiguration.store doc |> ignore
@@ -105,11 +105,11 @@ module Admin =
         with _ -> 
             500,"internal server error"
 
-    [<Delete ("/raw/%s", "Deletes a raw data entry with the provided id")>]
+    [<Delete ("/raw/%s")>]
     let deleteRaw (id : string) = 
         Rawdata.delete id
 
-    [<Delete ("/cache/%s", "Deletes the cache entry identified by the provided id")>]
+    [<Delete ("/cache/%s")>]
     let deleteCache (id : string) = 
         Cache.delete id
 

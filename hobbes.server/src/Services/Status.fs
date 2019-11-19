@@ -5,9 +5,7 @@ open Hobbes.Server.Routing
 
 [<RouteArea "/status">]
 module Status =
-    [<Get ("/sync/%s", 
-           "{}", 
-           "Returns the status of the sync operation specified.")>] 
+    [<Get ("/sync/%s")>] 
     let getSyncState syncId =
         200, (Rawdata.getState syncId).ToString()
       

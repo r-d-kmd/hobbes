@@ -1,13 +1,9 @@
 version: "3.7"
-networks:
-  internal:
-  front:
+
 services:
   hobbes:
-    image: hobbes
+    image: kmdrd/hobbes-hobbes.server
     container_name: hobbes
-    networks: 
-      - internal
     expose:
       - 8085
     ports:
@@ -17,16 +13,12 @@ services:
       - COUCHDB_PASSWORD=password
       - SERVER_PORT=8085
       - KEY_SUFFIX=2804de67ba6979c756e8759e44fe4
-    depends_on:
-      - db
   db:
     image: apache/couchdb
     container_name: db
     environment:
       - COUCHDB_USER=admin 
       - COUCHDB_PASSWORD=password
-    networks: 
-      - internal
     expose: 
       - 5984
     volumes:
@@ -38,24 +30,13 @@ services:
       context: ./oauth
       dockerfile: Dockerfile
     container_name: oauth
-    networks: 
-      - internal
-      - front
     expose: 
       - 4180
     command: "--email-domain=* -cookie-secure=false -client-id=de431b1775741ace6e15 -redirect-url=https://localhost:8443/oauth2/callback --provider=github --http-address=http://0.0.0.0:4180 -upstream http://hobbes:8085 -client-secret=0a7e17f20beed0849045eb98292858f102442474 -github-org=r-d-kmd -cookie-secret=SECRETSECRET"
     #command: "--email-domain=* --provider=azure --http-address=http://0.0.0.0:4180 -upstream http://hobbes:8085 -client-secret=*******"
   front:
     container_name: front
-    build:
-        context: ./front
-        dockerfile: Dockerfile
-    networks: 
-      - internal
-      - front
+    image: kmdrd/hobbes-front
     ports:
       - 8443:443
       - 8080:80
-    depends_on:
-      - hobbes
-      - db

@@ -79,32 +79,19 @@ module Data =
                 |> fst
         transformedData 
 
-    [<Get ("/csv/%s", 
-           """column1:column2:column3
-"some value":0:"2019-11-01" 
-:3:"2019-08-11"
-""",
-           """The csv endpoint returns the data for the configuration specified as the sole argument
-The data is colon seperated. The configuration includes what data source to use and what transformations to apply.
-The results can be freely cached and usually are
-           """)>]
+    [<Get ("/csv/%s")>]
     let csv configuration = 
         debugf "Getting csv for '%A'" configuration
         let data = data configuration
         200,data 
         |> DataMatrix.toJson Csv
 
-    [<Get ("/raw/%s",
-           "{}",
-           "This endpoint returns the raw data identified by the provided id. It's solely meant for debugging and should be considered unstable") >]
+    [<Get ("/raw/%s") >]
     let getRaw id =
         Rawdata.get id
 
     
-    [<Get ("/sync/%s",
-           "{}",
-           """For configurations that do not automatically trigger a syncronazation, this endpoint can be used to trigger a data syncronization. 
-A syncronization invalidates all caches for that particular dataset and rebuilds the caches again when the syncronization is complete""") >]
+    [<Get ("/sync/%s") >]
     let sync configurationName =
         let azureToken = env "AZURE_TOKEN"
         let configuration = DataConfiguration.get configurationName

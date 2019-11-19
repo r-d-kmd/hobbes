@@ -13,7 +13,7 @@ let renaming =
         rename "Iteration.StartDate" "Sprint Start Date"
         rename "Iteration.EndDate" "Sprint End Date"
         rename "Project.Name" "Team"
-        rename "Estimate" "Story Points"
+        rename "PlanEstimate" "Story Points"
         create (column  "State") (If ((!> "ScheduleState") == (!!> "Accepted")) (Then !!> "Done") (Else 
                                      (If ((!> "StateCategory" == !!> "In-Progress") .|| (!> "StateCategory" == !!> "Completed")) (Then !!> "Todo") (Else !!> "Done" ))
                                  ))

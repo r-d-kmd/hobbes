@@ -115,7 +115,7 @@ let main args =
                 (prod.Host + listRawdataPath |> getString prod.Hobbes
                  |> RawdataKeyList.Parse).Rawdata
 
-            let db = Database.Database("rawdata",ignore,Database.consoleLogger)
+            let db = Database.Database("rawdata",ignore,Database.consoleLogger, "localhost:5984")
             rawKeys
             |> Array.iter(fun key ->
                 let doc = 
@@ -123,7 +123,7 @@ let main args =
                 doc.Replace("_rev","prodRev") |> db.InsertOrUpdate |> ignore
             )
 
-            let db = Database.Database("transformations",ignore,Database.consoleLogger)
+            let db = Database.Database("transformations",ignore,Database.consoleLogger, "localhost:5984")
             let configurations = 
                 (prod.Host + listTransformationsPath |> getString prod.Hobbes
                  |> TransformationList.Parse).Transformations
@@ -131,7 +131,7 @@ let main args =
             configurations
             |> Array.iter(db.InsertOrUpdate >> ignore)
 
-            let db = Database.Database("configurations",ignore,Database.consoleLogger)
+            let db = Database.Database("configurations",ignore,Database.consoleLogger, "localhost:5984")
             let configurations = 
                 (prod.Host + listConfigPath |> getString prod.Hobbes
                  |> ConfigurationsList.Parse).Configurations

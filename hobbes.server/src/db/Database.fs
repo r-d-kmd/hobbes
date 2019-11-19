@@ -25,11 +25,9 @@ namespace Hobbes.Server.Db
             System.Environment.GetEnvironmentVariable name
 
         #if DEBUG
-        let private dbServerUrl = "http://localhost:5984"
         let private user = "admin"
         let private pwd = "password"
         #else
-        let private dbServerUrl = "http://db:5984"
         let private user = env "COUCHDB_USER"
         let private pwd = env "COUCHDB_PASSWORD"
         #endif
@@ -191,10 +189,16 @@ namespace Hobbes.Server.Db
                 (listResult startKey endKey (Some limit) descending None).Rows
                 |> Array.map(fun entry -> entry.Value.ToString() |> parser)
 
-        and Database<'a> (databaseName, parser : string -> 'a, log : ILog) =
+        and Database<'a> (databaseName, parser : string -> 'a, log : ILog, defaultDbUrl) =
             let mutable _views : Map<string,View> = Map.empty
             let request httpMethod isTrial body path rev queryString =
                 let enc (s : string) = System.Web.HttpUtility.UrlEncode s
+
+                let dbServerUrl =
+                    try 
+                        env "dbServerUrl"
+                    with :? System.ArgumentNullException ->
+                        defaultDbUrl             
 
                 let url = 
                     System.String.Join("/", [
@@ -423,6 +427,6 @@ namespace Hobbes.Server.Db
                     member __.Debugf<'a> (format : LogFormatter<'a>) = 
                         kprintf ignore format
                 }    
-        let users = Database ("_users", UserRecord.Parse, consoleLogger)
-        let couch = Database ("", id, consoleLogger)
+        let users = Database ("_users", UserRecord.Parse, consoleLogger, "localhost:5984")
+        let couch = Database ("", id, consoleLogger, "localhost:5984")
        

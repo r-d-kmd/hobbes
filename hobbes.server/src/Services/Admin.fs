@@ -176,7 +176,7 @@ module Admin =
                     System.IO.Directory.EnumerateFiles(dir,"*.json")
                     |> Seq.map(fun f -> 
                         let dbName = System.IO.Path.GetFileName dir
-                        let db = Database(dbName, CouchDoc.Parse, ignoreLogging)
+                        let db = Database(dbName, CouchDoc.Parse, ignoreLogging, "localhost:5984")
                         let insertOrUpdate =
                             db.InsertOrUpdate
                         let tryGetHash = db.TryGetHash

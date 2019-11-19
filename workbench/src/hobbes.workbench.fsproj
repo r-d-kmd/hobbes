@@ -10,7 +10,7 @@
     <ProjectReference Include="..\..\src\hobbes.fsproj">
       <Name>hobbes.fsproj</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\hobbes.server\collector\src\collector.fsproj">
+    <ProjectReference Include="..\..\hobbes.server\collectors\azureDevopsCollector\src\azureDevopsCollector.fsproj">
       <Name>hobbes.fsproj</Name>
     </ProjectReference>
   </ItemGroup>

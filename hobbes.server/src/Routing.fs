@@ -90,47 +90,38 @@ module Routing =
     [<AttributeUsage(AttributeTargets.Method, 
                             Inherited = false, 
                             AllowMultiple = false)>]
-    type RouteHandlerAttribute internal (path:string, verb : HttpMethods, result : string, description : string) =
+    type RouteHandlerAttribute internal (path:string, verb : HttpMethods) =
         inherit Attribute()
         member __.Path with get() = path
         member __.Verb with get() = verb
-        member this.HasBody 
-            with get() = 
-                this.Body |> isNull |> not
-        abstract Body : string with get
+        abstract HasBody : bool with get
 
     [<AttributeUsage(AttributeTargets.Method, 
                             Inherited = false, 
                             AllowMultiple = false)>]
-    type GetAttribute(path : string, result, description) = 
-        inherit RouteHandlerAttribute(path, HttpMethods.Get, result, description)
-        new(path) = GetAttribute(path,null, null)
-        override __.Body with get() = null
+    type GetAttribute(path) = 
+        inherit RouteHandlerAttribute(path, HttpMethods.Get)
+        override __.HasBody with get() = false
+    [<AttributeUsage(AttributeTargets.Method, 
+                            Inherited = false, 
+                            AllowMultiple = false)>]
+    type PutAttribute(path, hasBody) = 
+        inherit RouteHandlerAttribute(path, HttpMethods.Put)
+        override __.HasBody with get() = hasBody
 
     [<AttributeUsage(AttributeTargets.Method, 
                             Inherited = false, 
                             AllowMultiple = false)>]
-    type PutAttribute(path : string, body : string, result, description) = 
-        inherit RouteHandlerAttribute(path, HttpMethods.Put, result, description)
-        new(path, body) = PutAttribute(path,body, null, null)
-        override __.Body with get() = body
+    type PostAttribute(path, hasBody) = 
+        inherit RouteHandlerAttribute(path, HttpMethods.Post)
+        override __.HasBody with get() = hasBody
 
     [<AttributeUsage(AttributeTargets.Method, 
                             Inherited = false, 
                             AllowMultiple = false)>]
-    type PostAttribute(path : string, body : string, result, description) = 
-        inherit RouteHandlerAttribute(path, HttpMethods.Post, result, description)
-        new(path, body) = PostAttribute(path,body, null, null)
-        override __.Body with get() = body 
-
-    [<AttributeUsage(AttributeTargets.Method, 
-                            Inherited = false, 
-                            AllowMultiple = false)>]
-    type DeleteAttribute(path : string, description) = 
-        inherit RouteHandlerAttribute(path, HttpMethods.Delete, null, description)
-        new(path) = DeleteAttribute(path, null)
-        override __.Body with get() = null
-
+    type DeleteAttribute(path) = 
+        inherit RouteHandlerAttribute(path, HttpMethods.Delete)
+        override __.HasBody with get() = false
     type RouterBuilder with 
         member private __.FindMethodAndPath<'a> (action: Expr<'a -> int * string>) =
             match readQuotation action with

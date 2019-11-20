@@ -28,7 +28,6 @@ namespace Hobbes.Server.Db
 
         let private user = env "COUCHDB_USER" "admin"
         let private pwd = env "COUCHDB_PASSWORD" "password"
-        let private dbServerUrl = env "DB_SERVER_URL" "http://localhost:5984"
 
         type CouchDoc = JsonProvider<"""{
             "_id" : "dd",
@@ -186,14 +185,18 @@ namespace Hobbes.Server.Db
                 (listResult startKey endKey (Some limit) descending None).Rows
                 |> Array.map(fun entry -> entry.Value.ToString() |> parser)
 
-        and Database<'a> (databaseName, parser : string -> 'a, log : ILog) =
+        and Database<'a> (databaseName, parser : string -> 'a, log : ILog, dbServerUrl : string) =
+
+            new(databaseName, parser, log) = Database(databaseName, parser, log, env "DB_SERVER_URL" "http://localhost:5984")
+
             let mutable _views : Map<string,View> = Map.empty
+
             let request httpMethod isTrial body path rev queryString =
                 let enc (s : string) = System.Web.HttpUtility.UrlEncode s           
 
                 let url = 
                     System.String.Join("/", [
-                                                dbServerUrl |> string
+                                                dbServerUrl
                                                 databaseName
                                             ]@(path
                                                |> List.map enc))+
@@ -204,6 +207,7 @@ namespace Hobbes.Server.Db
                                              qs
                                              |> Seq.map(fun (k,v) -> sprintf "%s=%s" k  v)
                        )
+                       
                 let m,direction =
                       match httpMethod with 
                       Get -> "GET", "from"

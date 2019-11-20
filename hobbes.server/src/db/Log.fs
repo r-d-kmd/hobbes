@@ -128,4 +128,4 @@ module Log =
     do
         let db = Database.Database("log", LogRecord.Parse, ignoreLogging)
         _logger <- db.Post >> ignore
-        _list <- (db.List >> Seq.map(fun l -> (string l).Replace("\n","\\n").Replace("\r","\\r")
+        _list <- (db.List >> Seq.map(fun l -> (string l).Replace("\n","\\n").Replace("\r","\\r")))

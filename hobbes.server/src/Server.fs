@@ -3,9 +3,7 @@ open Giraffe
 open Hobbes.Server.Db.Database
 
 let private port = 
-    match env "port" with
-    null -> 8085
-    | p -> int p
+    env "port" "8085" |> int
 
 open Hobbes.Server.Routing 
 

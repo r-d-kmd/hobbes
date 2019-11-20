@@ -21,16 +21,14 @@ namespace Hobbes.Server.Db
                     sBuilder.Append(d.ToString("x2"))
             ) sBuilder).ToString()  
             
-        let env name = 
-            System.Environment.GetEnvironmentVariable name
+        let env name defaultValue = 
+            match System.Environment.GetEnvironmentVariable name with
+            null -> defaultValue
+            | v -> v
 
-        #if DEBUG
-        let private user = "admin"
-        let private pwd = "password"
-        #else
-        let private user = env "COUCHDB_USER"
-        let private pwd = env "COUCHDB_PASSWORD"
-        #endif
+        let private user = env "COUCHDB_USER" "admin"
+        let private pwd = env "COUCHDB_PASSWORD" "password"
+        let private dbServerUrl = env "DB_SERVER_URL" "http://localhost:5984"
 
         type CouchDoc = JsonProvider<"""{
             "_id" : "dd",
@@ -40,7 +38,6 @@ namespace Hobbes.Server.Db
             "_id" : "dd",
             "key": "jens",
             "_rev": "jlkjkl"}""">
-
 
         type UserRecord = JsonProvider<"""{
           "_id": "org.couchdb.user:dev",
@@ -189,20 +186,14 @@ namespace Hobbes.Server.Db
                 (listResult startKey endKey (Some limit) descending None).Rows
                 |> Array.map(fun entry -> entry.Value.ToString() |> parser)
 
-        and Database<'a> (databaseName, parser : string -> 'a, log : ILog, defaultDbUrl) =
+        and Database<'a> (databaseName, parser : string -> 'a, log : ILog) =
             let mutable _views : Map<string,View> = Map.empty
             let request httpMethod isTrial body path rev queryString =
-                let enc (s : string) = System.Web.HttpUtility.UrlEncode s
-
-                let dbServerUrl =
-                    try 
-                        env "dbServerUrl"
-                    with :? System.ArgumentNullException ->
-                        defaultDbUrl             
+                let enc (s : string) = System.Web.HttpUtility.UrlEncode s           
 
                 let url = 
                     System.String.Join("/", [
-                                                dbServerUrl
+                                                dbServerUrl |> string
                                                 databaseName
                                             ]@(path
                                                |> List.map enc))+
@@ -427,6 +418,6 @@ namespace Hobbes.Server.Db
                     member __.Debugf<'a> (format : LogFormatter<'a>) = 
                         kprintf ignore format
                 }    
-        let users = Database ("_users", UserRecord.Parse, consoleLogger, "localhost:5984")
-        let couch = Database ("", id, consoleLogger, "localhost:5984")
+        let users = Database ("_users", UserRecord.Parse, consoleLogger)
+        let couch = Database ("", id, consoleLogger)
        

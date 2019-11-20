@@ -193,4 +193,4 @@ module AzureDevOps =
         |> getInitialUrl
         |> _read []
         
-        200,"ok"
+        200,sprintf """ {"synced" : "%A", "status" : "ok"} """ project

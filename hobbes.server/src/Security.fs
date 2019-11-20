@@ -108,8 +108,12 @@ module Security =
         match user.Split('|') with
         [|user;_;token|] ->
             let userInfo = 
-                user
-                |> fromB64
+                try
+                    user
+                    |> fromB64
+                with e ->
+                   eprintfn "Failed decoding token (%s). Message: %s" user e.Message
+                   reraise()
             //github and azure use different formats so lets try and align them
             let userText = 
                 userInfo.Replace("\"email\"", "\"Email\"").Replace("\"user\"","\"User\"").Trim().Replace(" ", ",").Trim().TrimStart('{').TrimEnd('}')
@@ -128,8 +132,8 @@ module Security =
     let verifyAuthToken (authToken : string) = 
         try
             let key = 
+                printfn "Auth token: (%s)" authToken
                 if authToken.ToLower().StartsWith(Basic) then
-
                         authToken.Substring(Basic.Length)
                         |> fromB64
                         |> (fun s -> 

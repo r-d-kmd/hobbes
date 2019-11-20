@@ -5,7 +5,7 @@ namespace Hobbes.Server.Db
 
       type TransformationRecord = JsonProvider<"""{"_id" : "jlk", "lines" : ["","jghkhj"]}""">
 
-      let private db = Database.Database ("transformations", TransformationRecord.Parse, Log.loggerInstance, "localhost:5984")
+      let private db = Database.Database ("transformations", TransformationRecord.Parse, Log.loggerInstance)
 
       let load (transformationIds : #seq<string>) = 
          db.FilterByKeys transformationIds

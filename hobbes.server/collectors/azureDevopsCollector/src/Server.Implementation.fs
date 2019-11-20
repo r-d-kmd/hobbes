@@ -15,7 +15,7 @@ let cacheRevision (source : DataConfiguration.DataSource) =
         sprintf "%s:%s:%d" source.SourceName source.ProjectName (System.DateTime.Now.Ticks) |> hash
 
 let sync configurationName =
-        let azureToken = env "AZURE_TOKEN"
+        let azureToken = env "AZURE_TOKEN" null
         let configuration = DataConfiguration.get configurationName
         let cacheRevision = cacheRevision configuration.Source
         let syncId = Rawdata.createSyncStateDocument cacheRevision configuration.Source
@@ -116,7 +116,7 @@ let initDb () =
                 System.IO.Directory.EnumerateFiles(dir,"*.json")
                 |> Seq.map(fun f -> 
                     let dbName = System.IO.Path.GetFileName dir
-                    let db = Database(dbName, CouchDoc.Parse, ignoreLogging, "localhost:5985")
+                    let db = Database(dbName, CouchDoc.Parse, ignoreLogging)
                     let insertOrUpdate =
                         db.InsertOrUpdate
                     let tryGetHash = db.TryGetHash

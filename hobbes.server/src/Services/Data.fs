@@ -93,7 +93,7 @@ module Data =
     
     [<Get ("/sync/%s") >]
     let sync configurationName =
-        let azureToken = env "AZURE_TOKEN"
+        let azureToken = env "AZURE_TOKEN" null
         let configuration = DataConfiguration.get configurationName
         let cacheRevision = cacheRevision configuration.Source
         let syncId = Rawdata.createSyncStateDocument cacheRevision configuration.Source

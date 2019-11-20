@@ -35,6 +35,10 @@ let projFiles = System.IO.Directory.EnumerateFiles("./","*.fsproj",System.IO.Sea
 
 let build configuration workingDir =
     let args = sprintf "--output ./bin/%s --configuration %s" configuration configuration
+
+    DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "tool restore" |> ignore
+    DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "paket restore" |> ignore
+
     let result =
         DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "build" args 
     if result.ExitCode <> 0 then failwithf "'dotnet %s' failed in %s" "build" workingDir

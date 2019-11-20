@@ -17,7 +17,7 @@ let key token =
               let userId = sprintf "org.couchdb.user:%s" user
               match users.TryGet userId with
               None  ->
-                Log.logf  "Didn't find user. %s" userId
+                logf  "Didn't find user. %s" userId
                 let userRecord = 
                     sprintf """{
                         "_id" : "%s",

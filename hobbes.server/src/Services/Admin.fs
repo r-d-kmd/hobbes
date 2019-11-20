@@ -57,7 +57,7 @@ module Admin =
     let storeTransformations doc = 
         try
             Transformations.store doc |> ignore
-            200,"ok"
+            200,sprintf """{"transformation":%s, "status" : "ok" }""" doc
         with _ -> 
             500,"internal server error"
 
@@ -101,7 +101,7 @@ module Admin =
     let storeConfigurations doc = 
         try
             DataConfiguration.store doc |> ignore
-            200,"ok"
+            200,sprintf """{"configuration":%s, "status" : "ok" }""" doc
         with _ -> 
             500,"internal server error"
 

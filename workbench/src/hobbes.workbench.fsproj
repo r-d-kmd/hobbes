@@ -4,13 +4,13 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\hobbes.server/src\hobbes.server.fsproj">
+    <ProjectReference Include="../../hobbes.server/src/hobbes.server.fsproj">
       <Name>hobbes.server.fsproj</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\hobbes.fsproj">
+    <ProjectReference Include="../../hobbes.core/src/hobbes.fsproj">
       <Name>hobbes.fsproj</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\hobbes.server\collectors\azureDevopsCollector\src\azureDevopsCollector.fsproj">
+    <ProjectReference Include="../../collectors/azureDevopsCollector/src/azureDevopsCollector.fsproj">
       <Name>hobbes.fsproj</Name>
     </ProjectReference>
   </ItemGroup>
@@ -24,5 +24,5 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <Import Project="..\..\.paket\Paket.Restore.targets" />
+  <Import Project="../../.paket/Paket.Restore.targets" />
 </Project>

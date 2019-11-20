@@ -7,14 +7,29 @@ let private port =
 
 open Hobbes.Server.Routing 
 
+let private rootRouter = router {
+    collect "/"
+} 
+
+let private adminRouter = router {
+    collect "/admin"
+} 
+
+let private statusRouter = router {
+    collect "/status"
+} 
+
+let private dataRouter = router {
+    collect "/data"
+} 
+
 let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
-    fetch <@ Implementation.ping @> 
-    withArg <@ Implementation.key @>
-    collect "/admin"
-    collect "/status"
-    collect "/data"
+    forward "/" rootRouter
+    forward "/admin" adminRouter
+    forward "/status" statusRouter
+    forward "/data" dataRouter
 } 
 
 let private app = application {

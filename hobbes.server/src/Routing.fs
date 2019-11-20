@@ -226,7 +226,13 @@ module Routing =
         [<CustomOperation "collect">]
         member this.Collect(state, areaPath : string) : RouterState =
             let routes, state = 
-                let areas = getTypesWithAttribute<RouteAreaAttribute>() 
+                let areas = 
+                    getTypesWithAttribute<RouteAreaAttribute>() 
+                    |> Seq.filter(fun area -> 
+                        (area.GetCustomAttributes(typeof<RouteAreaAttribute>, false) 
+                        |> Array.head
+                        :?> RouteAreaAttribute).Path.ToLower() = areaPath.ToLower()
+                    )
                 let state = 
                     match
                         areas

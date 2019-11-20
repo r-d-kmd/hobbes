@@ -17,6 +17,7 @@ nuget Fake.DotNet.Cli //"
 open Fake.Core
 open Fake.DotNet
 open Fake.DotNet.NuGet
+open Fake.IO
 
 let run command workingDir args = 
     let arguments = 
@@ -94,7 +95,17 @@ Target.create "Test" (fun _ ->
                 async {
                     do! Async.Sleep 20000 //the container has started but wait until it's ready
                     printfn "Starting testing"
-                    DotNet.test (DotNet.Options.withWorkingDirectory "./tests") ""
+                    System.IO.Directory.EnumerateFiles("./","*.fsproj",System.IO.SearchOption.AllDirectories)
+                    |> Seq.filter(fun f ->
+                        f.Contains("tests")
+                    ) |> Seq.iter(fun projectFile ->
+                        let workingDir = 
+                            projectFile
+                            |> Path.getFullName
+                            |> Path.getDirectory
+                        if workingDir.TrimEnd('/','\\').EndsWith("tests") then
+                            DotNet.test (DotNet.Options.withWorkingDirectory workingDir) ""
+                    )
                 }
         retry 24
 

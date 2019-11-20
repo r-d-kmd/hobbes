@@ -186,9 +186,6 @@ namespace Hobbes.Server.Db
                 |> Array.map(fun entry -> entry.Value.ToString() |> parser)
 
         and Database<'a> (databaseName, parser : string -> 'a, log : ILog, dbServerUrl : string) =
-
-            new(databaseName, parser, log) = Database(databaseName, parser, log, env "DB_SERVER_URL" "http://localhost:5984")
-
             let mutable _views : Map<string,View> = Map.empty
 
             let request httpMethod isTrial body path rev queryString =
@@ -207,7 +204,6 @@ namespace Hobbes.Server.Db
                                              qs
                                              |> Seq.map(fun (k,v) -> sprintf "%s=%s" k  v)
                        )
-                       
                 let m,direction =
                       match httpMethod with 
                       Get -> "GET", "from"
@@ -409,6 +405,9 @@ namespace Hobbes.Server.Db
                     get [id] None
                     |> CouchDoc.Parse
                 delete id (Some doc.Rev)
+                
+            new(databaseName, parser, log) = Database(databaseName, parser, log, env "DB_SERVER_URL" "http://localhost:5984")
+
         open FSharp.Core.Printf
         let consoleLogger =
                 { new ILog with

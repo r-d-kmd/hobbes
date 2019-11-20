@@ -64,7 +64,7 @@ Target.create "ReleaseBuild" (fun _ ->
 )
 
 Target.create "Test" (fun _ ->
-    
+
     let envIsRunning() = 
         let output = 
             RawCommand ("docker", ["ps"] |> Arguments.OfArgs)
@@ -202,6 +202,7 @@ Target.create "PublishPackage" (fun _ ->
 )
 
 let createDockerTag dockerOrg tag = sprintf "%s/hobbes-%s" dockerOrg tag
+
 Target.create "BuildDocker" (fun _ -> 
     let dockerOrg = "kmdrd"
     let run = run "docker"

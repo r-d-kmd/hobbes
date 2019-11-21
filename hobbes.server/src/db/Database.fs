@@ -11,19 +11,23 @@ namespace Hobbes.Server.Db
             abstract Errorf<'a> : string -> LogFormatter<'a> -> 'a
             abstract Debugf<'a> : LogFormatter<'a> -> 'a
         
+        
+        let hash (input : string) =
+            use md5Hash = System.Security.Cryptography.MD5.Create()
+            let data = md5Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input))
+            let sBuilder = System.Text.StringBuilder()
+            (data
+            |> Seq.fold(fun (sBuilder : System.Text.StringBuilder) d ->
+                    sBuilder.Append(d.ToString("x2"))
+            ) sBuilder).ToString()  
+            
+        let env name defaultValue = 
+            match System.Environment.GetEnvironmentVariable name with
+            null -> defaultValue
+            | v -> v
 
-        let env name = 
-            System.Environment.GetEnvironmentVariable name
-
-        #if DEBUG
-        let private dbServerUrl = "http://localhost:5984"
-        let private user = "admin"
-        let private pwd = "password"
-        #else
-        let private dbServerUrl = "http://db:5984"
-        let private user = env "COUCHDB_USER"
-        let private pwd = env "COUCHDB_PASSWORD"
-        #endif
+        let private user = env "COUCHDB_USER" "admin"
+        let private pwd = env "COUCHDB_PASSWORD" "password"
 
         type CouchDoc = JsonProvider<"""{
             "_id" : "dd",
@@ -33,7 +37,6 @@ namespace Hobbes.Server.Db
             "_id" : "dd",
             "key": "jens",
             "_rev": "jlkjkl"}""">
-
 
         type UserRecord = JsonProvider<"""{
           "_id": "org.couchdb.user:dev",
@@ -182,10 +185,11 @@ namespace Hobbes.Server.Db
                 (listResult startKey endKey (Some limit) descending None).Rows
                 |> Array.map(fun entry -> entry.Value.ToString() |> parser)
 
-        and Database<'a> (databaseName, parser : string -> 'a, log : ILog) =
+        and Database<'a> (databaseName, parser : string -> 'a, log : ILog, dbServerUrl : string) =
             let mutable _views : Map<string,View> = Map.empty
+
             let request httpMethod isTrial body path rev queryString =
-                let enc (s : string) = System.Web.HttpUtility.UrlEncode s
+                let enc (s : string) = System.Web.HttpUtility.UrlEncode s           
 
                 let url = 
                     System.String.Join("/", [
@@ -401,6 +405,9 @@ namespace Hobbes.Server.Db
                     get [id] None
                     |> CouchDoc.Parse
                 delete id (Some doc.Rev)
+                
+            new(databaseName, parser, log) = Database(databaseName, parser, log, env "DB_SERVER_URL" "http://localhost:5984")
+
         open FSharp.Core.Printf
         let consoleLogger =
                 { new ILog with

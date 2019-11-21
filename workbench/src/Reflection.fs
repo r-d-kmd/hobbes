@@ -1,18 +1,25 @@
 namespace Workbench
 
-open Microsoft.FSharp.Quotations.Patterns
+open Hobbes.Server.Reflection
+
 type Source = 
     AzureDevOps = 1
     | Rally = 2
     | Jira = 3
     | Test = 4
 
+[<System.FlagsAttribute>]
 type Project =
-    AzureDevOps = 4
-    | Gandalf = 3
-    | Momentum = 2
-    | Flowerpot = 1
-    | General = 0
+    Delta = 256
+    | EzEnergy = 128
+    | Gandalf = 64
+    | Momentum = 32
+    | Flowerpot = 16
+    | Jira = 8
+    | AzureDevOps = 4
+    | Rally = 2
+    | General = 1
+
 
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -24,11 +31,23 @@ module Project =
         | Project.Flowerpot -> "flowerpot"
         | Project.AzureDevOps -> "azuredevops"
         | _ -> failwith "Can't happen"
+
     let sourceProject (p : Project)=
        match p with
        Project.Gandalf 
        | Project.Momentum | Project.Flowerpot | Project.AzureDevOps -> Project.AzureDevOps
        | _ -> failwith "Shouldn't happen"
+
+    let toList (p: Project) =
+        let rec inner (n : int) acc = 
+            let acc = 
+                if (p |> int) &&& n = n then (enum<Project> n)::acc
+                else acc
+            if n = 1 then acc
+            else inner (n/2) acc
+        let maxValue = 
+            [ for i in System.Enum.GetValues(typeof<Project>) ->  i |> unbox |> int] |> List.max
+        inner maxValue [] 
         
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Source =
@@ -50,7 +69,7 @@ type Configuration =
 
 [<System.AttributeUsage(System.AttributeTargets.Property, 
                         Inherited = false, 
-                        AllowMultiple = true)>]
+                        AllowMultiple = false)>]
 type TransformationAttribute(order : int) =
     inherit System.Attribute()
     member __.Order with get() = order
@@ -58,7 +77,7 @@ type TransformationAttribute(order : int) =
 
 [<System.AttributeUsage(System.AttributeTargets.Class, 
                         Inherited = false)>]
-type TransformationsAttribute(project : Project) =
+type TransformationsAttribute(project : Project ) =
     inherit System.Attribute()
     member __.Project with get() = project
 
@@ -70,95 +89,65 @@ type ConfigurationsAttribute(source : Source) =
 
 [<System.AttributeUsage(System.AttributeTargets.Property, 
                          Inherited = false, 
-                         AllowMultiple = true)>]
+                         AllowMultiple = false)>]
 type ConfigurationAttribute(project : Project) =
     inherit System.Attribute()
     member __.Project with get() = project
  
 type Transformation = Hobbes.DSL.Statements list
 module Reflection =
-    let tryGetAttribute<'a> (m:System.Reflection.MemberInfo) : 'a option= 
-        match m.GetCustomAttributes(typeof<'a>,false) with
-        [||] -> None
-        | a -> a |> Array.head :?> 'a |> Some
-
-    let hasAttribute t (m:#System.Reflection.MemberInfo) =
-        m.GetCustomAttributes(t,false) |> Seq.isEmpty |> not
-     
-    let private filterByAttribute attributeType (types : seq<#System.Reflection.MemberInfo>) =
-        types |> Seq.filter(hasAttribute attributeType)
-
-    let private  getTypesWithAttribute<'a>() =
-        let att = typeof<'a> 
-        System.Reflection.Assembly.GetExecutingAssembly().GetTypes()
-        |> filterByAttribute att
-
-    let private getPropertiesdWithAttribute<'a,'att> (t: System.Type) =
-        let flags = System.Reflection.BindingFlags.Static ||| System.Reflection.BindingFlags.Public
-        let att = typeof<'att>
-        let props = t.GetProperties(flags)
-        props |> filterByAttribute att
-        |> Seq.collect(fun prop -> 
-           prop.GetCustomAttributes(att,false)
-           |> Array.map(fun a -> 
-               a :?> 'att, (prop.DeclaringType.Name + "." + prop.Name, prop.GetValue(null) :?> 'a)
-           )
-        )
-
+    
     let private isTransformtion (f : System.Reflection.FieldInfo) =
         f.GetCustomAttributes(typeof<TransformationAttribute>,false) |> Seq.isEmpty |> not
         
     let transformations() =
         let collect = getPropertiesdWithAttribute<Transformation, TransformationAttribute>
-        let types = getTypesWithAttribute<TransformationsAttribute>()
+        let types = 
+            getTypesWithAttribute<TransformationsAttribute>()
+            |> Seq.toList
         types
         |> Seq.collect (collect)
         |> Seq.map snd
-       
+
     let private createConfiguration (projectTransformations : Map<_,_>) (configurationContainer : System.Type)  =
         configurationContainer
         |> getPropertiesdWithAttribute<Quotations.Expr<Transformation list>,ConfigurationAttribute>
-        |> Seq.map(fun (att,(name, expr)) ->
-            let rec readQuotation =
-                function
-                    PropertyGet(_,prop,_) -> 
-                        [prop]
-                    | NewUnionCase (_,exprs) ->
-                        //this is also the pattern for a list
-                        let elements =  
-                            exprs
-                            |> List.fold(fun res expr ->
-                                res@(readQuotation expr)
-                            ) [] 
-                        elements
-                    | _ -> 
-                        failwithf "Expected a transformation %A" expr
+        |> Seq.collect(fun (att,(name, expr)) ->
+            let projects = 
+                att.Project |> Project.toList
+
             let transformationsProperties = 
                 readQuotation expr
+                |> List.filter(fun t -> t.GetType() = typeof<System.Reflection.PropertyInfo>)
+
             let trans = 
-                transformationsProperties
+                (transformationsProperties)
                 |> List.map(fun transformationProperty ->
                     transformationProperty.DeclaringType.Name + "." + transformationProperty.Name
                 )
-            let projectTrans =
-                match projectTransformations |> Map.tryFind att.Project with
-                None -> []
-                | Some t -> t 
 
-            let sourceTrans =
-                match projectTransformations |> Map.tryFind (att.Project |> Project.sourceProject) with
-                None -> []
-                | Some t -> t
-            {
-                Id = (att.Project |> Project.string) + "." + name
-                Source = 
-                    (configurationContainer
-                     |> tryGetAttribute<ConfigurationsAttribute> 
-                     |> Option.get).Source
-                Project = att.Project
-                Transformations = 
-                   projectTrans@sourceTrans@trans
-            }
+            projects
+            |> Seq.map(fun project ->
+                let projectTrans =
+                    match projectTransformations |> Map.tryFind project with
+                    None -> []
+                    | Some t -> t 
+
+                let sourceTrans =
+                    match projectTransformations |> Map.tryFind (project |> Project.sourceProject) with
+                    None -> []
+                    | Some t -> t
+                {
+                    Id = (project |> Project.string) + "." + name
+                    Source = 
+                        (configurationContainer
+                         |> tryGetAttribute<ConfigurationsAttribute> 
+                         |> Option.get).Source
+                    Project = project
+                    Transformations = 
+                       projectTrans@sourceTrans@trans
+                }
+            )
         ) |> List.ofSeq
     let configurations() =
         let types = getTypesWithAttribute<ConfigurationsAttribute>() |> List.ofSeq
@@ -175,7 +164,5 @@ module Reflection =
             )
             |> Map.ofSeq
         types
-        |> Seq.map(createConfiguration projectTransformations)|> Seq.collect id
-       
-        
+        |> Seq.map(createConfiguration projectTransformations)|> Seq.collect id 
         

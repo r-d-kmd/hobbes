@@ -196,10 +196,8 @@ namespace Hobbes.Server.Db
                 ] |> TableView.toTable
                 |> Seq.map(fun (columnName,values) -> 
                     columnName, values.ToSeq()
-                                |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
-                ) 
-                |> Hobbes.FSharp.DataStructures.DataMatrix.fromTable
-                |> Some
+                                |> Seq.map(fun (i,v) -> i, v)
+                ) |> Some 
             )
 
         let delete =

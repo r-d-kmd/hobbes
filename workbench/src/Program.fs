@@ -39,7 +39,25 @@ let getString pat url  =
                     ]
     )
 
-type WorkbenchSettings = FSharp.Data.JsonProvider<"""{"development" : {"host": "lkjlkj", "hobbes" : "lkjlkj", "azure" : "jlkjlkj" }, "production" : {"host": "lkjlkj", "hobbes" : "lkjlkj", "azure" : "jlkjlkj" }}""">
+type WorkbenchSettings = FSharp.Data.JsonProvider<"""{
+    "development" : {
+        "host": "lkjlkj", 
+        "hobbes" : "lkjlkj", 
+        "azure" : {
+            "kmddk" : "y3cg",
+            "time-payroll-kmddk" : "gvrg"
+        }
+    }, 
+    "production" : {
+        "host": "lkjlkj", 
+        "hobbes" : "lkjlkj",
+        "azure" : {
+            "kmddk" : "y3cg",
+            "time-payroll-kmddk" : "gvrg"
+        }
+    }
+}""">
+
 type RawdataKeyList = JsonProvider<"""{"rawdata" : ["_design/default","default_hash"]}""">
 type ConfigurationsList = JsonProvider<"""{"configurations" : [{
   "_id": "_design/default",
@@ -86,7 +104,7 @@ let main args =
                 if System.IO.File.Exists  settingsFile then 
                     (settingsFile |> WorkbenchSettings.Load).Development
                 else
-                     match "WORKBENCH_ENVIRONMENT" |> Database.env with
+                     match Database.env "WORKBENCH_ENVIRONMENT" null with
                      null -> failwith "No settings file and no env var"
                      | s -> 
                          s 
@@ -102,7 +120,7 @@ let main args =
             
         let test = results.TryGetResult Tests 
         let sync = results.TryGetResult Sync
-        let publish = results.TryGetResult Publish
+        let publish = Some Publish //results.TryGetResult Publish
         let backsync = results.TryGetResult BackSync
         let listTransformationsPath = "/api/admin/list/transformations"
         let listConfigPath = "/api/admin/list/configurations"
@@ -217,7 +235,7 @@ let main args =
                 let pat = settings.Hobbes
                 
                 let url = settings.Host + "/api/data/sync/" + configurationName
-                let azurePat = settings.Azure
+                let azurePat = settings.Azure.TimePayrollKmddk
                 Http.Request(url, 
                                  httpMethod = "GET",
                                  headers = 

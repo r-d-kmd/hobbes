@@ -22,12 +22,20 @@ module Reflection =
     let getTypesWithAttribute<'a>() =
         let att = typeof<'a> 
         let asm = Assembly.GetExecutingAssembly()
-        asm::(
-                asm.GetReferencedAssemblies()
-                |> Array.map(fun assemblyName -> 
-                    Assembly.Load(assemblyName)
-                ) |> List.ofArray)
-        |> List.collect(fun a -> a.GetTypes() |> List.ofArray) 
+        let assemblies =
+            asm::(
+                    asm.GetReferencedAssemblies()
+                    |> Array.map(fun assemblyName -> 
+                        Assembly.Load(assemblyName)
+                    ) |> List.ofArray
+                 ) |> Seq.ofList
+        let types = 
+            assemblies
+            |> Seq.collect(fun a -> 
+                a.GetTypes()
+                |> Seq.ofArray
+            ) 
+        types
         |> filterByAttribute att
 
     let getMembersWithAttribute<'att> (t: System.Type) = 

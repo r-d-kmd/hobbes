@@ -17,6 +17,7 @@ module DataConfiguration =
         AzureDevOps of projectName: string
         | Rally of projectName : string
         | Jira of projectName : string
+        | Join of DataSource * DataSource
         | Test
         with member 
                 x.ProjectName 
@@ -26,6 +27,7 @@ module DataConfiguration =
                         | Rally projectName
                         | Jira projectName -> projectName
                         | Test -> System.String.Empty
+                        | Join(a,b) -> a.ProjectName + "<+>" + b.ProjectName 
              member 
                 x.SourceName 
                     with get() =
@@ -34,6 +36,7 @@ module DataConfiguration =
                         | Rally _ -> "Rally"
                         | Jira  _ -> "Jira"
                         | Test  _ -> "Test"
+                        | Join _ -> "join"
                         
              static member Parse (source : string) project =
                 project
@@ -41,6 +44,7 @@ module DataConfiguration =
                    "azure devops" -> AzureDevOps
                    | "rally" -> Rally
                    | "jira" -> Jira
+                   |
                    | _ -> fun _ -> Test
     
     //TODO: Should be able to depend on other configuratiuons

@@ -76,13 +76,13 @@ module AzureDevOps =
                 | :? System.DateTimeOffset as d -> sprintf """ "%s" """ (d.ToString())
                 | _ -> sprintf "%A" value
 
-    let private getInitialUrl projectName =
+    let private getInitialUrl (account,projectName) =
         let initialUrl = 
             let selectedFields = 
                (",", azureFields |> List.map fst) |> System.String.Join
-            sprintf "https://analytics.dev.azure.com/kmddk/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s,Iteration&$filter=IsLastRevisionOfDay%%20eq%%20true%%20and%%20WorkItemRevisionSK%%20gt%%20%d" projectName selectedFields
+            sprintf "https://analytics.dev.azure.com/%s/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s,Iteration&$filter=IsLastRevisionOfDay%%20eq%%20true%%20and%%20WorkItemRevisionSK%%20gt%%20%d" account projectName selectedFields
         try
-            match  DataConfiguration.AzureDevOps projectName |> Rawdata.tryLatestId with
+            match  DataConfiguration.AzureDevOps (account,projectName) |> Rawdata.tryLatestId with
             Some workItemRevisionId -> 
                 initialUrl workItemRevisionId
             | None -> 
@@ -122,9 +122,9 @@ module AzureDevOps =
                     sBuilder.Append(d.ToString("x2"))
             ) sBuilder).ToString()
 
-    let readCached (projectName : string) =
+    let readCached project =
         let raw = 
-            projectName 
+            project
             |> DataConfiguration.AzureDevOps 
             |> Rawdata.bySource
         let rows = 
@@ -151,8 +151,8 @@ module AzureDevOps =
         rows
 
     //TODO should be async and in parallel-ish
-    let sync azureToken projectName cacheRevision = 
-        let source = DataConfiguration.AzureDevOps projectName
+    let sync azureToken project cacheRevision = 
+        let source = DataConfiguration.AzureDevOps project
         let rec _read hashes (url : string) : unit  = 
             let resp = 
                 url
@@ -189,8 +189,8 @@ module AzureDevOps =
             else 
                 eprintfn "StatusCode: %d. Message: %s" resp.StatusCode (match resp.Body with Text t -> t | _ -> "")
                 
-        projectName
+        project
         |> getInitialUrl
         |> _read []
         
-        200,"ok"
+        200,sprintf """ {"synced" : "%A", "status" : "ok"} """ project

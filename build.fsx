@@ -17,6 +17,7 @@ nuget Fake.DotNet.Cli //"
 open Fake.Core
 open Fake.DotNet
 open Fake.DotNet.NuGet
+open Fake.IO
 
 let run command workingDir args = 
     let arguments = 
@@ -35,6 +36,10 @@ let projFiles = System.IO.Directory.EnumerateFiles("./","*.fsproj",System.IO.Sea
 
 let build configuration workingDir =
     let args = sprintf "--output ./bin/%s --configuration %s" configuration configuration
+
+    DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "tool restore" |> ignore
+    DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "paket restore" |> ignore
+
     let result =
         DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "build" args 
     if result.ExitCode <> 0 then failwithf "'dotnet %s' failed in %s" "build" workingDir
@@ -59,7 +64,7 @@ Target.create "ReleaseBuild" (fun _ ->
 )
 
 Target.create "Test" (fun _ ->
-    
+
     let envIsRunning() = 
         let output = 
             RawCommand ("docker", ["ps"] |> Arguments.OfArgs)
@@ -73,13 +78,11 @@ Target.create "Test" (fun _ ->
                 row.Split([|"\t";" "|], System.StringSplitOptions.RemoveEmptyEntries)
                 |> Array.last
             ) |> Seq.tail
-        if containers |> Seq.tryFind(fun image -> image = "hobbes") |> Option.isSome then
+        if containers |> Seq.filter(fun image -> image = "hobbes" || image = "front" || image = "db") |> Seq.length = 3 then
             true
         else
             printfn "Containers currently running %A" (containers |> Seq.map (sprintf "%A"))
             false
-        
-           
 
     let test = 
         let rec retry count = 
@@ -92,14 +95,24 @@ Target.create "Test" (fun _ ->
                 async {
                     do! Async.Sleep 20000 //the container has started but wait until it's ready
                     printfn "Starting testing"
-                    DotNet.test (DotNet.Options.withWorkingDirectory "./tests") ""
+                    System.IO.Directory.EnumerateFiles("./","*.fsproj",System.IO.SearchOption.AllDirectories)
+                    |> Seq.filter(fun f ->
+                        f.Contains("tests")
+                    ) |> Seq.iter(fun projectFile ->
+                        let workingDir = 
+                            projectFile
+                            |> Path.getFullName
+                            |> Path.getDirectory
+                        if workingDir.TrimEnd('/','\\').EndsWith("tests") then
+                            DotNet.test (DotNet.Options.withWorkingDirectory workingDir) ""
+                    )
                 }
         retry 24
 
     let startEnvironment = async {
         let workDir = "./hobbes.server"
         run "docker-compose" workDir "kill"
-        run "docker-compose" workDir "up --build --force-recreate -d hobbes db"
+        run "docker-compose" workDir "up -d hobbes db front"
     }
 
     let tasks =
@@ -123,7 +136,7 @@ let projectName = "hobbes"
 let projectDescription = "A high level language for data transformations and calculations"
 let projectSummary = projectDescription
 let releaseNotes = "Initial release"
-let buildDir = "./src/bin"
+let buildDir = "./hobbes.core/src/bin"
 let packagingRoot = "./packaging"
 let packagingDir = System.IO.Path.Combine(packagingRoot, "hobbes")
 let netDir = packagingDir @@ "lib/net45" |> System.IO.Path.GetFullPath
@@ -189,6 +202,7 @@ Target.create "PublishPackage" (fun _ ->
 )
 
 let createDockerTag dockerOrg tag = sprintf "%s/hobbes-%s" dockerOrg tag
+
 Target.create "BuildDocker" (fun _ -> 
     let dockerOrg = "kmdrd"
     let run = run "docker"
@@ -203,7 +217,7 @@ Target.create "BuildDocker" (fun _ ->
             printfn "Executing: $ docker %s" args
             run workingDir args
 
-        let tag = workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last
+        let tag = (workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last).ToLower()
         build tag
     ) 
 )

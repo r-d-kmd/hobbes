@@ -3,49 +3,61 @@ namespace Hobbes.Server.Db
 open FSharp.Data
 
 module DataConfiguration =
-    type private ConfigurationRecord = JsonProvider<"""{
+    type private ConfigurationRecord = JsonProvider<"""[{
+          "_id": "flowerpot.State.onlyUserStories",
+          "_rev": "5-b6433576152e3d1d8c7183499ce5b565",
+          "source": "azure devops",
+          "dataset": "flowerpot",
+          "transformations": [
+            "Flowerpot.renaming",
+            "Azure.stateRenaming",
+            "General.onlyUserStory"
+          ]
+        },{
         "_id" : "name",
-        "source" : "name of source such as Azure DevOps, Rally or Jira",
-        "dataset" : "name of the dataset. Eg a project name in azure devops",
+        "azureDevOps" : {
+            "account" : "kmddk",
+            "project" : "gandalf"
+        },
         "transformations" : ["transformation 1", "transformation 2"]
-    }""">
+    },{
+        "_id" : "name",
+        "rallly" : {
+            "project" : "gandalf"
+        },
+        "transformations" : ["transformation 1", "transformation 2"]
+    },{
+        "_id" : "name",
+        "jira" : {
+            "project" : "gandalf"
+        },
+        "transformations" : ["transformation 1", "transformation 2"]
+    }]""", SampleIsList = true>
     let private sourceView = "bySource"
     let private db = 
         Database.Database("configurations", ConfigurationRecord.Parse, Log.loggerInstance)
                  .AddView(sourceView)
     type DataSource = 
-        AzureDevOps of projectName: string
+        AzureDevOps of account: string * projectName: string
         | Rally of projectName : string
         | Jira of projectName : string
-        | Join of DataSource * DataSource
         | Test
         with member 
                 x.ProjectName 
                     with get() =
                         match x with
-                        AzureDevOps projectName
+                        AzureDevOps (_, projectName)
                         | Rally projectName
                         | Jira projectName -> projectName
                         | Test -> System.String.Empty
-                        | Join(a,b) -> a.ProjectName + "<+>" + b.ProjectName 
              member 
                 x.SourceName 
                     with get() =
                         match x with
                         AzureDevOps _ -> "azure devops"
-                        | Rally _ -> "Rally"
-                        | Jira  _ -> "Jira"
-                        | Test  _ -> "Test"
-                        | Join _ -> "join"
-                        
-             static member Parse (source : string) project =
-                project
-                |> match source.ToLower() with
-                   "azure devops" -> AzureDevOps
-                   | "rally" -> Rally
-                   | "jira" -> Jira
-                   |
-                   | _ -> fun _ -> Test
+                        | Rally _ -> "rally"
+                        | Jira  _ -> "jira"
+                        | Test  _ -> "test"
     
     //TODO: Should be able to depend on other configuratiuons
     //with the result of the transformations of either to be joined together on the index
@@ -77,12 +89,28 @@ module DataConfiguration =
        
         {
             Source = 
-                record.Dataset
-                |> (match record.Source.ToLower() with
-                    "azure devops" | "azure" -> AzureDevOps
-                    | "rally" -> Rally
-                    | "jira" -> Jira
-                    | _ -> failwithf "Couldn't read from source %s" record.Source)
+                record.AzureDevOps
+                |> Option.bind(fun devops ->
+                    let account = 
+                        if System.String.IsNullOrWhiteSpace devops.Account then 
+                            "kmddk" 
+                        else 
+                            devops.Account
+                    AzureDevOps(account, devops.Project)
+                    |> Some
+                ) |> Option.orElse(
+                    record.Rallly
+                    |> Option.map(fun rally ->
+                        Rally(rally.Project)
+                    ) |> Option.orElse(
+                        record.Jira
+                        |> Option.bind(fun jira ->
+                           Jira(jira.Project) |> Some
+                        ) |> Option.orElse(
+                            AzureDevOps("kmddk",record.Dataset.Value) |> Some
+                        )
+                    )
+                ) |> Option.get
             Transformations = 
                 record.Transformations 
                 |> List.ofArray

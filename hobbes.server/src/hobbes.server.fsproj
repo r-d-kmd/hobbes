@@ -4,11 +4,12 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\hobbes.fsproj">
+    <ProjectReference Include="../../hobbes.core/src/hobbes.fsproj">
       <Name>hobbes.fsproj</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Reflection.fs" />
     <Compile Include="db/Database.fs" />
     <Compile Include="db/Log.fs" />
     <Compile Include="db/Transformations.fs" />
@@ -21,8 +22,11 @@
     <Compile Include="Readers/*.fs" />
     <Compile Include="Security.fs" />
     <Compile Include="Routing.fs" />
-    <Compile Include="Server.Implementation.fs" />
+    <Compile Include="Services/Admin.fs" />
+    <Compile Include="Services/Status.fs" />
+    <Compile Include="Services/Data.fs" />
+    <Compile Include="Services/Root.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
-  <Import Project="..\..\.paket\Paket.Restore.targets" />
+  <Import Project="../../.paket/Paket.Restore.targets" />
 </Project>

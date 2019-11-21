@@ -1,4 +1,4 @@
-*.lock
+build.fsx.lock
 .fake/
 .ionide/
 .vs/
@@ -8,9 +8,11 @@ Debug/
 Release/
 packages/
 packaging/
+paket-files/
 deploy/
 hobbes.server/db/data
 hobbes.server/collector/db/data
 docker-compose.prod.yml
 *.user
 workbench.json
+azureDevopsCollector/db/data

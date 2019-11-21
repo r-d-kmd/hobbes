@@ -1,10 +1,12 @@
 namespace Configurations
+open Workbench
 
-[<Workbench.Configurations(Workbench.Source.AzureDevOps)>]
+[<Configurations(Source.AzureDevOps)>]
 module State = 
-  
-  [<Workbench.Configuration(Workbench.Project.Flowerpot)>]
-  [<Workbench.Configuration(Workbench.Project.Gandalf)>]
+  [<Literal>]
+  let private Projects = Project.Flowerpot ||| Project.Gandalf ||| Project.Delta
+
+  [<Configuration(Projects)>]
   let onlyUserStories =
       <@
           [
@@ -12,18 +14,16 @@ module State =
           ]
       @>
   
-  [<Workbench.Configuration(Workbench.Project.Flowerpot)>]
-  [<Workbench.Configuration(Workbench.Project.Gandalf)>]
+  [<Configuration(Projects)>]
   let userStoriesFoldedBySprint =
       <@
           [
             Transformations.General.onlyUserStory
             Transformations.General.foldBySprint
           ]
-      @>
-
-  [<Workbench.Configuration(Workbench.Project.Flowerpot)>]
-  [<Workbench.Configuration(Workbench.Project.Gandalf)>]
+      @>  
+      
+  [<Configuration(Projects)>]
   let stateBySprint =
       <@
           [
@@ -33,8 +33,7 @@ module State =
           ]
       @>
 
-  [<Workbench.Configuration(Workbench.Project.Flowerpot)>]
-  [<Workbench.Configuration(Workbench.Project.Gandalf)>]
+  [<Configuration(Projects)>]
   let expandingCompletionBySprint =
       <@
           [

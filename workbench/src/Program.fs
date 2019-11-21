@@ -39,7 +39,25 @@ let getString pat url  =
                     ]
     )
 
-type WorkbenchSettings = FSharp.Data.JsonProvider<"""{"development" : {"host": "lkjlkj", "hobbes" : "lkjlkj", "azure" : "jlkjlkj" }, "production" : {"host": "lkjlkj", "hobbes" : "lkjlkj", "azure" : "jlkjlkj" }}""">
+type WorkbenchSettings = FSharp.Data.JsonProvider<"""{
+    "development" : {
+        "host": "lkjlkj", 
+        "hobbes" : "lkjlkj", 
+        "azure" : {
+            "kmddk" : "y3cg",
+            "time-payroll-kmddk" : "gvrg"
+        }
+    }, 
+    "production" : {
+        "host": "lkjlkj", 
+        "hobbes" : "lkjlkj",
+        "azure" : {
+            "kmddk" : "y3cg",
+            "time-payroll-kmddk" : "gvrg"
+        }
+    }
+}""">
+
 type RawdataKeyList = JsonProvider<"""{"rawdata" : ["_design/default","default_hash"]}""">
 type ConfigurationsList = JsonProvider<"""{"configurations" : [{
   "_id": "_design/default",
@@ -217,7 +235,7 @@ let main args =
                 let pat = settings.Hobbes
                 
                 let url = settings.Host + "/api/data/sync/" + configurationName
-                let azurePat = settings.Azure
+                let azurePat = settings.Azure.TimePayrollKmddk
                 Http.Request(url, 
                                  httpMethod = "GET",
                                  headers = 

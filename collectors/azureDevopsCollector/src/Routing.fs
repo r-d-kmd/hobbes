@@ -17,7 +17,7 @@ let rec private execute name f : HttpHandler =
                 let start = watch.ElapsedMilliseconds
                 let code, body = f ctx
                 let ``end`` = watch.ElapsedMilliseconds
-                Log.timed name (start - ``end``)
+                Log.timed name (``end`` - start)
                 return! (setStatusCode code >=> setBodyFromString body) next ctx
             }
 

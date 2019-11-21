@@ -255,7 +255,7 @@ module Routing =
                     //%% is a single % escaped. All other % are an argument. Split on % thus results
                     //in an array with one more elements than there are %-args
                     att.Path.Replace("%%", "").Split('%', StringSplitOptions.RemoveEmptyEntries).Length - 1
-                let path = areaPath + att.Path
+                let path = att.Path
                 if att.HasBody then
                     this.LocalWithBody(state,path,att.Verb, method)
                 else

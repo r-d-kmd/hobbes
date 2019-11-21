@@ -62,9 +62,14 @@ module Admin =
             500,"internal server error"
 
     let formatDBList name list =
-        let stringList = list
-                         |> Seq.map (sprintf "%A")
-        let body = sprintf """{"%s" : [%s]}""" <| name <| System.String.Join(",", stringList)
+        let stringList = 
+            list
+            |> Seq.map (sprintf "%A")
+
+        let body = 
+            System.String.Join(",", stringList)
+            |> sprintf """{"%s" : [%s]}""" name 
+
         200, body    
 
     [<Get ("/list/configurations")>]
@@ -92,9 +97,11 @@ module Admin =
         |> Seq.map(fun logRecord ->
             let st = 
                 match logRecord.Stacktrace with
-                None -> ""
-                | Some st -> sprintf "\n%s" st
-            sprintf "%s - [%s] %s %s" (logRecord.Timestamp.ToString()) logRecord.Type logRecord.Message st
+                  None -> ""
+                  | Some st -> sprintf "\n%s" st
+                |> Log.jsonify
+            let message = logRecord.Message |> Log.jsonify
+            sprintf "%s - [%s] %s %s" (logRecord.Timestamp.ToString()) logRecord.Type message st
         ) |> formatDBList "logEntries"
 
     [<Put ("/configuration",true)>]

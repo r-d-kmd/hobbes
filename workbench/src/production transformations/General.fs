@@ -1,15 +1,17 @@
+namespace Workbench.Transformations
+
 [<Workbench.Transformations(Workbench.Project.General)>]
-module Transformations.General
+module General = 
 
-open Hobbes.DSL
+    open Hobbes.DSL
 
-[<Workbench.Transformation 0>]
-let foldBySprint = 
-    [
-        group by ["Sprint"; "WorkItemId"] => ( maxby !> "ChangedDate")
-    ]
-[<Workbench.Transformation 0>]
-let onlyUserStory =
-    [
-        only (!> "WorkItemType" == "User Story")
-    ]
+    [<Workbench.Transformation 0>]
+    let foldBySprint = 
+        [
+            group by ["Sprint"; "WorkItemId"] => ( maxby !> "ChangedDate")
+        ]
+    [<Workbench.Transformation 0>]
+    let onlyUserStory =
+        [
+            only (!> "WorkItemType" == "User Story")
+        ]

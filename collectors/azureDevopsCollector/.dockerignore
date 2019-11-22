@@ -1,6 +1,5 @@
 **/.fake/
 **/.bin/
-**/Collector/
 db/data/
 **/obj/
 **/Properties/

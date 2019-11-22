@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>hobbes</RootNamespace>
@@ -10,10 +11,9 @@
     <Compile Include="backend/Keywords.fs" />
     <Compile Include="backend/Expressions.fs" />
     <Compile Include="backend/Parser.fs" />
-    
     <Compile Include="frontend.fsharp/DataMatrix.fs" />
     <Compile Include="frontend.fsharp/Compile.fs" />
     <Compile Include="DSL.fs" />
   </ItemGroup>
-  <Import Project="../../.paket\Paket.Restore.targets" />
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

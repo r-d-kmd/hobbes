@@ -2,7 +2,6 @@ namespace Hobbes.Server.Readers
 module AzureDevOps =
 
     open FSharp.Data
-    open Deedle
     open Hobbes.Server.Db
 
     let inline private asObj v =
@@ -14,19 +13,19 @@ module AzureDevOps =
 
     let private azureFields = 
         [
-             "RevisedDate" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.RevisedDate
-             "WorkItemId" =>  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemId 
-             "IsLastRevisionOfDay"  => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.IsLastRevisionOfDay
-             "Title" =>  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.Title 
-             "ChangedDate" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
-             "WorkItemType" =>  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemType 
-             "CreatedDate" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
-             "State" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.State 
-             "StateCategory" =>fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.StateCategory 
-             "Priority" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.Priority 
-             "LeadTimeDays" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.LeadTimeDays 
-             "CycleTimeDays" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.CycleTimeDays          
-             "WorkItemRevisionSK" => fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemRevisionSk
+             "RevisedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.RevisedDate
+             "WorkItemId",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemId 
+             "IsLastRevisionOfDay" , fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.IsLastRevisionOfDay
+             "Title",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.Title 
+             "ChangedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
+             "WorkItemType",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemType 
+             "CreatedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
+             "State", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.State 
+             "StateCategory",fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.StateCategory 
+             "Priority", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.Priority 
+             "LeadTimeDays", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.LeadTimeDays 
+             "CycleTimeDays", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.CycleTimeDays          
+             "WorkItemRevisionSK", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemRevisionSk
         ]
 
     let tryNextLink (data : string) = 
@@ -134,10 +133,10 @@ module AzureDevOps =
                     match row.Iteration with
                     Some iteration ->
                         [
-                           "Iteration.IterationLevel1" => asObj iteration.IterationLevel1 
-                           "Iteration.IterationLevel2" => asObj iteration.IterationLevel2 
-                           "Iteration.IterationLevel3" => asObj iteration.IterationLevel3 
-                           "Iteration.IterationLevel4" => asObj iteration.IterationLevel4 
+                           "Iteration.IterationLevel1", asObj iteration.IterationLevel1 
+                           "Iteration.IterationLevel2", asObj iteration.IterationLevel2 
+                           "Iteration.IterationLevel3", asObj iteration.IterationLevel3 
+                           "Iteration.IterationLevel4", asObj iteration.IterationLevel4 
                         ]
                     | None -> 
                         []
@@ -146,7 +145,7 @@ module AzureDevOps =
                     |> List.map(fun (name, getter) ->
                         name, getter row
                     )
-                Hobbes.Parsing.AST.KeyType.Create index,(iterationProperties@properties)
+                index,(iterationProperties@properties)
             )
         rows
 

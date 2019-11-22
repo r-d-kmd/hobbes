@@ -764,11 +764,11 @@ module DataStructures =
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module DataMatrix =
         let empty = DataMatrix(Frame([],[]))
-        let fromRows rows = 
+        let fromRows rows  = 
             let frame = 
                 rows
                 |> Seq.map(fun (rowKey, values) ->
-                    rowKey =>
+                    AST.KeyType.Create rowKey =>
                      (values |> series)
                 ) |> series
                 |> Frame.ofRows

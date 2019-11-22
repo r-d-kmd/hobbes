@@ -212,8 +212,8 @@ Target.create "BuildDocker" (fun _ ->
     |> Seq.iter(fun path ->
         let workingDir = System.IO.Path.GetDirectoryName path
         
-        let build tag = 
-            let args = sprintf "build -t %s --platform linux ." <| createDockerTag dockerOrg tag
+        let build (tag : string) = 
+            let args = sprintf "build -t %s --platform linux ." <| createDockerTag dockerOrg (tag.ToLower())
             printfn "Executing: $ docker %s" args
             run workingDir args
 
@@ -242,8 +242,8 @@ Target.create "PushToDocker" (fun _ ->
     |> Seq.iter(fun path ->
         let workingDir = System.IO.Path.GetDirectoryName path
         
-        let push tag = 
-            let args = sprintf "push %s" <| createDockerTag dockerOrg tag
+        let push (tag : string) = 
+            let args = sprintf "push %s" <| createDockerTag dockerOrg (tag.ToLower())
             printfn "Executing: $ docker %s" args
             run workingDir args
         let tag = workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last

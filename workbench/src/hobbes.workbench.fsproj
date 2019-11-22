@@ -10,9 +10,9 @@
     <ProjectReference Include="../../hobbes.core/src/hobbes.fsproj">
       <Name>hobbes.fsproj</Name>
     </ProjectReference>
-    <ProjectReference Include="../../collectors/azureDevopsCollector/src/azureDevopsCollector.fsproj">
-      <Name>hobbes.fsproj</Name>
-    </ProjectReference>
+    <!-- <ProjectReference Include="../../collectors/azureDevopsCollector/src/azureDevopsCollector.fsproj">
+      <Name>azureDevopsCollector.fsproj</Name>
+    </ProjectReference> -->
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Reflection.fs" />

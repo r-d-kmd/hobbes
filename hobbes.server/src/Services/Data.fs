@@ -91,9 +91,8 @@ module Data =
         Rawdata.get id
 
     
-    [<Get ("/sync/%s") >]
-    let sync configurationName =
-        let azureToken = env "AZURE_TOKEN" null
+    
+    let sync configurationName azureToken =
         let configuration = DataConfiguration.get configurationName
         let cacheRevision = cacheRevision configuration.Source
         let syncId = Rawdata.createSyncStateDocument cacheRevision configuration.Source
@@ -135,3 +134,7 @@ module Data =
                 Rawdata.setSyncFailed e.Message cacheRevision configuration.Source
         } |> Async.Start
         200, syncId
+        
+    [<Get ("/sync/%s") >]
+    let syncronize configurationName = 
+        sync configurationName (env "AZURE_TOKEN" null)

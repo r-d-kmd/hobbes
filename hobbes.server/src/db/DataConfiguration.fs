@@ -86,31 +86,20 @@ module DataConfiguration =
         let record = 
             configurationName
             |> db.Get
-       
+        let source =
+            match record.AzureDevOps with
+            Some devops ->
+                let account = 
+                    if System.String.IsNullOrWhiteSpace devops.Account then 
+                        "kmddk" 
+                    else 
+                        devops.Account
+                AzureDevOps(account, devops.Project)
+            | None ->
+                AzureDevOps("kmddk",record.Dataset.Value)
         {
-            Source = 
-                record.AzureDevOps
-                |> Option.bind(fun devops ->
-                    let account = 
-                        if System.String.IsNullOrWhiteSpace devops.Account then 
-                            "kmddk" 
-                        else 
-                            devops.Account
-                    AzureDevOps(account, devops.Project)
-                    |> Some
-                ) |> Option.orElse(
-                    record.Rallly
-                    |> Option.map(fun rally ->
-                        Rally(rally.Project)
-                    ) |> Option.orElse(
-                        record.Jira
-                        |> Option.bind(fun jira ->
-                           Jira(jira.Project) |> Some
-                        ) |> Option.orElse(
-                            AzureDevOps("kmddk",record.Dataset.Value) |> Some
-                        )
-                    )
-                ) |> Option.get
+            Source = source
+               
             Transformations = 
                 record.Transformations 
                 |> List.ofArray

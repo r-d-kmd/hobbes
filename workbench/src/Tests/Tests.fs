@@ -1,6 +1,5 @@
 module Workbench.Tests
 open Hobbes.Server.Db
-open Hobbes.Server.Services
 
 let env name = 
     System.Environment.GetEnvironmentVariable name
@@ -13,12 +12,12 @@ let cacheInvalidation configName =
     DataConfiguration.AzureDevOps configName //run these two lines of code to test cache invalidation
     |> Cache.invalidateCache
 
-let sync configuration = 
-    let _,key = Hobbes.Server.Readers.AzureDevOps.sync (env "AZURE_TOKEN") ("kmddk","gandalf") "abcd"
+let sync configuration azureToken= 
+    let _,key = Hobbes.Server.Services.Data.sync configuration azureToken
     printfn "sync key: %s" key
     
-let test() = 
+let test azureToken  = 
     //Implementation.initDb() |> ignore
-    //sync "flowerpot.State.stateBySprint" //"gandalf.State.expandingCompletionBySprint" 
-    getData (*"flowerpot.State.stateBySprint"*) "flowerpot.State.expandingCompletionBySprint"
+    sync "delta.State.userStoriesFoldedBySprint" azureToken //"flowerpot.State.stateBySprint" //"gandalf.State.expandingCompletionBySprint" 
+    //getData (*"flowerpot.State.stateBySprint"*) "flowerpot.State.expandingCompletionBySprint"
     

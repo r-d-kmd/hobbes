@@ -4,7 +4,11 @@ open Workbench
 [<Configurations(Source.AzureDevOps)>]
 module State = 
   [<Literal>]
-  let private Projects = Project.Flowerpot ||| Project.Gandalf ||| Project.Delta
+  let private Projects = 
+      Project.Flowerpot 
+      ||| Project.Gandalf 
+      ||| Project.Delta 
+      ||| Project.AzureDevOps
 
   [<Configuration(Projects)>]
   let onlyUserStories =

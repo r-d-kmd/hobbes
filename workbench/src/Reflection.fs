@@ -24,39 +24,65 @@ type Project =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Project =
-    let string (s: Project) =
-        match s with
-        Project.Gandalf -> "gandalf"
-        | Project.Momentum -> "momentum"
-        | Project.Flowerpot -> "flowerpot"
-        | Project.AzureDevOps -> "azuredevops"
-        | _ -> failwith "Can't happen"
-
-    let sourceProject (p : Project)=
-       match p with
-       Project.Gandalf 
-       | Project.Momentum | Project.Flowerpot | Project.AzureDevOps -> Project.AzureDevOps
-       | _ -> failwith "Shouldn't happen"
+    let source (p : Project)=
+        match (p &&& Project.AzureDevOps)
+               ||| (p &&& Project.Rally)
+               ||| (p &&& Project.Jira) with
+        Project.AzureDevOps 
+        | Project.Rally 
+        | Project.Jira  as p -> p
+        | _ -> 
+            eprintfn "No source specified %A" p
+            Project.General
 
     let toList (p: Project) =
         let rec inner (n : int) acc = 
-            let acc = 
-                if (p |> int) &&& n = n then (enum<Project> n)::acc
-                else acc
-            if n = 1 then acc
-            else inner (n/2) acc
+            if n = int Project.Jira then acc
+            else
+                let acc = 
+                    if (p |> int) &&& n = n then (enum<Project> n)::acc
+                    else acc
+                
+                inner (n/2) acc
+
         let maxValue = 
             [ for i in System.Enum.GetValues(typeof<Project>) ->  i |> unbox |> int] |> List.max
+
         inner maxValue [] 
+    let name (p: Project) =
+        match p |> toList with
+        Project.Gandalf::_ -> "gandalf"
+        | Project.Momentum::_ -> "momentum"
+        | Project.Flowerpot::_ -> "flowerpot"
+        | Project.AzureDevOps::_ -> "azuredevops"
+        | Project.Delta::_ -> "delta"
+        | _ -> failwith "Can't happen"
+
+    let configString (s: Project) =
+        let p = s |> toList |> List.head //removes any source 'projects'
+        let projectName = p |> name
+
+        match s |> source with
+        Project.AzureDevOps ->
+            let detailedSourceConfig account = 
+                sprintf """ "azureDevOps" : {
+                                "account" : "%s",
+                                "project" : "%s"
+                            }""" account projectName
+            match p with
+            Project.Delta ->
+                detailedSourceConfig "time-payroll-kmddk"
+            | _ -> 
+                detailedSourceConfig "kmddk"
+        | _ -> failwith "Project source not supported yet!"
         
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Source =
-    let string (s: Source) =
+    let project (s: Source) =
         match s with
-        Source.AzureDevOps -> "azure devops"
-        | Source.Rally -> "rally"
-        | Source.Jira -> "jira"
-        | Source.Test -> "test"
+        Source.AzureDevOps -> Project.AzureDevOps
+        | Source.Rally -> Project.Rally
+        | Source.Jira -> Project.Jira
         | _ -> failwith "Can't happen"
 
 type Configuration = 
@@ -102,10 +128,10 @@ module Reflection =
         
     let transformations() =
         let collect = getPropertiesdWithAttribute<Transformation, TransformationAttribute>
-        let types = 
-            getTypesWithAttribute<TransformationsAttribute>()
+        let modules = 
+            getModulesWithAttribute<TransformationsAttribute>(System.Reflection.Assembly.GetExecutingAssembly())
             |> Seq.toList
-        types
+        modules
         |> Seq.collect (collect)
         |> Seq.map snd
 
@@ -113,32 +139,36 @@ module Reflection =
         configurationContainer
         |> getPropertiesdWithAttribute<Quotations.Expr<Transformation list>,ConfigurationAttribute>
         |> Seq.collect(fun (att,(name, expr)) ->
+            let source = att.Project |> Project.source
             let projects = 
-                att.Project |> Project.toList
-
+                att.Project 
+                |> Project.toList
+                |> List.map(fun p -> p ||| source )
+            
+            
             let transformationsProperties = 
                 readQuotation expr
-                |> List.filter(fun t -> t.GetType() = typeof<System.Reflection.PropertyInfo>)
 
             let trans = 
-                (transformationsProperties)
+                transformationsProperties
                 |> List.map(fun transformationProperty ->
                     transformationProperty.DeclaringType.Name + "." + transformationProperty.Name
                 )
-
+            
             projects
             |> Seq.map(fun project ->
+                let p = project |> Project.toList |> List.head
                 let projectTrans =
-                    match projectTransformations |> Map.tryFind project with
+                    match projectTransformations |> Map.tryFind p with
                     None -> []
                     | Some t -> t 
 
                 let sourceTrans =
-                    match projectTransformations |> Map.tryFind (project |> Project.sourceProject) with
+                    match projectTransformations |> Map.tryFind (project |> Project.source) with
                     None -> []
                     | Some t -> t
                 {
-                    Id = (project |> Project.string) + "." + name
+                    Id = (project |> Project.name) + "." + name
                     Source = 
                         (configurationContainer
                          |> tryGetAttribute<ConfigurationsAttribute> 
@@ -150,9 +180,10 @@ module Reflection =
             )
         ) |> List.ofSeq
     let configurations() =
-        let types = getTypesWithAttribute<ConfigurationsAttribute>() |> List.ofSeq
+        let asm = System.Reflection.Assembly.GetExecutingAssembly()
+        let modules = getModulesWithAttribute<ConfigurationsAttribute>(asm) |> List.ofSeq
         let projectTransformations = 
-            getTypesWithAttribute<TransformationsAttribute>()
+            getModulesWithAttribute<TransformationsAttribute> asm
             |> Seq.map(fun t -> 
                 (t 
                  |> (tryGetAttribute<TransformationsAttribute> >> Option.get)).Project, 
@@ -163,6 +194,6 @@ module Reflection =
                 |> List.ofSeq
             )
             |> Map.ofSeq
-        types
+        modules
         |> Seq.map(createConfiguration projectTransformations)|> Seq.collect id 
         

@@ -158,7 +158,7 @@ let main args =
             |> Array.iter(db.InsertOrUpdate >> ignore)
             0
         elif  test.IsSome || (sync.IsNone && publish.IsNone) then
-            Workbench.Tests.test() |> ignore
+            settings.Azure.TimePayrollKmddk |> Workbench.Tests.test|> ignore
             printfn "Press enter to exit..."
             System.Console.ReadLine().Length
         else            
@@ -193,12 +193,10 @@ let main args =
                         |> Seq.map(fun c ->
                             sprintf """{
                                 "_id" : "%s",
-                                "source" : "%s",
-                                "dataset" : "%s",
+                                %s,
                                 "transformations" : [%s]
                             }""" c.Id
-                                 (c.Source |> Workbench.Source.string)
-                                 (c.Project |> Workbench.Project.string)
+                                 ((c.Source |> Workbench.Source.project ||| c.Project) |> Workbench.Project.configString)
                                  (System.String.Join(",",c.Transformations |> Seq.map(sprintf "%A")))
                         ) 
                     
@@ -235,6 +233,7 @@ let main args =
                 let pat = settings.Hobbes
                 
                 let url = settings.Host + "/api/data/sync/" + configurationName
+                //TODO: this should be based on the configuration and not hard coded
                 let azurePat = settings.Azure.TimePayrollKmddk
                 Http.Request(url, 
                                  httpMethod = "GET",

@@ -80,6 +80,5 @@ open Fake.Core.TargetOperators
     ==> "Bundle" 
     ==> "Build"
     ==> "BuildImage"
-    ==> "Restart"
 
 Target.runOrDefaultWithArguments "BuildImage"

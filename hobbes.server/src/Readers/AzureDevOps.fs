@@ -170,7 +170,8 @@ module AzureDevOps =
                 body
                 |> Option.bind(fun body -> 
                     if body |> isEmpty |> not then
-                        
+                        let body = 
+                            body.Replace("\\\"","'")
                         let rawdataRecord = Cache.createDataRecord rawId source body [
                                                                                         "url", url
                                                                                         "recordCount", hashes 

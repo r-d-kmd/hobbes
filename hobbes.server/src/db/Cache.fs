@@ -146,15 +146,14 @@ namespace Hobbes.Server.Db
                              source.ProjectName
                              (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
 
-                             (if data |> isNull then "null" else data.Replace("\\","\\\\"))
+                             (if data |> isNull then "null" else data)
                              (match keyValue with
                               [] -> ""
                               | values ->
                                   System.String.Join(",",
                                       values
                                       |> Seq.map(fun (k,v) -> sprintf """%A:%A""" k v)
-                                  )
-                                  |> sprintf """,%s"""
+                                  ) |> sprintf """,%s"""
                              ))
             let parsedRecord = record |> CacheRecord.Parse
 

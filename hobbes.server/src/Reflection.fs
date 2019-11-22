@@ -19,23 +19,27 @@ module Reflection =
     let filterByAttribute attributeType (types : seq<#MemberInfo>) =
         types |> Seq.filter(hasAttribute attributeType)
 
-    let getTypesWithAttribute<'a>() =
+    let getModulesWithAttribute<'a>(asm : System.Reflection.Assembly) =
         let att = typeof<'a> 
-        let asm = Assembly.GetExecutingAssembly()
         let assemblies =
-            asm::(
+            asm(*::(
                     asm.GetReferencedAssemblies()
                     |> Array.map(fun assemblyName -> 
                         Assembly.Load(assemblyName)
                     ) |> List.ofArray
-                 ) |> Seq.ofList
+                 ) |> Seq.ofList*)
         let types = 
-            assemblies
-            |> Seq.collect(fun a -> 
+            assemblies.GetTypes()
+             
+        let modules = 
+            types
+            |> Array.filter(Reflection.FSharpType.IsModule)
+            (*|> Seq.collect(fun a -> 
                 a.GetTypes()
                 |> Seq.ofArray
-            ) 
-        types
+            )
+            |> List.ofSeq*)
+        modules
         |> filterByAttribute att
 
     let getMembersWithAttribute<'att> (t: System.Type) = 
@@ -50,12 +54,17 @@ module Reflection =
            )
         )
 
-    let getPropertiesdWithAttribute<'a,'att> t =
-        t 
-        |> getMembersWithAttribute<'att>
-        |> Seq.filter(fun (_,m) -> m :? PropertyInfo)
-        |> Seq.map(fun (a,m) -> a, m :?> PropertyInfo)
-        |> Seq.collect(fun (_,prop) -> 
+    let getPropertiesdWithAttribute<'a,'att> (t : System.Type) =
+        let flags = BindingFlags.Static ||| BindingFlags.Public
+        let att = typeof<'att>
+        let props = t.GetProperties(flags)
+        props |> filterByAttribute att
+        |> Seq.collect(fun prop -> 
+           prop.GetCustomAttributes(att,false)
+           |> Array.map(fun a -> 
+               a :?> 'att, prop
+           )
+        ) |> Seq.collect(fun (_,prop) -> 
            prop.GetCustomAttributes(typeof<'att>,false)
            |> Array.map(fun a -> 
                a :?> 'att, (prop.DeclaringType.Name + "." + prop.Name, prop.GetValue(null) :?> 'a)

@@ -227,7 +227,7 @@ module Routing =
         member this.Collect(state, areaPath : string) : RouterState =
             let routes, state = 
                 let areas = 
-                    getTypesWithAttribute<RouteAreaAttribute>() 
+                    getModulesWithAttribute<RouteAreaAttribute> (Reflection.Assembly.GetExecutingAssembly())
                     |> Seq.filter(fun area -> 
                         (area.GetCustomAttributes(typeof<RouteAreaAttribute>, false) 
                         |> Array.head

@@ -1,3 +1,4 @@
+open System
 #r "paket: 
 nuget Fake
 nuget Fake.Core
@@ -50,19 +51,25 @@ Target.create "Build" (fun _ ->
 )
 
 Target.create "Bundle" (fun _ ->
-    let serverDir = Path.combine deployDir "azureDevopsCollector"
+    let serverDir = Path.combine deployDir "Server"
 
     let publishArgs = sprintf "publish -c Release -o \"%s\"" serverDir
     runDotNet publishArgs serverPath ""
 )
 
 Target.create "BuildImage" (fun _ ->
-    if System.IO.Directory.Exists("./deploy/azureDevopsCollector") |> not then failwith "Doh"
-    //if System.IO.Directory.Exists("./deploy/Server/db") |> not then failwith "with What??"
-    let arguments = "build -t azuredevopscollector --platform linux ." |> String.split ' ' |> Arguments.OfArgs
+    let workingDir = "../"
+    let arguments = 
+        ((workingDir
+        |> Path.getFullName
+        |> Path.getDirectory).Split([|'/'; '\\'|], StringSplitOptions.RemoveEmptyEntries)
+        |> Array.last).ToLower()
+        |> sprintf "build -t kmdrd/hobbes-%s --platform linux ." 
+        |> String.split ' '
+        |> Arguments.OfArgs
     RawCommand ("docker", arguments)
         |> CreateProcess.fromCommand
-        |> CreateProcess.withWorkingDirectory "../"
+        |> CreateProcess.withWorkingDirectory workingDir
         |> CreateProcess.ensureExitCode
         |> Proc.run
         |> ignore
@@ -73,5 +80,6 @@ open Fake.Core.TargetOperators
     ==> "Bundle" 
     ==> "Build"
     ==> "BuildImage"
+    ==> "Restart"
 
 Target.runOrDefaultWithArguments "BuildImage"

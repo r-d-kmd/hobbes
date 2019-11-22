@@ -1,4 +1,4 @@
-namespace Configurations
+namespace Workbench.Configurations
 open Workbench
 
 [<Configurations(Source.AzureDevOps)>]

@@ -42,5 +42,5 @@ test_script:
 
 deploy_script:
   - docker login -u="%DOCKER_USER%" -p="%DOCKER_PASS%"
-  - fake build --target Publish
+  - fake build --target pushtodocker
 

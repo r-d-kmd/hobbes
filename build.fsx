@@ -31,6 +31,7 @@ let run command workingDir args =
     |> Proc.run
     |> ignore
 
+let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.0.165"
 let dockerFiles = System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllDirectories)
 let projFiles = System.IO.Directory.EnumerateFiles("./","*.fsproj",System.IO.SearchOption.AllDirectories)
 
@@ -181,7 +182,7 @@ Target.create "CopyFiles" (fun _ ->
 )
 
 Target.create "PublishPackage" (fun _ ->
-    let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "0.2.0.1"
+    
     let myAccessKey = Environment.environVarOrDefault "key" ""
 
     NuGet.NuGet
@@ -213,7 +214,19 @@ Target.create "BuildDocker" (fun _ ->
         let workingDir = System.IO.Path.GetDirectoryName path
         
         let build (tag : string) = 
-            let args = sprintf "build -t %s --platform linux ." <| createDockerTag dockerOrg (tag.ToLower())
+            let tags =
+               let t = createDockerTag dockerOrg (tag.ToLower())
+               [
+                   t + ":" + assemblyVersion
+                   t + ":" + "latest"
+               ]
+            tags
+            |> List.iter(fun tag -> 
+                let args = sprintf "build -t %s --platform linux ." tag
+                printfn "Executing: $ docker %s" args
+                run workingDir args
+            )
+            let args = sprintf "build -t %s:%s --platform linux ." <| createDockerTag dockerOrg (tag.ToLower()) <| assemblyVersion
             printfn "Executing: $ docker %s" args
             run workingDir args
 
@@ -223,7 +236,7 @@ Target.create "BuildDocker" (fun _ ->
 )
 
 Target.create "Publish" (fun _ -> 
-    run "dotnet" "./workbench/src" "run -- --publish" 
+    run "dotnet" "./workbench/src" "run -- --publish --environment production" 
 )
 
 Target.create "RestartHobbes" (fun _ ->
@@ -243,9 +256,18 @@ Target.create "PushToDocker" (fun _ ->
         let workingDir = System.IO.Path.GetDirectoryName path
         
         let push (tag : string) = 
-            let args = sprintf "push %s" <| createDockerTag dockerOrg (tag.ToLower())
-            printfn "Executing: $ docker %s" args
-            run workingDir args
+            let tags =
+               let t = createDockerTag dockerOrg (tag.ToLower())
+               [
+                   t + ":" + assemblyVersion
+                   t + ":" + "latest"
+               ]
+            tags
+            |> List.iter(fun tag ->
+                let args = sprintf "push %s" <| tag
+                printfn "Executing: $ docker %s" args
+                run workingDir args
+            )
         let tag = workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last
       
         push tag

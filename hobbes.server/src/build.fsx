@@ -1,12 +1,5 @@
 open System
-#r "paket: 
-nuget Fake
-nuget Fake.Core
-nuget Fake.Core.Target
-nuget Fake.DotNet
-nuget Fake.DotNet.NuGet
-nuget Fake.IO.FileSystem
-nuget Fake.DotNet.Cli //"
+#r "paket: groupref build //"
 
 #if !FAKE
 #r "netstandard"
@@ -16,6 +9,8 @@ nuget Fake.DotNet.Cli //"
 open Fake.Core
 open Fake.IO
 open Fake.DotNet
+open Fake
+open Fake.Tools.Git
 
 let run command workingDir args = 
     let arguments = 
@@ -47,6 +42,18 @@ let build configuration workingDir =
     runDotNet "build" workingDir args
 
 Target.create "Build" (fun _ ->
+    let version = 
+        match BuildServer.buildServer with
+        BuildServer.AppVeyor -> Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.0.default"
+        | _ -> "1.0.local"
+    let gitHash = Information.getCurrentHash()
+    AssemblyInfoFile.createFSharp "./AssemblyInfo.fs" [
+        AssemblyInfo.Version version
+        AssemblyInfo.Title "Hobbes server"
+        AssemblyInfo.Metadata("hash", gitHash)
+        AssemblyInfo.FileVersion version
+        AssemblyInfo.Product "Hobbes server"
+    ]
     build "Debug" serverPath
 )
 

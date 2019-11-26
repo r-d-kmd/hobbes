@@ -12,15 +12,7 @@ environment:
     secure: FMSdnVu01kCl/h3wLYiJfrZh9g8XCScl5sT98lVFr8KakwD9C5Lsqs01fn4o7DwX7zu+voHMzTqJ+eE+eTP/j63LoH5DHq81hW2w0Rq6EOEXg1EAUolVHsVerSUAXzfpwnvRHzagS9pD6MX7/n7813lHo9vFL4lIZeqmc1oK/eFy4trd2cGfwbrgxFY2NZnzpzY2R9vVHTCiIJuDS33BuQ==
   PM_APIKEY:
     secure: ujCKbQHfvl9fiBouXlRQH1hq59pHNBKj+CyfDaowaVTxQm67QvpmG6HuVEgcmRvkwDwjVIjOo8IEe7X/fmwRKKLb1eYv8yUd4YSJ+T36Md0=
-dotnet_csproj:
-  patch: true
-  file: '**\hobbes.server.fsproj'
-  version: '{version}'
-  package_version: '{version}'
-  assembly_version: '{version}'
-  file_version: '{version}'
-  informational_version: '{version}'
-  
+
 install:
   - docker version
   - dotnet tool install fake-cli -g

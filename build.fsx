@@ -1,12 +1,5 @@
 open Fake.SystemHelper
-#r "paket: 
-nuget Fake
-nuget Fake.Core
-nuget Fake.Core.Target
-nuget Fake.DotNet
-nuget Fake.DotNet.NuGet
-nuget Fake.IO.FileSystem
-nuget Fake.DotNet.Cli //"
+#r "paket: groupref build //"
 #load "./.fake/build.fsx/intellisense.fsx"
 
 #if !FAKE
@@ -31,7 +24,7 @@ let run command workingDir args =
     |> Proc.run
     |> ignore
 
-let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.0.165"
+
 let dockerFiles = System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllDirectories)
 let projFiles = System.IO.Directory.EnumerateFiles("./","*.fsproj",System.IO.SearchOption.AllDirectories)
 
@@ -180,27 +173,7 @@ Target.create "CopyFiles" (fun _ ->
         System.IO.File.Copy(file, System.IO.Path.Combine(netDir,System.IO.Path.GetFileName file))
     )
 )
-
-Target.create "PublishPackage" (fun _ ->
-    
-    let myAccessKey = Environment.environVarOrDefault "key" ""
-
-    NuGet.NuGet
-     (fun p ->
-        {p with 
-            Authors = authors
-            Project = projectName
-            Description = projectDescription
-            OutputPath = packagingRoot
-            Summary = projectSummary
-            WorkingDir = packagingDir
-            Version = assemblyVersion
-            ReleaseNotes = releaseNotes
-            Publish = true
-            AccessKey = myAccessKey
-            Dependencies = PackageDependencies
-            }) "src/hobbes.nuspec"
-)
+let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.0.default"
 
 let createDockerTag dockerOrg tag = sprintf "%s/hobbes-%s" dockerOrg tag
 
@@ -279,7 +252,6 @@ open Fake.Core.TargetOperators
 "Clean"
    ==> "ReleaseBuild"
    ==> "CopyFiles"
-   ==> "PublishPackage"
 
 "ReleaseBuild" 
    ==> "CopyFiles"

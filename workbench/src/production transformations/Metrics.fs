@@ -20,3 +20,11 @@ module Metrics =
             create (column "Total Completed") (expanding Hobbes.Parsing.AST.Sum (!> "Done"))
             
         ]
+        
+    [<Workbench.Transformation 1>]
+    let sprintVelocity =
+        [
+            slice columns ["Sprint";"Done"]
+            sort by "Sprint" 
+            create (column "Velocity") (moving Hobbes.Parsing.AST.Mean 3 (!> "Done"))
+        ]

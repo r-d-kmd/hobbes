@@ -35,11 +35,7 @@ module Log =
 
 
     let mutable logLevel = 
-#if DEBUG
-        Debug
-#else
-        Error
-#endif
+        Database.env "LOG_LEVEL" "Debug" |> LogType.Parse
     
     let mutable private _logger = eprintf "%A" 
     let mutable private _list : unit -> seq<string> = fun () -> Seq.empty
@@ -59,18 +55,17 @@ module Log =
                              "type" : "%A",
                              "stacktrace" : "%s",
                              "message" : "%s"}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) logType (stacktrace |> jsonify) (msg |> jsonify)
-#if DEBUG
-        //let's print log messages to console when running locally
-        printfn "%s. \nStackTrace: %A" msg stacktrace
-#else        
-        async {
-           try
-              if logType >= logLevel then
-                  doc |>_logger
-           with e ->
-               eprintfn "Failed to insert log doc %s. Message: %s StackTRace %s" doc e.Message e.StackTrace
-        } |> Async.Start
-#endif
+        if Database.env "LOG_LOCATION" "console" = "console" then
+            //let's print log messages to console when running locally
+            printfn "%s. \nStackTrace: %A" msg stacktrace
+        else
+            async {
+               try
+                  if logType >= logLevel then
+                      doc |>_logger
+               with e ->
+                   eprintfn "Failed to insert log doc %s. Message: %s StackTRace %s" doc e.Message e.StackTrace
+            } |> Async.Start
     let log msg =
         writeLogMessage Info null msg
  

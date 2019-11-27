@@ -9,7 +9,15 @@ module Azure =
     let stateRenaming = 
         [
             rename "State" "DetailedState"
-            create (column  "State") (If (((!> "StateCategory") == (!!> "Completed")) .|| ((!> "StateCategory") == (!!> "Resolved")) .|| ((!> "StateCategory") == (!!> "Removed"))) (Then !!> "Done") (Else 
-                                         (If (!> "StateCategory" == !!> "InProgress") (Then !!> "Doing") (Else !!> "Todo" ))
-                                     ))
+            create "State" (If (contains (!> "StateCategory") [
+                                      !!> "Completed"
+                                      !!> "Resolved"
+                                      !!> "Removed"
+                                      ] )
+                                (Then
+                                    (!!> "Done") )
+                                (Else
+                                    ( 
+                                      (If (!> "StateCategory" == !!> "InProgress") (Then !!> "Doing") (Else !!> "Todo" ))
+                                    )))
         ]

@@ -40,12 +40,12 @@ let runDotNet cmd workingDir args =
 let build configuration workingDir =
     let args = sprintf "--output ../bin/%s --configuration %s" configuration configuration
     runDotNet "build" workingDir args
-
-Target.create "Build" (fun _ ->
+    
+Target.create "SetAssemblyInfo" (fun _ ->
     let version = 
         match BuildServer.buildServer with
-        BuildServer.AppVeyor -> Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.0.default"
-        | _ -> "1.0.local"
+        AppVeyor -> Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.1.default"
+        | _ -> "1.1.local"
     let gitHash = Information.getCurrentHash()
     AssemblyInfoFile.createFSharp "./AssemblyInfo.fs" [
         AssemblyInfo.Version version
@@ -54,6 +54,8 @@ Target.create "Build" (fun _ ->
         AssemblyInfo.FileVersion version
         AssemblyInfo.Product "Hobbes server"
     ]
+)
+Target.create "Build" (fun _ ->
     build "Debug" serverPath
 )
 
@@ -64,7 +66,7 @@ Target.create "Bundle" (fun _ ->
     runDotNet publishArgs serverPath ""
 )
 
-Target.create "Restart"(fun _ ->
+Target.create "Restart" (fun _ ->
     let compose = run "docker-compose" "."
     compose "kill hobbes"
     compose "rm -f hobbes"
@@ -80,7 +82,7 @@ Target.create "BuildImage" (fun _ ->
         |> Path.getFullName
         |> Path.getDirectory).Split([|'/'; '\\'|], StringSplitOptions.RemoveEmptyEntries)
         |> Array.last
-        |> sprintf "build -t kmdrd/hobbes-%s --platform linux ." 
+        |> sprintf "build -t %s --platform linux ." 
         |> String.split ' '
         |> Arguments.OfArgs
     RawCommand ("docker", arguments)
@@ -93,8 +95,8 @@ Target.create "BuildImage" (fun _ ->
 
 open Fake.Core.TargetOperators
 "Clean" 
+    ==> "SetAssemblyInfo"
     ==> "Bundle" 
-    ==> "Build"
     ==> "BuildImage"
     ==> "Restart"
 

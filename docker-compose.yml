@@ -24,7 +24,7 @@ services:
     expose: 
       - 5984
     volumes:
-      - ./hobbes.server/db/data1:/opt/couchdb/data
+      - ./hobbes.server/db/data:/opt/couchdb/data
     ports:
       - 5984:5984
   oauth:
@@ -38,7 +38,7 @@ services:
     #command: "--email-domain=* --provider=azure --http-address=http://0.0.0.0:4180 -upstream http://hobbes:8085 -client-secret=*******"
   front:
     container_name: front
-    image: front
+    image: hobbes-front
     ports:
       - 8443:443
       - 8080:80

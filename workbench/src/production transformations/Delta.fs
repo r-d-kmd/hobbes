@@ -8,6 +8,9 @@ module Delta =
     [<Workbench.Transformation 0 >]
     let renaming = 
         [
-            only ((!> "WorkItemType" == "User Story") .|| (!> "WorkItemType" == "Bug"))
-            rename "Iteration.IterationLevel4" "Sprint"
+            only ( contains (!> "WorkItemType") [
+                                                    !!> "User Story"
+                                                    !!> "Bug"
+                                                  ])
+            rename "Iteration.IterationLevel3" "Sprint"
         ]

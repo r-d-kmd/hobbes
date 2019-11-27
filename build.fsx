@@ -38,23 +38,22 @@ let build configuration workingDir =
         DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "build" args 
     if result.ExitCode <> 0 then failwithf "'dotnet %s' failed in %s" "build" workingDir
 
-Target.create "Build" (fun _ ->
+let buildProjects config = 
     projFiles
     |> Seq.iter(fun file ->
         let workDir = System.IO.Path.GetDirectoryName file
         if System.IO.File.Exists(System.IO.Path.Combine(workDir,"build.fsx")) then
             run "fake" workDir "build"
         else
-            build "Debug" workDir
+            build config workDir
     )
+
+Target.create "Build" (fun _ ->
+    buildProjects "Debug"
 )
 
 Target.create "ReleaseBuild" (fun _ ->
-    projFiles
-    |> Seq.iter(fun file ->
-        let workDir = System.IO.Path.GetDirectoryName file
-        build "Release" workDir
-    )
+    buildProjects "Release"
 )
 
 Target.create "Test" (fun _ ->
@@ -124,23 +123,13 @@ Target.create "Test" (fun _ ->
 
 let inline (@@) p1 p2 = 
     System.IO.Path.Combine(p1,p2)
-let company = "KMD A/S"
-let authors = [company; "Rune Lund-Søltoft"; "Lucas Helin Petersen"; "Mikkel Ditlevsen"]
+
 let projectName = "hobbes"
-let projectDescription = "A high level language for data transformations and calculations"
-let projectSummary = projectDescription
-let releaseNotes = "Initial release"
 let buildDir = "./hobbes.core/src/bin"
 let packagingRoot = "./packaging"
-let packagingDir = System.IO.Path.Combine(packagingRoot, "hobbes")
+let packagingDir = packagingRoot @@ "hobbes"
 let netDir = packagingDir @@ "lib/net45" |> System.IO.Path.GetFullPath
 
-let PackageDependencies =
-    [
-        "Accord.MachineLearning", "3.8.0"
-        "Deedle","2.0.4"
-        "FParsec","1.0.3"
-    ]
         
 let CleanDirs dirs = 
     dirs
@@ -170,7 +159,7 @@ Target.create "CopyFiles" (fun _ ->
             buildDir @@ (sprintf "Release/%s.%s" projectName ext) |> System.IO.Path.GetFullPath
     ) |> List.iter (fun file -> 
         printfn "Copying %s to %s" file netDir
-        System.IO.File.Copy(file, System.IO.Path.Combine(netDir,System.IO.Path.GetFileName file))
+        System.IO.File.Copy(file, netDir @@ System.IO.Path.GetFileName file)
     )
 )
 let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.0.default"
@@ -187,15 +176,21 @@ Target.create "BuildDocker" (fun _ ->
         let workingDir = System.IO.Path.GetDirectoryName path
         
         let build (tag : string) = 
+            let tag = tag.ToLower()
             let tags =
-               let t = createDockerTag dockerOrg (tag.ToLower())
+               let t = createDockerTag dockerOrg tag
                [
                    t + ":" + assemblyVersion
                    t + ":" + "latest"
                ]
+
+            let args = sprintf "build -t %s --platform linux ." tag
+            run workingDir args
+
             tags
-            |> List.iter(fun tag -> 
-                let args = sprintf "build -t %s --platform linux ." tag
+            |> List.iter(fun t ->
+                let args = sprintf "tag %s %s" tag t 
+                run workingDir args
                 printfn "Executing: $ docker %s" args
                 run workingDir args
             )
@@ -207,14 +202,6 @@ Target.create "BuildDocker" (fun _ ->
 
 Target.create "Publish" (fun _ -> 
     run "dotnet" "./workbench/src" "run -- --publish --environment production" 
-)
-
-Target.create "RestartHobbes" (fun _ ->
-    let serverDir = "./hobbes.server"
-    run "fake" (serverDir + "/src") "build"
-    run "docker-compose" serverDir "kill hobbes"
-    run "docker-compose" serverDir "rm -f hobbes"
-    run "docker-compose" serverDir "up hobbes"
 )
 
 Target.create "PushToDocker" (fun _ ->
@@ -252,7 +239,7 @@ open Fake.Core.TargetOperators
 "Clean"
    ==> "ReleaseBuild"
    ==> "CopyFiles"
-
+   
 "ReleaseBuild" 
    ==> "CopyFiles"
    ==> "BuildDocker"

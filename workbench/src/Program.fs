@@ -1,5 +1,3 @@
-
-
 open Argu
 open FSharp.Data
 open Hobbes.Server.Db
@@ -41,20 +39,20 @@ let getString pat url  =
 
 type WorkbenchSettings = FSharp.Data.JsonProvider<"""{
     "development" : {
-        "host": "lkjlkj", 
-        "hobbes" : "lkjlkj", 
         "azure" : {
-            "kmddk" : "y3cg",
-            "time-payroll-kmddk" : "gvrg"
-        }
+            "kmddk" : "y3",
+            "time-payroll-kmddk" : "g"
+        },
+        "hobbes" : "V",
+        "host" : "http://localhost:8080"
     }, 
-    "production" : {
-        "host": "lkjlkj", 
-        "hobbes" : "lkjlkj",
-        "azure" : {
-            "kmddk" : "y3cg",
-            "time-payroll-kmddk" : "gvrg"
-        }
+    "production": {
+        "azure": {
+            "kmddk": "4b",
+            "time-payroll-kmddk": "gvr"
+        }, 
+        "hobbes": "VR",
+        "host" : "https://hobbes.azurewebsites.net"
     }
 }""">
 
@@ -101,15 +99,15 @@ let main args =
             match results.TryGetResult Environment with
             None -> 
                 
-                if System.IO.File.Exists  settingsFile then 
+                if System.IO.File.Exists settingsFile then 
                     (settingsFile |> WorkbenchSettings.Load).Development
                 else
                      match Database.env "WORKBENCH_ENVIRONMENT" null with
                      null -> failwith "No settings file and no env var"
                      | s -> 
-                         s 
-                         |> JsonValue.Parse
-                         |> WorkbenchSettings.Development
+                         printfn "Env settings: %s " s
+                         (s 
+                         |> WorkbenchSettings.Parse).Production
             | Some e -> 
                let settings = (settingsFile |> WorkbenchSettings.Load)
                match e with
@@ -120,7 +118,7 @@ let main args =
             
         let test = results.TryGetResult Tests 
         let sync = results.TryGetResult Sync
-        let publish = Some Publish //results.TryGetResult Publish
+        let publish = results.TryGetResult Publish
         let backsync = results.TryGetResult BackSync
         let listTransformationsPath = "/api/admin/list/transformations"
         let listConfigPath = "/api/admin/list/configurations"
@@ -203,16 +201,19 @@ let main args =
                     transformations 
                     |> Seq.iter(fun doc ->
                         printfn "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
-
-                        Http.Request(urlTransformations, 
-                                     httpMethod = "PUT",
-                                     body = TextRequest doc,
-                                     headers = 
-                                        [
-                                           HttpRequestHeaders.BasicAuth pat ""
-                                           HttpRequestHeaders.ContentType HttpContentTypes.Json
-                                        ]
-                                    ) |> ignore
+                        try
+                            Http.Request(urlTransformations, 
+                                         httpMethod = "PUT",
+                                         body = TextRequest doc,
+                                         headers = 
+                                            [
+                                               HttpRequestHeaders.BasicAuth pat ""
+                                               HttpRequestHeaders.ContentType HttpContentTypes.Json
+                                            ]
+                                        ) |> ignore
+                        with e ->
+                           printfn "Failed to publish transformations. URL: %s Settings: %s Msg: %s" urlTransformations (Database.env "WORKBENCH_ENVIRONMENT" "<no settings>") e.Message
+                           reraise()
                     )
                     configurations
                      

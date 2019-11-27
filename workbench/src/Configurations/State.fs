@@ -47,3 +47,14 @@ module State =
             Transformations.Metrics.expandingCompletionBySprint
           ]
       @>
+
+  [<Configuration(Projects)>]
+  let sprintVelocity =
+      <@
+          [
+            Transformations.General.onlyUserStory
+            Transformations.General.foldBySprint
+            Transformations.Metrics.stateCountBySprint
+            Transformations.Metrics.sprintVelocity
+          ]
+      @>

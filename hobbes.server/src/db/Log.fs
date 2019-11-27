@@ -93,7 +93,7 @@ module Log =
             try
                 doc |> _logger
             with e ->
-                eprintfn "Failedto insert timed event in log. %s. Message: %s StackTrace %s" doc e.Message e.StackTrace
+                eprintfn "Failed to insert timed event in log. %s. Message: %s StackTrace %s" doc e.Message e.StackTrace
         } |> Async.Start
 
     let list() = 

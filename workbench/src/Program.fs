@@ -99,7 +99,7 @@ let main args =
             match results.TryGetResult Environment with
             None -> 
                 
-                if System.IO.File.Exists  settingsFile then 
+                if System.IO.File.Exists settingsFile then 
                     (settingsFile |> WorkbenchSettings.Load).Development
                 else
                      match Database.env "WORKBENCH_ENVIRONMENT" null with
@@ -118,7 +118,7 @@ let main args =
             
         let test = results.TryGetResult Tests 
         let sync = results.TryGetResult Sync
-        let publish = Some Publish //results.TryGetResult Publish
+        let publish = results.TryGetResult Publish
         let backsync = results.TryGetResult BackSync
         let listTransformationsPath = "/api/admin/list/transformations"
         let listConfigPath = "/api/admin/list/configurations"
@@ -201,16 +201,19 @@ let main args =
                     transformations 
                     |> Seq.iter(fun doc ->
                         printfn "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
-
-                        Http.Request(urlTransformations, 
-                                     httpMethod = "PUT",
-                                     body = TextRequest doc,
-                                     headers = 
-                                        [
-                                           HttpRequestHeaders.BasicAuth pat ""
-                                           HttpRequestHeaders.ContentType HttpContentTypes.Json
-                                        ]
-                                    ) |> ignore
+                        try
+                            Http.Request(urlTransformations, 
+                                         httpMethod = "PUT",
+                                         body = TextRequest doc,
+                                         headers = 
+                                            [
+                                               HttpRequestHeaders.BasicAuth pat ""
+                                               HttpRequestHeaders.ContentType HttpContentTypes.Json
+                                            ]
+                                        ) |> ignore
+                        with e ->
+                           printfn "Failed to publish transformations. URL: %s Settings: %s Msg: %s" urlTransformations (Database.env "WORKBENCH_ENVIRONMENT" "<no settings>") e.Message
+                           reraise()
                     )
                     configurations
                      

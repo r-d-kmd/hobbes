@@ -11,8 +11,7 @@ module Root =
     [<Get "/ping" >] 
     let ping() = 
         let app = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application
-        
-        200,sprintf """{"appVersion": "%s", "runtimeFramework" : "%s", "appName" : "%s"}""" app.ApplicationVersion app.RuntimeFramework.FullName app.ApplicationName
+        200,sprintf """{"appVersion": "%s", "runtimeFramework" : "%s", "appName" : "%s", "db" : "%s"}""" app.ApplicationVersion app.RuntimeFramework.FullName app.ApplicationName "jens"
 
     [<Get "/key/%s" >] 
     let key token =

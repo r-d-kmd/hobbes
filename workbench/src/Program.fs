@@ -39,20 +39,20 @@ let getString pat url  =
 
 type WorkbenchSettings = FSharp.Data.JsonProvider<"""{
     "development" : {
-        "host": "lkjlkj", 
-        "hobbes" : "lkjlkj", 
         "azure" : {
-            "kmddk" : "y3cg",
-            "time-payroll-kmddk" : "gvrg"
-        }
+            "kmddk" : "y3",
+            "time-payroll-kmddk" : "g"
+        },
+        "hobbes" : "V",
+        "host" : "http://localhost:8080"
     }, 
-    "production" : {
-        "host": "lkjlkj", 
-        "hobbes" : "lkjlkj",
-        "azure" : {
-            "kmddk" : "y3cg",
-            "time-payroll-kmddk" : "gvrg"
-        }
+    "production": {
+        "azure": {
+            "kmddk": "4b",
+            "time-payroll-kmddk": "gvr"
+        }, 
+        "hobbes": "VR",
+        "host" : "https://hobbes.azurewebsites.net"
     }
 }""">
 
@@ -105,9 +105,9 @@ let main args =
                      match Database.env "WORKBENCH_ENVIRONMENT" null with
                      null -> failwith "No settings file and no env var"
                      | s -> 
-                         s 
-                         |> JsonValue.Parse
-                         |> WorkbenchSettings.Development
+                         printfn "Env settings: %s " s
+                         (s 
+                         |> WorkbenchSettings.Parse).Production
             | Some e -> 
                let settings = (settingsFile |> WorkbenchSettings.Load)
                match e with

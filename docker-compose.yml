@@ -24,7 +24,7 @@ services:
     expose: 
       - 5984
     volumes:
-      - ./hobbes.server/db/data:/opt/couchdb/data
+      - ./hobbes.server/db/data1:/opt/couchdb/data
     ports:
       - 5984:5984
   oauth:

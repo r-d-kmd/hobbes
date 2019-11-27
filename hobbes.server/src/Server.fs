@@ -49,6 +49,7 @@ let private appRouter = router {
     
     fetch <@ ping @> 
     withArg <@ key @>
+    fetch <@ initDb @>
     forward "/admin" adminRouter
     forward "/status" statusRouter
     forward "/data" dataRouter
@@ -64,6 +65,7 @@ let private app = application {
 let rec private init() =
     async {
         try
+           FSharp.Data.Http.Request("http://db:5984") |> ignore //make sure db is up and running
            initDb() |> ignore
            printfn "DB initialized"
         with _ ->

@@ -17,3 +17,4 @@ docker-compose.prod.yml
 workbench.json
 **/db/data
 **/AssemblyInfo.fs
+hobbes.server/db/data1/

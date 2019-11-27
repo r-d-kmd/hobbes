@@ -33,7 +33,7 @@ module Root =
                           "password": "%s"
                         }""" userId user token
                     userRecord
-                    |> users.Post
+                    |> users.InsertOrUpdate
                     |> ignore
                     users.FilterByKeys [userId]
                     |> Seq.head

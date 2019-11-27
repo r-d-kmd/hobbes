@@ -2,16 +2,16 @@
 namespace System
 open System.Reflection
 
-[<assembly: AssemblyVersionAttribute("1.0")>]
+[<assembly: AssemblyVersionAttribute("1.1")>]
 [<assembly: AssemblyTitleAttribute("Hobbes server")>]
 [<assembly: AssemblyMetadataAttribute("hash","6b13b1")>]
-[<assembly: AssemblyFileVersionAttribute("1.0")>]
+[<assembly: AssemblyFileVersionAttribute("1.1")>]
 [<assembly: AssemblyProductAttribute("Hobbes server")>]
 do ()
 
 module internal AssemblyVersionInformation =
-    let [<Literal>] AssemblyVersion = "1.0"
+    let [<Literal>] AssemblyVersion = "1.1"
     let [<Literal>] AssemblyTitle = "Hobbes server"
     let [<Literal>] AssemblyMetadata_hash = "6b13b1"
-    let [<Literal>] AssemblyFileVersion = "1.0"
+    let [<Literal>] AssemblyFileVersion = "1.1"
     let [<Literal>] AssemblyProduct = "Hobbes server"

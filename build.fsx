@@ -201,7 +201,7 @@ Target.create "BuildDocker" (fun _ ->
 )
 
 Target.create "Publish" (fun _ -> 
-    run "dotnet" "./workbench/src" "run -- --publish --environment production" 
+    run "dotnet" "./workbench/src" "run -- --publish" 
 )
 
 Target.create "PushToDocker" (fun _ ->

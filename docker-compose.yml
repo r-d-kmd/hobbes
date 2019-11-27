@@ -38,7 +38,7 @@ services:
     #command: "--email-domain=* --provider=azure --http-address=http://0.0.0.0:4180 -upstream http://hobbes:8085 -client-secret=*******"
   front:
     container_name: front
-    image: hobbes-front
+    image: front
     ports:
       - 8443:443
       - 8080:80

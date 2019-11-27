@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  namespace: ingress-nginx
+spec:
+  selector:
+    matchLabels:
+      app: db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+      - env:
+        - name: COUCHDB_PASSWORD
+          value: password
+        - name: COUCHDB_USER
+          value: admin
+        image: apache/couchdb
+        name: db
+        ports:
+        - containerPort: 5984
+        resources: {}
+      restartPolicy: Always
+status: {}
+

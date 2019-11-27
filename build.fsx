@@ -38,7 +38,7 @@ let build configuration workingDir =
         DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "build" args 
     if result.ExitCode <> 0 then failwithf "'dotnet %s' failed in %s" "build" workingDir
 
-Target.create "Build" (fun _ ->
+Target.create "Compile" (fun _ ->
     projFiles
     |> Seq.iter(fun file ->
         let workDir = System.IO.Path.GetDirectoryName file
@@ -48,6 +48,8 @@ Target.create "Build" (fun _ ->
             build "Debug" workDir
     )
 )
+
+Target.create "Build" ignore
 
 Target.create "ReleaseBuild" (fun _ ->
     projFiles
@@ -193,11 +195,13 @@ Target.create "BuildDocker" (fun _ ->
                    t + ":" + assemblyVersion
                    t + ":" + "latest"
                ]
+
+            sprintf "build -t %s --platform linux ." tag
+            |> run workingDir
             tags
-            |> List.iter(fun tag -> 
-                let args = sprintf "build -t %s --platform linux ." tag
-                printfn "Executing: $ docker %s" args
-                run workingDir args
+            |> List.iter(fun t -> 
+                sprintf "tag %s %s" tag t
+                |> run workingDir
             )
 
         let tag = (workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last).ToLower()
@@ -223,6 +227,7 @@ Target.create "PushToDocker" (fun _ ->
     
     dockerFiles
     |> Seq.iter(fun path ->
+        let path = System.IO.Path.GetFullPath path
         let workingDir = System.IO.Path.GetDirectoryName path
         
         let push (tag : string) = 
@@ -244,9 +249,37 @@ Target.create "PushToDocker" (fun _ ->
     ) 
 )
 
+Target.create "PushAlpha" (fun _ ->
+    let dockerOrg = "kmdrd"
+    let run = run "docker"
+    
+    dockerFiles
+    |> Seq.iter(fun path ->
+        let path = System.IO.Path.GetFullPath path
+        let workingDir = System.IO.Path.GetDirectoryName path
+        
+        let push (tag : string) = 
+            let t = createDockerTag dockerOrg (tag.ToLower()) + ":" + "alpha"
+            sprintf "tag %s %s" tag t
+             |> run workingDir 
+            
+            let args = sprintf "push %s" <| t
+            printfn "Executing: $ docker %s" args
+            run workingDir args
+            
+        let tag = workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last
+      
+        push tag
+    ) 
+)
+
 open Fake.Core.TargetOperators
 
 "Clean"
+   ==> "Compile"
+   ==> "CopyFiles"
+   ==> "BuildDocker"
+   ==> "PushAlpha"
    ==> "Build"
 
 "Clean"

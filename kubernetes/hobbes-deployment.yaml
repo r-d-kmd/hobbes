@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hobbes-server
+  namespace: ingress-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hobbes-server
+  template:
+    metadata:
+      labels:
+        app: hobbes-server
+    spec:
+      containers:
+      - env:
+        - name: COUCHDB_PASSWORD
+          value: password
+        - name: COUCHDB_USER
+          value: admin
+        - name: KEY_SUFFIX
+          value: 2804de67ba6979c756e8759e44fe4
+        - name: SERVER_PORT
+          value: "8085"
+        imagePullPolicy: Always
+        image: kmdrd/hobbes-hobbes.server:alpha
+        name: hobbes-server
+        ports:
+        - containerPort: 8085
+        resources: {}
+      restartPolicy: Always
+status: {}

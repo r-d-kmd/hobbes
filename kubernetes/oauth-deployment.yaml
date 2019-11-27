@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: ingress-nginx
+  name: oauth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oauth
+  template:
+    metadata:
+      labels:
+        app: oauth
+    spec:
+      containers:
+      - args:
+        - --email-domain=*
+        - -cookie-secure=false
+        - -client-id=de431b1775741ace6e15
+        - -redirect-url=https://localhost:8443/oauth2/callback
+        - --provider=github
+        - --http-address=http://0.0.0.0:4180
+        - -upstream
+        - http://hobbes-server-svc:8085
+        - -client-secret=0a7e17f20beed0849045eb98292858f102442474
+        - -github-org=r-d-kmd
+        - -cookie-secret=SECRETSECRET
+        image: kmdrd/hobbes-oauth:alpha
+        name: oauth
+        resources: {}
+      restartPolicy: Always
+status: {}

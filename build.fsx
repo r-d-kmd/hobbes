@@ -71,7 +71,8 @@ Target.create "Test" (fun _ ->
                 row.Split([|"\t";" "|], System.StringSplitOptions.RemoveEmptyEntries)
                 |> Array.last
             ) |> Seq.tail
-        if containers |> Seq.filter(fun image -> image = "hobbes" || image = "db") |> Seq.length = 3 then
+        
+        if containers |> Seq.filter(fun image -> image = "hobbes" || image = "db") |> Seq.length = 2 then
             true
         else
             printfn "Containers currently running %A" (containers |> Seq.map (sprintf "%A"))

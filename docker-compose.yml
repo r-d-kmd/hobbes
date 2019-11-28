@@ -27,15 +27,6 @@ services:
       - ./hobbes.server/db/data:/opt/couchdb/data
     ports:
       - 5984:5984
-  oauth:
-    build:
-      context: ./oauth
-      dockerfile: Dockerfile
-    container_name: oauth
-    expose: 
-      - 4180
-    command: "--email-domain=* -cookie-secure=false -client-id=de431b1775741ace6e15 -redirect-url=https://localhost:8443/oauth2/callback --provider=github --http-address=http://0.0.0.0:4180 -upstream http://hobbes:8085 -client-secret=0a7e17f20beed0849045eb98292858f102442474 -github-org=r-d-kmd -cookie-secret=SECRETSECRET"
-    #command: "--email-domain=* --provider=azure --http-address=http://0.0.0.0:4180 -upstream http://hobbes:8085 -client-secret=*******"
   front:
     container_name: front
     image: front

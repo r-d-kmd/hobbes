@@ -150,7 +150,8 @@ module Admin =
             db.CompactAndClean()
             return res
         }
-
+        
+    [<Get "/init">]
     let initDb () =
         Settings.Load SettingsPath
         |> configure

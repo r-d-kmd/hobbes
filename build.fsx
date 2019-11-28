@@ -71,7 +71,7 @@ Target.create "Test" (fun _ ->
                 row.Split([|"\t";" "|], System.StringSplitOptions.RemoveEmptyEntries)
                 |> Array.last
             ) |> Seq.tail
-        if containers |> Seq.filter(fun image -> image = "hobbes" || image = "front" || image = "db") |> Seq.length = 3 then
+        if containers |> Seq.filter(fun image -> image = "hobbes" || image = "db") |> Seq.length = 3 then
             true
         else
             printfn "Containers currently running %A" (containers |> Seq.map (sprintf "%A"))
@@ -105,7 +105,7 @@ Target.create "Test" (fun _ ->
     let startEnvironment = async {
         let workDir = "./hobbes.server"
         run "docker-compose" workDir "kill"
-        run "docker-compose" workDir "up -d hobbes db front"
+        run "docker-compose" workDir "up -d"
     }
 
     let tasks =

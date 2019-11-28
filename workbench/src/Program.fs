@@ -232,16 +232,12 @@ let main args =
                 0
              | Some configurationName ->
                 let pat = settings.Hobbes
-                
                 let url = settings.Host + "/data/sync/" + configurationName
-                //TODO: this should be based on the configuration and not hard coded
-                let azurePat = settings.Azure.TimePayrollKmddk
                 Http.Request(url, 
                                  httpMethod = "GET",
                                  headers = 
                                     [
                                        HttpRequestHeaders.BasicAuth pat ""
-                                       ("PAT",azurePat)
                                        HttpRequestHeaders.ContentType HttpContentTypes.Json
                                     ]
                                 ) |> ignore

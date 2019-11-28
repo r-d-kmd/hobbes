@@ -27,9 +27,3 @@ services:
       - ./hobbes.server/db/data:/opt/couchdb/data
     ports:
       - 5984:5984
-  front:
-    container_name: front
-    image: front
-    ports:
-      - 8443:443
-      - 8080:80

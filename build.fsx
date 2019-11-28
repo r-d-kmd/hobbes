@@ -150,7 +150,7 @@ Target.create "Clean" (fun _ ->
     ]
 )
 
-let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.0.default"
+let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.2.default"
 
 let createDockerTag dockerOrg tag = sprintf "%s/hobbes-%s" dockerOrg tag
 
@@ -226,8 +226,6 @@ open Fake.Core.TargetOperators
 
 "Clean"
    ==> "ReleaseBuild"
-   ==> "CopyFiles"
-   
    ==> "BuildDocker"
    ==> "PushToDocker"
    ==> "Publish"

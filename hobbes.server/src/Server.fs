@@ -72,7 +72,11 @@ let rec private init() =
            do! Async.Sleep 2000
            init()
     } |> Async.Start
-let appInfo = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application        
-printfn """{"appVersion": "%s", "runtimeFramework" : "%s", "appName" : "%s"}""" appInfo.ApplicationVersion appInfo.RuntimeFramework.FullName appInfo.ApplicationName
+
+let asm = System.Reflection.Assembly.GetExecutingAssembly() 
+let asmName = asm.GetName()
+
+let version = asmName.Version.ToString()      
+printfn """{"appVersion": "%s", "name" : "%s"}""" version asmName.Name
 init()
 run app

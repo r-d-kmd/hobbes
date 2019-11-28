@@ -120,9 +120,9 @@ let main args =
         let sync = results.TryGetResult Sync
         let publish = results.TryGetResult Publish
         let backsync = results.TryGetResult BackSync
-        let listTransformationsPath = "/api/admin/list/transformations"
-        let listConfigPath = "/api/admin/list/configurations"
-        let listRawdataPath = "/api/admin/list/rawdata"
+        let listTransformationsPath = "/admin/list/transformations"
+        let listConfigPath = "/admin/list/configurations"
+        let listRawdataPath = "/admin/list/rawdata"
         if backsync.IsSome && System.IO.File.Exists settingsFile then
             let settings = WorkbenchSettings.Load settingsFile
             let prod = settings.Production
@@ -135,7 +135,7 @@ let main args =
             rawKeys
             |> Array.iter(fun key ->
                 let doc = 
-                    prod.Host + "/api/admin/raw/" + key |> getString prod.Hobbes
+                    prod.Host + "/admin/raw/" + key |> getString prod.Hobbes
                 doc.Replace("_rev","prodRev") |> db.InsertOrUpdate |> ignore
             )
 
@@ -164,8 +164,8 @@ let main args =
             None -> 
                 if publish |> Option.isSome then 
                     printfn "Using host: %s" settings.Host
-                    let urlTransformations = settings.Host + "/api/admin/transformation"
-                    let urlConfigurations = settings.Host + "/api/admin/configuration"
+                    let urlTransformations = settings.Host + "/admin/transformation"
+                    let urlConfigurations = settings.Host + "/admin/configuration"
                     let pat = settings.Hobbes
                     let transformations = 
                         Workbench.Reflection.transformations()
@@ -233,7 +233,7 @@ let main args =
              | Some configurationName ->
                 let pat = settings.Hobbes
                 
-                let url = settings.Host + "/api/data/sync/" + configurationName
+                let url = settings.Host + "/data/sync/" + configurationName
                 //TODO: this should be based on the configuration and not hard coded
                 let azurePat = settings.Azure.TimePayrollKmddk
                 Http.Request(url, 

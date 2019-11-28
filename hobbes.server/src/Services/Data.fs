@@ -90,11 +90,10 @@ module Data =
     let getRaw id =
         Rawdata.get id
 
-    
-    
     let sync configurationName azureToken =
         let configuration = DataConfiguration.get configurationName
         let cacheRevision = cacheRevision configuration.Source
+
         let syncId = Rawdata.createSyncStateDocument cacheRevision configuration.Source
         async {
             try
@@ -137,4 +136,11 @@ module Data =
         
     [<Get ("/sync/%s") >]
     let syncronize configurationName = 
-        sync configurationName (env "AZURE_TOKEN" null)
+        
+        let configuration = DataConfiguration.get configurationName
+        let token =
+            match configuration.Source with
+            DataConfiguration.DataSource.AzureDevOps(account,_)  ->
+               (env (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_")) null)
+            | source -> failwithf "Not supported. %A"source
+        sync configurationName token

@@ -150,18 +150,6 @@ Target.create "Clean" (fun _ ->
     ]
 )
 
-
-Target.create "CopyFiles" (fun _ -> 
-    [
-        "dll"
-        "pdb"
-    ] |> List.map (fun ext ->
-            buildDir @@ (sprintf "Release/%s.%s" projectName ext) |> System.IO.Path.GetFullPath
-    ) |> List.iter (fun file -> 
-        printfn "Copying %s to %s" file netDir
-        System.IO.File.Copy(file, netDir @@ System.IO.Path.GetFileName file)
-    )
-)
 let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.0.default"
 
 let createDockerTag dockerOrg tag = sprintf "%s/hobbes-%s" dockerOrg tag
@@ -240,8 +228,6 @@ open Fake.Core.TargetOperators
    ==> "ReleaseBuild"
    ==> "CopyFiles"
    
-"ReleaseBuild" 
-   ==> "CopyFiles"
    ==> "BuildDocker"
    ==> "PushToDocker"
    ==> "Publish"

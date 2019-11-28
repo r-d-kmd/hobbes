@@ -16,7 +16,7 @@ environment:
 install:
   - docker version
   - dotnet tool install fake-cli -g
-  - dotnet tool install --global --version 5.198.0 paket
+  - dotnet tool install --global --version 5.226.0 paket
   - npm install -s -g --unicode=false newman
 
 before_build:

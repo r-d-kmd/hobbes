@@ -48,7 +48,7 @@ let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
     fetch <@ ping @> 
-    withArg <@ key @>
+    withBody <@ key @>
     fetch <@ initDb @>
     forward "/admin" adminRouter
     forward "/status" statusRouter
@@ -73,6 +73,6 @@ let rec private init() =
            init()
     } |> Async.Start
 let appInfo = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application        
-printf """{"appVersion": "%s", "runtimeFramework" : "%s", "appName" : "%s"}""" appInfo.ApplicationVersion appInfo.RuntimeFramework.FullName appInfo.ApplicationName
+printfn """{"appVersion": "%s", "runtimeFramework" : "%s", "appName" : "%s"}""" appInfo.ApplicationVersion appInfo.RuntimeFramework.FullName appInfo.ApplicationName
 init()
 run app

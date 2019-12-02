@@ -455,8 +455,12 @@ module DataStructures =
                             //inputs will be longer than outputs when doing forecasting
                             let x = [|for i in 0..values.Length + count - 1 -> float i|]
                             let regression = ols.Learn(x |> Array.take values.Length, values)    
-                            regression.Transform(x)
+                            regression.Transform(x) 
+                            |> Array.skip values.Length
+                            |> Array.take count
+                            |> Array.append values
                         )
+                        
                     assert (xSeries.Length = expectedLength)
 
                     let createKey (v: float) =
@@ -481,6 +485,7 @@ module DataStructures =
                             |> Array.zip xSeries
                             |> Array.map(fun (x,y) -> createKey x => (y :> Comp))
                         assert (result.Length = expectedLength)
+                        printfn "Extrapolated values: %A" result
                         result |> series
 
             | AST.Regression(regressionType,inputTreeNodes,outputTreeNodes) ->
@@ -601,9 +606,9 @@ module DataStructures =
                 )
             | AST.CreateColumn (exp, nameOfNewColumn) -> 
                 let compiledExpression = compileExpression frame exp
-                let nFrame = Frame([nameOfNewColumn],[compiledExpression (keySeries)])
-                nFrame
-                |> Frame.join JoinKind.Outer frame
+                frame?(nameOfNewColumn) <- (compiledExpression (keySeries))
+                frame
+                
             | AST.Pivot(rowKeyExpression,columnKeyExpression,valueExpression, reduction) ->
                 let rowkey,compiledExpressionFunc = compileTempColumn "__rowkey__" rowKeyExpression
                 compiledExpressionFunc frame keySeries

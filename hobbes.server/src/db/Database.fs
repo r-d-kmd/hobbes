@@ -243,7 +243,7 @@ namespace Hobbes.Server.Db
                 if failed then
                     log.Debugf "Response status code : %d.  Body: %s. Url: %s" 
                         statusCode 
-                        (body.Substring(0,min 1000 body.Length)) 
+                        (body.Substring(0,min 1000 body.Length).Replace("\"","\\\"")) 
                         url
                  
                 if isTrial || not(failed) then

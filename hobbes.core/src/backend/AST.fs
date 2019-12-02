@@ -10,7 +10,7 @@ module AST =
     type RegExResultToken = 
         RegExGroupIdentifier of int
         | RegExResultString of string        
-
+ 
     type Reduction = 
         | Count
         | Sum

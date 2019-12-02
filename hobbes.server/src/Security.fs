@@ -15,7 +15,7 @@ module Security =
     let private toB64 s = 
         System.Convert.ToBase64String s
 
-    let fromB64 s = 
+    let fromB64 s =  
         System.Convert.FromBase64String s
         |> encoding.GetString
 

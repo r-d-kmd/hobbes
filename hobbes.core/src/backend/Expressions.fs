@@ -37,13 +37,23 @@ module Expressions =
         let expanding = 
             pipe2  (kwExpanding >>? reduction) expressionInBrackets (fun reduction columnExpression ->
                 AST.Expanding(reduction,columnExpression) |> ColumnExpression
-            )   
+            )
+        let ordinals = kwOrdinals >>= (fun _ -> AST.Ordinals |> preturn)
         let regression = 
-            pipe3 (kwLinear .>>? kwRegression)
-                  expressionInBrackets 
+            pipe2 (kwLinear .>>? 
+                   kwRegression >>.
+                   expressionInBrackets)
                   expressionInBrackets
-                  (fun regressionType inputs outputs -> AST.Regression(regressionType,inputs,outputs)) 
+                  (fun inputs outputs -> AST.Regression(AST.Linear,inputs,outputs)) 
+
+        let extrapolation = 
+            pipe2 (kwLinear .>>? kwExtrapolation >>.
+                  expressionInBrackets)
+                  pint32
+                  (fun outputs count -> AST.Extrapolate(AST.Linear,outputs, count)) 
+
         let ``int`` = kwInt >>? expr >>= (AST.Int >> preturn) 
+
         let ifThisThenElse =
             let expressionInCurly = spaces >>. (between (skipString "{" .>> spaces) (spaces >>. skipString "}") expr) .>> spaces
             (pipe3 (kwIf >>? expressionInBrackets)
@@ -54,13 +64,28 @@ module Expressions =
                           checkBooleanExp condition
                       AST.IfThisThenElse(condition,thenBody,elseBody)
                   ))
-            
+
+        let regExGroupExpression = 
+            (pstring "$" >>. pint32) >>= (AST.RegExGroupIdentifier >> preturn)
+            <|> (pquotedStringLiteral >>= (AST.RegExResultString >> preturn))
+
+        let regExGroupExpressions =
+            let expr = sepBy regExGroupExpression (skipString "+")
+            between (skipString "[") (skipString "]") expr
+
+        let regex = 
+            pipe3 (kwRegex >>. expressionInBrackets) regexLiteral regExGroupExpressions (fun expr literal result ->
+               RegularExpression(expr, literal.Replace("\\/","/"),result) 
+            )
+
         opp.TermParser <- 
             ifThisThenElse
             <|> int
             <|> moving
             <|> expanding
             <|> regression
+            <|> regex
+            <|> extrapolation
             <|> (pnumber >>= (AST.Number >> preturn))
             <|> kwMissing
             <|> kwKeys

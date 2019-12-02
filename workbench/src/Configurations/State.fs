@@ -19,6 +19,10 @@ module State =
       @>
   
   [<Configuration(Projects)>]
+  let baseInformations : Quotations.Expr<Hobbes.DSL.Statements list list> =
+      <@ [] @>
+
+  [<Configuration(Projects)>]
   let userStoriesFoldedBySprint =
       <@
           [

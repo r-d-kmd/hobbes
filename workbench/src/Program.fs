@@ -44,7 +44,7 @@ type WorkbenchSettings = FSharp.Data.JsonProvider<"""{
             "time-payroll-kmddk" : "g"
         },
         "hobbes" : "V",
-        "host" : "http://localhost:8080"
+        "host" : "http://"
     }, 
     "production": {
         "azure": {
@@ -52,7 +52,7 @@ type WorkbenchSettings = FSharp.Data.JsonProvider<"""{
             "time-payroll-kmddk": "gvr"
         }, 
         "hobbes": "VR",
-        "host" : "https://hobbes.azurewebsites.net"
+        "host" : "https://"
     }
 }""">
 
@@ -177,7 +177,7 @@ let main args =
                             System.String.Join(",",
                                 statements
                                 |> List.map (fun stmt ->
-                                   (stmt |> string).Replace("\"", "\\\"") |> sprintf "\n  %A"
+                                   (stmt |> string).Replace("\\","\\\\").Replace("\"", "\\\"") |> sprintf "\n  %A"
                                 )
                             ) |> sprintf "[%s\n]"
                             |> sprintf """{

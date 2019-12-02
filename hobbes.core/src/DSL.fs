@@ -34,6 +34,7 @@ type Expression =
     | RegularExpression of input : Expression * patter: string * resultSnippets : AST.RegExResultToken list
     | Ordinals
     | Keys
+    | Int of Expression
     with override x.ToString() =
            match x with
              Identifier s -> sprintf """ "%s" """ s
@@ -74,6 +75,7 @@ type Expression =
                      match reg with
                      AST.Linear -> "linear"
                  sprintf "%s extrapolation [%s] %d" regStr (outputs.ToString()) count
+             | Int e -> sprintf "int (%s)" (e.ToString())
            
          static member private ParseStringOrDate (stringOrDate : string) = 
             match System.DateTime.TryParse(stringOrDate) with
@@ -271,3 +273,5 @@ let ``$4`` = AST.RegExGroupIdentifier 4
 
 let regex expr pattern tokens =
     RegularExpression(expr, pattern, tokens)
+
+let int e = Int(e)

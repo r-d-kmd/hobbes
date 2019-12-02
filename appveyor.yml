@@ -24,7 +24,6 @@ before_build:
   - mkdir "c:\projects\hobbes\hobbes.server\db\data"
 
 build_script: 
-  - fake build --target build
   - fake build --target builddocker
 
 test_script:

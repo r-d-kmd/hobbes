@@ -58,6 +58,7 @@ module AzureDevOps =
             IterationIterationLevel2 : string
             IterationIterationLevel3 : string
             IterationIterationLevel4 : string
+            IterationNumber : int
             LeadTimeDays :  System.Nullable<decimal>
             CycleTimeDays :  System.Nullable<decimal>
         }
@@ -136,7 +137,8 @@ module AzureDevOps =
                            "Iteration.IterationLevel1", asObj iteration.IterationLevel1 
                            "Iteration.IterationLevel2", asObj iteration.IterationLevel2 
                            "Iteration.IterationLevel3", asObj iteration.IterationLevel3 
-                           "Iteration.IterationLevel4", asObj iteration.IterationLevel4 
+                           "Iteration.IterationLevel4", asObj iteration.IterationLevel4
+                           "Iteration.Number", iteration.Number |> box
                         ]
                     | None -> 
                         []

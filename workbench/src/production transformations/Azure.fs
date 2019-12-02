@@ -4,12 +4,20 @@ namespace Workbench.Transformations
 module Azure = 
 
     open Hobbes.DSL
-
+    open General
     [<Workbench.Transformation 0>]
     let stateRenaming = 
         [
-            rename "State" "DetailedState"
-            create (column  "State") (If (((!> "StateCategory") == (!!> "Completed")) .|| ((!> "StateCategory") == (!!> "Resolved")) .|| ((!> "StateCategory") == (!!> "Removed"))) (Then !!> "Done") (Else 
-                                         (If (!> "StateCategory" == !!> "InProgress") (Then !!> "Doing") (Else !!> "Todo" ))
-                                     ))
+            rename State.Name "DetailedState"
+            create State.Name (If (contains (!> "StateCategory") [
+                                      !!> "Completed"
+                                      !!> "Resolved"
+                                      !!> "Removed"
+                                      ] )
+                                (Then
+                                    (!!> "Done") )
+                                (Else
+                                    ( 
+                                      (If (!> "StateCategory" == !!> "InProgress") (Then !!> "Doing") (Else !!> "Todo" ))
+                                    )))
         ]

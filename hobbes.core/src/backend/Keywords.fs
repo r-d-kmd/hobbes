@@ -31,7 +31,7 @@ module Keywords =
 
     let internal kwElse  =     createKeyword "else"
     let internal kwExpanding = createKeyword "expanding"
-
+    let internal kwExtrapolation = createKeyword "extrapolation"  
     let internal kwFormat = createKeyword "format"
 
     let internal kwGroup = createKeyword "group" 
@@ -43,7 +43,7 @@ module Keywords =
     let internal kwKeys  =    createKeywordReturn "keys" AST.Keys
     let internal kwKMeans = createKeyword "k-means"
 
-    let internal kwLinear  =    createKeywordReturn "linear" AST.Linear
+    let internal kwLinear  =    createKeyword "linear"
 
     let internal kwMaxBy = createKeyword "maxby"
     let internal kwMax = createKeywordReturn "max"  AST.Max
@@ -58,10 +58,12 @@ module Keywords =
     let internal kwNumeric  =  createKeyword "numeric" 
 
     let internal kwOnly  =     createKeyword "only"
+    let internal kwOrdinals  =     createKeyword "ordinals"
     
     let internal kwPivot  =    createKeyword "pivot"  
-
+    let internal kwRegex  =     createKeyword "regex"
     let internal kwRegression  =    createKeyword "regression"  
+    
     let internal kwRows     =  createKeyword "rows"
 
     let internal kwSlice    =  createKeyword "slice" 

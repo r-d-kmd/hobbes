@@ -15,5 +15,6 @@ hobbes.server/collector/db/data
 docker-compose.prod.yml
 *.user
 workbench.json
-azureDevopsCollector/db/data
-AssemblyInfo.fs
+**/db/data
+**/AssemblyInfo.fs
+hobbes.server/db/data1/

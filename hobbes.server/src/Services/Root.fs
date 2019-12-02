@@ -13,37 +13,51 @@ module Root =
         let app = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application
         
         200,sprintf """{"appVersion": "%s", "runtimeFramework" : "%s", "appName" : "%s"}""" app.ApplicationVersion app.RuntimeFramework.FullName app.ApplicationName
+    type UserSpec = FSharp.Data.JsonProvider<"""{"name" : "kjlkj", "token" : "lkælk"}""">
 
-    [<Get "/key/%s" >] 
-    let key token =
-        let user = 
-            token
-            |> tryParseUser
-            |> Option.bind(fun (user,token) -> 
-                  let userId = sprintf "org.couchdb.user:%s" user
-                  match users.TryGet userId with
-                  None  ->
-                    logf  "Didn't find user. %s" userId
-                    let userRecord = 
-                        sprintf """{
-                            "_id" : "%s",
-                          "name": "%s",
-                          "type": "user",
-                          "roles": [],
-                          "password": "%s"
-                        }""" userId user token
-                    userRecord
-                    |> users.Post
-                    |> ignore
-                    users.FilterByKeys [userId]
-                    |> Seq.head
-                    |> Some
-                  | s -> s 
-            )
+    [<Put ("/key", true) >] 
+    let key userStr =
+        printfn "User: %s" userStr
+        let user = userStr |> UserSpec.Parse
+        let verifiedUser = 
+            let userIds = 
+                users.ListIds() 
+                |> Seq.filter(fun userId -> userId.StartsWith "org.couchdb.user:") 
+                |> List.ofSeq
+                
+            printfn "Users in system: %A" userIds
+            let isFirstUser = userIds |> List.isEmpty && System.String.IsNullOrWhiteSpace(user.Token)
+            if isFirstUser ||  verifyAuthToken user.Token then
+                let token = 
+                   let rndstring = randomString 16
+                   ( env "KEY_SUFFIX" (randomString 16)) + user.Name + rndstring |> hash
+                
+                let userId = sprintf "org.couchdb.user:%s" user.Name
+                match users.TryGet userId with
+                None  ->
+                  logf  "Didn't find user. %s" userId
+                  let userRecord = 
+                      sprintf """{
+                          "_id" : "%s",
+                        "name": "%s",
+                        "type": "user",
+                        "roles": [],
+                        "password": "%s"
+                      }""" userId user.Name token
 
-        match user with
+                  userRecord
+                  |> users.InsertOrUpdate
+                  |> ignore
+                  users.FilterByKeys [userId]
+                  |> Seq.head
+                  |> Some
+                | s -> s 
+            else
+                None        
+
+        match verifiedUser with
         None ->
-            eprintfn "No user token. Tried with %s" token 
+            errorf "" "No user token. Tried with %s" user.Token 
             403,"Unauthorized"
         | Some (user) ->
             printfn "Creating api key for %s " user.Name

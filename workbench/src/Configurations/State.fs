@@ -19,6 +19,10 @@ module State =
       @>
   
   [<Configuration(Projects)>]
+  let baseInformations : Quotations.Expr<Hobbes.DSL.Statements list list> =
+      <@ [] @>
+
+  [<Configuration(Projects)>]
   let userStoriesFoldedBySprint =
       <@
           [
@@ -45,5 +49,16 @@ module State =
             Transformations.General.foldBySprint
             Transformations.Metrics.stateCountBySprint
             Transformations.Metrics.expandingCompletionBySprint
+          ]
+      @>
+
+  [<Configuration(Projects)>]
+  let sprintVelocity =
+      <@
+          [
+            Transformations.General.onlyUserStory
+            Transformations.General.foldBySprint
+            Transformations.Metrics.stateCountBySprint
+            Transformations.Metrics.sprintVelocity
           ]
       @>

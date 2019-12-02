@@ -4,10 +4,15 @@ namespace Workbench.Transformations
 module Delta = 
 
     open Hobbes.DSL
+    open General
 
     [<Workbench.Transformation 0 >]
     let renaming = 
         [
-            only ((!> "WorkItemType" == "User Story") .|| (!> "WorkItemType" == "Bug"))
-            rename "Iteration.IterationLevel4" "Sprint"
+            only (contains WorkItemType.Expression [
+                                                     !!> "User Story"
+                                                     !!> "Bug"
+                                                   ])
+            rename "Iteration.IterationLevel3" SprintName.Name
+            create (column SprintNumber.Name) (regex (!> "Sprint Name") "[Ss][Pp][Rr][Ii][Nn][Tt] [^\\d]*([\\d]+).*" [``$1``])
         ]

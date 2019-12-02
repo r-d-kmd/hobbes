@@ -7,6 +7,10 @@ module AST =
                 | Int64 of int64    
                 | Float of float
 
+    type RegExResultToken = 
+        RegExGroupIdentifier of int
+        | RegExResultString of string        
+
     type Reduction = 
         | Count
         | Sum
@@ -68,6 +72,7 @@ module AST =
         | FormatDate of columnName:string * DateFormat
         | Number of Number
         | Int of ComputationExpression
+        | RegularExpression of input: ComputationExpression * pattern : string * resultFormation: RegExResultToken list
         | Keys
         | MissingValue
         | String of string
@@ -75,6 +80,8 @@ module AST =
         | ColumnName of string
         | ColumnExpression of ColumnComputationExpression
         | Regression of Regression * ComputationExpression * ComputationExpression
+        | Extrapolate of Regression * ComputationExpression * int
+        | Ordinals
     
     type FilterAndSorting =
        SliceColumns of string list 
@@ -99,7 +106,7 @@ module AST =
     [<CustomEquality>]
     [<CustomComparison>]
     type KeyType =
-        Numbers of decimal
+        Numbers of float
         | Text of string
         | DateTime of System.DateTime
         | Obj of obj
@@ -148,23 +155,23 @@ module AST =
                 | :? System.DateTime as d ->
                     DateTime(d)                
                 | :? System.UInt16 as a -> 
-                    Numbers(a |> decimal)
+                    Numbers(a |> float)
                 | :? System.UInt32 as a -> 
-                    Numbers(a |> decimal)
+                    Numbers(a |> float)
                 | :? System.UInt64 as a -> 
-                    Numbers(a |> decimal)
+                    Numbers(a |> float)
                 | :? System.Int16 as a -> 
-                    Numbers(a |> decimal)
+                    Numbers(a |> float)
                 | :? System.Int32 as a -> 
-                    Numbers(a |> decimal)
+                    Numbers(a |> float)
                 | :? System.Int64 as a -> 
-                    Numbers(a |> decimal)
+                    Numbers(a |> float)
                 | :? System.Single as a -> 
-                    Numbers(a |> decimal)
+                    Numbers(a |> float)
                 | :? System.Double as a -> 
-                    Numbers(a |> decimal)
-                | :? System.Decimal as a -> 
                     Numbers(a)
+                | :? System.Decimal as a -> 
+                    Numbers(a |> float)
                 | :? (KeyType list) as l ->
                     List(l)
                 | :? System.Collections.IEnumerable as l ->

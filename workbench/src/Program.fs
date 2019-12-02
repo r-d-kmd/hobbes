@@ -1,5 +1,3 @@
-
-
 open Argu
 open FSharp.Data
 open Hobbes.Server.Db
@@ -41,20 +39,20 @@ let getString pat url  =
 
 type WorkbenchSettings = FSharp.Data.JsonProvider<"""{
     "development" : {
-        "host": "lkjlkj", 
-        "hobbes" : "lkjlkj", 
         "azure" : {
-            "kmddk" : "y3cg",
-            "time-payroll-kmddk" : "gvrg"
-        }
+            "kmddk" : "y3",
+            "time-payroll-kmddk" : "g"
+        },
+        "hobbes" : "V",
+        "host" : "http://"
     }, 
-    "production" : {
-        "host": "lkjlkj", 
-        "hobbes" : "lkjlkj",
-        "azure" : {
-            "kmddk" : "y3cg",
-            "time-payroll-kmddk" : "gvrg"
-        }
+    "production": {
+        "azure": {
+            "kmddk": "4b",
+            "time-payroll-kmddk": "gvr"
+        }, 
+        "hobbes": "VR",
+        "host" : "https://"
     }
 }""">
 
@@ -101,15 +99,15 @@ let main args =
             match results.TryGetResult Environment with
             None -> 
                 
-                if System.IO.File.Exists  settingsFile then 
+                if System.IO.File.Exists settingsFile then 
                     (settingsFile |> WorkbenchSettings.Load).Development
                 else
                      match Database.env "WORKBENCH_ENVIRONMENT" null with
                      null -> failwith "No settings file and no env var"
                      | s -> 
-                         s 
-                         |> JsonValue.Parse
-                         |> WorkbenchSettings.Development
+                         printfn "Env settings: %s " s
+                         (s 
+                         |> WorkbenchSettings.Parse).Production
             | Some e -> 
                let settings = (settingsFile |> WorkbenchSettings.Load)
                match e with
@@ -120,11 +118,11 @@ let main args =
             
         let test = results.TryGetResult Tests 
         let sync = results.TryGetResult Sync
-        let publish = Some Publish //results.TryGetResult Publish
+        let publish = results.TryGetResult Publish
         let backsync = results.TryGetResult BackSync
-        let listTransformationsPath = "/api/admin/list/transformations"
-        let listConfigPath = "/api/admin/list/configurations"
-        let listRawdataPath = "/api/admin/list/rawdata"
+        let listTransformationsPath = "/admin/list/transformations"
+        let listConfigPath = "/admin/list/configurations"
+        let listRawdataPath = "/admin/list/rawdata"
         if backsync.IsSome && System.IO.File.Exists settingsFile then
             let settings = WorkbenchSettings.Load settingsFile
             let prod = settings.Production
@@ -137,7 +135,7 @@ let main args =
             rawKeys
             |> Array.iter(fun key ->
                 let doc = 
-                    prod.Host + "/api/admin/raw/" + key |> getString prod.Hobbes
+                    prod.Host + "/admin/raw/" + key |> getString prod.Hobbes
                 doc.Replace("_rev","prodRev") |> db.InsertOrUpdate |> ignore
             )
 
@@ -166,8 +164,8 @@ let main args =
             None -> 
                 if publish |> Option.isSome then 
                     printfn "Using host: %s" settings.Host
-                    let urlTransformations = settings.Host + "/api/admin/transformation"
-                    let urlConfigurations = settings.Host + "/api/admin/configuration"
+                    let urlTransformations = settings.Host + "/admin/transformation"
+                    let urlConfigurations = settings.Host + "/admin/configuration"
                     let pat = settings.Hobbes
                     let transformations = 
                         Workbench.Reflection.transformations()
@@ -179,7 +177,7 @@ let main args =
                             System.String.Join(",",
                                 statements
                                 |> List.map (fun stmt ->
-                                   (stmt |> string).Replace("\"", "\\\"") |> sprintf "\n  %A"
+                                   (stmt |> string).Replace("\\","\\\\\\\\").Replace("\"", "\\\"") |> sprintf "\n  %A"
                                 )
                             ) |> sprintf "[%s\n]"
                             |> sprintf """{
@@ -203,16 +201,19 @@ let main args =
                     transformations 
                     |> Seq.iter(fun doc ->
                         printfn "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
-
-                        Http.Request(urlTransformations, 
-                                     httpMethod = "PUT",
-                                     body = TextRequest doc,
-                                     headers = 
-                                        [
-                                           HttpRequestHeaders.BasicAuth pat ""
-                                           HttpRequestHeaders.ContentType HttpContentTypes.Json
-                                        ]
-                                    ) |> ignore
+                        try
+                            Http.Request(urlTransformations, 
+                                         httpMethod = "PUT",
+                                         body = TextRequest doc,
+                                         headers = 
+                                            [
+                                               HttpRequestHeaders.BasicAuth pat ""
+                                               HttpRequestHeaders.ContentType HttpContentTypes.Json
+                                            ]
+                                        ) |> ignore
+                        with e ->
+                           printfn "Failed to publish transformations. URL: %s Settings: %s Msg: %s" urlTransformations (Database.env "WORKBENCH_ENVIRONMENT" "<no settings>") e.Message
+                           reraise()
                     )
                     configurations
                      
@@ -231,16 +232,12 @@ let main args =
                 0
              | Some configurationName ->
                 let pat = settings.Hobbes
-                
-                let url = settings.Host + "/api/data/sync/" + configurationName
-                //TODO: this should be based on the configuration and not hard coded
-                let azurePat = settings.Azure.TimePayrollKmddk
+                let url = settings.Host + "/data/sync/" + configurationName
                 Http.Request(url, 
                                  httpMethod = "GET",
                                  headers = 
                                     [
                                        HttpRequestHeaders.BasicAuth pat ""
-                                       ("PAT",azurePat)
                                        HttpRequestHeaders.ContentType HttpContentTypes.Json
                                     ]
                                 ) |> ignore

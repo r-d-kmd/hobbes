@@ -4,10 +4,11 @@ namespace Workbench.Transformations
 module Flowerpot = 
 
     open Hobbes.DSL
-
+    open General
+    
     [<Workbench.Transformation 0 >]
     let renaming = 
         [
-            only ((!> "WorkItemType" == "User Story") .|| (!> "WorkItemType" == "Bug"))
-            rename "Iteration.IterationLevel2" "Sprint"
+            only ((WorkItemType.Expression == "User Story") .|| (WorkItemType.Expression == "Bug"))
+            rename "Iteration.IterationLevel2" SprintName.Name
         ]

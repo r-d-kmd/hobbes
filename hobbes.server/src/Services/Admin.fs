@@ -74,15 +74,20 @@ module Admin =
 
     [<Get ("/list/configurations")>]
     let listConfigurations() = 
-        DataConfiguration.list() |> formatDBList "configurations"
+        DataConfiguration.list()
+        |> Seq.map(fun t -> t.Id) 
+        |> formatDBList "configurations"
 
     [<Get ("/list/cache")>]
     let listCache() = 
-        Cache.list() |> formatDBList "cache"
+        Cache.list()
+        |> formatDBList "cache"
         
     [<Get ("/list/transformations")>]
     let listTransformations() = 
-        Transformations.list() |> formatDBList "transformations"
+        Transformations.list()
+        |> Seq.map(fun t -> t.Id) 
+        |> formatDBList "transformations"
         
     [<Get ("/list/rawdata")>]
     let listRawdata() = 
@@ -145,7 +150,8 @@ module Admin =
             db.CompactAndClean()
             return res
         }
-
+        
+    [<Get "/init">]
     let initDb () =
         Settings.Load SettingsPath
         |> configure

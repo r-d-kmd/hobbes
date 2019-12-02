@@ -4,20 +4,21 @@ namespace Workbench.Transformations
 module EzEnergy = 
 
     open Hobbes.DSL
-
+    open General
+    
     [<Workbench.Transformation 0 >]
     let renaming = 
         [
-            only ((!> "WorkItemType" == "User Story") .|| (!> "WorkItemType" == "Bug"))
-            rename "Iteration.Name" "Sprint"
-            rename "FormattedID" "WorkItemId"
-            rename "_ValidFrom" "ChangedDate"
-            rename "Iteration.StartDate" "Sprint Start Date"
-            rename "Iteration.EndDate" "Sprint End Date"
-            rename "Project.Name" "Team"
-            rename "PlanEstimate" "Story Points"
-            create (column  "State") (If ((!> "ScheduleState") == (!!> "Accepted")) (Then !!> "Done") (Else 
-                                         (If ((!> "StateCategory" == !!> "In-Progress") .|| (!> "StateCategory" == !!> "Completed")) (Then !!> "Todo") (Else !!> "Done" ))
-                                     ))
+            only ((WorkItemType.Expression == "User Story") .|| (WorkItemType.Expression == "Bug"))
+            rename "Iteration.Name" SprintName.Name
+            rename "FormattedID" WorkItemId.Name
+            rename "_ValidFrom" ChangedDate.Name
+            rename "Iteration.StartDate" SprintStartDate.Name
+            rename "Iteration.EndDate" SprintEndDate.Name
+            rename "Project.Name" Team.Name
+            rename "PlanEstimate" Estimate.Name
+            create (column State.Name) (If ((!> "ScheduleState") == (!!> "Accepted")) (Then !!> "Done") (Else 
+                                          (If ((!> "StateCategory" == !!> "In-Progress") .|| (!> "StateCategory" == !!> "Completed")) (Then !!> "Todo") (Else !!> "Done" ))
+                                       ))
                                     
         ]

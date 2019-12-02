@@ -257,6 +257,49 @@ module DataStructures =
                      | AST.Int64 n -> n :> Comp
                      | AST.Float n -> n :> Comp
                Series.mapValues(fun _ -> n)
+            | AST.RegularExpression(expr, pattern, result) ->
+                let regex input = 
+                    System.Text.RegularExpressions.Regex.Matches(input, pattern)
+                let formatter (groups : string []) = 
+                    result
+                    |> List.fold(fun acc token ->
+                        let s = 
+                            match token with
+                            AST.RegExGroupIdentifier n ->
+                                groups.[n]
+                            | AST.RegExResultString literal ->
+                                literal
+                        s::acc
+                    ) []
+                    |> List.rev
+                    |> System.String.Concat
+                    :> Comp
+                (expr
+                |> compileExpression)
+                >> Series.mapValues (fun v ->
+                    let input = string v
+                    let matches =
+                        input
+                        |> regex
+                        |> List.ofSeq
+                    let groups = 
+                        match matches with 
+                        [] -> 
+                            eprintfn "No matches. Input: %s Pattern: %s" input pattern
+                            []
+                        | [h] -> 
+                            h.Groups 
+                            |> List.ofSeq
+                        | _ -> 
+                            printfn "Found multiple groups. Collecting as different matches"
+                            matches 
+                            |> List.ofSeq 
+                            |> List.collect(fun m -> m.Groups |> List.ofSeq)
+                    groups
+                    |> Seq.map(fun g -> g.Value)
+                    |> Array.ofSeq
+                    |> formatter
+                )
             | AST.DateTime d ->
                Series.mapValues(fun _ -> d :> Comp)           
             | AST.MissingValue ->
@@ -326,7 +369,7 @@ module DataStructures =
                     |> Series.mapValues(fun v ->
                     let date = 
                         match v with
-                        :? System.DateTimeOffset as d -> Some d.DateTime
+                        :? DateTimeOffset as d -> Some d.DateTime
                         | :? string as s -> 
                             (s
                              |> System.DateTimeOffset.Parse).DateTime
@@ -351,7 +394,65 @@ module DataStructures =
                 compileBooleanExpression b
             | AST.ColumnExpression(expression) ->  
                 columnComputationExpression expression
-            
+            | AST.Ordinals ->
+                fun s -> 
+                    s
+                    |> Series.observationsAll
+                    |> Seq.indexed
+                    |> Seq.map(fun (i,(k,_)) -> k => (i :> Comp) )
+                    |> series
+            | AST.Extrapolate(regressionType, knownValues, count) -> 
+                let knownValuesExpr = 
+                    knownValues
+                    |> compileExpression
+
+                fun s ->
+                    let transformExpressionsToVariants expr = 
+                        s
+                        |> expr
+                        |> Series.mapValues(fun c -> c :> obj :?> float)
+                        |> Series.values
+                        |> Array.ofSeq
+
+                    let xSeries = 
+                        s
+                        |> Series.keys
+                        |> Seq.map(fun k ->
+                            match k with
+                            AST.KeyType.Numbers d -> d |> float
+                            | AST.KeyType.DateTime d -> d.Ticks |> float
+                            | _ -> failwith "Can only extrapolated based on numeric values"
+                        ) |> Array.ofSeq
+                        |> (fun values ->
+                            let ols = OrdinaryLeastSquares()
+                            //inputs will be longer than outputs when doing forecasting
+                            let x = [|for i in 0..values.Length + count - 1 -> float i|]
+                            let regression = ols.Learn(x |> Array.take values.Length, values)    
+                            regression.Transform(x)
+                        )
+
+                    let createKey (v: float) =
+                        v |> 
+                        match s |> Series.keys |> Seq.head with
+                        AST.KeyType.Numbers _ -> AST.KeyType.Numbers
+                        | AST.KeyType.DateTime _ -> (int64 >> DateTime >> AST.KeyType.DateTime)
+                        | _ -> failwith "Can't convert to key"
+
+                    let knownValues = 
+                        knownValuesExpr
+                        |> transformExpressionsToVariants
+                        
+                    match regressionType with
+                    AST.Linear ->
+                        let ols = OrdinaryLeastSquares()
+                        //inputs will be longer than outputs when doing forecasting
+                        let x = xSeries |> Array.take knownValues.Length
+                        let regression = ols.Learn(x, knownValues)    
+                        regression.Transform(xSeries)
+                        |> Array.zip (xSeries)
+                        |> Array.map(fun (x,y) -> AST.KeyType.Create x => (y :> Comp))
+                        |> series
+
             | AST.Regression(regressionType,inputTreeNodes,outputTreeNodes) ->
                 let inputExpr = 
                     inputTreeNodes
@@ -379,7 +480,9 @@ module DataStructures =
                     match regressionType with
                     AST.Linear ->
                         let ols = OrdinaryLeastSquares()
-                        let regression = ols.Learn(inputs, outputs)    
+                        //inputs will be longer than outputs when doing forecasting
+                        let x = inputs |> Array.take outputs.Length
+                        let regression = ols.Learn(x, outputs)    
                         regression.Transform(inputs)
                         |> Array.zip (s
                                      |> Series.keys

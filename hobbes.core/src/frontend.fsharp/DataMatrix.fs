@@ -266,7 +266,15 @@ module DataStructures =
                         let s = 
                             match token with
                             AST.RegExGroupIdentifier n ->
-                                groups.[n]
+                                try
+                                    groups.[n]
+                                with 
+                                  | :? IndexOutOfRangeException ->
+                                      eprintfn "Didn't find group %d in groups %A" n groups
+                                      reraise()
+                                  | e -> 
+                                      eprintfn "Failed to create regex result. Message: %s" e.Message
+                                      reraise()
                             | AST.RegExResultString literal ->
                                 literal
                         s::acc
@@ -344,7 +352,17 @@ module DataStructures =
             | AST.Int exp ->
                 fun s ->
                     s |> (compileExpression exp)
-                    |> Series.mapValues(fun v -> int(v :?> float) :> Comp)
+                    |> Series.mapValues(function 
+                          :? string as s -> int s :> Comp
+                          | :? int as i -> i :> Comp
+                          | :? float as f -> int f :> Comp
+                          | a -> 
+                              a 
+                              |> string 
+                              |> System.Double.Parse 
+                              |> int 
+                              :> Comp
+                          )
             | AST.IfThisThenElse(condition,thenBody,elseBody) ->
                 let conditionExp = 
                     compileBooleanExpression condition
@@ -413,14 +431,23 @@ module DataStructures =
                         |> Series.mapValues(fun c -> c :> obj :?> float)
                         |> Series.values
                         |> Array.ofSeq
-
-                    let xSeries = 
+                    let keys = 
                         s
                         |> Series.keys
+                    let expectedLength = 
+                        (keys |> Seq.length) + 10
+                    let xSeries = 
+                        keys
                         |> Seq.map(fun k ->
                             match k with
                             AST.KeyType.Numbers d -> d |> float
                             | AST.KeyType.DateTime d -> d.Ticks |> float
+                            | AST.KeyType.Text t when System.Double.TryParse t |> fst ->
+                                k 
+                                |> AST.KeyType.UnWrap
+                                |> string 
+                                |> System.Double.TryParse
+                                |> snd
                             | _ -> failwith "Can only extrapolated based on numeric values"
                         ) |> Array.ofSeq
                         |> (fun values ->
@@ -430,6 +457,7 @@ module DataStructures =
                             let regression = ols.Learn(x |> Array.take values.Length, values)    
                             regression.Transform(x)
                         )
+                    assert (xSeries.Length = expectedLength)
 
                     let createKey (v: float) =
                         v |> 
@@ -448,10 +476,12 @@ module DataStructures =
                         //inputs will be longer than outputs when doing forecasting
                         let x = xSeries |> Array.take knownValues.Length
                         let regression = ols.Learn(x, knownValues)    
-                        regression.Transform(xSeries)
-                        |> Array.zip (xSeries)
-                        |> Array.map(fun (x,y) -> AST.KeyType.Create x => (y :> Comp))
-                        |> series
+                        let result = 
+                            regression.Transform(xSeries)
+                            |> Array.zip xSeries
+                            |> Array.map(fun (x,y) -> createKey x => (y :> Comp))
+                        assert (result.Length = expectedLength)
+                        result |> series
 
             | AST.Regression(regressionType,inputTreeNodes,outputTreeNodes) ->
                 let inputExpr = 
@@ -571,9 +601,9 @@ module DataStructures =
                 )
             | AST.CreateColumn (exp, nameOfNewColumn) -> 
                 let compiledExpression = compileExpression frame exp
-                frame?(nameOfNewColumn) <- (compiledExpression (keySeries))
-                   
-                frame
+                let nFrame = Frame([nameOfNewColumn],[compiledExpression (keySeries)])
+                nFrame
+                |> Frame.join JoinKind.Outer frame
             | AST.Pivot(rowKeyExpression,columnKeyExpression,valueExpression, reduction) ->
                 let rowkey,compiledExpressionFunc = compileTempColumn "__rowkey__" rowKeyExpression
                 compiledExpressionFunc frame keySeries

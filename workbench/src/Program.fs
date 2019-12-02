@@ -177,7 +177,7 @@ let main args =
                             System.String.Join(",",
                                 statements
                                 |> List.map (fun stmt ->
-                                   (stmt |> string).Replace("\\","\\\\").Replace("\"", "\\\"") |> sprintf "\n  %A"
+                                   (stmt |> string).Replace("\\","\\\\\\\\").Replace("\"", "\\\"") |> sprintf "\n  %A"
                                 )
                             ) |> sprintf "[%s\n]"
                             |> sprintf """{

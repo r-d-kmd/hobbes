@@ -14,5 +14,5 @@ module Delta =
                                                      !!> "Bug"
                                                    ])
             rename "Iteration.IterationLevel3" SprintName.Name
-            create (column SprintNumber.Name) (regex (!> "Sprint Name") "[^\\d]*([\\d]+).*" [``$1``])
+            create (column SprintNumber.Name) (regex (!> "Sprint Name") "[Ss][Pp][Rr][Ii][Nn][Tt] [^\\d]*([\\d]+).*" [``$1``])
         ]

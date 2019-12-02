@@ -34,7 +34,9 @@ module Metrics =
     [<Workbench.Transformation 1>]
     let sprintVelocity =
         [
-            index rows by SprintNumber.Expression
             sort by SprintNumber.Name
+            index rows by (int SprintNumber.Expression)
             create (column "Velocity")  (linear extrapolation ((moving Mean 3 (!> "Done"))) 10)
+            create (column SprintNumber.Name) Keys
+            slice columns [SprintNumber.Name; "Velocity"]
         ]

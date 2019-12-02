@@ -16,3 +16,4 @@ docker-compose.prod.yml
 *.user
 workbench.json
 azureDevopsCollector/db/data
+AssemblyInfo.fs

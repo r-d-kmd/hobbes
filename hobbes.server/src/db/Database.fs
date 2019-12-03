@@ -243,7 +243,7 @@ namespace Hobbes.Server.Db
                 if failed then
                     log.Debugf "Response status code : %d.  Body: %s. Url: %s" 
                         statusCode 
-                        (body.Substring(0,min 1000 body.Length)) 
+                        (body.Substring(0,min 1000 body.Length).Replace("\"","\\\"")) 
                         url
                  
                 if isTrial || not(failed) then
@@ -273,17 +273,7 @@ namespace Hobbes.Server.Db
                 if  statusCode >= 200  && statusCode <= 299  then
                     body
                 elif statusCode = 400 then
-                    let length = 500
-                    let start =
-                        if (body).Contains "Invalid JSON starting at character " then
-                            (((body.Split("Invalid JSON starting at character ") |> Array.last).Split ' '
-                             |> Array.head).Trim()
-                            |> int)
-                            - 20
-                            |> max 0
-                        else
-                            0
-                    failwithf "Bad format. Doc: %s" (body.Substring(start, min body.Length length))
+                    failwithf "Bad format. Doc: %s" (body.Substring(0, min body.Length 500))
                 else
                     failwith body
             member this.AddView name =
@@ -299,7 +289,7 @@ namespace Hobbes.Server.Db
             member __.List() =
                 (get ["_all_docs"] (Some ["include_docs","true"])
                  |> List.Parse).Rows
-                 |> Array.map(fun r -> r.Doc.ToString() |> parser)
+                 |> Array.map(fun r -> r.Doc :> obj :?> string |> parser)
                  |> Seq.ofArray
 
             member __.Get id =

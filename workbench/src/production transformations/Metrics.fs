@@ -1,30 +1,42 @@
 namespace Workbench.Transformations
+open Hobbes.Parsing.AST
 
 [<Workbench.Transformations(Workbench.Project.General)>]
 module Metrics = 
 
     open Hobbes.DSL
+    open General
 
     [<Workbench.Transformation 0>]
     let stateCountBySprint = 
         [
-            pivot (!> "Sprint") (!> "State") Hobbes.Parsing.AST.Count (!> "WorkItemId")
-            create (column "Sprint") Keys
-        ]
+            pivot 
+                  SprintNumber.Expression 
+                  State.Expression 
+                  Count 
+                  WorkItemId.Expression
 
+            create SprintNumber.Name Keys
+            sort by SprintNumber.Name
+        ]
+    
     [<Workbench.Transformation 1>]
     let expandingCompletionBySprint =
         [
-            slice columns ["Sprint";"Done"]
-            sort by "Sprint" 
-            create (column "Total Completed") (expanding Hobbes.Parsing.AST.Sum (!> "Done"))
-            
+            slice columns [SprintNumber.Name; "Done"]
+            sort by SprintNumber.Name
+            create (column "Burn up") (expanding Sum (!> "Done")) 
+            create (column "Velocity") ((moving Mean 3 (!> "Done")))
+            index rows by SprintNumber.Expression
+            create (column "Burn up Prediction") ((linear extrapolation) (!> "Burn up") 10)
         ]
         
     [<Workbench.Transformation 1>]
     let sprintVelocity =
         [
-            slice columns ["Sprint";"Done"]
-            sort by "Sprint" 
-            create (column "Velocity") (moving Hobbes.Parsing.AST.Mean 3 (!> "Done"))
+            sort by SprintNumber.Name
+            index rows by (int SprintNumber.Expression)
+            create (column "Velocity")  (linear extrapolation ((moving Mean 3 (!> "Done"))) 10)
+            create (column SprintNumber.Name) Keys
+            slice columns [SprintNumber.Name; "Velocity"]
         ]

@@ -15,7 +15,7 @@ module Security =
     let private toB64 s = 
         System.Convert.ToBase64String s
 
-    let fromB64 s = 
+    let fromB64 s =  
         System.Convert.FromBase64String s
         |> encoding.GetString
 
@@ -128,6 +128,32 @@ module Security =
                     user.User 
             Some(userName, token)
         | _ -> None
+
+    let randomString length =
+        let chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-_"
+        use crypto = new RNGCryptoServiceProvider()
+
+        // Maximum random number that can be used without introducing a bias
+        let maxRandom = 255 - (256 % chars.Length) |> byte
+        let data = Array.create length 0uy
+        let rec inner acc =
+            crypto.GetBytes(data);
+
+            let temp = 
+                data
+                |> Array.filter(fun v -> v <= maxRandom)
+                |> List.ofArray
+                
+            match acc@temp with
+            lst when lst.Length >= length ->
+                let result = 
+                    lst
+                    |> List.take (min length data.Length)
+                    |> List.map(fun v -> chars.[int v % chars.Length])
+                    |> Array.ofList
+                System.String(result)
+            | l -> inner l
+        inner []
 
     let verifyAuthToken (authToken : string) = 
         try

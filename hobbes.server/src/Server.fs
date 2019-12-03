@@ -22,6 +22,8 @@ let adminRouter =
         fetch    <@ listCache @>
         fetch    <@ listRawdata @>
         fetch    <@ listLog @> 
+        fetch    <@ clearCache @> 
+        fetch    <@ clearRawdata @> 
 
         withArg  <@ deleteRaw @>
         withArg  <@ deleteCache @>
@@ -48,7 +50,8 @@ let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
     fetch <@ ping @> 
-    withArg <@ key @>
+    withBody <@ key @>
+    fetch <@ initDb @>
     forward "/admin" adminRouter
     forward "/status" statusRouter
     forward "/data" dataRouter
@@ -64,13 +67,18 @@ let private app = application {
 let rec private init() =
     async {
         try
+           FSharp.Data.Http.Request("http://db:5984") |> ignore //make sure db is up and running
            initDb() |> ignore
            printfn "DB initialized"
         with _ ->
            do! Async.Sleep 2000
            init()
     } |> Async.Start
-let appInfo = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application        
-printf """{"appVersion": "%s", "runtimeFramework" : "%s", "appName" : "%s"}""" appInfo.ApplicationVersion appInfo.RuntimeFramework.FullName appInfo.ApplicationName
+
+let asm = System.Reflection.Assembly.GetExecutingAssembly() 
+let asmName = asm.GetName()
+
+let version = asmName.Version.ToString()      
+printfn """{"appVersion": "%s", "name" : "%s"}""" version asmName.Name
 init()
 run app

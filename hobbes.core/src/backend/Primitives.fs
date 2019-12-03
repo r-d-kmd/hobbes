@@ -19,20 +19,30 @@ module Primitives =
         between (pstring "\"") (pstring "\"")
                 (manyChars (normalChar <|> escapedChar)) 
 
-    let quotedStringLiteral<'u> : Parser<AST.ComputationExpression, 'u> =
-        let normalChar = satisfy (fun c -> c <> '\\' && c <> '\'')
+    let delimitedString<'u> (delim : string) escaped : Parser<string, 'u> =
+        let normalChar = satisfy (fun c -> c <> '\\' && c <> delim.[0])
         let unescape c = match c with
                          | 'n' -> '\n'
                          | 'r' -> '\r'
                          | 't' -> '\t'
                          | c   -> c
-        let escapedChar = pstring "\\" >>. (anyOf "\\nrt\'" |>> unescape)
-        between (pstring "\'") (pstring "\'")
-                (manyChars (normalChar <|> escapedChar)) >>= ((fun s -> 
-                     match System.DateTime.TryParse(s,System.Globalization.CultureInfo.CurrentCulture,System.Globalization.DateTimeStyles.None) with
-                     true, v  -> AST.DateTime v
-                     | false, _ -> AST.String s
-                ) >> preturn)
+        let escapedChar = pstring "\\" >>. (anyOf (delim + escaped) |>> unescape)
+        between (pstring delim) (pstring delim)
+                (manyChars (normalChar <|> escapedChar))
+    
+    let pquotedStringLiteral : Parser<string, unit> =
+        delimitedString "\'" "\\nrt"
+
+    let quotedStringLiteral : Parser<AST.ComputationExpression, unit> = 
+        pquotedStringLiteral >>= ((fun (s : string) -> 
+             match System.DateTime.TryParse(s,System.Globalization.CultureInfo.CurrentCulture,System.Globalization.DateTimeStyles.None) with
+             true, v  -> AST.DateTime v
+             | false, _ -> AST.String s
+        ) >> preturn)
+        
+    let regexLiteral : Parser<string, unit> = 
+        delimitedString "/" "\\abtrvfnexcudw.$^{[(|)*+?" .>> spaces
+
     //someName || "some quoted string"
     let columnName = stringLiteral <|> identifier 
     //col1, "col2" , "column three"

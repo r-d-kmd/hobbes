@@ -20,6 +20,9 @@
     <Compile Include="../../../hobbes.server/src/Security.fs" />
     <Compile Include="../../../hobbes.server/src/Routing.fs" />
     <Compile Include="db/Uniform.fs" />
+    <None Include="../../../hobbes.server/src/db/**/**/*.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <Compile Include="Server.Implementation.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>

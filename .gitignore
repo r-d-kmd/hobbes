@@ -11,7 +11,7 @@ packaging/
 paket-files/
 deploy/
 hobbes.server/db/data
-hobbes.server/collector/db/data
+collectors/db/data/
 docker-compose.prod.yml
 *.user
 workbench.json

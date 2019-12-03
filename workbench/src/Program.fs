@@ -105,7 +105,6 @@ let main args =
                      match Database.env "WORKBENCH_ENVIRONMENT" null with
                      null -> failwith "No settings file and no env var"
                      | s -> 
-                         printfn "Env settings: %s " s
                          (s 
                          |> WorkbenchSettings.Parse).Production
             | Some e -> 
@@ -166,7 +165,7 @@ let main args =
                     printfn "Using host: %s" settings.Host
                     let urlTransformations = settings.Host + "/admin/transformation"
                     let urlConfigurations = settings.Host + "/admin/configuration"
-                    let urlClearCache = settings.Host + "/admin/clearCache"
+                    let urlClearCache = settings.Host + "/admin/clear/cache"
 
                     let pat = settings.Hobbes
                     let transformations = 
@@ -214,7 +213,7 @@ let main args =
                                             ]
                                         ) |> ignore
                         with e ->
-                           printfn "Failed to publish transformations. URL: %s Settings: %s Msg: %s" urlTransformations (Database.env "WORKBENCH_ENVIRONMENT" "<no settings>") e.Message
+                           printfn "Failed to publish transformations. URL: %s Msg: %s" urlTransformations e.Message
                            reraise()
                     )
 

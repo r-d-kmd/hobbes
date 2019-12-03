@@ -22,6 +22,7 @@ let adminRouter =
         fetch    <@ listCache @>
         fetch    <@ listRawdata @>
         fetch    <@ listLog @> 
+        fetch    <@ clearCache @> 
 
         withArg  <@ deleteRaw @>
         withArg  <@ deleteCache @>

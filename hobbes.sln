@@ -13,13 +13,9 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.server", "hobbes.ser
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.workbench", "workbench\src\hobbes.workbench.fsproj", "{3C554E03-A110-4E7F-BC69-391573A3B099}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "collector", "hobbes.server\collector\src\collector.fsproj", "{82872901-91C0-4415-B957-AFF45E26DDDA}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "collectors", "collectors", "{839E43CC-EED3-4546-B312-E83EB021AEA5}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "azureDevopsCollector", "azureDevopsCollector", "{42A29C41-AE8B-47B2-ABCB-C2D532C136CD}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "azureDevopsCollector", "hobbes.server\collectors\azureDevopsCollector\src\azureDevopsCollector.fsproj", "{C44A04C8-BDE0-4F78-AEBE-F3240F18FBB8}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "azureDevopsCollector", "collectors\azureDevopsCollector\src\azureDevopsCollector.fsproj", "{C44A04C8-BDE0-4F78-AEBE-F3240F18FBB8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

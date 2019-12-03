@@ -3,10 +3,9 @@ module AzureDevopsCollector.Implementation
 open Hobbes.Server.Db.Database
 open Hobbes.Server.Db.Log
 open Hobbes.Server.Db
-open Hobbes.Server.Db
 
 let ping () =
-    200, "pong"
+    200, "dingeling"
 
 let getSyncState syncId =
     200, (Rawdata.getState syncId).ToString()
@@ -109,13 +108,14 @@ let initDb () =
         errorCode, msg
      | None ->
         try
-            let documentDir = "./../../../src/db/documents"
+            let documentDir = "./documents"
             if System.IO.Directory.Exists documentDir |> not then failwith "Document folder not found"
             (System.IO.Directory.EnumerateDirectories(documentDir)
             |> Seq.collect(fun dir -> 
-                System.IO.Directory.EnumerateFiles(dir,"*.json")
-                |> Seq.map(fun f -> 
-                    let dbName = System.IO.Path.GetFileName dir
+                let dbName = System.IO.Path.GetFileName dir
+                System.IO.Directory.EnumerateFiles(dir,"*.json") 
+                |> Seq.filter (fun _ ->List.exists (fun db -> db.Equals(dbName)) dbs)
+                |> Seq.map (fun f -> 
                     let db = Database(dbName, CouchDoc.Parse, ignoreLogging)
                     let insertOrUpdate =
                         db.InsertOrUpdate

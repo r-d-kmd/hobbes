@@ -185,7 +185,7 @@ namespace Hobbes.Server.Db
                 (listResult startKey endKey (Some limit) descending None).Rows
                 |> Array.map(fun entry -> entry.Value.ToString() |> parser)
 
-        and Database<'a> (databaseName, parser : string -> 'a, log : ILog, dbServerUrl : string) =
+        and Database<'a> private (databaseName, parser : string -> 'a, log : ILog, dbServerUrl : string) =
             let mutable _views : Map<string,View> = Map.empty
 
             let request httpMethod isTrial body path rev queryString =

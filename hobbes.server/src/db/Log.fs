@@ -35,7 +35,7 @@ module Log =
 
 
     let mutable logLevel = 
-        Database.env "LOG_LEVEL" "Debug" |> LogType.Parse
+        Database.env "LOG_LEVEL" "info" |> LogType.Parse
     
     let mutable private _logger = eprintf "%A" 
     let mutable private _list : unit -> seq<string> = fun () -> Seq.empty

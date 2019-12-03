@@ -114,7 +114,7 @@ let initDb () =
             |> Seq.collect(fun dir -> 
                 let dbName = System.IO.Path.GetFileName dir
                 System.IO.Directory.EnumerateFiles(dir,"*.json") 
-                |> Seq.filter (fun _ ->List.exists (fun db -> db.Equals(dbName)) dbs)
+                |> Seq.filter (fun _ -> List.exists (fun db -> db.Equals(dbName)) dbs)
                 |> Seq.map (fun f -> 
                     let db = Database(dbName, CouchDoc.Parse, ignoreLogging)
                     let insertOrUpdate =

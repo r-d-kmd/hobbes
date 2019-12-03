@@ -24,7 +24,9 @@ before_build:
   - mkdir "c:\projects\hobbes\hobbes.server\db\data"
 
 build_script: 
-  - cd hobbes.server/src && fake build --target SetAssemblyInfo
+  - cd hobbes.server/src
+  - fake build --target SetAssemblyInfo
+  - cd ../..
   - fake build --target builddocker
 
 test_script:

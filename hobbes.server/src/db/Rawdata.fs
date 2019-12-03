@@ -113,6 +113,27 @@ module Rawdata =
     let list = 
         db.ListIds
 
+    let clear()=
+        //todo: make a bulk update instead setting the prop _deleted to true
+        async {
+            let!_ =
+                db.ListIds()
+                |> Seq.filter(fun id ->
+                   (id.StartsWith "_design" || id = "default_hash") |> not
+                )
+                |> Seq.map(fun id -> 
+                    async { 
+                        let status,body = delete id
+                        if status > 299 then
+                            Log.errorf "" "Couldn't delete cache %s. Messahe: %s" id body
+                        else
+                            Log.debugf "Deleted cache %s" id
+                    }
+                ) |> Async.Parallel
+            return ()
+        } |> Async.Start
+        200,"deleting"
+
     let bySource (source : DataConfiguration.DataSource) = 
         //this could be done with a view but the production environment often exceeds the time limit.
         //we haven't got enough documents for a missing index to be a problem and since it's causing problems 

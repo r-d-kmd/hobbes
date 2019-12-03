@@ -6,7 +6,6 @@ metadata:
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
-
 ---
 kind: ConfigMap
 apiVersion: v1
@@ -207,7 +206,7 @@ spec:
         kubernetes.io/os: linux
       containers:
         - name: nginx-ingress-controller
-          image: kmdrd/hobbes-front:alpha
+          image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.26.1
           args:
             - /nginx-ingress-controller
             - --configmap=$(POD_NAMESPACE)/nginx-configuration

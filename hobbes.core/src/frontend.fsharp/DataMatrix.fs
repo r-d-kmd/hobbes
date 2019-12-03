@@ -606,9 +606,36 @@ module DataStructures =
                 )
             | AST.CreateColumn (exp, nameOfNewColumn) -> 
                 let compiledExpression = compileExpression frame exp
-                frame?(nameOfNewColumn) <- (compiledExpression (keySeries))
-                frame
-                
+                let resultingSeries = compiledExpression (keySeries)
+                frame?(nameOfNewColumn) <- resultingSeries
+                if resultingSeries.KeyCount > frame.RowCount then
+                    let columns = 
+                        frame.ColumnKeys
+                        |> Seq.filter(fun c -> c <> nameOfNewColumn)
+                    let rows = 
+                        frame
+                        |> Frame.getRows
+                    let rowKeys = 
+                        frame.RowKeys
+                        |> Set.ofSeq
+                    let newRows =
+                        resultingSeries
+                        |> Series.filter(fun k _ -> rowKeys |> Set.contains k |> not)
+                        |> Series.mapValues(fun (v : Comp) ->
+                               let cells =
+                                   (nameOfNewColumn => Some v)::
+                                       (
+                                           columns
+                                           |> Seq.map(fun c -> c => None)
+                                           |> List.ofSeq
+                                       )
+                               cells
+                               |> Series.ofOptionalObservations
+                        )
+                    rows.Merge newRows
+                    |> Frame.ofRows
+                else
+                    frame
             | AST.Pivot(rowKeyExpression,columnKeyExpression,valueExpression, reduction) ->
                 let rowkey,compiledExpressionFunc = compileTempColumn "__rowkey__" rowKeyExpression
                 compiledExpressionFunc frame keySeries

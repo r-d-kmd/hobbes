@@ -26,8 +26,6 @@ spec:
         imagePullPolicy: Always
         image: kmdrd/hobbes-hobbes.server:alpha
         name: hobbes-server
-        ports:
-        - containerPort: 8085
         resources: {}
       restartPolicy: Always
 status: {}

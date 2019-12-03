@@ -229,6 +229,5 @@ open Fake.Core.TargetOperators
    ==> "ReleaseBuild"
    ==> "BuildDocker"
    ==> "PushToDocker"
-   ==> "Publish"
 
 Target.runOrDefaultWithArguments "Build"

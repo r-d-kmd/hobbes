@@ -15,7 +15,6 @@ let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
     get "/ping" ((ignore >> Implementation.ping) |> Hobbes.Server.Routing.noArgs "ping" )
-    get "/init" ((ignore >> Implementation.initDb) |> Hobbes.Server.Routing.noArgs "init") 
 } 
 
 let private app = application {
@@ -28,6 +27,7 @@ let private app = application {
 let rec private init() =
     async {
         try
+           FSharp.Data.Http.Request("http://collectordb:5984") |> ignore //make sure db is up and running
            Implementation.initDb() |> ignore
            printfn "DB initialized"
         with _ ->

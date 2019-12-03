@@ -61,8 +61,7 @@ module Rawdata =
     type private RawList = JsonProvider<"""["id_a","id_b"]""">
     let private db = 
         Database.Database("rawdata", CacheRecord.Parse, Log.loggerInstance)
-          .AddView("table")
-          .AddView "WorkItemRevisions"
+                .AddView "WorkItemRevisions"
 
     let keys (source : DataConfiguration.DataSource) = 
         let startKey = 
@@ -114,27 +113,14 @@ module Rawdata =
     let list = 
         db.ListIds
 
-    type private Table = JsonProvider<"""{
-          "total_rows": 2,
-          "offset": 0,
-          "rows": [
-            {
-              "id": "azure devops:flowerpot",
-              "key": [
-                "Azure DevOps",
-                "flowerpot"
-              ],
-              "value": "azure devops:flowerpot"
-            }
-          ]
-        }""">
-
-    let bySource source = 
-        let key = keys source
-        let keys = db.Views.["table"].List(Table.Parse, startKey = key)
-        let docs = db.FilterByKeys keys
-        docs
-        |> Seq.collect(fun s -> 
+    let bySource (source : DataConfiguration.DataSource) = 
+        //this could be done with a view but the production environment often exceeds the time limit.
+        //we haven't got enough documents for a missing index to be a problem and since it's causing problems 
+        //reliance on an index has been removed
+        db.List()
+        |> Seq.filter(fun doc -> 
+           doc.Source = source.SourceName && doc.Project = source.ProjectName
+        ) |> Seq.collect(fun s -> 
             match s.JsonValue.Properties() |> Seq.tryFind(fun (n,_) -> n = "data") with
             Some _ -> 
                 let data = s.Data.ToString() 
@@ -142,7 +128,8 @@ module Rawdata =
                     (data 
                      |> AzureDevOpsAnalyticsRecord.Parse).Value
                 value
-            | None -> [||])
+            | None -> [||]
+        )
             
     let get (id : string) = 
         200, (db.Get id).ToString()

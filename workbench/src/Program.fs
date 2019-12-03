@@ -44,7 +44,7 @@ type WorkbenchSettings = FSharp.Data.JsonProvider<"""{
             "time-payroll-kmddk" : "g"
         },
         "hobbes" : "V",
-        "host" : "http://localhost:8080"
+        "host" : "http://"
     }, 
     "production": {
         "azure": {
@@ -52,7 +52,7 @@ type WorkbenchSettings = FSharp.Data.JsonProvider<"""{
             "time-payroll-kmddk": "gvr"
         }, 
         "hobbes": "VR",
-        "host" : "https://hobbes.azurewebsites.net"
+        "host" : "https://"
     }
 }""">
 
@@ -105,7 +105,6 @@ let main args =
                      match Database.env "WORKBENCH_ENVIRONMENT" null with
                      null -> failwith "No settings file and no env var"
                      | s -> 
-                         printfn "Env settings: %s " s
                          (s 
                          |> WorkbenchSettings.Parse).Production
             | Some e -> 
@@ -120,9 +119,9 @@ let main args =
         let sync = results.TryGetResult Sync
         let publish = results.TryGetResult Publish
         let backsync = results.TryGetResult BackSync
-        let listTransformationsPath = "/api/admin/list/transformations"
-        let listConfigPath = "/api/admin/list/configurations"
-        let listRawdataPath = "/api/admin/list/rawdata"
+        let listTransformationsPath = "/admin/list/transformations"
+        let listConfigPath = "/admin/list/configurations"
+        let listRawdataPath = "/admin/list/rawdata"
         if backsync.IsSome && System.IO.File.Exists settingsFile then
             let settings = WorkbenchSettings.Load settingsFile
             let prod = settings.Production
@@ -135,7 +134,7 @@ let main args =
             rawKeys
             |> Array.iter(fun key ->
                 let doc = 
-                    prod.Host + "/api/admin/raw/" + key |> getString prod.Hobbes
+                    prod.Host + "/admin/raw/" + key |> getString prod.Hobbes
                 doc.Replace("_rev","prodRev") |> db.InsertOrUpdate |> ignore
             )
 
@@ -164,8 +163,10 @@ let main args =
             None -> 
                 if publish |> Option.isSome then 
                     printfn "Using host: %s" settings.Host
-                    let urlTransformations = settings.Host + "/api/admin/transformation"
-                    let urlConfigurations = settings.Host + "/api/admin/configuration"
+                    let urlTransformations = settings.Host + "/admin/transformation"
+                    let urlConfigurations = settings.Host + "/admin/configuration"
+                    let urlClearCache = settings.Host + "/admin/clear/cache"
+
                     let pat = settings.Hobbes
                     let transformations = 
                         Workbench.Reflection.transformations()
@@ -177,7 +178,7 @@ let main args =
                             System.String.Join(",",
                                 statements
                                 |> List.map (fun stmt ->
-                                   (stmt |> string).Replace("\"", "\\\"") |> sprintf "\n  %A"
+                                   (stmt |> string).Replace("\\","\\\\\\\\").Replace("\"", "\\\"") |> sprintf "\n  %A"
                                 )
                             ) |> sprintf "[%s\n]"
                             |> sprintf """{
@@ -212,11 +213,11 @@ let main args =
                                             ]
                                         ) |> ignore
                         with e ->
-                           printfn "Failed to publish transformations. URL: %s Settings: %s Msg: %s" urlTransformations (Database.env "WORKBENCH_ENVIRONMENT" "<no settings>") e.Message
+                           printfn "Failed to publish transformations. URL: %s Msg: %s" urlTransformations e.Message
                            reraise()
                     )
+
                     configurations
-                     
                     |> Seq.iter(fun doc ->
                         printfn "Creating configurations: %s" (Database.CouchDoc.Parse doc).Id
                         Http.Request(urlConfigurations, 
@@ -229,19 +230,25 @@ let main args =
                                         ]
                                     ) |> ignore
                     )
+
+                    //clear the cache so that it'll be rebuild based on the new transformations
+                    //TODO: only clear if transformation related to cache has changed
+                    Http.Request(urlClearCache, 
+                                     httpMethod = "GET",
+                                     headers = 
+                                        [
+                                           HttpRequestHeaders.BasicAuth pat ""
+                                        ]
+                                    ) |> ignore
                 0
              | Some configurationName ->
                 let pat = settings.Hobbes
-                
-                let url = settings.Host + "/api/data/sync/" + configurationName
-                //TODO: this should be based on the configuration and not hard coded
-                let azurePat = settings.Azure.TimePayrollKmddk
+                let url = settings.Host + "/data/sync/" + configurationName
                 Http.Request(url, 
                                  httpMethod = "GET",
                                  headers = 
                                     [
                                        HttpRequestHeaders.BasicAuth pat ""
-                                       ("PAT",azurePat)
                                        HttpRequestHeaders.ContentType HttpContentTypes.Json
                                     ]
                                 ) |> ignore

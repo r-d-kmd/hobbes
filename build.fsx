@@ -73,7 +73,8 @@ Target.create "Test" (fun _ ->
                 row.Split([|"\t";" "|], System.StringSplitOptions.RemoveEmptyEntries)
                 |> Array.last
             ) |> Seq.tail
-        if containers |> Seq.filter(fun image -> image = "hobbes" || image = "front" || image = "db") |> Seq.length = 3 then
+        
+        if containers |> Seq.filter(fun image -> image = "hobbes" || image = "db") |> Seq.length = 2 then
             true
         else
             printfn "Containers currently running %A" (containers |> Seq.map (sprintf "%A"))
@@ -107,7 +108,7 @@ Target.create "Test" (fun _ ->
     let startEnvironment = async {
         let workDir = "./hobbes.server"
         run "docker-compose" workDir "kill"
-        run "docker-compose" workDir "up -d hobbes db front"
+        run "docker-compose" workDir "up -d"
     }
 
     let tasks =
@@ -152,19 +153,7 @@ Target.create "Clean" (fun _ ->
     ]
 )
 
-
-Target.create "CopyFiles" (fun _ -> 
-    [
-        "dll"
-        "pdb"
-    ] |> List.map (fun ext ->
-            buildDir @@ (sprintf "Release/%s.%s" projectName ext) |> System.IO.Path.GetFullPath
-    ) |> List.iter (fun file -> 
-        printfn "Copying %s to %s" file netDir
-        System.IO.File.Copy(file, netDir @@ System.IO.Path.GetFileName file)
-    )
-)
-let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.0.default"
+let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.2.default"
 
 let createDockerTag dockerOrg tag = sprintf "%s/hobbes-%s" dockerOrg tag
 
@@ -266,12 +255,7 @@ open Fake.Core.TargetOperators
 
 "Clean"
    ==> "ReleaseBuild"
-   ==> "CopyFiles"
-   
-"ReleaseBuild" 
-   ==> "CopyFiles"
    ==> "BuildDocker"
    ==> "PushToDocker"
-   ==> "Publish"
 
 Target.runOrDefaultWithArguments "Build"

@@ -29,10 +29,25 @@ type Expression =
     | NumberConstant of float
     | DateTimeConstant of System.DateTime
     | Not of Expression
+    | Regression of AST.Regression * Expression * Expression
+    | Extrapolation of AST.Regression * Expression * int
+    | RegularExpression of input : Expression * patter: string * resultSnippets : AST.RegExResultToken list
+    | Ordinals
     | Keys
+    | Int of Expression
     with override x.ToString() =
            match x with
              Identifier s -> sprintf """ "%s" """ s
+             | RegularExpression(input, pattern, results) ->
+                let tokens = 
+                    (System.String.Join(" ", 
+                        results 
+                        |> List.map(function 
+                                        AST.RegExGroupIdentifier n -> sprintf "$%d" n 
+                                        | AST.RegExResultString s -> sprintf "'%s'" s)
+                                   )
+                    )
+                sprintf "regex [%s] /%s/ [%s]" (input.ToString()) pattern tokens
              | Expanding (r,exp) ->
                  sprintf "expanding %s [%s]"  (toString(r)) (exp.ToString())
              | Moving (r,windowSize, exp) ->
@@ -49,6 +64,18 @@ type Expression =
              | Not e -> sprintf "!(%s)" (e.ToString())
              | Keys -> "keys"
              | DateTimeConstant d -> sprintf "\'%s\'" (d.ToString(culture))
+             | Ordinals -> "ordinals"
+             | Regression(reg, inputs, outputs) ->
+                 let regStr = 
+                     match reg with
+                     AST.Linear -> "linear"
+                 sprintf "%s regression [%s] [%s]" regStr (inputs.ToString()) (outputs.ToString())
+             | Extrapolation(reg, outputs, count) ->
+                 let regStr = 
+                     match reg with
+                     AST.Linear -> "linear"
+                 sprintf "%s extrapolation [%s] %d" regStr (outputs.ToString()) count
+             | Int e -> sprintf "int (%s)" (e.ToString())
            
          static member private ParseStringOrDate (stringOrDate : string) = 
             match System.DateTime.TryParse(stringOrDate) with
@@ -137,7 +164,7 @@ type Statements =
            | Sort(name) -> sprintf """sort by column "%s" """ name
            | Index(exp) -> sprintf """index rows by (%s) """ (exp.ToString())
            | Only exp -> sprintf "only (%s)" (exp.ToString())
-               
+
 let by = ()
 
 type GroupByWithColumnNames = GroupByWithColumnNames of string list
@@ -217,11 +244,34 @@ let sort _ name =
     Sort(name)
 let index _ _ exp =
     Index(exp)
+
 let only expression = 
     Only(expression)
+
+let ordinals = Ordinals
+
+let linear f = f AST.Linear
+let regression regressionType inputs outputs = 
+    Regression(regressionType,inputs,outputs)
+
+let extrapolation regressionType outputs count= 
+    Extrapolation(regressionType,outputs,count)
 
 let inline (!!>) (text:string) = 
          TextLiteral text
 
 let inline (!>) (identifier:string) = 
          Identifier identifier
+
+let inline (<!>) (regexLiteral : string) =
+    AST.RegExResultString regexLiteral
+
+let ``$1`` = AST.RegExGroupIdentifier 1
+let ``$2`` = AST.RegExGroupIdentifier 2
+let ``$3`` = AST.RegExGroupIdentifier 3
+let ``$4`` = AST.RegExGroupIdentifier 4
+
+let regex expr pattern tokens =
+    RegularExpression(expr, pattern, tokens)
+
+let int e = Int(e)

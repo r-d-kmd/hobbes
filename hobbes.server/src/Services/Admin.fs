@@ -125,6 +125,14 @@ module Admin =
     let deleteCache (id : string) = 
         Cache.delete id
 
+    [<Delete ("/clear/cache")>]
+    let clearCache () = 
+        Cache.clear()
+
+    [<Delete ("/clear/rawdata")>]
+    let clearRawdata () = 
+        Cache.clear()
+        
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
         
         async {
@@ -150,7 +158,8 @@ module Admin =
             db.CompactAndClean()
             return res
         }
-
+        
+    [<Get "/init">]
     let initDb () =
         Settings.Load SettingsPath
         |> configure

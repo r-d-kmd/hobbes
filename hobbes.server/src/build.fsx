@@ -100,4 +100,6 @@ open Fake.Core.TargetOperators
     ==> "BuildImage"
     ==> "Restart"
 
+"SetAssemblyInfo"
+    ==> "Build"
 Target.runOrDefaultWithArguments "BuildImage"

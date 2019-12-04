@@ -53,7 +53,7 @@ build_script:
   - fake build --target SetAssemblyInfo
   - cd ../..
   - fake build --target builddocker
-  - docker login --username "%DOCKER_USER%" --password-stdin "%DOCKER_PASS%" 
+  - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
   - fake build --target PushAlpha
   
 test_script:

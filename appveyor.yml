@@ -45,7 +45,7 @@ before_build:
   - paket install
   - mkdir "c:\projects\hobbes\hobbes.server\db\data"
   - mkdir "c:\projects\hobbes\collectors\db\data"
-  - minikube start --vm-driver=none --memory=4096
+  - sudo minikube start --vm-driver=none --memory=4096
 
 build_script: 
  

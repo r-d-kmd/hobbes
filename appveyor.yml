@@ -34,7 +34,7 @@ install:
   - npm install -s -g --unicode=false newman
   - choco install kubernetes-cli
   - choco install minikube
-  - minikube start --vm-driver=none
+  - minikube start
   - kubectl get all
 
 before_build:

@@ -43,12 +43,12 @@ install:
   - sudo mv minikube /usr/local/bin/
   - sudo CHANGE_MINIKUBE_NONE_USER=true minikube start --vm-driver=none --memory=4096
   # Wait for Kubernetes to be up and ready (https://blog.travis-ci.com/2017-10-26-running-kubernetes-on-travis-ci-with-minikube)
-  - JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
   # Run commands 
   - kubectl get nodes
   - kubectl get pods --all-namespaces
   - cd kubernetes
   - kubectl apply -f db-deployment.yaml,db-service.yaml,db-volume.yaml,hobbes-deployment.yaml,hobbes-service.yaml
+  - JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
   - kubectl get all
   - cd ../
 
@@ -56,25 +56,5 @@ before_build:
   - paket install
   - mkdir "c:\projects\hobbes\hobbes.server\db\data"
   - mkdir "c:\projects\hobbes\collectors\db\data"
-
-build_script: 
-  - cd hobbes.server/src
-  - fake build --target SetAssemblyInfo DOCKER_CLI_EXPERIMENTAL=enabled
-  - cd ../..
-  - fake build --target builddocker DOCKER_CLI_EXPERIMENTAL=enabled
-  
-test_script:
-  - sh: kubectl get nodes
-  - sh: kubectl get pods --all-namespaces
-  - fake build --target test DOCKER_CLI_EXPERIMENTAL=enabled
-  - kubectl apply -f hobbes-deployment.yaml,db-deployment.yaml,hobbes-service.yaml,db-service.yaml,db-volume.yaml
-  #- newman run https://api.getpostman.com/collections/4127812-d535bce5-ad9a-4346-acb4-311c8443c478?apikey=%PM_APIKEY% -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=%PM_APIKEY%
-  #- newman run https://api.getpostman.com/collections/9463780-a7355a7a-5fe6-42b5-a1ed-877f3c9bc2f7?apikey=%PM_APIKEY% -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=%PM_APIKEY% --env-var "pat=%HOBBES_PAT%"
-
-deploy_script:
-  - docker login -u="%DOCKER_USER%" -p="%DOCKER_PASS%"
-  - fake build --target pushtodocker DOCKER_CLI_EXPERIMENTAL=enabled
-  - fake build --target publish DOCKER_CLI_EXPERIMENTAL=enabled
-
-
+  - kubectl get all
 

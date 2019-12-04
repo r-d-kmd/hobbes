@@ -4,7 +4,7 @@ open System.Reflection
 
 [<assembly: AssemblyVersionAttribute("1.1")>]
 [<assembly: AssemblyTitleAttribute("Hobbes server")>]
-[<assembly: AssemblyMetadataAttribute("hash","8a56c9")>]
+[<assembly: AssemblyMetadataAttribute("hash","79156f")>]
 [<assembly: AssemblyFileVersionAttribute("1.1")>]
 [<assembly: AssemblyProductAttribute("Hobbes server")>]
 do ()
@@ -12,6 +12,6 @@ do ()
 module internal AssemblyVersionInformation =
     let [<Literal>] AssemblyVersion = "1.1"
     let [<Literal>] AssemblyTitle = "Hobbes server"
-    let [<Literal>] AssemblyMetadata_hash = "8a56c9"
+    let [<Literal>] AssemblyMetadata_hash = "79156f"
     let [<Literal>] AssemblyFileVersion = "1.1"
     let [<Literal>] AssemblyProduct = "Hobbes server"

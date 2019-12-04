@@ -45,20 +45,21 @@ before_build:
   - paket install
   - mkdir "c:\projects\hobbes\hobbes.server\db\data"
   - mkdir "c:\projects\hobbes\collectors\db\data"
-  - sudo minikube start --vm-driver=none --memory=4096
-
+  - sudo CHANGE_MINIKUBE_NONE_USER=true minikube start --vm-driver=none --memory=4096
 build_script: 
  
   - cd hobbes.server/src
   - fake build --target SetAssemblyInfo
   - cd ../..
   - fake build --target builddocker
+  - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
   - fake build --target PushAlpha
   
 test_script:
-  - fake build --target test
   - cd kubernetes
   - kubectl apply -f db-deployment.yaml,db-service.yaml,db-volume.yaml,hobbes-deployment.yaml,hobbes-service.yaml
+  - while [[ $(kubectl get pods -l app=db -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for database" && sleep 1; done
+  - while [[ $(kubectl get pods -l app=hobbes-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for hobbes-server" && sleep 1; done
   - kubectl get all
   - cd ../
  
@@ -66,9 +67,8 @@ test_script:
   #- newman run https://api.getpostman.com/collections/9463780-a7355a7a-5fe6-42b5-a1ed-877f3c9bc2f7?apikey=%PM_APIKEY% -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=%PM_APIKEY% --env-var "pat=%HOBBES_PAT%"
 
 deploy_script:
-  - docker login -u="%DOCKER_USER%" -p="%DOCKER_PASS%"
-  - fake build --target pushtodocker DOCKER_CLI_EXPERIMENTAL=enabled
-  - fake build --target publish DOCKER_CLI_EXPERIMENTAL=enabled
+  - fake build --target pushtodocker
+  - fake build --target publish 
 
 
 

@@ -33,7 +33,6 @@ install:
   - dotnet tool install --global --version 5.226.0 paket
   - npm install -s -g --unicode=false newman
   - choco install kubernetes-cli
-  - kubectl get all
   - choco install minikube
   - minikube start --vm-driver=none
   - kubectl get all

@@ -9,6 +9,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="db/Database.fs" />
     <Compile Include="db/Log.fs" />

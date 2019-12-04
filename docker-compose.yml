@@ -47,7 +47,7 @@ services:
       - COUCHDB_USER=admin 
       - COUCHDB_PASSWORD=password
     expose: 
-      - 5984
+      - 5985
     volumes:
       - ./collectors/db/data:/opt/couchdb/data
     ports:

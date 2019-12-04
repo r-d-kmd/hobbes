@@ -219,8 +219,8 @@ module Routing =
             this.LocalWithArgs(state,path, verb, method)
         
         [<CustomOperation("withArgs3")>]
-        member this.WithArgs3(state, action : Expr<('a*'b*'c) -> int * string>) : RouterState =
-            let path,method,verb = this.FindMethodAndPath action
+        member this.WithArgs3(state, action : Expr<'a -> 'b -> 'c -> int * string>) : RouterState =
+            let path,method,verb = this.FindMethodAndPath action 
             this.LocalWithArgs3(state,path, verb, method)
 
         [<CustomOperation "collect">]

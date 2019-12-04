@@ -11,7 +11,7 @@ spec:
   accessModes:
     - ReadWriteMany
   hostPath: 
-    path: "/data"
+    path: "./data"
 
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -27,3 +27,4 @@ spec:
   resources:
     requests:
       storage: 3Gi
+  

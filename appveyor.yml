@@ -50,6 +50,7 @@ install:
   - cd kubernetes
   - kubectl apply -f db-deployment.yaml,db-service.yaml,db-volume.yaml,hobbes-deployment.yaml,hobbes-service.yaml
   - kubectl get all
+  - cd ../
 
 before_build:
   - paket install

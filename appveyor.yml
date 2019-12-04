@@ -28,7 +28,6 @@ services:
   - docker
 
 install:
-  - echo $'{\n    "experimental": true\n}' | sudo tee /etc/docker/daemon.json;
   - docker version
   - dotnet tool install fake-cli -g
   - dotnet tool install --global --version 5.226.0 paket
@@ -48,6 +47,9 @@ install:
   # Run commands 
   - kubectl get nodes
   - kubectl get pods --all-namespaces
+  - cd kubernetes
+  - kubectl apply -f db-deployment.yaml,db-service.yaml,db-volume.yaml,hobbes-deployment.yaml,hobbes-service.yaml
+  - kubectl get all
 
 before_build:
   - paket install

@@ -82,7 +82,7 @@ Target.create "BuildImage" (fun _ ->
         |> Path.getFullName
         |> Path.getDirectory).Split([|'/'; '\\'|], StringSplitOptions.RemoveEmptyEntries)
         |> Array.last
-        |> sprintf "build -t %s --platform linux ." 
+        |> sprintf "build -t %s linux ." 
         |> String.split ' '
         |> Arguments.OfArgs
     RawCommand ("docker", arguments)

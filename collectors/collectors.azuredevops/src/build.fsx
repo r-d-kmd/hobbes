@@ -64,7 +64,7 @@ Target.create "BuildImage" (fun _ ->
         |> Path.getFullName
         |> Path.getDirectory).Split([|'/'; '\\'|], StringSplitOptions.RemoveEmptyEntries)
         |> Array.last).ToLower()
-        |> sprintf "build -t kmdrd/hobbes-%s --platform linux ." 
+        |> sprintf "build -t kmdrd/hobbes-%s ." 
         |> String.split ' '
         |> Arguments.OfArgs
     RawCommand ("docker", arguments)

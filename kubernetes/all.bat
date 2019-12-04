@@ -1,1 +1,1 @@
-kubectl get all -n ingress-nginx
+kubectl get all

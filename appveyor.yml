@@ -33,7 +33,10 @@ install:
   - dotnet tool install --global --version 5.226.0 paket
   - npm install -s -g --unicode=false newman
   - choco install kubernetes-cli
+  - kubectl get all
   - choco install minikube
+  - minikube start --vm-driver=none
+  - kubectl get all
 
 before_build:
   - paket install
@@ -45,7 +48,6 @@ build_script:
   - fake build --target SetAssemblyInfo
   - cd ../..
   - fake build --target builddocker
-  - sh: sudo -E minikube start --vm-driver=none
   
 test_script:
   - sh: kubectl get nodes

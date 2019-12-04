@@ -175,7 +175,7 @@ Target.create "BuildDocker" (fun _ ->
                    t + ":" + "latest"
                ]
 
-            sprintf "build -t %s --platform linux ." tag
+            sprintf "build -t %s ." tag
             |> run workingDir
             tags
             |> List.iter(fun t -> 

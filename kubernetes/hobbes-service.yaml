@@ -3,10 +3,10 @@ kind: Service
 metadata:
   name: hobbes-server-svc
 spec:
+  type: NodePort
   ports:
   - port: 80
     targetPort: 8085
+    nodePort: 30080
   selector:
     app: hobbes-server
-  type: LoadBalancer
-  loadBalancerIP: 203.0.113.32

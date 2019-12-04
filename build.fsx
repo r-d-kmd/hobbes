@@ -223,12 +223,11 @@ Target.create "PushToDocker" (fun _ ->
 Target.create "PushAlpha" (fun _ ->
     let dockerOrg = "kmdrd"
     let run = run "docker"
-    
     dockerFiles
     |> Seq.iter(fun path ->
         let path = System.IO.Path.GetFullPath path
         let workingDir = System.IO.Path.GetDirectoryName path
-        
+   
         let push (tag : string) = 
             let t = createDockerTag dockerOrg (tag.ToLower()) + ":" + "alpha"
             sprintf "tag %s %s" tag t
@@ -240,6 +239,7 @@ Target.create "PushAlpha" (fun _ ->
             
         let tag = workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last
       
+
         push tag
     ) 
 )
@@ -248,7 +248,6 @@ open Fake.Core.TargetOperators
 
 "Clean"
    ==> "Compile"
-   ==> "CopyFiles"
    ==> "BuildDocker"
    ==> "PushAlpha"
    ==> "Build"

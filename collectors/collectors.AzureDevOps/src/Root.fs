@@ -4,18 +4,69 @@ open Hobbes.Server.Db.Database
 open Hobbes.Server.Db.Log
 open Hobbes.Server.Db
 open Hobbes.Server.Routing
+open Hobbes.Server.Readers
 
 [<RouteArea ("/", false)>]
 module Root =
+
+    let cacheRevision (source : DataConfiguration.DataSource) = 
+        sprintf "%s:%s:%d" source.SourceName source.ProjectName (System.DateTime.Now.Ticks) |> hash
+
+    let synchronize source token =
+        let cacheRevision = cacheRevision source
+
+        let syncId = Rawdata.createSyncStateDocument cacheRevision source
+        async {
+            try
+                match source with
+                DataConfiguration.AzureDevOps(account,projectName) ->
+                    if Rawdata.exists() |> not then Rawdata.init |> ignore else () //TODO, rename Rawdata to azureRaw
+                    let statusCode,body = AzureDevOps.sync token (account,projectName)
+                    logf "Sync finised with statusCode %d and result %s" statusCode body
+                    if statusCode >= 200 && statusCode < 300 then 
+                        //TODO: if caching failed in server, we shouldn't setSyncCompleted?
+                        Rawdata.setSyncCompleted cacheRevision source 
+                    else
+                        let msg = sprintf "Syncronization failed. Message: %s" body
+                        eprintfn "%s" msg
+                        Rawdata.setSyncFailed msg cacheRevision source  
+                | source -> 
+                    let msg = sprintf "No collector found for: %s" source.SourceName
+                    eprintfn "%s" msg
+                    Rawdata.setSyncFailed msg cacheRevision source
+            with e ->
+                Rawdata.setSyncFailed e.Message cacheRevision source
+        } |> Async.Start
+        200, syncId
 
     [<Get "/ping">]
     let ping () =
         200, "ping"
 
-    [<Get "/raw/%s/%s">]
-    let raw (configurationName, theOther) : int * string =
+    [<Get ("/raw/%s/%s/%s")>]
+    let raw ((source : string), account, project) : int * string =
+        let raw = 
+            match source.ToLower() with
+            "azure" ->
+                AzureDevOps.readCached account project |> string //TODO: Turn into JSON
+            | _ -> 
+                "Source not supported"            
+        404, "Not implemented yet" + raw
 
-        999, configurationName + theOther
+    [<Get ("/sync/%s/%s/%s")>]
+    let sync ((source : string), (account : string), (project : string)) =
+
+        let dataSource = 
+            match source.ToLower() with
+            | "azure" -> DataConfiguration.DataSource.AzureDevOps (account, project)
+            | _       -> DataConfiguration.DataSource.Unsupported
+
+        let token =
+            match dataSource with
+            DataConfiguration.DataSource.AzureDevOps(account,_)  ->
+               (env (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_")) null)
+            | source -> failwithf "Not supported. %A"source
+        synchronize dataSource token
            
 
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =

@@ -23,7 +23,7 @@
     <None Include="../../../hobbes.server/src/db/**/**/*.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Compile Include="Server.Implementation.fs" />
+    <Compile Include="Root.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
   <Import Project="..\..\..\.paket\Paket.Restore.targets" />

@@ -42,6 +42,7 @@ module DataConfiguration =
         | Rally of projectName : string
         | Jira of projectName : string
         | Test
+        | Unsupported
         with member 
                 x.ProjectName 
                     with get() =
@@ -50,6 +51,7 @@ module DataConfiguration =
                         | Rally projectName
                         | Jira projectName -> projectName
                         | Test -> System.String.Empty
+                        | Unsupported -> System.String.Empty
              member 
                 x.SourceName 
                     with get() =
@@ -57,7 +59,8 @@ module DataConfiguration =
                         AzureDevOps _ -> "azure devops"
                         | Rally _ -> "rally"
                         | Jira  _ -> "jira"
-                        | Test  _ -> "test"
+                        | Test -> "test"
+                        | Unsupported -> "Unsupported source"
     
     //TODO: Should be able to depend on other configuratiuons
     //with the result of the transformations of either to be joined together on the index

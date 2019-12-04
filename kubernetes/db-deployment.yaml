@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+spec:
+  selector:
+    matchLabels:
+      app: db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      volumes:
+      - name: db-storage
+        persistentVolumeClaim:
+          claimName: db-volume-claim
+      containers:
+      - env:
+        - name: COUCHDB_PASSWORD
+          value: password
+        - name: COUCHDB_USER
+          value: admin
+        image: apache/couchdb
+        name: db
+        ports:
+        - containerPort: 5984
+        volumeMounts:
+        - name: db-storage
+          mountPath: /opt/couchdb/data
+      restartPolicy: Always
+status: {}
+

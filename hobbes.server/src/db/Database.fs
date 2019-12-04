@@ -396,7 +396,7 @@ namespace Hobbes.Server.Db
                     |> CouchDoc.Parse
                 delete id (Some doc.Rev)
                 
-            new(databaseName, parser, log) = Database(databaseName, parser, log, env "DB_SERVER_URL" "http://localhost:5984")
+            new(databaseName, parser, log) = Database(databaseName, parser, log, env "DB_SERVER_URL" "http://db-svc:5984")
 
         open FSharp.Core.Printf
         let consoleLogger =

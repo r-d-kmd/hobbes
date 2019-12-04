@@ -4,13 +4,15 @@ module AzureDevOps =
     open FSharp.Data
     open Hobbes.Server.Db
 
+    //Helper method for optional properties of the data record
     let inline private asObj v =
         match v with
         Some v -> 
             v |> box
         | None -> 
             null
-
+    //These are the fields we read in (all other fields are disregarded)
+    //and a function to type them correctly
     let private azureFields = 
         [
              "RevisedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.RevisedDate
@@ -28,7 +30,9 @@ module AzureDevOps =
              "WorkItemRevisionSK", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemRevisionSk
         ]
 
-    let tryNextLink (data : string) = 
+    //looks whether it's the last record or there's a odatanextlink porperty 
+    //which signals that the data has been paged and that we're not at the last page yet
+    let private tryNextLink (data : string) = 
         let data = Rawdata.AzureDevOpsAnalyticsRecord.Parse data
         try
             if System.String.IsNullOrWhiteSpace(data.OdataNextLink) |> not then
@@ -36,46 +40,12 @@ module AzureDevOps =
             else 
                 None
         with _ -> None
-
+    //If there's no work item records returned, this will return true
     let isEmpty (data : string) = 
         let data = Rawdata.AzureDevOpsAnalyticsRecord.Parse data
         data.Value |> Array.isEmpty
-
-    type Record = 
-        {
-            Index : int
-            RevisedDate : System.Nullable<System.DateTimeOffset>
-            WorkItemId : int
-            IsLastRevisionOfDay :  System.Nullable<bool>
-            Title : string
-            ChangedDate :  System.Nullable<System.DateTimeOffset>
-            WorkItemType : string
-            CreatedDate :  System.Nullable<System.DateTimeOffset>
-            State : string
-            StateCategory : string
-            Priority : System.Nullable<int>
-            IterationIterationLevel1 : string
-            IterationIterationLevel2 : string
-            IterationIterationLevel3 : string
-            IterationIterationLevel4 : string
-            IterationNumber : int
-            LeadTimeDays :  System.Nullable<decimal>
-            CycleTimeDays :  System.Nullable<decimal>
-        }
-
-    let private serialiseValue (value : obj) = 
-                match value with
-                | null -> "null"
-                | :? string as s -> sprintf """ "%s" """ s
-                | :? bool as b -> 
-                    if b then "true" else "false"
-                | :? int as i -> i |> string
-                | :? float as f -> f |> string
-                | :? decimal as d -> d |> string
-                | :? System.DateTime as d -> sprintf """ "%s" """ (d.ToString())
-                | :? System.DateTimeOffset as d -> sprintf """ "%s" """ (d.ToString())
-                | _ -> sprintf "%A" value
-
+    
+    //The first url to start with, if there's already some stored data
     let private getInitialUrl (account,projectName) =
         let initialUrl = 
             let selectedFields = 
@@ -91,7 +61,8 @@ module AzureDevOps =
         with e -> 
             eprintfn "Failed to get latest. Message: %s" e.Message
             initialUrl 0L
-            
+
+    //sends a http request   
     let private request user pwd httpMethod body url  =
         let headers =
             [
@@ -113,6 +84,9 @@ module AzureDevOps =
                 headers = headers
             )
 
+    //Used to create the ID of the individual raw data records.
+    //There might be a better ID now that the database is project specific
+    //Eg the last workitemid contained, which would help in knowing where to start the next sync
     let private hash (input : string) =
             use md5Hash = System.Security.Cryptography.MD5.Create()
             let data = md5Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input))
@@ -122,6 +96,7 @@ module AzureDevOps =
                     sBuilder.Append(d.ToString("x2"))
             ) sBuilder).ToString()
 
+    //Reads data from the raw data store. This should be exposed as part of the API in some form 
     let readCached project =
         let raw = 
             project
@@ -152,7 +127,9 @@ module AzureDevOps =
         rows
 
     //TODO should be async and in parallel-ish
-    let sync azureToken project cacheRevision = 
+    //part of the API (see server to how it's exposed)
+    //we might want to store azureToken as an env variable
+    let sync azureToken project = 
         let source = DataConfiguration.AzureDevOps project
         let rec _read hashes (url : string) : unit  = 
             let resp = 

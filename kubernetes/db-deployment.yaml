@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: db
-  namespace: ingress-nginx
 spec:
   selector:
     matchLabels:
@@ -13,6 +12,10 @@ spec:
       labels:
         app: db
     spec:
+      volumes:
+      - name: db-storage
+        persistentVolumeClaim:
+          claimName: db-volume-claim
       containers:
       - env:
         - name: COUCHDB_PASSWORD
@@ -23,7 +26,9 @@ spec:
         name: db
         ports:
         - containerPort: 5984
-        resources: {}
+        volumeMounts:
+        - name: db-storage
+          mountPath: /opt/couchdb/data
       restartPolicy: Always
 status: {}
 

@@ -35,12 +35,10 @@ install:
    
   - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
   - chmod +x kubectl
-  - sudo mv kubectl /usr/local/bin/
   
   - curl -sL https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 -o minikube
   - chmod +x minikube
-  - sudo mv minikube /usr/local/bin/
-  
+
 before_build:
   - paket install
   - mkdir "c:\projects\hobbes\hobbes.server\db\data"

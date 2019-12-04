@@ -173,7 +173,7 @@ Target.create "BuildDocker" (fun _ ->
                    t + ":" + "latest"
                ]
 
-            let args = sprintf "build -t %s --platform linux ." tag
+            let args = sprintf "build -t %s ." tag
             run workingDir args
 
             tags

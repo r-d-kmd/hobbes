@@ -27,8 +27,7 @@ environment:
 
 services:
   - docker
-sudo: required
-
+  
 install:
   - docker version
   - dotnet tool install fake-cli -g

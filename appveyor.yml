@@ -70,6 +70,8 @@ test_script:
 
 deploy_script:
   - fake build --target pushtodocker
-  - fake build --target publish
+  - fake build --target publish 
+
+  
 
 

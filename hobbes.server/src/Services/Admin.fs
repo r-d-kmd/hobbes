@@ -131,8 +131,10 @@ module Admin =
 
     [<Delete ("/clear/rawdata")>]
     let clearRawdata () = 
-        Cache.clear()
-        
+        Rawdata.clear()
+
+    let clearProject = Rawdata.clearProject
+    
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
         
         async {

@@ -419,10 +419,18 @@ module DataStructures =
                     |> Seq.indexed
                     |> Seq.map(fun (i,(k,_)) -> k => (i :> Comp) )
                     |> series
-            | AST.Extrapolate(regressionType, knownValues, count) -> 
+            | AST.Extrapolate(regressionType, knownValues, count, length) -> 
                 let knownValuesExpr = 
-                    knownValues
-                    |> compileExpression
+                    let values = 
+                        knownValues
+                        |> compileExpression
+                    match length with
+                    None -> values
+                    | Some length -> 
+                        values
+                        >> Series.rev
+                        >> Series.take length
+                        >> Series.rev
 
                 fun s ->
                     let transformExpressionsToVariants expr = 
@@ -434,8 +442,7 @@ module DataStructures =
                     let keys = 
                         s
                         |> Series.keys
-                    let expectedLength = 
-                        (keys |> Seq.length) + 10
+                        
                     let xSeries = 
                         keys
                         |> Seq.map(fun k ->
@@ -461,7 +468,6 @@ module DataStructures =
                             |> Array.append values
                         )
                         
-                    assert (xSeries.Length = expectedLength)
 
                     let createKey (v: float) =
                         v |> 
@@ -484,7 +490,7 @@ module DataStructures =
                             regression.Transform(xSeries)
                             |> Array.zip xSeries
                             |> Array.map(fun (x,y) -> createKey x => (y :> Comp))
-                        assert (result.Length = expectedLength)
+                            
                         printfn "Extrapolated values: %A" result
                         result |> series
 
@@ -608,30 +614,33 @@ module DataStructures =
                 let compiledExpression = compileExpression frame exp
                 let resultingSeries = compiledExpression (keySeries)
                 frame?(nameOfNewColumn) <- resultingSeries
-                if resultingSeries.KeyCount > frame.RowCount then
-                    let columns = 
-                        frame.ColumnKeys
-                        |> Seq.filter(fun c -> c <> nameOfNewColumn)
+                let rowKeys = 
+                    frame.RowKeys
+                    |> Set.ofSeq
+                    
+                let columns = 
+                    frame.ColumnKeys
+                    |> Seq.filter(fun c -> c <> nameOfNewColumn)
+
+                let newRows =
+                    resultingSeries
+                    |> Series.filter(fun k _ -> rowKeys |> Set.contains k |> not)
+                    |> Series.mapValues(fun (v : Comp) ->
+                           let cells =
+                               (nameOfNewColumn => Some v)::
+                                   (
+                                       columns
+                                       |> Seq.map(fun c -> c => None)
+                                       |> List.ofSeq
+                                   )
+                           cells
+                           |> Series.ofOptionalObservations
+                    )
+
+                if newRows.KeyCount > 0 then
                     let rows = 
                         frame
                         |> Frame.getRows
-                    let rowKeys = 
-                        frame.RowKeys
-                        |> Set.ofSeq
-                    let newRows =
-                        resultingSeries
-                        |> Series.filter(fun k _ -> rowKeys |> Set.contains k |> not)
-                        |> Series.mapValues(fun (v : Comp) ->
-                               let cells =
-                                   (nameOfNewColumn => Some v)::
-                                       (
-                                           columns
-                                           |> Seq.map(fun c -> c => None)
-                                           |> List.ofSeq
-                                       )
-                               cells
-                               |> Series.ofOptionalObservations
-                        )
                     rows.Merge newRows
                     |> Frame.ofRows
                 else

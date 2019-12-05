@@ -123,6 +123,10 @@ module Rawdata =
         db.List()
         |> Seq.filter(fun doc -> 
            doc.Source = source.SourceName && doc.Project = source.ProjectName
+           && (doc.JsonValue.Properties() 
+               |> Seq.tryFind(fun (name,v) -> 
+                   name = "data" 
+               ) |> Option.isSome)
         ) 
 
     let bySource source = 

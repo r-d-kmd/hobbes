@@ -1,0 +1,30 @@
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: db-volume
+  labels:
+    volume: db-volume
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath: 
+    path: "../hobbes-server/db/data"
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-volume-claim
+spec:
+  storageClassName: standard
+  selector:
+    matchLabels:
+      volume: db-volume
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 3Gi
+  

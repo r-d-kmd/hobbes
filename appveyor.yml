@@ -1,5 +1,6 @@
 version: 1.0.{build}
-image: Visual Studio 2019
+image: 
+  - Ubuntu
 
 environment:
   DOCKER_USER:
@@ -7,35 +8,67 @@ environment:
   DOCKER_PASS:
     secure: /T9ITfudL23Ga+Mz7oRaVA==
   WORKBENCH_ENVIRONMENT:
-    secure: /0UAqpwPkUwhtSS6lpKMBHZ8ljEtyTr5h3VPFqsliGLsVg8u/WLCPcwPpJOm1xpglFrEuY5lQc9ekyZ4BS6PBzv0ifFUHrAyuIUyeyzku5UhneVhFyGCpngj0EYG99tWbiHTJvQnUVVuIMhyjfiSAi/VhdR65Q9ZRKfrRpTa28uLsvImL/gw/PwvnsvGmMX0qtdNs3xgr+e4+ZRWKz86d+W9vCvQwsptksmS4EYM8AL5gVn/mxQgcOQAS2oG6k9lA5uNgCBJjCJzVVmwwL8vCLY8/JinTjcLlGdKzRexBa24b6Wghbtt8gEz9rSWcDo3MfnXY0bdCAZGLupT9avsOfp+xw2werAB4oGOTZS4ORiZK1MIeXfMOO0S4ZfFNWVtjJf4CUIMDpR51a22EVc+Et3rKL3QSJQI9ig9w4z2GverkO7BE3hh46Zp8DFm6jvGItUYjgBw8LPqCPNOHfcRV3ONtcTpp44NDbEayqESJPIFfIKjn0qdg5BXPZrL2HG8vB/kr22D0SDmP/XrXAwgekToX3bHQ+KvHL2wteiL5/64jTuzdmEY4z72eVzMKN6zUTAFVsxRHW3CER+U7ylIXGkIInj1UKp88+ec9fCOyiJwuy5WON7XJ9YfJGd76sS7LpUMRWlIqihtngqsxoOlvxM+ZdAuTZbu5XRud3yq9fgmiqInob/vdAHs/sYaspwDjLe4wvFR1LQdq10FZntpXo33cRpOadbbGSnqd0jtmhroqCR9TmxdSElzZGGgXq/WBMtKBaFn7glXXNvny7PI3WTMh+2j27a+QV73vTPuY5dFhdwZ4XvQPuvrINH0kfB9BCIxmb3aHVD3uM0ChXQ9whqkMHDMvyckutLHj+Slmmm01lZFsIYJMhEzomdQ4nXMvGmlsoPqcOWejcpj9KZh6J5MpjnjPBrAacL1stcN+ziAMuRYZyKI8ODuqkr5L84kkfOu4XbkUn/d+HJ9HYwKMkkx0H5joNPuyvfmNKfoMOQg7m+S3sUSUbNNKGLVFzMenE3vuwNs7aZ5gSWT/dK0fK/nwuaDwYhQPUWlOVZ6qv/E0B+mxJPc7yev/EnMu/HVQcbjBdv8d0ZibYS0OdZt6d7CBAMqukoGjmObrC3KSdDNCENi/8LCSIm2bB/kVOvdjc8KwEH3noIFo6uw6OLNaED5O6jfo+PLhkNv1/SMIjbfYs8eQ2bvbm5UD8HjJ/6R
+    secure: /0UAqpwPkUwhtSS6lpKMBHZ8ljEtyTr5h3VPFqsliGIWs46Xlb4Axx16L9jLIzrKmhrRwCe9k/ViAvGR/YpabAlQjzuZ38M/hLP9K0a6Ru2fVWHwr8KzITfc7NRspN2dYqHB+INSso/h128TRgvmihxWPg9dF7cUyjnURIRqEmELZ0sp1EL0kx7SI2C3oJWCO4Dtl1j5cyJoT6CH2cAU7Ktb0llTa1hv8b6R5tNJbjVQ7S5VzAzVXv427VwUS+35vRG3DzLnmSXFizYsTZGAJwHhbCD9Wim5LhPSTPkjJxAgA04/Gdt3pOp62rn7R+ktroDeOR8P/JaTXfj1JwHdRSHc+nF1vxmWDPbNRa/XZPmvUmi2nH58D18s4aa+tvktD+knCjq9DjTM0yF5hJrQnA7Q+Z/sUc4tSkX7nfGyJYaceeC48ubfVQJ0I1uQffhpHjZsSm+wBCANxJf1fbcAu7bA8u6ugTW4fs5FdGwDtT2XlEdPvSbjT7b+SweQrfkFZnok2JvOpVIYp71TObQQTImCUTJc0qfp4grMMnIVgH0fptyPjcfy3w+Zk1r1idaYy80iJvDed5umj2mDc2tv/KuGfFuO21UdBCNflZwO7hSrCKlzLOsQctf4MRbbFO/fWlBkHazXk1GWP095QtfRfQnJAYO0ci/CLP8Gwzkw3/DYHCinJFPHc67NzfWBvGpasxFCqS9u/HqiU7W8K5CVl2BhB9bW7ix06cKO5OgP3/AW3c/ZuzJqZDdJ4yDccKZOasssAExiiOUyvWLjD57EgkNoUfFTQdClynI8W4Lnz83RZLx5ESNTTO+nBnpEnhdAHAdo3rqrr98rRa45FRKZxQyE+5ovROQzxKt+pHkGQLdlbBlM03q97LvCY70P5bqAEQeJoiC6rNWIcDVIqDQHY7gN/aJH0HmbFx4ce+202L0N+Q0vLVwMvXosB0/Oisu4o3aNRtBsO5bdYIzaxDcOG+JcxUisTOrf7SlVSVsDtXd7thF51XpTknLEs9OpgbnXbNHU1awIsXMT8u0bSlsISiGM15Z/M1U0uZDvyGNf3IXskf7eCVhAip0JbvqgkpvyQWi4oy9p7gR2yS1tO3G28MknYVZXLAUMM3jVN75MtJtZgV1bdQwyRQmTUs0j7LFxoPNWmZjzwmIZGcqO7WStpMZzodoLBuhJqAAf1/GRMHQbomMZeKpa+JcWxvl08D7Y
   HOBBES_PAT:
     secure: FMSdnVu01kCl/h3wLYiJfrZh9g8XCScl5sT98lVFr8KakwD9C5Lsqs01fn4o7DwX7zu+voHMzTqJ+eE+eTP/j63LoH5DHq81hW2w0Rq6EOEXg1EAUolVHsVerSUAXzfpwnvRHzagS9pD6MX7/n7813lHo9vFL4lIZeqmc1oK/eFy4trd2cGfwbrgxFY2NZnzpzY2R9vVHTCiIJuDS33BuQ==
   PM_APIKEY:
     secure: ujCKbQHfvl9fiBouXlRQH1hq59pHNBKj+CyfDaowaVTxQm67QvpmG6HuVEgcmRvkwDwjVIjOo8IEe7X/fmwRKKLb1eYv8yUd4YSJ+T36Md0=
+  # Disable Powershell on Linux machines
+  APPVEYOR_YML_DISABLE_PS_LINUX: "true"
+  # Changes ownership of minikube config dirs to running user
+  CHANGE_MINIKUBE_NONE_USER: "true"
+  # Set kubeconfig and minikube paths
+  KUBECONFIG: "/home/appveyor/.kube/config"
+  MINIKUBE_HOME: "/home/appveyor/kubernetes"
+  # Disable prompts for CI
+  MINIKUBE_WANTUPDATENOTIFICATION: "false"
+  MINIKUBE_WANTREPORTERRORPROMPT: "false"
+
+services:
+  - docker
 
 install:
   - docker version
   - dotnet tool install fake-cli -g
   - dotnet tool install --global --version 5.226.0 paket
   - npm install -s -g --unicode=false newman
-
+  
+  - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
+  - chmod +x kubectl
+  - sudo mv kubectl /usr/local/bin/
+  
+  - curl -sL https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 -o minikube
+  - chmod +x minikube
+  - sudo mv minikube /usr/local/bin/
+  
 before_build:
   - paket install
   - mkdir "c:\projects\hobbes\hobbes.server\db\data"
-
+  - mkdir "c:\projects\hobbes\collectors\db\data"
+  - sudo CHANGE_MINIKUBE_NONE_USER=true minikube start --vm-driver=none --memory=4096
 build_script: 
+ 
   - cd hobbes.server/src
   - fake build --target SetAssemblyInfo
   - cd ../..
   - fake build --target builddocker
-
+  - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
+  - fake build --target PushAlpha
+  
 test_script:
-  - fake build --target test
+  - cd kubernetes
+  - kubectl apply -f db-deployment.yaml,db-service.yaml,db-volume.yaml,hobbes-deployment.yaml,hobbes-service.yaml
+  - while [[ $(kubectl get pods -l app=db -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for database" && sleep 1; done
+  - while [[ $(kubectl get pods -l app=hobbes-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for hobbes-server" && sleep 1; done
+  - kubectl get all
+  - cd ../
+ 
   #- newman run https://api.getpostman.com/collections/4127812-d535bce5-ad9a-4346-acb4-311c8443c478?apikey=%PM_APIKEY% -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=%PM_APIKEY%
   #- newman run https://api.getpostman.com/collections/9463780-a7355a7a-5fe6-42b5-a1ed-877f3c9bc2f7?apikey=%PM_APIKEY% -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=%PM_APIKEY% --env-var "pat=%HOBBES_PAT%"
 
 deploy_script:
-  - docker login -u="%DOCKER_USER%" -p="%DOCKER_PASS%"
   - fake build --target pushtodocker
-  - fake build --target publish
+  - fake build --target publish 
+
+
 

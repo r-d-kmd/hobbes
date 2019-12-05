@@ -99,8 +99,7 @@ module Data =
             try
                 match configuration.Source with
                 DataConfiguration.AzureDevOps(account,projectName) ->
-                  
-                    let statusCode,body = Hobbes.Server.Readers.AzureDevOps.sync azureToken (account,projectName) cacheRevision
+                    let statusCode,body = Hobbes.Server.Readers.AzureDevOps.sync azureToken (account,projectName)
                     logf "Sync finised with statusCode %d and result %s" statusCode body
                     if statusCode >= 200 && statusCode < 300 then 
                         debug "Invalidating cache"

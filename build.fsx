@@ -48,9 +48,11 @@ let buildProjects config =
             build config workDir
     )
 
-Target.create "Build" (fun _ ->
+Target.create "Compile" (fun _ ->
     buildProjects "Debug"
 )
+
+Target.create "Build" ignore
 
 Target.create "ReleaseBuild" (fun _ ->
     buildProjects "Release"
@@ -173,15 +175,12 @@ Target.create "BuildDocker" (fun _ ->
                    t + ":" + "latest"
                ]
 
-            let args = sprintf "build -t %s --platform linux ." tag
-            run workingDir args
-
+            sprintf "build -t %s ." tag
+            |> run workingDir
             tags
-            |> List.iter(fun t ->
-                let args = sprintf "tag %s %s" tag t 
-                run workingDir args
-                printfn "Executing: $ docker %s" args
-                run workingDir args
+            |> List.iter(fun t -> 
+                sprintf "tag %s %s" tag t
+                |> run workingDir
             )
 
         let tag = (workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last).ToLower()
@@ -199,6 +198,7 @@ Target.create "PushToDocker" (fun _ ->
     
     dockerFiles
     |> Seq.iter(fun path ->
+        let path = System.IO.Path.GetFullPath path
         let workingDir = System.IO.Path.GetDirectoryName path
         
         let push (tag : string) = 
@@ -220,9 +220,36 @@ Target.create "PushToDocker" (fun _ ->
     ) 
 )
 
+Target.create "PushAlpha" (fun _ ->
+    let dockerOrg = "kmdrd"
+    let run = run "docker"
+    dockerFiles
+    |> Seq.iter(fun path ->
+        let path = System.IO.Path.GetFullPath path
+        let workingDir = System.IO.Path.GetDirectoryName path
+   
+        let push (tag : string) = 
+            let t = createDockerTag dockerOrg (tag.ToLower()) + ":" + "alpha"
+            sprintf "tag %s %s" tag t
+             |> run workingDir 
+            
+            let args = sprintf "push %s" <| t
+            printfn "Executing: $ docker %s" args
+            run workingDir args
+            
+        let tag = workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last
+      
+
+        push tag
+    ) 
+)
+
 open Fake.Core.TargetOperators
 
 "Clean"
+   ==> "Compile"
+   ==> "BuildDocker"
+   ==> "PushAlpha"
    ==> "Build"
 
 "Clean"

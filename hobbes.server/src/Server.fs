@@ -11,7 +11,7 @@ open Hobbes.Server.Services.Status
 
 let private port = 
     env "port" "8085" |> int
-    
+       
 let adminRouter = 
    router {
         pipe_through verifiedPipe
@@ -28,6 +28,7 @@ let adminRouter =
         withArg  <@ deleteRaw @>
         withArg  <@ deleteCache @>
         withArgs <@ setting @>
+        
         withBody <@ configureStr @>
         withBody <@storeConfigurations@>
     }
@@ -67,7 +68,7 @@ let private app = application {
 let rec private init() =
     async {
         try
-           FSharp.Data.Http.Request("http://db:5984") |> ignore //make sure db is up and running
+           FSharp.Data.Http.Request(env "DB_SERVER_URL" "http://localhost:5984") |> ignore //make sure db is up and running
            initDb() |> ignore
            printfn "DB initialized"
         with _ ->

@@ -139,15 +139,18 @@ namespace Hobbes.Server.Db
                             "_id" : "%s",
                             "source" : "%s",
                             "project" : "%s",
-                            "timeStamp" : "%s",
-                            "data" : %s%s
+                            "timeStamp" : "%s"
+                            %s%s
                         }""" key
                              source.SourceName
                              source.ProjectName
                              (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
 
-                             (if data |> isNull then "null" else data)
-                             (match keyValue with
+                             (if data |> isNull then 
+                                  "" 
+                              else 
+                                  sprintf """, "data": %s"""data)
+                              (match keyValue with
                               [] -> ""
                               | values ->
                                   System.String.Join(",",

@@ -289,7 +289,7 @@ namespace Hobbes.Server.Db
             member __.List() =
                 (get ["_all_docs"] (Some ["include_docs","true"])
                  |> List.Parse).Rows
-                 |> Array.map(fun r -> r.Doc :> obj :?> string |> parser)
+                 |> Array.map(fun r -> r.Doc.JsonValue.ToString JsonSaveOptions.DisableFormatting |> parser)
                  |> Seq.ofArray
 
             member __.Get id =

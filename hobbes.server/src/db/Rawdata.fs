@@ -90,25 +90,7 @@ module Rawdata =
     let createSyncStateDocument revision = setSyncState Started None (Some revision)
 
     let tryLatestId (source : DataConfiguration.DataSource) =
-        let startKey = keys source
-        try
-            let revisions =  
-                db.Views.["WorkItemRevisions"].List(WorkItemRevisionRecord.Parse,
-                                                         startKey = startKey
-                )
-            (revisions
-            |> List.maxBy(fun record -> 
-                try
-                   record.JsonValue.AsInteger64()
-                with e -> 
-                   Log.errorf e.StackTrace "Failed to get revision from record. Reason: %s. Record: %s" e.Message <| record.ToString()
-                   -1L
-                )
-            ).JsonValue.AsInteger64()
-            |> Some
-        with e ->
-           Log.errorf e.StackTrace "Failed to get last revision. Reason: %s." e.Message 
-           None
+        None //should ideal return the latest workitem id but view in production are unstable
 
     let list = 
         db.ListIds
@@ -133,15 +115,20 @@ module Rawdata =
             return ()
         } |> Async.Start
         200,"deleting"
-
-    let bySource (source : DataConfiguration.DataSource) = 
+    
+    let projectsBySource (source : DataConfiguration.DataSource) = 
         //this could be done with a view but the production environment often exceeds the time limit.
         //we haven't got enough documents for a missing index to be a problem and since it's causing problems 
         //reliance on an index has been removed
         db.List()
         |> Seq.filter(fun doc -> 
            doc.Source = source.SourceName && doc.Project = source.ProjectName
-        ) |> Seq.collect(fun s -> 
+        ) 
+
+    let bySource source = 
+        source
+        |> projectsBySource
+        |> Seq.collect(fun s -> 
             match s.JsonValue.Properties() |> Seq.tryFind(fun (n,_) -> n = "data") with
             Some _ -> 
                 let data = s.Data.ToString() 
@@ -151,7 +138,24 @@ module Rawdata =
                 value
             | None -> [||]
         )
-            
+
+    let clearProject (source : DataConfiguration.DataSource) =
+        async {
+            let! _ = 
+                source
+                |> projectsBySource
+                |> Seq.map(fun p -> 
+                    async {
+                        try
+                            p.Id 
+                            |> delete
+                            |> ignore
+                        with _ -> ()
+                    }
+                ) |> Async.Parallel
+            return ()
+        } |> Async.Start
+
     let get (id : string) = 
         200, (db.Get id).ToString()
 

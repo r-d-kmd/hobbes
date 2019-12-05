@@ -163,9 +163,7 @@ module Admin =
         
     [<Get "/init">]
     let initDb () =
-        Settings.Load SettingsPath
-        |> configure
-        |> ignore
+        
         
         let dbs = 
             [

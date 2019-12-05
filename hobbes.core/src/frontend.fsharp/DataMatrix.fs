@@ -474,7 +474,7 @@ module DataStructures =
                         match s |> Series.keys |> Seq.head with
                         AST.KeyType.Numbers _ -> AST.KeyType.Numbers
                         | AST.KeyType.DateTime _ -> (int64 >> DateTime >> AST.KeyType.DateTime)
-                        | _ -> failwith "Can't convert to key"
+                        | k -> failwithf "Can't convert to key. %A" k
 
                     let knownValues = 
                         knownValuesExpr

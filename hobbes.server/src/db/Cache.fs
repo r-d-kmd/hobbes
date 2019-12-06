@@ -149,7 +149,7 @@ namespace Hobbes.Server.Db
                              (if data |> isNull then 
                                   "" 
                               else 
-                                  sprintf """, "data": %s"""(Log.jsonify data))
+                                  sprintf """, "data": %s""" data)
                               (match keyValue with
                               [] -> ""
                               | values ->

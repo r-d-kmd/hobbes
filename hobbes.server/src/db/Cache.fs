@@ -149,7 +149,7 @@ namespace Hobbes.Server.Db
                              (if data |> isNull then 
                                   "" 
                               else 
-                                  sprintf """, "data": %s"""data)
+                                  sprintf """, "data": %s"""(Log.jsonify data))
                               (match keyValue with
                               [] -> ""
                               | values ->
@@ -185,6 +185,7 @@ namespace Hobbes.Server.Db
                 db.InsertOrUpdate record |> ignore
             with e ->
                 Log.errorf e.StackTrace "Failed to cache data. Reason: %s" e.Message
+                Log.debug data
             (CacheRecord.Parse record).Data.ToString()
 
         let private tryRetrieve cacheKey =

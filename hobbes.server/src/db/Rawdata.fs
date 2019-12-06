@@ -135,11 +135,8 @@ module Rawdata =
         |> Seq.collect(fun s -> 
             match s.JsonValue.Properties() |> Seq.tryFind(fun (n,_) -> n = "data") with
             Some _ -> 
-                let data = s.Data.ToString() 
-                let value = 
-                    (data 
-                     |> AzureDevOpsAnalyticsRecord.Parse).Value
-                value
+                let data = s.Data :> obj :?> AzureDevOpsAnalyticsRecord.Root
+                data.Value
             | None -> [||]
         )
 

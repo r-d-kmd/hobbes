@@ -420,29 +420,36 @@ module DataStructures =
                     |> Seq.map(fun (i,(k,_)) -> k => (i :> Comp) )
                     |> series
             | AST.Extrapolate(regressionType, knownValues, count, length) -> 
-                let knownValuesExpr = 
-                    let values = 
-                        knownValues
-                        |> compileExpression
+                let fitSeries : Series<AST.KeyType,_> -> Series<AST.KeyType,_> =
                     match length with
-                    None -> values
-                    | Some length -> 
-                        values
-                        >> Series.rev
+                    None -> id
+                    | Some length ->
+                        Series.rev
                         >> Series.take length
                         >> Series.rev
 
-                fun s ->
+                let knownValuesExpr = 
+                    (knownValues
+                    |> compileExpression)
+                    >> fitSeries
+
+                fun values ->
+                    let s = 
+                        values
+                        |> fitSeries
+                        
                     let transformExpressionsToVariants expr = 
                         s
                         |> expr
                         |> Series.mapValues(fun c -> c :> obj :?> float)
                         |> Series.values
                         |> Array.ofSeq
+
                     let keys = 
                         s
                         |> Series.keys
-                        
+                    assert(length |> Option.isNone || keys |> Seq.length = length.Value)  
+
                     let xSeries = 
                         keys
                         |> Seq.map(fun k ->
@@ -459,13 +466,15 @@ module DataStructures =
                         ) |> Array.ofSeq
                         |> (fun values ->
                             let ols = OrdinaryLeastSquares()
-                            //inputs will be longer than outputs when doing forecasting
                             let x = [|for i in 0..values.Length + count - 1 -> float i|]
                             let regression = ols.Learn(x |> Array.take values.Length, values)    
-                            regression.Transform(x) 
-                            |> Array.skip values.Length
-                            |> Array.take count
-                            |> Array.append values
+                            regression.Transform(x)
+                            |> Array.mapi(fun i y ->
+                                if i < values.Length then
+                                    values.[i]
+                                else
+                                    y
+                            )                            
                         )
                         
 
@@ -617,7 +626,7 @@ module DataStructures =
                 let rowKeys = 
                     frame.RowKeys
                     |> Set.ofSeq
-                    
+
                 let columns = 
                     frame.ColumnKeys
                     |> Seq.filter(fun c -> c <> nameOfNewColumn)

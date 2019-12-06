@@ -14,11 +14,14 @@
                 "pipeArgs": [
                     "exec",
                     "-i",
-                    "sunshine-downloader"
+                    "hobbes"
                 ],
-                "debuggerPath": "/vsdbg/vsdbg",
+                "debuggerPath": "/root/vsdbg/vsdbg",
                 "pipeCwd": "${workspaceRoot}",
                 "quoteArgs": false
+            },
+            "sourceFileMap": {
+                "/home/ExampleAccount/ExampleProject": "${workspaceRoot}"
             }
         }]
 }

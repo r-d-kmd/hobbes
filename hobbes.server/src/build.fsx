@@ -25,7 +25,7 @@ let run command workingDir args =
     |> ignore
 
 let serverPath = Path.getFullName "./"
-let deployDir = Path.getFullName "./deploy"
+let deployDir = Path.getFullName "../deploy"
 
 Target.create "Clean" (fun _ ->
     [ deployDir ]

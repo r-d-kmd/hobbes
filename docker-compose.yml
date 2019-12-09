@@ -13,21 +13,23 @@ services:
       - COUCHDB_PASSWORD=password
       - SERVER_PORT=8085
       - KEY_SUFFIX=2804de67ba6979c756e8759e44fe4
-      - DB_SERVER_URL=http://db:5984/
-      - AZURE_TOKEN=abcdef
-  db:
+      - DB_SERVER_URL=http://db-svc:5984/
+
+  db-svc:
     image: apache/couchdb
-    container_name: db
+    container_name: db-svc
     environment:
       - COUCHDB_USER=admin 
       - COUCHDB_PASSWORD=password
     expose: 
       - 5984
+    ports:
+      - 5984:5984
     volumes:
       - ./hobbes.server/db/data:/opt/couchdb/data
   azuredevopscollector:
-    image: kmdrd/hobbes-collectors.azuredevops
-    container_name: azuredevops
+    image: collectors.azuredevops
+    container_name: azuredevopscollector
     expose:
       - 8085
     environment:

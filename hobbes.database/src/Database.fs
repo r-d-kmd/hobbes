@@ -1,30 +1,18 @@
-namespace Hobbes.Server.Db
+namespace Hobbes.Db
     open FSharp.Data
+    open Hobbes.Helpers 
+    
+    type Logger = string -> unit
+    type LogFormatter<'a> = Printf.StringFormat<'a,unit>
+    type ILog =
+        abstract Log : string -> unit
+        abstract Error : string -> string -> unit
+        abstract Debug : string -> unit 
+        abstract Logf<'a> : LogFormatter<'a> -> 'a
+        abstract Errorf<'a> : string -> LogFormatter<'a> -> 'a
+        abstract Debugf<'a> : LogFormatter<'a> -> 'a
+        
     module Database =
-        type Logger = string -> unit
-        type LogFormatter<'a> = Printf.StringFormat<'a,unit>
-        type ILog =
-            abstract Log : string -> unit
-            abstract Error : string -> string -> unit
-            abstract Debug : string -> unit
-            abstract Logf<'a> : LogFormatter<'a> -> 'a
-            abstract Errorf<'a> : string -> LogFormatter<'a> -> 'a
-            abstract Debugf<'a> : LogFormatter<'a> -> 'a
-        
-        
-        let hash (input : string) =
-            use md5Hash = System.Security.Cryptography.MD5.Create()
-            let data = md5Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input))
-            let sBuilder = System.Text.StringBuilder()
-            (data
-            |> Seq.fold(fun (sBuilder : System.Text.StringBuilder) d ->
-                    sBuilder.Append(d.ToString("x2"))
-            ) sBuilder).ToString()  
-            
-        let env name defaultValue = 
-            match System.Environment.GetEnvironmentVariable name with
-            null -> defaultValue
-            | v -> v
 
         let private user = env "COUCHDB_USER" "admin"
         let private pwd = env "COUCHDB_PASSWORD" "password"
@@ -396,7 +384,7 @@ namespace Hobbes.Server.Db
                     |> CouchDoc.Parse
                 delete id (Some doc.Rev)
                 
-            new(databaseName, parser, log) = Database(databaseName, parser, log, env "DB_SERVER_URL" "http://db-svc:5984")
+            new(databaseName, parser, log) = Database(databaseName, parser, log, env "DB_SERVER_URL" "http://db-svc:5984/")
 
         open FSharp.Core.Printf
         let consoleLogger =

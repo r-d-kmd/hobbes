@@ -1,1 +1,3 @@
-minikube service list -p dev
+minikube service list
+@echo off
+pause

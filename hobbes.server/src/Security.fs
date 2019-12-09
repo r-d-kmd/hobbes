@@ -2,7 +2,7 @@ namespace Hobbes.Server
 
 open System.Security.Cryptography
 open System.IO
-open Hobbes.Db.Database
+open Hobbes.Web.Database
 open Hobbes.Helpers
 
 module Security =

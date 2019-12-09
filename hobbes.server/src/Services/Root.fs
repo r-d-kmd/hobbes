@@ -1,6 +1,6 @@
 namespace Hobbes.Server.Services
 
-open Hobbes.Db.Database
+open Hobbes.Web.Database
 open Hobbes.Server.Db.Log
 open Hobbes.Server.Routing
 open Hobbes.Server.Security

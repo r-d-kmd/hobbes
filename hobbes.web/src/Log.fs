@@ -1,7 +1,7 @@
 namespace Hobbes.Server.Db
 open FSharp.Data
 open Hobbes.Helpers
-open Hobbes.Db
+open Hobbes.Web
 
 module Log =
     open FSharp.Core.Printf

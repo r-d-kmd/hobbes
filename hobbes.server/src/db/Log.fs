@@ -1,6 +1,7 @@
 namespace Hobbes.Server.Db
 open FSharp.Data
 open Hobbes.Helpers
+open Hobbes.Db
 
 module Log =
     open FSharp.Core.Printf
@@ -97,28 +98,29 @@ module Log =
                 eprintfn "Failed to insert timed event in log. %s. Message: %s StackTrace %s" doc e.Message e.StackTrace
         } |> Async.Start
 
+    //_list is mutable. We'll hide that and make sure that the current is always called
     let list() = 
         _list()
 
     let loggerInstance = 
-        { new Database.ILog with
+        { new ILog with
             member __.Log msg   = log msg
             member __.Error stackTrace msg = error stackTrace msg
             member __.Debug msg = debug msg
-            member __.Logf<'a> (format : Database.LogFormatter<'a>)  = logf format  
-            member __.Errorf<'a> stackTrace (format : Database.LogFormatter<'a>) = errorf stackTrace format
-            member __.Debugf<'a>  (format : Database.LogFormatter<'a>) = debugf format
+            member __.Logf<'a> (format : LogFormatter<'a>)  = logf format  
+            member __.Errorf<'a> stackTrace (format : LogFormatter<'a>) = errorf stackTrace format
+            member __.Debugf<'a>  (format : LogFormatter<'a>) = debugf format
         }
 
     let ignoreLogging =
-        { new Database.ILog with
+        { new ILog with
             member __.Log _   = ()
             member __.Error stackTrace msg = error stackTrace msg
             member __.Debug _ = ()
-            member __.Logf<'a> (format : Database.LogFormatter<'a>)  = 
+            member __.Logf<'a> (format : LogFormatter<'a>)  = 
                 ksprintf ignore format
-            member __.Errorf<'a> stackTrace (format : Database.LogFormatter<'a>) = errorf stackTrace format
-            member __.Debugf<'a>  (format : Database.LogFormatter<'a>)  = 
+            member __.Errorf<'a> stackTrace (format : LogFormatter<'a>) = errorf stackTrace format
+            member __.Debugf<'a>  (format : LogFormatter<'a>)  = 
                 ksprintf ignore format
         }
     do

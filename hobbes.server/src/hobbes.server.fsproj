@@ -17,7 +17,6 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Reflection.fs" />
-    <Compile Include="db/Database.fs" />
     <Compile Include="db/Log.fs" />
     <Compile Include="db/Transformations.fs" />
     <Compile Include="db/DataConfiguration.fs" />

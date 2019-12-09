@@ -1,1 +1,3 @@
-minikube start --vm-driver hyperv --hyperv-virtual-switch "Primary Virtual Switch" -p d
+minikube start --vm-driver hyperv --hyperv-virtual-switch "Primary Virtual Switch"
+@echo off
+pause

@@ -40,7 +40,7 @@ module Data =
                 match configuration.Source with
                 DataConfiguration.AzureDevOps(account,projectName) ->
                     let rows  = 
-                        Hobbes.Server.Readers.AzureDevOps.readCached (account,projectName)
+                        Hobbes.Server.Readers.AzureDevOps.readCached account projectName
                         |> List.ofSeq
                     rows
                     |> DataMatrix.fromRows

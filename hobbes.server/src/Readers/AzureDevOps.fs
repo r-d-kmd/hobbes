@@ -97,9 +97,9 @@ module AzureDevOps =
             ) sBuilder).ToString()
 
     //Reads data from the raw data store. This should be exposed as part of the API in some form 
-    let readCached project =
+    let readCached account project =
         let raw = 
-            project
+            (account, project)
             |> DataConfiguration.AzureDevOps 
             |> Rawdata.bySource
         let rows = 
@@ -158,7 +158,7 @@ module AzureDevOps =
                                                                                         "hashes", System.String.Join(",", hashes) 
                                                                                                   |> sprintf "[%s]"
                                                                                      ] 
-                        Rawdata.InsertOrUpdate rawdataRecord |> ignore     
+                        Rawdata.InsertOrUpdate rawdataRecord |> ignore //TODO this should be changed to a db with name azure  
                     body
                     |> tryNextLink
                 ) |> Option.map(fun nextlink ->   

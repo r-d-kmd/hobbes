@@ -1,8 +1,5 @@
 open Saturn
 open Giraffe
-open Microsoft.AspNetCore.Http
-open Hobbes.Server.Db.Database
-open Hobbes.Server.Db
 open Hobbes.Server.Routing
 open Hobbes.Server.Services.Admin
 open Hobbes.Server.Services.Data

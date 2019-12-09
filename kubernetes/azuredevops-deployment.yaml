@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azuredevopscollector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: azuredevopscollector
+  template:
+    metadata:
+      labels:
+        app: azuredevopscollector
+    spec:
+      containers:
+      - env:
+        - name: COUCHDB_PASSWORD
+          value: password
+        - name: COUCHDB_USER
+          value: admin
+        - name: KEY_SUFFIX
+          value: 2804de67ba6979c756e8759e44fe4
+        - name: SERVER_PORT
+          value: "8085"
+        - name: DB_SERVER_URL
+          value: http://collectordb-svc:5984/
+        imagePullPolicy: Always
+        image: kmdrd/hobbes-collectors.azuredevops:alpha
+        name: collectors-azuredevops
+        resources: {}
+      restartPolicy: Always
+status: {}

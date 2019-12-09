@@ -1,10 +1,11 @@
 namespace Collector.AzureDevOps
 
-open Hobbes.Server.Db.Database
+open Hobbes.Db.Database
 open Hobbes.Server.Db.Log
-open Hobbes.Server.Db
+open Hobbes.Db
 open Hobbes.Server.Routing
 open Hobbes.Server.Readers
+open Hobbes.Helpers
 
 [<RouteArea ("/", false)>]
 module Root =
@@ -67,6 +68,11 @@ module Root =
                (env (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_")) null)
             | source -> failwithf "Not supported. %A"source
         synchronize dataSource token
+
+    [<Get "/test/%s/%s/%s">]
+    let test (arg1, arg2, arg3) : int * string =
+
+        200, arg1 + arg2 + arg3    
            
 
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =

@@ -151,7 +151,7 @@ module Routing =
                 Log.errorf e.StackTrace "Invocation failed: %s. Method name: %s. Parameters: %s " e.Message method.Name (System.String.Join(",",method.GetParameters() |> Array.map(fun p -> p.Name)))
                 500, "Invocation error"
 
-        member private this.GenerateRouteWithArgs state (f : 'a -> int * string) path verb = 
+        member private this.GenerateRouteWithArgs<'a> state (f : 'a -> int * string) path verb = 
             let pathf = PrintfFormat<_,_,_,_,'a>(path)
             match verb with 
             HttpMethods.Get ->
@@ -178,15 +178,15 @@ module Routing =
                 this.SafeCall method [|arg1|]
             this.GenerateRouteWithArgs state f path verb
 
-        member private this.LocalWithArgs(state, path, verb, method : System.Reflection.MethodInfo) = 
-            let f (arg1 : 'a, arg2 : 'b) = 
+        member private this.LocalWithArgs<'a, 'b>(state, path, verb, method : System.Reflection.MethodInfo) = 
+            let f (arg1 : 'a, arg2 : 'b) =  
                 this.SafeCall method [|arg1;arg2|]
-            this.GenerateRouteWithArgs state f path verb
+            this.GenerateRouteWithArgs<('a * 'b)> state f path verb
 
-        member private this.LocalWithArgs3(state, path, verb, method : System.Reflection.MethodInfo) = 
+        member private this.LocalWithArgs3<'a, 'b, 'c>(state, path, verb, method : System.Reflection.MethodInfo) = 
             let f (arg1 : 'a, arg2 : 'b, arg3 : 'c) = 
                 this.SafeCall method [|arg1;arg2;arg3|]
-            this.GenerateRouteWithArgs state f path verb
+            this.GenerateRouteWithArgs<('a * 'b * 'c)> state f path verb
 
         member private this.LocalWithBody(state, path, verb, method) = 
             let f body = 
@@ -216,12 +216,12 @@ module Routing =
         [<CustomOperation("withArgs")>]
         member this.WithArgs(state, action : Expr<('a * 'b) -> int * string>) : RouterState =
             let path,method,verb = this.FindMethodAndPath action
-            this.LocalWithArgs(state,path, verb, method)
+            this.LocalWithArgs<'a, 'b>(state,path, verb, method)
         
         [<CustomOperation("withArgs3")>]
-        member this.WithArgs3(state, action : Expr<'a -> 'b -> 'c -> int * string>) : RouterState =
-            let path,method,verb = this.FindMethodAndPath action 
-            this.LocalWithArgs3(state,path, verb, method)
+        member this.WithArgs3(state, action : Expr<('a * 'b * 'c) -> int * string>) : RouterState =
+            let path,method,verb = this.FindMethodAndPath action
+            this.LocalWithArgs3<'a, 'b, 'c>(state,path, verb, method)
 
         [<CustomOperation "collect">]
         member this.Collect(state, areaPath : string) : RouterState =

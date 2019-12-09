@@ -80,7 +80,7 @@ module AST =
         | ColumnName of string
         | ColumnExpression of ColumnComputationExpression
         | Regression of Regression * ComputationExpression * ComputationExpression
-        | Extrapolate of Regression * ComputationExpression * int
+        | Extrapolate of Regression * ComputationExpression * int * trainingLength: int option
         | Ordinals
     
     type FilterAndSorting =

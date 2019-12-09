@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: db
+  name: collectordb
 spec:
   selector:
     matchLabels:
-      app: db
+      app: collectordb
   template:
     metadata:
       labels:
-        app: db
+        app: collectordb
     spec:
       volumes:
-      - name: db-storage
+      - name: collectordb-storage
         persistentVolumeClaim:
-          claimName: db-volume-claim
+          claimName: collectordb-volume-claim
       containers:
       - env:
         - name: COUCHDB_PASSWORD
@@ -22,11 +22,11 @@ spec:
         - name: COUCHDB_USER
           value: admin
         image: apache/couchdb
-        name: db
+        name: collectordb
         ports:
         - containerPort: 5984
         volumeMounts:
-        - name: db-storage
+        - name: collectordb-storage
           mountPath: /opt/couchdb/data
       restartPolicy: Always
 status: {}

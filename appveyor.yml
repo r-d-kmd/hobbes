@@ -8,7 +8,7 @@ environment:
   DOCKER_PASS:
     secure: /T9ITfudL23Ga+Mz7oRaVA==
   WORKBENCH_ENVIRONMENT:
-    secure: /0UAqpwPkUwhtSS6lpKMBHZ8ljEtyTr5h3VPFqsliGIWs46Xlb4Axx16L9jLIzrKmhrRwCe9k/ViAvGR/YpabAlQjzuZ38M/hLP9K0a6Ru2fVWHwr8KzITfc7NRspN2dYqHB+INSso/h128TRgvmihxWPg9dF7cUyjnURIRqEmELZ0sp1EL0kx7SI2C3oJWCO4Dtl1j5cyJoT6CH2cAU7Ktb0llTa1hv8b6R5tNJbjVQ7S5VzAzVXv427VwUS+35vRG3DzLnmSXFizYsTZGAJwHhbCD9Wim5LhPSTPkjJxAgA04/Gdt3pOp62rn7R+ktroDeOR8P/JaTXfj1JwHdRSHc+nF1vxmWDPbNRa/XZPmvUmi2nH58D18s4aa+tvktD+knCjq9DjTM0yF5hJrQnA7Q+Z/sUc4tSkX7nfGyJYaceeC48ubfVQJ0I1uQffhpHjZsSm+wBCANxJf1fbcAu7bA8u6ugTW4fs5FdGwDtT2XlEdPvSbjT7b+SweQrfkFZnok2JvOpVIYp71TObQQTImCUTJc0qfp4grMMnIVgH0fptyPjcfy3w+Zk1r1idaYy80iJvDed5umj2mDc2tv/KuGfFuO21UdBCNflZwO7hSrCKlzLOsQctf4MRbbFO/fWlBkHazXk1GWP095QtfRfQnJAYO0ci/CLP8Gwzkw3/DYHCinJFPHc67NzfWBvGpasxFCqS9u/HqiU7W8K5CVl2BhB9bW7ix06cKO5OgP3/AW3c/ZuzJqZDdJ4yDccKZOasssAExiiOUyvWLjD57EgkNoUfFTQdClynI8W4Lnz83RZLx5ESNTTO+nBnpEnhdAHAdo3rqrr98rRa45FRKZxQyE+5ovROQzxKt+pHkGQLdlbBlM03q97LvCY70P5bqAEQeJoiC6rNWIcDVIqDQHY7gN/aJH0HmbFx4ce+202L0N+Q0vLVwMvXosB0/Oisu4o3aNRtBsO5bdYIzaxDcOG+JcxUisTOrf7SlVSVsDtXd7thF51XpTknLEs9OpgbnXbNHU1awIsXMT8u0bSlsISiGM15Z/M1U0uZDvyGNf3IXskf7eCVhAip0JbvqgkpvyQWi4oy9p7gR2yS1tO3G28MknYVZXLAUMM3jVN75MtJtZgV1bdQwyRQmTUs0j7LFxoPNWmZjzwmIZGcqO7WStpMZzodoLBuhJqAAf1/GRMHQbomMZeKpa+JcWxvl08D7Y
+    secure: /0UAqpwPkUwhtSS6lpKMBHZ8ljEtyTr5h3VPFqsliGLsVg8u/WLCPcwPpJOm1xpglFrEuY5lQc9ekyZ4BS6PB3rL5hfhvI1+T0zD9EMIaN+1Uo9AGU3Dc6PFzeaxT3oZBBRgzdsHeOaicVhgai6xOexBtPEZzWfXDYtxjOfybV4BmFA/hk7u7RCnkRodG6z2IiCUmXYIQbxOLyKDfbVOUVbqnYlPoYdzcZY95h2yyvik03N2vYfCtuqa/YG9NFXg0VnB/iXnlT0zfETQ9LxXJqy7WCEjgouDgZXAgPL6/XHvZW1vNfLnfn9mawqCRFVMVqXSQntma418dPc3SBgnKT6hBSn7b/VtmhJ11FpEaL7PSSl2fAGz0hF15KSQNwIyEr77niMYKgcTCVI+9i8v/WULYJKl751URnMaC3H2eXlUugOpQ34qKOV037/h07m6OrMrpOxEgyjWmkjdzzyBs6qsiQ07Xk7Fb2HooRyMUECamBPC969v5qTiUU3TXb0Ec5ssxvjpaIig5iYpfn4DbCkFo8D80R75YUXByipcPezbvAY+yXZW/VnC2UT1JdB1iRVnyb3QzBic6q8QQHnteyYfGii/crPpkBXpzWzNHp+yxLO+f7eHq+rcJu3EU3JDZAw4fUUcjil8BHWKRzDzUKaTjBbZtb2mTStgkpOlUBbAgFwecnYGanTEAQnBQJN507Yc9A/U7gIkYtI2MApI0FM6RB51bSt7wer3KrocBDCHtzHInHYPe45/1qmxPaqw0BrCdUJjIZsCy/l1mhN9N1dYuyi7TdWwHvjUAW+F8ekvC9PZ1tMEKq/z2eybPz3XTtkLuy7w9JU0caTLXPe3Hs0Sa29HkqAuPJ2KyPcT3XZ5eBHi7QEFF2IcukusZdEhx15qH4OFjWQxrrqZX5oKrJFnmSaI5WNxnf1yKp0eVAZz8Pce5fXZHud1axwC8Tr2Lq/DyxbQt5efJB00Gr6YRSmeI2f62NM6BRcUVkIgZnLvHXQjXf9MTjPx1w/NnslqfjQIYNxOT+ipX8WsN7bLYrEX72hsdn32dFT5eqzQyt611O3dwChcSBoh9fKbIDKeU3aSKIx3yQlogwsxtb6ZMJ/7kFWiZrwDf9dK31hmsAmOG5TdeU9SMZAZYJ4xD9XRhx17eOCpYnIV7o3NLlY3wj8CSuUhFazJ/SxjkrDeLTI9zjbM9ie++C16yjwR9OVq
   HOBBES_PAT:
     secure: FMSdnVu01kCl/h3wLYiJfrZh9g8XCScl5sT98lVFr8KakwD9C5Lsqs01fn4o7DwX7zu+voHMzTqJ+eE+eTP/j63LoH5DHq81hW2w0Rq6EOEXg1EAUolVHsVerSUAXzfpwnvRHzagS9pD6MX7/n7813lHo9vFL4lIZeqmc1oK/eFy4trd2cGfwbrgxFY2NZnzpzY2R9vVHTCiIJuDS33BuQ==
   PM_APIKEY:
@@ -45,18 +45,17 @@ before_build:
   - paket install
   - mkdir "c:\projects\hobbes\hobbes.server\db\data"
   - mkdir "c:\projects\hobbes\collectors\db\data"
-  - sudo minikube start --vm-driver=none --memory=4096
-
+  - sudo CHANGE_MINIKUBE_NONE_USER=true minikube start --vm-driver=none --memory=4096
 build_script: 
  
   - cd hobbes.server/src
   - fake build --target SetAssemblyInfo
   - cd ../..
   - fake build --target builddocker
+  - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
   - fake build --target PushAlpha
   
 test_script:
-  - fake build --target test
   - cd kubernetes
   - kubectl apply -f db-deployment.yaml,db-service.yaml,db-volume.yaml,hobbes-deployment.yaml,hobbes-service.yaml
   - while [[ $(kubectl get pods -l app=db -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for database" && sleep 1; done
@@ -68,9 +67,8 @@ test_script:
   #- newman run https://api.getpostman.com/collections/9463780-a7355a7a-5fe6-42b5-a1ed-877f3c9bc2f7?apikey=%PM_APIKEY% -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=%PM_APIKEY% --env-var "pat=%HOBBES_PAT%"
 
 deploy_script:
-  - docker login -u="%DOCKER_USER%" -p="%DOCKER_PASS%"
-  - fake build --target pushtodocker DOCKER_CLI_EXPERIMENTAL=enabled
-  - fake build --target publish DOCKER_CLI_EXPERIMENTAL=enabled
+  - fake build --target pushtodocker
+  - fake build --target publish 
 
 
 

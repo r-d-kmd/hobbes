@@ -1,6 +1,6 @@
 namespace Hobbes.Server.Db
 open FSharp.Data
-open Hobbes.Db
+open Hobbes.Web
 open Hobbes.Server.Db
 
 module Transformations =

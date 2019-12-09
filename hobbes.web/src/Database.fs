@@ -1,4 +1,4 @@
-namespace Hobbes.Db
+namespace Hobbes.Web
     open FSharp.Data
     open Hobbes.Helpers 
     

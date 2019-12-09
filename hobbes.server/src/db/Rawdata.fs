@@ -3,7 +3,7 @@ namespace Hobbes.Server.Db
 
 open Cache
 open FSharp.Data
-open Hobbes.Db
+open Hobbes.Web
 open Hobbes.Server.Db
 
 module Rawdata =

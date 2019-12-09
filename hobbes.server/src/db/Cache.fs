@@ -1,7 +1,7 @@
 namespace Hobbes.Server.Db 
 open Hobbes.Server.Db.DataConfiguration
 open FSharp.Data
-open Hobbes.Db
+open Hobbes.Web
 open Hobbes.Server.Db
 module Cache = 
 

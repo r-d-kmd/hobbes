@@ -32,10 +32,42 @@ let run command workingDir args =
 let serverPath = Path.getFullName "./"
 let deployDir = Path.getFullName "./deploy"
 
+let buildImage dockerfile _ = 
+    let workingDir = "../"
+    let arguments = 
+        (workingDir
+        |> Path.getFullName
+        |> Path.getDirectory).Split([|'/'; '\\'|], StringSplitOptions.RemoveEmptyEntries)
+        |> Array.last
+        |> (
+            match dockerfile with
+            None -> 
+                sprintf "build -t %s ."
+            | Some dockerfile -> 
+                sprintf "build -f %s -t %s ." dockerfile  
+        )
+        |> String.split ' '
+        |> Arguments.OfArgs
+    RawCommand ("docker", arguments)
+        |> CreateProcess.fromCommand
+        |> CreateProcess.withWorkingDirectory workingDir
+        |> CreateProcess.ensureExitCode
+        |> Proc.run
+        |> ignore
+
 Target.create "Clean" (fun _ ->
     [ deployDir ]
     |> Shell.cleanDirs
 )
+
+Target.create "Restart" (fun _ ->
+    buildImage (Some "Dockerfile.debug") ()
+    let compose = run "docker-compose" "."
+    compose "kill azuredevopscollector"
+    compose "rm -f azuredevopscollector"
+    compose "up azuredevopscollector"
+)
+
 
 let runDotNet cmd workingDir args =
     let result =
@@ -50,6 +82,13 @@ Target.create "Build" (fun _ ->
     build "Debug" serverPath
 )
 
+Target.create "Debug" (fun _ ->
+    let serverDir = Path.combine deployDir "Server"
+
+    let publishArgs = sprintf "publish -c Debug -o \"%s\"" serverDir
+    runDotNet publishArgs serverPath ""
+)
+
 Target.create "Bundle" (fun _ ->
     let serverDir = Path.combine deployDir "Server"
 
@@ -57,28 +96,15 @@ Target.create "Bundle" (fun _ ->
     runDotNet publishArgs serverPath ""
 )
 
-Target.create "BuildImage" (fun _ ->
-    let workingDir = "../"
-    let arguments = 
-        ((workingDir
-        |> Path.getFullName
-        |> Path.getDirectory).Split([|'/'; '\\'|], StringSplitOptions.RemoveEmptyEntries)
-        |> Array.last).ToLower()
-        |> sprintf "build -t kmdrd/hobbes-%s ." 
-        |> String.split ' '
-        |> Arguments.OfArgs
-    RawCommand ("docker", arguments)
-        |> CreateProcess.fromCommand
-        |> CreateProcess.withWorkingDirectory workingDir
-        |> CreateProcess.ensureExitCode
-        |> Proc.run
-        |> ignore
-)
+Target.create "BuildImage" (buildImage None)
 
 open Fake.Core.TargetOperators
 "Clean" 
     ==> "Bundle" 
     ==> "Build"
     ==> "BuildImage"
+
+"Debug"
+    ==> "Restart"
 
 Target.runOrDefaultWithArguments "BuildImage"

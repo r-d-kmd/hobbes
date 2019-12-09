@@ -1,9 +1,10 @@
 namespace Collector.AzureDevOps
 
-open Hobbes.Server.Db.Database
+open Hobbes.Db.Database
 open Hobbes.Server.Db.Log
-open Hobbes.Server.Db
+open Hobbes.Db
 open Hobbes.Server.Routing
+open Hobbes.Helpers 
 
 [<RouteArea ("/", false)>]
 module Root =

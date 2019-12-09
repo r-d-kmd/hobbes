@@ -1,17 +1,15 @@
 open Saturn
 open Giraffe
-open Microsoft.AspNetCore.Http
-open Hobbes.Server.Db.Database
-open Hobbes.Server.Db
 open Hobbes.Server.Routing
 open Hobbes.Server.Services.Admin
 open Hobbes.Server.Services.Data
 open Hobbes.Server.Services.Root
 open Hobbes.Server.Services.Status
+open Hobbes.Helpers
 
 let private port = 
     env "port" "8085" |> int
-let f a b c = 200,sprintf "%s%s%s" a b c    
+       
 let adminRouter = 
    router {
         pipe_through verifiedPipe
@@ -28,7 +26,7 @@ let adminRouter =
         withArg  <@ deleteRaw @>
         withArg  <@ deleteCache @>
         withArgs <@ setting @>
-        withArgs3 <@ f @>
+        
         withBody <@ configureStr @>
         withBody <@storeConfigurations@>
     }
@@ -68,7 +66,7 @@ let private app = application {
 let rec private init() =
     async {
         try
-           FSharp.Data.Http.Request("http://db:5984") |> ignore //make sure db is up and running
+           FSharp.Data.Http.Request(env "DB_SERVER_URL" "http://db-svc:5984") |> ignore //make sure db is up and running
            initDb() |> ignore
            printfn "DB initialized"
         with _ ->

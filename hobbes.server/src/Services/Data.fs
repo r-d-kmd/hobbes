@@ -1,10 +1,11 @@
 namespace Hobbes.Server.Services
 
-open Hobbes.Server.Db.Database
+open Hobbes.Db.Database
 open Hobbes.Server.Db.Log
 open Hobbes.Server.Db
 open Hobbes.Server.Routing
 open Hobbes.FSharp.DataStructures
+open Hobbes.Helpers
 
 [<RouteArea "/data">]
 module Data = 
@@ -135,8 +136,11 @@ module Data =
         
     [<Get ("/sync/%s") >]
     let syncronize configurationName = 
-        
         let configuration = DataConfiguration.get configurationName
+        configuration.Source 
+        |> Admin.clearProject  
+        |> ignore
+        Admin.clearCache() |> ignore
         let token =
             match configuration.Source with
             DataConfiguration.DataSource.AzureDevOps(account,_)  ->

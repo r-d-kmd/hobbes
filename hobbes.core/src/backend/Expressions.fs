@@ -38,19 +38,24 @@ module Expressions =
             pipe2  (kwExpanding >>? reduction) expressionInBrackets (fun reduction columnExpression ->
                 AST.Expanding(reduction,columnExpression) |> ColumnExpression
             )
-        let ordinals = kwOrdinals >>= (fun _ -> AST.Ordinals |> preturn)
+        let ordinals = kwOrdinals >>= (fun _ -> Ordinals |> preturn)
         let regression = 
             pipe2 (kwLinear .>>? 
                    kwRegression >>.
                    expressionInBrackets)
                   expressionInBrackets
-                  (fun inputs outputs -> AST.Regression(AST.Linear,inputs,outputs)) 
+                  (fun inputs outputs -> Regression(Linear,inputs,outputs)) 
 
         let extrapolation = 
             pipe2 (kwLinear .>>? kwExtrapolation >>.
                   expressionInBrackets)
                   pint32
-                  (fun outputs count -> AST.Extrapolate(AST.Linear,outputs, count)) 
+                  (fun outputs count -> Extrapolate(Linear,outputs, count, None))
+            <|> pipe3 (kwLinear .>>? kwExtrapolation >>.
+                  expressionInBrackets)
+                  pint32
+                  pint32
+                  (fun outputs count trainginLength -> Extrapolate(Linear,outputs, count, Some trainginLength)) 
 
         let ``int`` = kwInt >>? expr >>= (AST.Int >> preturn) 
 

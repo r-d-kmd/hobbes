@@ -1,8 +1,9 @@
 namespace Hobbes.Server
 
-open Hobbes.Server.Db.Database
 open System.Security.Cryptography
 open System.IO
+open Hobbes.Db.Database
+open Hobbes.Helpers
 
 module Security =
     [<Literal>]
@@ -21,9 +22,7 @@ module Security =
 
     type private JwtPayload = FSharp.Data.JsonProvider<"""{"name":"some"}""">
     let private keySuffix = 
-        match System.Environment.GetEnvironmentVariable("KEY_SUFFIX") with
-        null -> "development"
-        | suffix -> suffix
+        env "KEY_SUFFIX" "development"
 
     let private getSignature personalKey header payload = 
         let hmac = System.Security.Cryptography.HMAC.Create("HMACSHA256")

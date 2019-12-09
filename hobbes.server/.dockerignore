@@ -1,12 +1,3 @@
-**/.fake/
-**/.bin/
-**/Collector/
-db/data/
-**/obj/
-**/Properties/
-**/build.fsx
-**/build.lock.fsx
-**/*.fsproj
-**/*.fs
-**/*.references
-vsdbg/
+db/
+bin/
+src/

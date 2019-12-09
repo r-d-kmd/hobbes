@@ -1,9 +1,10 @@
 namespace Collector.AzureDevOps
 
-open Hobbes.Server.Db.Database
+open Hobbes.Db.Database
 open Hobbes.Server.Db.Log
-open Hobbes.Server.Db
+open Hobbes.Db
 open Hobbes.Server.Routing
+open Hobbes.Helpers 
 
 [<RouteArea ("/", false)>]
 module Root =
@@ -15,7 +16,12 @@ module Root =
     [<Get "/raw/%s/%s">]
     let raw (configurationName, theOther) : int * string =
 
-        999, configurationName + theOther
+        200, configurationName + theOther
+
+    [<Get "/test/%s/%s/%s">]
+    let test (arg1, arg2, arg3) : int * string =
+
+        200, arg1 + arg2 + arg3    
            
 
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =

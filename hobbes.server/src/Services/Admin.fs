@@ -1,9 +1,10 @@
 namespace Hobbes.Server.Services
 
-open Hobbes.Server.Db.Database
+open Hobbes.Db.Database
 open Hobbes.Server.Db.Log
 open Hobbes.Server.Db
 open Hobbes.Server.Routing
+open Hobbes.Helpers
 
 [<RouteArea "/admin">]
 module Admin = 
@@ -132,7 +133,9 @@ module Admin =
     [<Delete ("/clear/rawdata")>]
     let clearRawdata () = 
         Rawdata.clear()
-        
+
+    let clearProject = Rawdata.clearProject
+    
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
         
         async {

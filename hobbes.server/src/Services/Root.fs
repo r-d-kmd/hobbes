@@ -1,9 +1,10 @@
 namespace Hobbes.Server.Services
 
-open Hobbes.Server.Db.Database
+open Hobbes.Db.Database
 open Hobbes.Server.Db.Log
 open Hobbes.Server.Routing
 open Hobbes.Server.Security
+open Hobbes.Helpers
 
 [<RouteArea ("/", false)>]
 module Root =
@@ -11,8 +12,8 @@ module Root =
     [<Get "/ping" >] 
     let ping() = 
         let app = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application
-        let x = FSharp.Data.Http.RequestString("http://db-svc:5984/")
-        200,sprintf """{"appVersion": "%s", "runtimeFramework" : "%s", "appName" : "%s", "db" : "%s"}""" app.ApplicationVersion app.RuntimeFramework.FullName app.ApplicationName x
+        
+        200,sprintf """{"appVersion": "%s", "runtimeFramework" : "%s", "appName" : "%s"}""" app.ApplicationVersion app.RuntimeFramework.FullName app.ApplicationName
     type UserSpec = FSharp.Data.JsonProvider<"""{"name" : "kjlkj", "token" : "lkælk"}""">
 
     [<Put ("/key", true) >] 

@@ -25,7 +25,7 @@ let run command workingDir args =
     |> ignore
 
 let serverPath = Path.getFullName "./"
-let deployDir = Path.getFullName "./deploy"
+let deployDir = Path.getFullName "../deploy"
 
 Target.create "Clean" (fun _ ->
     [ deployDir ]
@@ -55,9 +55,8 @@ Target.create "SetAssemblyInfo" (fun _ ->
         AssemblyInfo.Product "Hobbes server"
     ]
 )
-Target.create "Build" (fun _ ->
-    build "Debug" serverPath
-)
+
+Target.create "Build"  ignore
 
 Target.create "Bundle" (fun _ ->
     let serverDir = Path.combine deployDir "Server"
@@ -66,23 +65,29 @@ Target.create "Bundle" (fun _ ->
     runDotNet publishArgs serverPath ""
 )
 
-Target.create "Restart" (fun _ ->
-    let compose = run "docker-compose" "."
-    compose "kill hobbes"
-    compose "rm -f hobbes"
-    compose "up hobbes"
+
+Target.create "Debug" (fun _ ->
+    let serverDir = Path.combine deployDir "Server"
+
+    let publishArgs = sprintf "publish -c Debug -o \"%s\"" serverDir
+    runDotNet publishArgs serverPath ""
 )
 
-Target.create "BuildImage" (fun _ ->
-    if IO.Directory.Exists("./deploy/Server") |> not then failwith "Doh"
-    if IO.Directory.Exists("./deploy/Server/db") |> not then failwith "with What??"
+
+let buildImage  dockerfile _ = 
     let workingDir = "../"
     let arguments = 
         (workingDir
         |> Path.getFullName
         |> Path.getDirectory).Split([|'/'; '\\'|], StringSplitOptions.RemoveEmptyEntries)
         |> Array.last
-        |> sprintf "build -t %s ." 
+        |> (
+            match dockerfile with
+            None -> 
+                sprintf "build -t %s ."
+            | Some dockerfile -> 
+                sprintf "build -f %s -t %s ." dockerfile  
+        )
         |> String.split ' '
         |> Arguments.OfArgs
     RawCommand ("docker", arguments)
@@ -91,15 +96,31 @@ Target.create "BuildImage" (fun _ ->
         |> CreateProcess.ensureExitCode
         |> Proc.run
         |> ignore
+
+Target.create "Restart" (fun _ ->
+    buildImage (Some "Dockerfile.debug") ()
+    let compose = run "docker-compose" "."
+    compose "kill hobbes"
+    compose "rm -f hobbes"
+    compose "up hobbes"
 )
+
+
+Target.create "BuildImage" (buildImage None)
+
+Target.create "ReleaseBuild" ignore
 
 open Fake.Core.TargetOperators
 "Clean" 
     ==> "SetAssemblyInfo"
     ==> "Bundle" 
-    ==> "BuildImage"
-    ==> "Restart"
+    ==> "BuildImage"  
+    ==> "ReleaseBuild"
+
+"Bundle" ==> "Build"
 
 "SetAssemblyInfo"
-    ==> "Build"
-Target.runOrDefaultWithArguments "BuildImage"
+    ==> "Debug"
+    ==> "Restart"
+
+Target.runOrDefaultWithArguments "ReleaseBuild"

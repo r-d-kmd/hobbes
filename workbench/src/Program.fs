@@ -1,6 +1,7 @@
 open Argu
 open FSharp.Data
-open Hobbes.Server.Db
+open Hobbes.Db
+open Hobbes.Helpers
 
 type Environment = 
     Development
@@ -102,7 +103,7 @@ let main args =
                 if System.IO.File.Exists settingsFile then 
                     (settingsFile |> WorkbenchSettings.Load).Development
                 else
-                     match Database.env "WORKBENCH_ENVIRONMENT" null with
+                     match env "WORKBENCH_ENVIRONMENT" null with
                      null -> failwith "No settings file and no env var"
                      | s -> 
                          (s 

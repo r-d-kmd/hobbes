@@ -1,8 +1,7 @@
 namespace Collector.AzureDevOps
 
 open Hobbes.Db.Database
-open Hobbes.Server.Db.Log
-open Hobbes.Db
+open Hobbes.Server.Db
 open Hobbes.Server.Routing
 open Hobbes.Server.Readers
 open Hobbes.Helpers
@@ -23,7 +22,7 @@ module Root =
                 DataConfiguration.AzureDevOps(account,projectName) ->
                     if Rawdata.exists() |> not then Rawdata.init |> ignore else () //TODO, rename Rawdata to azureRaw
                     let statusCode,body = AzureDevOps.sync token (account,projectName)
-                    logf "Sync finised with statusCode %d and result %s" statusCode body
+                    Log.logf "Sync finised with statusCode %d and result %s" statusCode body
                     if statusCode >= 200 && statusCode < 300 then 
                         //TODO: if caching failed in server, we shouldn't setSyncCompleted?
                         Rawdata.setSyncCompleted cacheRevision source 
@@ -121,7 +120,7 @@ module Root =
         match errorCode with
          Some errorCode ->
             let msg = "INIT: error in creating dbs"
-            error null msg
+            Log.error null msg
             errorCode, msg
          | None ->
             try
@@ -133,7 +132,7 @@ module Root =
                     System.IO.Directory.EnumerateFiles(dir,"*.json") 
                     |> Seq.filter (fun _ -> List.exists (fun db -> db.Equals(dbName)) dbs)
                     |> Seq.map (fun f -> 
-                        let db = Database(dbName, CouchDoc.Parse, ignoreLogging)
+                        let db = Database(dbName, CouchDoc.Parse, Log.ignoreLogging)
                         let insertOrUpdate =
                             db.InsertOrUpdate
                         let tryGetHash = db.TryGetHash
@@ -144,8 +143,8 @@ module Root =
                 |> Async.RunSynchronously) |> ignore
 
                 let msg = "Init completed"
-                log msg
+                Log.log msg
                 200,msg
             with e ->
-                errorf e.StackTrace "Error in init: %s" e.Message
+                Log.errorf e.StackTrace "Error in init: %s" e.Message
                 500,e.Message

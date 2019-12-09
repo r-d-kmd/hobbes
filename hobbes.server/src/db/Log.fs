@@ -1,5 +1,6 @@
 namespace Hobbes.Server.Db
 open FSharp.Data
+open Hobbes.Helpers
 
 module Log =
     open FSharp.Core.Printf
@@ -35,7 +36,7 @@ module Log =
 
 
     let mutable logLevel = 
-        Database.env "LOG_LEVEL" "info" |> LogType.Parse
+        env "LOG_LEVEL" "info" |> LogType.Parse
     
     let mutable private _logger = eprintf "%A" 
     let mutable private _list : unit -> seq<string> = fun () -> Seq.empty
@@ -55,7 +56,7 @@ module Log =
                              "type" : "%A",
                              "stacktrace" : "%s",
                              "message" : "%s"}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) logType (stacktrace |> jsonify) (msg |> jsonify)
-        if Database.env "LOG_LOCATION" "console" = "console" then
+        if env "LOG_LOCATION" "console" = "console" then
             //let's print log messages to console when running locally
             printfn "%s. \nStackTrace: %A" msg stacktrace
         else

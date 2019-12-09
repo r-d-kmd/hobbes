@@ -4,6 +4,7 @@ open Hobbes.Server.Db.Database
 open Hobbes.Server.Db.Log
 open Hobbes.Server.Routing
 open Hobbes.Server.Security
+open Hobbes.Helpers
 
 [<RouteArea ("/", false)>]
 module Root =

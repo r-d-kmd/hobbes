@@ -1,12 +1,14 @@
 namespace Hobbes.Server.Db
     open FSharp.Data
+    open Hobbes.Helpers 
+
     module Database =
         type Logger = string -> unit
         type LogFormatter<'a> = Printf.StringFormat<'a,unit>
         type ILog =
             abstract Log : string -> unit
             abstract Error : string -> string -> unit
-            abstract Debug : string -> unit
+            abstract Debug : string -> unit 
             abstract Logf<'a> : LogFormatter<'a> -> 'a
             abstract Errorf<'a> : string -> LogFormatter<'a> -> 'a
             abstract Debugf<'a> : LogFormatter<'a> -> 'a
@@ -20,11 +22,7 @@ namespace Hobbes.Server.Db
             |> Seq.fold(fun (sBuilder : System.Text.StringBuilder) d ->
                     sBuilder.Append(d.ToString("x2"))
             ) sBuilder).ToString()  
-            
-        let env name defaultValue = 
-            match System.Environment.GetEnvironmentVariable name with
-            null -> defaultValue
-            | v -> v
+
 
         let private user = env "COUCHDB_USER" "admin"
         let private pwd = env "COUCHDB_PASSWORD" "password"

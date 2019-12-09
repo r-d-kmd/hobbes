@@ -8,6 +8,7 @@ open Hobbes.Server.Services.Admin
 open Hobbes.Server.Services.Data
 open Hobbes.Server.Services.Root
 open Hobbes.Server.Services.Status
+open Hobbes.Helpers
 
 let private port = 
     env "port" "8085" |> int

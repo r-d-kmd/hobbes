@@ -5,6 +5,7 @@ open Hobbes.Server.Db.Log
 open Hobbes.Server.Db
 open Hobbes.Server.Routing
 open Hobbes.FSharp.DataStructures
+open Hobbes.Helpers
 
 [<RouteArea "/data">]
 module Data = 

@@ -1,7 +1,7 @@
 namespace Hobbes.Server.Db
+
 open FSharp.Data
 open Hobbes.Web
-open Hobbes.Server.Db
 
 module Transformations =
    type TransformationRecord = JsonProvider<"""{"_id" : "jlk", "lines" : ["","jghkhj"]}""">

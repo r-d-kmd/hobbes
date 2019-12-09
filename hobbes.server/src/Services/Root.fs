@@ -1,7 +1,7 @@
 namespace Hobbes.Server.Services
 
 open Hobbes.Web.Database
-open Hobbes.Server.Db.Log
+open Hobbes.Web.Log
 open Hobbes.Server.Routing
 open Hobbes.Server.Security
 open Hobbes.Helpers

@@ -1,8 +1,8 @@
 namespace Hobbes.Server.Db
 
 open FSharp.Data 
+open Hobbes.Web.Log
 open Hobbes.Web
-open Hobbes.Server.Db
 
 module DataConfiguration =
     type private ConfigurationRecord = JsonProvider<"""[{

@@ -1,7 +1,7 @@
 namespace Hobbes.Server.Services
 
 open Hobbes.Web.Database
-open Hobbes.Server.Db.Log
+open Hobbes.Web.Log
 open Hobbes.Server.Db
 open Hobbes.Server.Routing
 open Hobbes.Helpers
@@ -96,7 +96,7 @@ module Admin =
 
     [<Get("/list/log")>]
     let listLog() = 
-        Log.list()
+        list()
         |> Seq.map LogRecord.Parse
         |> Seq.filter(fun record -> record.Type <> "requestTiming")
         |> Seq.sortByDescending(fun record -> record.Timestamp)
@@ -105,8 +105,8 @@ module Admin =
                 match logRecord.Stacktrace with
                   None -> ""
                   | Some st -> sprintf "\n%s" st
-                |> Log.jsonify
-            let message = logRecord.Message |> Log.jsonify
+                |> jsonify
+            let message = logRecord.Message |> jsonify
             sprintf "%s - [%s] %s %s" (logRecord.Timestamp.ToString()) logRecord.Type message st
         ) |> formatDBList "logEntries"
 

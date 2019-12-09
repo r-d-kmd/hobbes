@@ -1,1 +1,1 @@
-minikube service list -p test
+minikube service list -p dev

@@ -67,7 +67,7 @@ let private app = application {
 let rec private init() =
     async {
         try
-           FSharp.Data.Http.Request("http://db:5984") |> ignore //make sure db is up and running
+           FSharp.Data.Http.Request("http://db-svc:5984") |> ignore //make sure db is up and running
            initDb() |> ignore
            printfn "DB initialized"
         with _ ->

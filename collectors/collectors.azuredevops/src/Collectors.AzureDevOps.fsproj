@@ -8,7 +8,7 @@
     <ProjectReference Include="../../../hobbes.core/src/hobbes.fsproj">
       <Name>hobbes.fsproj</Name>
     </ProjectReference>
-    <ProjectReference Include="../../../hobbes.database/src/hobbes.database.fsproj">
+    <ProjectReference Include="../../../hobbes.web/src/hobbes.web.fsproj">
       <Name>hobbes.database.fsproj</Name>
     </ProjectReference>
     <ProjectReference Include="../../../hobbes.helpers/src/hobbes.helpers.fsproj">

@@ -3,6 +3,9 @@ open Hobbes.Server.Db.DataConfiguration
 open FSharp.Data
 open Hobbes.Web
 open Hobbes.Server.Db
+open Hobbes.Web
+open Hobbes.Web.Log
+
 module Cache = 
 
     type CacheRecord = JsonProvider<"""{

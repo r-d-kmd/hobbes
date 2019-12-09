@@ -5,6 +5,7 @@ open Cache
 open FSharp.Data
 open Hobbes.Web
 open Hobbes.Server.Db
+open Hobbes.Web.Log
 
 module Rawdata =
         

@@ -28,7 +28,7 @@ services:
     volumes:
       - ./hobbes.server/db/data:/opt/couchdb/data
   azuredevopscollector:
-    image: kmdrd/hobbes-collectors.azuredevops
+    image: collectors.azuredevops
     container_name: azuredevopscollector
     expose:
       - 8085

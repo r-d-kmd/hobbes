@@ -43,8 +43,10 @@ let buildProjects config =
     |> Seq.iter(fun file ->
         let workDir = System.IO.Path.GetDirectoryName file
         if System.IO.File.Exists(System.IO.Path.Combine(workDir,"build.fsx")) then
+            printfn("Build: FSX %s") file
             run "fake" workDir "build"
         else
+            printfn("Build: %s") file
             build config workDir
     )
 
@@ -247,14 +249,13 @@ Target.create "PushAlpha" (fun _ ->
 open Fake.Core.TargetOperators
 
 "Clean"
-   ==> "Compile"
+   ==> "ReleaseBuild"
    ==> "BuildDocker"
    ==> "PushAlpha"
    ==> "Build"
 
-"Clean"
-   ==> "ReleaseBuild"
-   ==> "BuildDocker"
+
+"BuildDocker"
    ==> "PushToDocker"
 
 Target.runOrDefaultWithArguments "Build"

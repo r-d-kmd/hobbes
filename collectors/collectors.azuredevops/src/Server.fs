@@ -17,6 +17,7 @@ let private appRouter = router {
     
     fetch <@ ping @>
     withArgs <@ raw @>
+    withArgs3 <@ test @>
 } 
 
 let private app = application {

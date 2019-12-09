@@ -28,18 +28,18 @@ services:
     volumes:
       - ./hobbes.server/db/data:/opt/couchdb/data
   azuredevopscollector:
-    image: kmdrd/hobbes-collectors.azuredevops
+    image: collectors.azuredevops
     container_name: azuredevopscollector
     expose:
       - 8085
     environment:
       - COUCHDB_USER=admin 
       - COUCHDB_PASSWORD=password
-      - DB_SERVER_URL=http://collectordb:5984/
+      - DB_SERVER_URL=http://collectordb-svc:5984/
       - SERVER_PORT=8085
-  collectordb:
+  collectordb-svc:
     image: apache/couchdb
-    container_name: collectordb
+    container_name: collectordb-svc
     environment:
       - COUCHDB_USER=admin 
       - COUCHDB_PASSWORD=password

@@ -16,7 +16,9 @@ let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
     fetch <@ ping @>
-    withArgs <@ raw @>
+    withArg <@ raw @>
+    withArgs3 <@ sync @>
+    withArgs3 <@ test @>
 } 
 
 let private app = application {
@@ -29,7 +31,7 @@ let private app = application {
 let rec private init() =
     async {
         try
-           FSharp.Data.Http.Request("http://collectordb:5984") |> ignore //make sure db is up and running
+           FSharp.Data.Http.Request("http://collectordb-svc:5984") |> ignore //make sure db is up and running
            initDb() |> ignore
            printfn "DB initialized"
         with _ ->

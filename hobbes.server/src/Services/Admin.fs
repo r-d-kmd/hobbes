@@ -1,9 +1,10 @@
 namespace Hobbes.Server.Services
 
-open Hobbes.Server.Db.Database
+open Hobbes.Db.Database
 open Hobbes.Server.Db.Log
 open Hobbes.Server.Db
 open Hobbes.Server.Routing
+open Hobbes.Helpers
 
 [<RouteArea "/admin">]
 module Admin = 

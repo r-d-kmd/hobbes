@@ -1,7 +1,10 @@
+#nowarn "3061"
 namespace Hobbes.Server.Db
 
 open Cache
 open FSharp.Data
+open Hobbes.Db
+open Hobbes.Server.Db
 
 module Rawdata =
         
@@ -120,7 +123,7 @@ module Rawdata =
         //this could be done with a view but the production environment often exceeds the time limit.
         //we haven't got enough documents for a missing index to be a problem and since it's causing problems 
         //reliance on an index has been removed
-        db.List()
+        db.List() 
         |> Seq.filter(fun doc -> 
            doc.Source = source.SourceName && doc.Project = source.ProjectName
            && (doc.JsonValue.Properties() 
@@ -135,6 +138,7 @@ module Rawdata =
         |> Seq.collect(fun s -> 
             match s.JsonValue.Properties() |> Seq.tryFind(fun (n,_) -> n = "data") with
             Some _ -> 
+
                 let data = s.Data :> obj :?> AzureDevOpsAnalyticsRecord.Root
                 data.Value
             | None -> [||]

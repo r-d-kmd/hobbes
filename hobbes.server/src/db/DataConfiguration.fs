@@ -1,6 +1,8 @@
 namespace Hobbes.Server.Db
 
-open FSharp.Data
+open FSharp.Data 
+open Hobbes.Db
+open Hobbes.Server.Db
 
 module DataConfiguration =
     type private ConfigurationRecord = JsonProvider<"""[{
@@ -35,7 +37,7 @@ module DataConfiguration =
     }]""", SampleIsList = true>
     let private sourceView = "bySource"
     let private db = 
-        Database.Database("configurations", ConfigurationRecord.Parse, Log.loggerInstance)
+        Database.Database("configurations", ConfigurationRecord.Parse, Log.loggerInstance) 
                  .AddView(sourceView)
     type DataSource = 
         AzureDevOps of account: string * projectName: string

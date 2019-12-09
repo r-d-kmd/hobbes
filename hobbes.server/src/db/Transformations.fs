@@ -1,22 +1,23 @@
 namespace Hobbes.Server.Db
-   module Transformations =
+open FSharp.Data
+open Hobbes.Db
+open Hobbes.Server.Db
 
-      open FSharp.Data
+module Transformations =
+   type TransformationRecord = JsonProvider<"""{"_id" : "jlk", "lines" : ["","jghkhj"]}""">
 
-      type TransformationRecord = JsonProvider<"""{"_id" : "jlk", "lines" : ["","jghkhj"]}""">
+   let private db = Database.Database ("transformations", TransformationRecord.Parse, Log.loggerInstance) 
 
-      let private db = Database.Database ("transformations", TransformationRecord.Parse, Log.loggerInstance)
+   let load (transformationIds : #seq<string>) = 
+      db.FilterByKeys transformationIds
 
-      let load (transformationIds : #seq<string>) = 
-         db.FilterByKeys transformationIds
+   let store doc = db.InsertOrUpdate doc
 
-      let store doc = db.InsertOrUpdate doc
+   let tryGetRev id = db.TryGetRev id
 
-      let tryGetRev id = db.TryGetRev id
+   let tryGetHash id = db.TryGetHash id
 
-      let tryGetHash id = db.TryGetHash id
+   let list() = 
+      db.List()
 
-      let list() = 
-         db.List()
-
-      let compactAndClean() = db.CompactAndClean()
+   let compactAndClean() = db.CompactAndClean()

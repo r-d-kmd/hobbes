@@ -7,8 +7,8 @@
   </PropertyGroup>
    <ItemGroup>
      <Reference Include="hobbes.helpers">
-      <HintPath>../../.lib/hobbes.helpers.dll</Name>
-    </ProjectReference>
+      <HintPath>../../.lib/hobbes.helpers.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Database.fs" />

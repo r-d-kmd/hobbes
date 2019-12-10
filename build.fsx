@@ -176,16 +176,24 @@ Target.create "BuildDocker" (fun _ ->
     ) 
 )
 
+//Set to 'Normal' to have more information when trouble shooting 
+let verbosity = 
+    Quiet
+    
 
-let package projectName _ =
+let package projectFile _ =
     DotNet.publish (fun opts -> 
                         { opts with 
                                OutputPath = Some commonLibDir
                                Configuration = DotNet.BuildConfiguration.Release
+                               MSBuildParams = 
+                                   { opts.MSBuildParams with
+                                          Verbosity = Some verbosity
+                                   }    
                         }
-                   ) <| sprintf "./hobbes.%s/src/hobbes.%s.fsproj" projectName projectName
+                   ) projectFile
 
-let libs =
+let commonLibs =
     [
         "core"
         "helpers"
@@ -193,17 +201,35 @@ let libs =
     ]
 
 Target.create "BuildCommon" ignore
+Target.create "ReleaseBuild" ignore
 
 open Fake.Core.TargetOperators
 
-(libs
+(commonLibs
  |> List.fold (fun prev name -> 
-     let targetName = sprintf "hobbes.%s" name 
-     Target.create targetName (package name)
+     let projectName = sprintf "hobbes.%s" name 
+     let projectFile = sprintf "./%s/src/%s.fsproj" projectName projectName
+     Target.create projectName (package projectFile)
      prev
-         ==> targetName 
+         ==> projectName 
  ) "Clean")
     ==> "BuildCommon"
+
+let tools = 
+    [
+        """hobbes.server\src\hobbes.server.fsproj"""
+        """collectors\collectors.AzureDevOps\src\Collectors.AzureDevOps.fsproj"""
+        """workbench\src\hobbes.workbench.fsproj"""
+    ]
+
+(tools
+|> List.fold(fun prev projectFile ->     
+    let targetName = System.IO.Path.GetFileNameWithoutExtension projectFile 
+    Target.create targetName (package projectFile)
+    prev
+       ==> targetName
+ ) "BuildCommon"
+) ==> "ReleaseBuild"
 
 Target.create "Publish" (fun _ -> 
     run "dotnet" "./workbench/src" "run -- --publish" 
@@ -262,7 +288,6 @@ Target.create "PushAlpha" (fun _ ->
     ) 
 )
 
-Target.create "ReleaseBuild" ignore
 
 "ReleaseBuild"
     ==> "BuildDocker"

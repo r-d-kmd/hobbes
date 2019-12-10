@@ -144,6 +144,18 @@ Target.create "Clean" (fun _ ->
     ]
 )
 
+
+Target.create "BaseImages" (fun _ ->
+    [
+        "base"
+        "release"
+        "debug"
+    ] |> List.iter(fun n ->
+        sprintf "build -f Dockerfile.%s -t kmdrd/%s ." n n
+        |> run "docker" "./docker"
+    )
+)
+
 let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.2.default"
 
 let createDockerTag dockerOrg (tag : string) = sprintf "%s/hobbes-%s" dockerOrg (tag.ToLower())
@@ -216,7 +228,7 @@ let commonPack = package commonLibDir
      Target.create projectName (commonPack projectFile )
      prev
          ==> projectName 
- ) "Clean")
+ ) "BaseImages")
     ==> "BuildCommon"
 
 let tools = 
@@ -269,7 +281,6 @@ Target.create "PushToDocker" (fun _ ->
         push tag
     ) 
 )
-
 Target.create "PushAlpha" (fun _ ->
     let dockerOrg = "kmdrd"
     let run = run "docker"
@@ -294,7 +305,8 @@ Target.create "PushAlpha" (fun _ ->
         push tag
     ) 
 )
-
+"Clean"
+    ==> "BaseImages"
 
 "ReleaseBuild"
     ==> "BuildDocker"

@@ -1,7 +1,2 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.0
-RUN apt-get update
-RUN apt-get install -y unzip procps 
-RUN curl -sSL https://aka.ms/getvsdbgsh | /bin/sh /dev/stdin -v latest -l ~/vsdbg
-COPY /deploy /
-WORKDIR /Server
-ENTRYPOINT [ "dotnet", "hobbes.server.dll" ]
+FROM kmdrd/debug
+ENTRYPOINT [ "dotnet", "hobbes.server.dll"]

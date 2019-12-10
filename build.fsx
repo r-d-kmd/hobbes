@@ -124,6 +124,7 @@ let inline (@@) p1 p2 =
 
 let commonLibDir = "./.lib/"
 let serverPackageDir = """hobbes.server/deploy/Server"""
+let collectorPackageDir = """collectors/collectors.azuredevops/deploy/Server"""
 
 let CleanDirs dirs = 
     dirs
@@ -139,6 +140,7 @@ Target.create "Clean" (fun _ ->
     CleanDirs [
         commonLibDir
         serverPackageDir
+        collectorPackageDir
     ]
 )
 
@@ -220,7 +222,7 @@ let commonPack = package commonLibDir
 let tools = 
     [
         """hobbes.server/src/hobbes.server.fsproj""", package serverPackageDir
-        """collectors/collectors.azuredevops/src/collectors.azuredevops.fsproj""", commonPack
+        """collectors/collectors.azuredevops/src/collectors.azuredevops.fsproj""", package collectorPackageDir
         """workbench/src/hobbes.workbench.fsproj""", commonPack
     ]
 
@@ -301,8 +303,5 @@ Target.create "PushAlpha" (fun _ ->
 "BuildDocker" 
     ?=>"PushAlpha"
     ==> "Build"
-
-"BuildDocker"
-    ==> "PushToDocker"
 
 Target.runOrDefaultWithArguments "Build"

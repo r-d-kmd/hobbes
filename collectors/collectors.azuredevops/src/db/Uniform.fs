@@ -2,7 +2,6 @@ namespace Hobbes.AzureDevopsCollector.Db
 
 open FSharp.Data
 open Hobbes.Web
-open Hobbes.Server.Db
 
 module Uniform =
 

@@ -2,7 +2,6 @@ namespace Collector.AzureDevOps
 
 open Hobbes.Web.Database
 open Hobbes.Server.Db
-open Hobbes.Web.Log
 open Hobbes.Web
 open Hobbes.Server.Routing
 open Hobbes.Server.Readers
@@ -16,13 +15,12 @@ module Root =
 
     let synchronize source token =
         let cacheRevision = cacheRevision source
-
         let syncId = Rawdata.createSyncStateDocument cacheRevision source
+        
         async {
             try
                 match source with
                 DataConfiguration.AzureDevOps(account,projectName) -> 
-                    if Rawdata.exists() |> not then Rawdata.init |> ignore else () //TODO, rename Rawdata to azureRaw
                     let statusCode,body = AzureDevOps.sync token (account,projectName)
                     Log.logf "Sync finised with statusCode %d and result %s" statusCode body
                     if statusCode >= 200 && statusCode < 300 then 
@@ -33,60 +31,44 @@ module Root =
                         eprintfn "%s" msg
                         Rawdata.setSyncFailed msg cacheRevision source  
                 | source -> 
-                    let msg = sprintf "No collector found for: %s" source.SourceName
+                    let msg = sprintf "Error: The source %s, wasn't AzureDevOps" source.SourceName
                     eprintfn "%s" msg
                     Rawdata.setSyncFailed msg cacheRevision source
             with e ->
+                eprintfn "Sync failed due to exception: %s" e.Message
                 Rawdata.setSyncFailed e.Message cacheRevision source
         } |> Async.Start
         200, syncId
 
     [<Get "/ping">]
     let ping () =
-        200, "ping"
+        200, "pong"
 
-    [<Get ("/raw/%s/%s/%s")>]
-    let raw ((source : string), account, project) : int * string =
-        let raw = 
-            match source.ToLower() with
-            "azure" ->
-                let rows =  
-                    AzureDevOps.readCached account project
-                    |> Seq.sortBy fst
-                    |> Seq.map(fun (_,values) ->
-                        System.String.Join(",", 
-                            values
-                            |> List.map(fun (columnName,value) ->
-                                sprintf """ "%s":%A""" columnName value
-                            )
-                        ) |> sprintf "{%s}"
+    [<Get ("/raw/%s/%s")>]
+    let raw ((account : string), (project : string)) : int * string =
+        let rows =  
+            AzureDevOps.readCached account project
+            |> Seq.sortBy fst
+            |> Seq.map(fun (_,values) ->
+                System.String.Join(",", 
+                    values
+                    |> List.map(fun (columnName,value) ->
+                        sprintf """ "%s":%A""" columnName value
                     )
-                System.String.Join(",",rows)
-                |> sprintf "[%s]"
-            | _ -> 
-                "Source not supported"            
-        404, "Not implemented yet" + raw
+                ) |> sprintf "{%s}"
+            )
+        200, System.String.Join(",",rows) |> sprintf "[%s]"        
 
-    [<Get ("/sync/%s/%s/%s")>]
-    let sync ((source : string), (account : string), (project : string)) =
+    [<Get ("/sync/%s/%s")>]
+    let sync ((account : string), (project : string)) =
 
-        let dataSource = 
-            match source.ToLower() with
-            | "azure" -> DataConfiguration.DataSource.AzureDevOps (account, project)
-            | _       -> DataConfiguration.DataSource.Unsupported
+        let dataSource = DataConfiguration.DataSource.AzureDevOps (account, project)
+        let token = (env (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_")) null)
+        synchronize dataSource token           
 
-        let token =
-            match dataSource with
-            DataConfiguration.DataSource.AzureDevOps(account,_)  ->
-               (env (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_")) null)
-            | source -> failwithf "Not supported. %A"source
-        synchronize dataSource token
-
-    [<Get "/test/%s/%s/%s">]
-    let test (arg1, arg2, arg3) : int * string =
-
-        200, arg1 + arg2 + arg3    
-           
+    [<Get ("/status/sync/%s")>]
+    let getState id =
+        200, Rawdata.getState id
 
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
             
@@ -117,6 +99,7 @@ module Root =
     let initDb () =
         let dbs = 
             [
+                "rawdata"
                 "transformations"
                 "uniform"
                 "log"

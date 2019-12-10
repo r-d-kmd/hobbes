@@ -6,7 +6,6 @@ open Hobbes.Web
 open Hobbes.Server.Routing
 open Hobbes.Server.Readers
 open Hobbes.Helpers
-open Hobbes.AzureDevopsCollector.Db
 
 [<RouteArea ("/", false)>]
 module Root =
@@ -16,78 +15,60 @@ module Root =
 
     let synchronize source token =
         let cacheRevision = cacheRevision source
+        let syncId = Rawdata.createSyncStateDocument cacheRevision source
         
-        let syncId = State.createSyncStateDocument cacheRevision source
         async {
             try
                 match source with
                 DataConfiguration.AzureDevOps(account,projectName) -> 
-                    if Rawdata.exists() |> not then Rawdata.init() |> ignore else () //TODO, rename Rawdata to azureRaw
-
                     let statusCode,body = AzureDevOps.sync token (account,projectName)
                     Log.logf "Sync finised with statusCode %d and result %s" statusCode body
                     if statusCode >= 200 && statusCode < 300 then 
                         //TODO: if caching failed in server, we shouldn't setSyncCompleted?
-                        State.setSyncCompleted cacheRevision source 
+                        Rawdata.setSyncCompleted cacheRevision source 
                     else
                         let msg = sprintf "Syncronization failed. Message: %s" body
                         eprintfn "%s" msg
-                        State.setSyncFailed msg cacheRevision source  
+                        Rawdata.setSyncFailed msg cacheRevision source  
                 | source -> 
-                    let msg = sprintf "No reader found for source: %s" source.SourceName
+                    let msg = sprintf "Error: The source %s, wasn't AzureDevOps" source.SourceName
                     eprintfn "%s" msg
-                    State.setSyncFailed msg cacheRevision source
+                    Rawdata.setSyncFailed msg cacheRevision source
             with e ->
                 eprintfn "Sync failed due to exception: %s" e.Message
-                State.setSyncFailed e.Message cacheRevision source
+                Rawdata.setSyncFailed e.Message cacheRevision source
         } |> Async.Start
         200, syncId
 
     [<Get "/ping">]
     let ping () =
-        200, "ping"
+        200, "pong"
 
     [<Get ("/raw/%s/%s")>]
-    let raw ((source : string), (project : string)) : int * string =
-        match source.ToLower() with
-        "azure" ->
-            let accAndProj = project.Split(":")
-            let rows =  
-                AzureDevOps.readCached accAndProj.[0] accAndProj.[1]
-                |> Seq.sortBy fst
-                |> Seq.map(fun (_,values) ->
-                    System.String.Join(",", 
-                        values
-                        |> List.map(fun (columnName,value) ->
-                            sprintf """ "%s":%A""" columnName value
-                        )
-                    ) |> sprintf "{%s}"
-                )
-            200, System.String.Join(",",rows) |> sprintf "[%s]"
-        | _ -> 
-            501, sprintf "Source: %s, not supported" source           
+    let raw ((account : string), (project : string)) : int * string =
+        let rows =  
+            AzureDevOps.readCached account project
+            |> Seq.sortBy fst
+            |> Seq.map(fun (_,values) ->
+                System.String.Join(",", 
+                    values
+                    |> List.map(fun (columnName,value) ->
+                        sprintf """ "%s":%A""" columnName value
+                    )
+                ) |> sprintf "{%s}"
+            )
+        200, System.String.Join(",",rows) |> sprintf "[%s]"        
 
     [<Get ("/sync/%s/%s")>]
-    let sync ((source : string), (project : string)) =
+    let sync ((account : string), (project : string)) =
 
-        let dataSource = 
-            match source.ToLower() with
-            | "azure" -> let accAndProj = project.Split(":")
-                         DataConfiguration.DataSource.AzureDevOps (accAndProj.[0], accAndProj.[1])
-            | "rally" -> DataConfiguration.DataSource.Rally (project)
-            | "jira"  -> DataConfiguration.DataSource.Jira (project)                 
-            | _       -> DataConfiguration.DataSource.Unsupported
-
-        let token =
-            match dataSource with
-            DataConfiguration.DataSource.AzureDevOps(account,_)  ->
-               (env (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_")) null)
-            | _ -> null
+        let dataSource = DataConfiguration.DataSource.AzureDevOps (account, project)
+        let token = (env (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_")) null)
         synchronize dataSource token           
 
     [<Get ("/status/sync/%s")>]
     let getState id =
-        200, State.getState id
+        200, Rawdata.getState id
 
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
             
@@ -118,7 +99,7 @@ module Root =
     let initDb () =
         let dbs = 
             [
-                "state"
+                "rawdata"
                 "transformations"
                 "uniform"
                 "log"

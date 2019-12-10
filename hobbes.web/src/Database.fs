@@ -13,6 +13,19 @@ namespace Hobbes.Web
         abstract Debugf<'a> : LogFormatter<'a> -> 'a
         
     module Database =
+        open FSharp.Core.Printf
+        let consoleLogger =
+                { new ILog with
+                    member __.Log msg   = printfn "%s" msg
+                    member __.Error stackTrace msg = eprintfn "%s StackTrace: \n %s" msg stackTrace
+                    member __.Debug msg = printfn "%s" msg
+                    member __.Logf<'a> (format : LogFormatter<'a>) = 
+                        kprintf ignore format 
+                    member __.Errorf<'a> _ (format : LogFormatter<'a>) = 
+                        kprintf ignore format
+                    member __.Debugf<'a> (format : LogFormatter<'a>) = 
+                        kprintf ignore format
+                }  
 
         let private user = env "COUCHDB_USER" "admin"
         let private pwd = env "COUCHDB_PASSWORD" "password"
@@ -307,7 +320,6 @@ namespace Hobbes.Web
                 else
                     None
 
-                
             member __.GetHash id =
                  (get [sprintf "%s_hash" id] None
                   |> Hash.Parse).Hash   
@@ -331,7 +343,6 @@ namespace Hobbes.Web
             member __.Post(path, body) = 
                 tryPost body [path]
                 |> handleResponse
-                
             member __.FilterByKeys keys = 
                 let body = 
                    System.String.Join(",", 
@@ -383,22 +394,17 @@ namespace Hobbes.Web
                     get [id] None
                     |> CouchDoc.Parse
                 delete id (Some doc.Rev)
-                
+            
+            member __.Init() =
+                tryPut "" None [] |> fst
+
+            member __.Exists with get() =
+                let status = tryGet [] None |> fst
+                status > 199 && status < 300
+
+            
             new(databaseName, parser, log) = Database(databaseName, parser, log, env "DB_SERVER_URL" "http://db-svc:5984/")
 
-        open FSharp.Core.Printf
-        let consoleLogger =
-                { new ILog with
-                    member __.Log msg   = printfn "%s" msg
-                    member __.Error stackTrace msg = eprintfn "%s StackTrace: \n %s" msg stackTrace
-                    member __.Debug msg = printfn "%s" msg
-                    member __.Logf<'a> (format : LogFormatter<'a>) = 
-                        kprintf ignore format 
-                    member __.Errorf<'a> _ (format : LogFormatter<'a>) = 
-                        kprintf ignore format
-                    member __.Debugf<'a> (format : LogFormatter<'a>) = 
-                        kprintf ignore format
-                }    
+          
         let users = Database ("_users", UserRecord.Parse, consoleLogger)
         let couch = Database ("", id, consoleLogger)
-       

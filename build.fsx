@@ -217,14 +217,17 @@ open Fake.Core.TargetOperators
 
 let tools = 
     [
-        """hobbes.server\src\hobbes.server.fsproj"""
-        """collectors\collectors.AzureDevOps\src\Collectors.AzureDevOps.fsproj"""
-        """workbench\src\hobbes.workbench.fsproj"""
+        """hobbes.server/src/hobbes.server.fsproj"""
+        """collectors/collectors.azuredevops/src/collectors.azuredevops.fsproj"""
+        """workbench/src/hobbes.workbench.fsproj"""
     ]
 
 (tools
 |> List.fold(fun prev projectFile ->     
-    let targetName = System.IO.Path.GetFileNameWithoutExtension projectFile 
+    let targetName = 
+        System.IO.Path.GetFileNameWithoutExtension(projectFile)
+           .Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries)
+        |> Array.last
     Target.create targetName (package projectFile)
     prev
        ==> targetName

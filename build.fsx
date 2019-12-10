@@ -38,27 +38,22 @@ let build configuration workingDir =
         DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "build" args 
     if result.ExitCode <> 0 then failwithf "'dotnet %s' failed in %s" "build" workingDir
 
-let buildProjects config = 
-    projFiles
-    |> Seq.iter(fun file ->
-        let workDir = System.IO.Path.GetDirectoryName file
-        if System.IO.File.Exists(System.IO.Path.Combine(workDir,"build.fsx")) then
-            printfn("Build: FSX %s") file
-            run "fake" workDir "build"
-        else
-            printfn("Build: %s") file
-            build config workDir
-    )
+let fake workdir = 
+    run "fake" workdir "build"
 
-Target.create "Compile" (fun _ ->
-    buildProjects "Debug"
+Target.create "BuildServer" (fun _ ->
+    fake "./hobbes.server/src" 
+)
+
+Target.create "BuildWorkbench" (fun _ ->
+    build "Release" "./workbench/src"
+)
+
+Target.create "BuildAzureDevOpsCollector" (fun _ ->
+    fake "./collectors/collectors.AzureDevOps/src"
 )
 
 Target.create "Build" ignore
-
-Target.create "ReleaseBuild" (fun _ ->
-    buildProjects "Release"
-)
 
 Target.create "Test" (fun _ ->
 
@@ -129,7 +124,6 @@ Target.create "Test" (fun _ ->
 let inline (@@) p1 p2 = 
     System.IO.Path.Combine(p1,p2)
 
-let projectName = "hobbes"
 let buildDir = "./hobbes.core/src/bin"
 let packagingRoot = "./packaging"
 let packagingDir = packagingRoot @@ "hobbes"
@@ -157,7 +151,7 @@ Target.create "Clean" (fun _ ->
 
 let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.2.default"
 
-let createDockerTag dockerOrg tag = sprintf "%s/hobbes-%s" dockerOrg tag
+let createDockerTag dockerOrg (tag : string) = sprintf "%s/hobbes-%s" dockerOrg (tag.ToLower())
 
 Target.create "BuildDocker" (fun _ -> 
     let dockerOrg = "kmdrd"
@@ -177,7 +171,7 @@ Target.create "BuildDocker" (fun _ ->
                    t + ":" + "latest"
                ]
 
-            sprintf "build -t %s ." tag
+            sprintf "build -t %s ." (tag.ToLower())
             |> run workingDir
             tags
             |> List.iter(fun t -> 
@@ -212,7 +206,7 @@ Target.create "PushToDocker" (fun _ ->
                ]
             tags
             |> List.iter(fun tag ->
-                let args = sprintf "push %s" <| tag
+                let args = sprintf "push %s" <| (tag.ToLower())
                 printfn "Executing: $ docker %s" args
                 run workingDir args
             )
@@ -231,7 +225,8 @@ Target.create "PushAlpha" (fun _ ->
         let workingDir = System.IO.Path.GetDirectoryName path
    
         let push (tag : string) = 
-            let t = createDockerTag dockerOrg (tag.ToLower()) + ":" + "alpha"
+            let tag = tag.ToLower()
+            let t = createDockerTag dockerOrg tag + ":" + "alpha"
             sprintf "tag %s %s" tag t
              |> run workingDir 
             
@@ -246,16 +241,30 @@ Target.create "PushAlpha" (fun _ ->
     ) 
 )
 
+Target.create "ReleaseBuild" ignore
+
 open Fake.Core.TargetOperators
+"Clean" 
+    ==> "BuildAzureDevOpsCollector"
+    ==> "ReleaseBuild"
+    
+"Clean" 
+    ==> "BuildServer"
+    ==> "ReleaseBuild"
 
-"Clean"
-   ==> "ReleaseBuild"
-   ==> "BuildDocker"
-   ==> "PushAlpha"
-   ==> "Build"
+"Clean" 
+    ==> "BuildWorkbench"
+    ==> "ReleaseBuild"
 
+"ReleaseBuild"
+    ==> "BuildDocker"
+    ==> "Build"
+
+"BuildDocker" 
+    ?=>"PushAlpha"
+    ==> "Build"
 
 "BuildDocker"
-   ==> "PushToDocker"
+    ==> "PushToDocker"
 
 Target.runOrDefaultWithArguments "Build"

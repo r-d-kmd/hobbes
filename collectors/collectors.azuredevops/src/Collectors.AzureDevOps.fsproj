@@ -17,7 +17,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="../../../hobbes.server/src/Reflection.fs" />
-    <Compile Include="../../../hobbes.server/src/db/Log.fs" />
     <Compile Include="../../../hobbes.server/src/db/DataConfiguration.fs" />
     <Compile Include="../../../hobbes.server/src/db/Cache.fs" />
     <Compile Include="../../../hobbes.server/src/db/Rawdata.fs" />

@@ -169,7 +169,7 @@ module Rawdata =
         200, (db.Delete id).ToString()
 
     let init() =
-        Database.couch.TryPut("Rawdata", "") |> fst
+        db.Init()
 
     let exists() =
-        Database.couch.TryGet "Rawdata"|> Option.isSome         
+        db.Exists         

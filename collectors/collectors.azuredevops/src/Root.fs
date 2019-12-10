@@ -2,7 +2,7 @@ namespace Collector.AzureDevOps
 
 open Hobbes.Web.Database
 open Hobbes.Server.Db
-open Hobbes.Server.Log
+open Hobbes.Web.Log
 open Hobbes.Web
 open Hobbes.Server.Routing
 open Hobbes.Server.Readers
@@ -21,7 +21,7 @@ module Root =
         async {
             try
                 match source with
-                DataConfiguration.AzureDevOps(account,projectName) ->
+                DataConfiguration.AzureDevOps(account,projectName) -> 
                     if Rawdata.exists() |> not then Rawdata.init |> ignore else () //TODO, rename Rawdata to azureRaw
                     let statusCode,body = AzureDevOps.sync token (account,projectName)
                     Log.logf "Sync finised with statusCode %d and result %s" statusCode body
@@ -50,7 +50,19 @@ module Root =
         let raw = 
             match source.ToLower() with
             "azure" ->
-                AzureDevOps.readCached account project |> string //TODO: Turn into JSON
+                let rows =  
+                    AzureDevOps.readCached account project
+                    |> Seq.sortBy fst
+                    |> Seq.map(fun (_,values) ->
+                        System.String.Join(",", 
+                            values
+                            |> List.map(fun (columnName,value) ->
+                                sprintf """ "%s":%A""" columnName value
+                            )
+                        ) |> sprintf "{%s}"
+                    )
+                System.String.Join(",",rows)
+                |> sprintf "[%s]"
             | _ -> 
                 "Source not supported"            
         404, "Not implemented yet" + raw

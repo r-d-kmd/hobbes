@@ -166,10 +166,4 @@ module Rawdata =
         200, (db.Get id).ToString()
 
     let delete (id : string) = 
-        200, (db.Delete id).ToString()
-
-    let init() =
-        db.Init()
-
-    let exists() =
-        db.Exists         
+        200, (db.Delete id).ToString()      

@@ -26,7 +26,6 @@ let run command workingDir args =
 
 
 let dockerFiles = System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllDirectories)
-let projFiles = System.IO.Directory.EnumerateFiles("./","*.fsproj",System.IO.SearchOption.AllDirectories)
 
 let build configuration workingDir =
     let args = sprintf "--output ./bin/%s --configuration %s" configuration configuration
@@ -124,11 +123,7 @@ Target.create "Test" (fun _ ->
 let inline (@@) p1 p2 = 
     System.IO.Path.Combine(p1,p2)
 
-let buildDir = "./hobbes.core/src/bin"
-let packagingRoot = "./packaging"
-let packagingDir = packagingRoot @@ "hobbes"
-let netDir = packagingDir @@ "lib/net45" |> System.IO.Path.GetFullPath
-
+let commonLibDir = "./.lib/"
         
 let CleanDirs dirs = 
     dirs
@@ -142,10 +137,7 @@ let CleanDirs dirs =
 
 Target.create "Clean" (fun _ ->
     CleanDirs [
-        buildDir
-        packagingRoot
-        packagingDir 
-        netDir
+        commonLibDir
     ]
 )
 
@@ -183,6 +175,35 @@ Target.create "BuildDocker" (fun _ ->
         build tag
     ) 
 )
+
+
+let package projectName _ =
+    DotNet.publish (fun opts -> 
+                        { opts with 
+                               OutputPath = Some commonLibDir
+                               Configuration = DotNet.BuildConfiguration.Release
+                        }
+                   ) <| sprintf "./hobbes.%s/src/hobbes.%s.fsproj" projectName projectName
+
+let libs =
+    [
+        "core"
+        "helpers"
+        "web"
+    ]
+
+Target.create "BuildCommon" ignore
+
+open Fake.Core.TargetOperators
+
+(libs
+ |> List.fold (fun prev name -> 
+     let targetName = sprintf "hobbes.%s" name 
+     Target.create targetName (package name)
+     prev
+         ==> targetName 
+ ) "Clean")
+    ==> "BuildCommon"
 
 Target.create "Publish" (fun _ -> 
     run "dotnet" "./workbench/src" "run -- --publish" 
@@ -242,19 +263,6 @@ Target.create "PushAlpha" (fun _ ->
 )
 
 Target.create "ReleaseBuild" ignore
-
-open Fake.Core.TargetOperators
-"Clean" 
-    ==> "BuildAzureDevOpsCollector"
-    ==> "ReleaseBuild"
-    
-"Clean" 
-    ==> "BuildServer"
-    ==> "ReleaseBuild"
-
-"Clean" 
-    ==> "BuildWorkbench"
-    ==> "ReleaseBuild"
 
 "ReleaseBuild"
     ==> "BuildDocker"

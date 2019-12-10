@@ -6,8 +6,8 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
    <ItemGroup>
-     <ProjectReference Include="../../hobbes.helpers/src/hobbes.helpers.fsproj">
-      <Name>hobbes.helpers.fsproj</Name>
+     <Reference Include="hobbes.helpers">
+      <HintPath>../../.lib/hobbes.helpers.dll</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -42,9 +42,9 @@ let buildImage dockerfile _ =
         |> (
             match dockerfile with
             None -> 
-                sprintf "build -t %s ."
+                fun t -> sprintf "build -t %s ." (t.ToLower())
             | Some dockerfile -> 
-                sprintf "build -f %s -t %s ." dockerfile  
+                fun t -> sprintf "build -f %s -t %s ." dockerfile  (t.ToLower())
         )
         |> String.split ' '
         |> Arguments.OfArgs
@@ -96,15 +96,12 @@ Target.create "Bundle" (fun _ ->
     runDotNet publishArgs serverPath ""
 )
 
-Target.create "BuildImage" (buildImage None)
-
 open Fake.Core.TargetOperators
 "Clean" 
     ==> "Bundle" 
     ==> "Build"
-    ==> "BuildImage"
 
 "Debug"
     ==> "Restart"
 
-Target.runOrDefaultWithArguments "BuildImage"
+Target.runOrDefaultWithArguments "build"

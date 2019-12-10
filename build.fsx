@@ -9,7 +9,6 @@ open Fake.SystemHelper
 
 open Fake.Core
 open Fake.DotNet
-open Fake.DotNet.NuGet
 open Fake.IO
 
 let run command workingDir args = 
@@ -124,7 +123,8 @@ let inline (@@) p1 p2 =
     System.IO.Path.Combine(p1,p2)
 
 let commonLibDir = "./.lib/"
-        
+let serverPackageDir = """hobbes.server/deploy/Server"""
+
 let CleanDirs dirs = 
     dirs
     |> List.map System.IO.Path.GetFullPath
@@ -138,6 +138,7 @@ let CleanDirs dirs =
 Target.create "Clean" (fun _ ->
     CleanDirs [
         commonLibDir
+        serverPackageDir
     ]
 )
 
@@ -181,10 +182,10 @@ let verbosity =
     Quiet
     
 
-let package projectFile _ =
+let package outputDir projectFile  _ =
     DotNet.publish (fun opts -> 
                         { opts with 
-                               OutputPath = Some commonLibDir
+                               OutputPath = Some outputDir
                                Configuration = DotNet.BuildConfiguration.Release
                                MSBuildParams = 
                                    { opts.MSBuildParams with
@@ -204,12 +205,13 @@ Target.create "BuildCommon" ignore
 Target.create "ReleaseBuild" ignore
 
 open Fake.Core.TargetOperators
-
+let commonPack = package commonLibDir
 (commonLibs
  |> List.fold (fun prev name -> 
      let projectName = sprintf "hobbes.%s" name 
      let projectFile = sprintf "./%s/src/%s.fsproj" projectName projectName
-     Target.create projectName (package projectFile)
+
+     Target.create projectName (commonPack projectFile )
      prev
          ==> projectName 
  ) "Clean")
@@ -217,18 +219,18 @@ open Fake.Core.TargetOperators
 
 let tools = 
     [
-        """hobbes.server/src/hobbes.server.fsproj"""
-        """collectors/collectors.azuredevops/src/collectors.azuredevops.fsproj"""
-        """workbench/src/hobbes.workbench.fsproj"""
+        """hobbes.server/src/hobbes.server.fsproj""", package serverPackageDir
+        """collectors/collectors.azuredevops/src/collectors.azuredevops.fsproj""", commonPack
+        """workbench/src/hobbes.workbench.fsproj""", commonPack
     ]
 
 (tools
-|> List.fold(fun prev projectFile ->     
+|> List.fold(fun prev (projectFile, pack) ->     
     let targetName = 
         System.IO.Path.GetFileNameWithoutExtension(projectFile)
            .Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries)
         |> Array.last
-    Target.create targetName (package projectFile)
+    Target.create targetName (pack projectFile)
     prev
        ==> targetName
  ) "BuildCommon"

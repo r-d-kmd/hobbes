@@ -17,10 +17,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="../../../hobbes.server/src/Reflection.fs" />
-    <Compile Include="../../../hobbes.server/src/db/Log.fs" />
+    <Compile Include="../../../hobbes.web/src/Log.fs" />
     <Compile Include="../../../hobbes.server/src/db/DataConfiguration.fs" />
     <Compile Include="../../../hobbes.server/src/db/Cache.fs" />
     <Compile Include="../../../hobbes.server/src/db/Rawdata.fs" />
+    <Compile Include="db/State.fs" />
     <Compile Include="db/Uniform.fs" />
     <Compile Include="../../../hobbes.server/src/Readers/AzureDevOps.fs" />
     <Compile Include="../../../hobbes.server/src/Security.fs" />

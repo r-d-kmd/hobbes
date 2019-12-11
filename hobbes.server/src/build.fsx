@@ -67,6 +67,7 @@ Target.create "Bundle" (fun _ ->
 
 
 Target.create "Debug" (fun _ ->
+    run "fake" "../../" "build -t DebugCommon"
     let serverDir = Path.combine deployDir "Server"
 
     let publishArgs = sprintf "publish -c Debug -o \"%s\"" serverDir
@@ -98,7 +99,9 @@ let buildImage  dockerfile _ =
         |> ignore
 
 Target.create "Restart" (fun _ ->
+    
     buildImage (Some "Dockerfile.debug") ()
+    
     let compose = run "docker-compose" "."
     compose "kill hobbes"
     compose "rm -f hobbes"

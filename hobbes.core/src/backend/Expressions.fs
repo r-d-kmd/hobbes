@@ -47,15 +47,11 @@ module Expressions =
                   (fun inputs outputs -> Regression(Linear,inputs,outputs)) 
 
         let extrapolation = 
-            pipe2 (kwLinear .>>? kwExtrapolation >>.
-                  expressionInBrackets)
-                  pint32
-                  (fun outputs count -> Extrapolate(Linear,outputs, count, None))
-            <|> pipe3 (kwLinear .>>? kwExtrapolation >>.
-                  expressionInBrackets)
-                  pint32
-                  pint32
-                  (fun outputs count trainginLength -> Extrapolate(Linear,outputs, count, Some trainginLength)) 
+            pipe3 (kwLinear .>>? kwExtrapolation >>.
+                expressionInBrackets)
+                (pint32)
+                ((spaces1 >>? pint32 >>= (Some >> preturn)) <|> (spaces >>. newlineReturn None))
+                (fun outputs count trainingLength -> Extrapolate(Linear,outputs, count, trainingLength)) 
 
         let ``int`` = kwInt >>? expr >>= (AST.Int >> preturn) 
 

@@ -30,7 +30,7 @@ type Expression =
     | DateTimeConstant of System.DateTime
     | Not of Expression
     | Regression of AST.Regression * Expression * Expression
-    | Extrapolation of AST.Regression * Expression * int
+    | Extrapolation of AST.Regression * Expression * int * int option
     | RegularExpression of input : Expression * patter: string * resultSnippets : AST.RegExResultToken list
     | Ordinals
     | Keys
@@ -70,11 +70,15 @@ type Expression =
                      match reg with
                      AST.Linear -> "linear"
                  sprintf "%s regression [%s] [%s]" regStr (inputs.ToString()) (outputs.ToString())
-             | Extrapolation(reg, outputs, count) ->
+             | Extrapolation(reg, outputs, count, length) ->
                  let regStr = 
                      match reg with
                      AST.Linear -> "linear"
-                 sprintf "%s extrapolation [%s] %d" regStr (outputs.ToString()) count
+                 let l = 
+                    match length with
+                    None -> ""
+                    | Some l -> sprintf " %d" l
+                 sprintf "%s extrapolation [%s] %d %s" regStr (outputs.ToString()) count l
              | Int e -> sprintf "int (%s)" (e.ToString())
            
          static member private ParseStringOrDate (stringOrDate : string) = 
@@ -255,7 +259,10 @@ let regression regressionType inputs outputs =
     Regression(regressionType,inputs,outputs)
 
 let extrapolation regressionType outputs count= 
-    Extrapolation(regressionType,outputs,count)
+    Extrapolation(regressionType,outputs,count, None)
+
+let extrapolationLimited regressionType outputs count length= 
+    Extrapolation(regressionType,outputs,count, Some length)
 
 let inline (!!>) (text:string) = 
          TextLiteral text

@@ -28,7 +28,8 @@ module Metrics =
             create (column "Burn up") (expanding Sum (!> "Done")) 
             create (column "Velocity") ((moving Mean 3 (!> "Done")))
             index rows by SprintNumber.Expression
-            create (column "Burn up Prediction") ((linear extrapolation) (!> "Burn up") 10)
+            create (column "Burn up Prediction") ((linear extrapolationLimited) (!> "Burn up") 10 10)
+            create SprintNumber.Name Keys
         ]
         
     [<Workbench.Transformation 1>]
@@ -36,7 +37,7 @@ module Metrics =
         [
             sort by SprintNumber.Name
             index rows by (int SprintNumber.Expression)
-            create (column "Velocity")  (linear extrapolation ((moving Mean 3 (!> "Done"))) 10)
+            create (column "Velocity")  (moving Mean 3 (!> "Done"))
             create (column SprintNumber.Name) Keys
             slice columns [SprintNumber.Name; "Velocity"]
         ]

@@ -56,7 +56,7 @@ build_script:
   - fake build --target PushAlpha
   
 test_script:
-  #- cd kubernetes
+  - cd kubernetes
   #- kubectl apply -f db-deployment.yaml,db-service.yaml,db-volume.yaml,hobbes-deployment.yaml,hobbes-service.yaml
   #- while [[ $(kubectl get pods -l app=db -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for database" && sleep 1; done
   #- while [[ $(kubectl get pods -l app=hobbes-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for hobbes-server" && sleep 1; done

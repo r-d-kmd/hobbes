@@ -53,7 +53,7 @@ module State =
       @>
 
   [<Configuration(Projects)>]
-  let sprintVelocity =
+  let   =
       <@
           [
             Transformations.General.onlyUserStory

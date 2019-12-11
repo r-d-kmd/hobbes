@@ -433,25 +433,21 @@ module DataStructures =
                     |> compileExpression)
                     >> fitSeries
 
-                fun values ->
-                    let s = 
-                        values
+                fun inputSeries ->
+                    let trainingData = 
+                        inputSeries
                         |> fitSeries
                         
                     let transformExpressionsToVariants expr = 
-                        s
+                        trainingData
                         |> expr
                         |> Series.mapValues(fun c -> c :> obj :?> float)
                         |> Series.values
                         |> Array.ofSeq
 
                     let keys = 
-                        s
+                        trainingData
                         |> Series.keys
-                    assert(length |> Option.isNone || keys |> Seq.length = length.Value)  
-
-                    let xSeries = 
-                        keys
                         |> Seq.map(fun k ->
                             match k with
                             AST.KeyType.Numbers d -> d |> float
@@ -464,18 +460,21 @@ module DataStructures =
                                 |> snd
                             | _ -> failwith "Can only extrapolated based on numeric values"
                         ) |> Array.ofSeq
-                        |> (fun values ->
+
+                    let predictedXValues = 
                             let ols = OrdinaryLeastSquares()
-                            let x = [|for i in 0..values.Length + count - 1 -> float i|]
-                            let regression = ols.Learn(x |> Array.take values.Length, values)    
+                            let x = [|
+                                for i in 0..keys.Length + count - 1 -> float i
+                            |]
+                            let regression = 
+                                ols.Learn(x |> Array.take keys.Length, keys)    
                             regression.Transform(x)
                             |> Array.mapi(fun i y ->
-                                if i < values.Length then
-                                    values.[i]
+                                if i < keys.Length then
+                                    keys.[i]
                                 else
                                     y
-                            )                            
-                        )
+                            )
                         
 
                     let createKey (v: float) =
@@ -493,11 +492,11 @@ module DataStructures =
                     AST.Linear ->
                         let ols = OrdinaryLeastSquares()
                         //inputs will be longer than outputs when doing forecasting
-                        let x = xSeries |> Array.take knownValues.Length
+                        let x = predictedXValues |> Array.take knownValues.Length
                         let regression = ols.Learn(x, knownValues)    
                         let result = 
-                            regression.Transform(xSeries)
-                            |> Array.zip xSeries
+                            regression.Transform(predictedXValues)
+                            |> Array.zip predictedXValues
                             |> Array.map(fun (x,y) -> createKey x => (y :> Comp))
                             
                         printfn "Extrapolated values: %A" result

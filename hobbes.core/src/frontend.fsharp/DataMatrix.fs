@@ -479,7 +479,7 @@ module DataStructures =
 
                     let createKey (v: float) =
                         v |> 
-                        match s |> Series.keys |> Seq.head with
+                        match trainingData |> Series.keys |> Seq.head with
                         AST.KeyType.Numbers _ -> AST.KeyType.Numbers
                         | AST.KeyType.DateTime _ -> (int64 >> DateTime >> AST.KeyType.DateTime)
                         | k -> failwithf "Can't convert to key. %A" k
@@ -491,9 +491,10 @@ module DataStructures =
                     match regressionType with
                     AST.Linear ->
                         let ols = OrdinaryLeastSquares()
-                        //inputs will be longer than outputs when doing forecasting
-                        let x = predictedXValues |> Array.take knownValues.Length
-                        let regression = ols.Learn(x, knownValues)    
+                        let traingKnownData = 
+                            let index = knownValues.Length - keys.Length
+                            knownValues |> Array.splitAt index |> snd
+                        let regression = ols.Learn(keys, traingKnownData)    
                         let result = 
                             regression.Transform(predictedXValues)
                             |> Array.zip predictedXValues

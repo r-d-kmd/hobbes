@@ -144,7 +144,6 @@ Target.create "Clean" (fun _ ->
     ]
 )
 
-
 Target.create "BaseImages" (fun _ ->
     [
         "base"
@@ -196,11 +195,11 @@ let verbosity =
     Quiet
     
 
-let package outputDir projectFile  _ =
+let package conf outputDir projectFile  _ =
     DotNet.publish (fun opts -> 
                         { opts with 
                                OutputPath = Some outputDir
-                               Configuration = DotNet.BuildConfiguration.Release
+                               Configuration = conf
                                MSBuildParams = 
                                    { opts.MSBuildParams with
                                           Verbosity = Some verbosity
@@ -216,26 +215,39 @@ let commonLibs =
     ]
 
 Target.create "BuildCommon" ignore
+Target.create "DebugCommon" ignore
 Target.create "ReleaseBuild" ignore
+Target.create "StartCommon" ignore
 
 open Fake.Core.TargetOperators
-let commonPack = package commonLibDir
-(commonLibs
- |> List.fold (fun prev name -> 
-     let projectName = sprintf "hobbes.%s" name 
-     let projectFile = sprintf "./%s/src/%s.fsproj" projectName projectName
 
-     Target.create projectName (commonPack projectFile )
-     prev
-         ==> projectName 
- ) "BaseImages")
-    ==> "BuildCommon"
+let buildCommon conf =
+    let commonPack = package conf commonLibDir
+    commonLibs
+    |> List.fold (fun prev name -> 
+        let projectName = sprintf "hobbes.%s" name 
+        let targetName =
+            projectName +
+                match conf with
+                DotNet.BuildConfiguration.Release -> ""
+                | DotNet.BuildConfiguration.Debug -> "Debug"
+                | DotNet.BuildConfiguration.Custom n -> n
+
+        let projectFile = sprintf "./%s/src/%s.fsproj" projectName projectName
+    
+        Target.create targetName (commonPack projectFile )
+        prev
+            ==> targetName 
+    ) "StartCommon"
+
+buildCommon DotNet.BuildConfiguration.Release ==> "BuildCommon"
+buildCommon DotNet.BuildConfiguration.Debug ==> "DebugCommon"
 
 let tools = 
     [
-        """hobbes.server/src/hobbes.server.fsproj""", package serverPackageDir
-        """collectors/collectors.azuredevops/src/collectors.azuredevops.fsproj""", package collectorPackageDir
-        """workbench/src/hobbes.workbench.fsproj""", commonPack
+        """hobbes.server/src/hobbes.server.fsproj""", package DotNet.BuildConfiguration.Release serverPackageDir
+        """collectors/collectors.azuredevops/src/collectors.azuredevops.fsproj""", package DotNet.BuildConfiguration.Release collectorPackageDir
+        """workbench/src/hobbes.workbench.fsproj""", package DotNet.BuildConfiguration.Release commonLibDir
     ]
 
 (tools
@@ -309,6 +321,7 @@ Target.create "PushAlpha" (fun _ ->
     ==> "BaseImages"
 
 "ReleaseBuild"
+    ==> "BaseImages"
     ==> "BuildDocker"
     ==> "Build"
 

@@ -263,21 +263,13 @@ module DataStructures =
                 let formatter (groups : string []) = 
                     result
                     |> List.fold(fun acc token ->
-                        let s = 
-                            match token with
-                            AST.RegExGroupIdentifier n ->
-                                try
-                                    groups.[n]
-                                with 
-                                  | :? IndexOutOfRangeException ->
-                                      eprintfn "Didn't find group %d in groups %A" n groups
-                                      reraise()
-                                  | e -> 
-                                      eprintfn "Failed to create regex result. Message: %s" e.Message
-                                      reraise()
-                            | AST.RegExResultString literal ->
-                                literal
-                        s::acc
+                        match token with
+                        AST.RegExGroupIdentifier n ->
+                            match groups |> Array.tryItem n with
+                            None -> acc
+                            | Some g -> g::acc
+                        | AST.RegExResultString literal ->
+                            literal::acc
                     ) []
                     |> List.rev
                     |> System.String.Concat

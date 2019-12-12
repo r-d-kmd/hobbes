@@ -19,3 +19,4 @@ workbench.json
 **/AssemblyInfo.fs
 hobbes.server/db/data1/
 .lib/
+.env

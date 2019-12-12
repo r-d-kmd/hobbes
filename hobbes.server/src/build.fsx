@@ -102,7 +102,7 @@ Target.create "Restart" (fun _ ->
     
     buildImage (Some "Dockerfile.debug") ()
     
-    let compose = run "docker-compose" "."
+    let compose = run "docker-compose" "../../"
     compose "kill hobbes"
     compose "rm -f hobbes"
     compose "up hobbes"

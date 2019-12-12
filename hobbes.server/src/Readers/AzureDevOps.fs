@@ -15,19 +15,19 @@ module AzureDevOps =
     //and a function to type them correctly
     let private azureFields = 
         [
-             "RevisedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.RevisedDate
+             //"RevisedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.RevisedDate
              "WorkItemId",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemId 
-             "IsLastRevisionOfDay" , fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.IsLastRevisionOfDay
-             "Title",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.Title 
+             //"IsLastRevisionOfDay" , fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.IsLastRevisionOfDay
+             //"Title",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.Title 
              "ChangedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
              "WorkItemType",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemType 
-             "CreatedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
+             //"CreatedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
              "State", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.State 
              "StateCategory",fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.StateCategory 
-             "Priority", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.Priority 
+             //"Priority", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.Priority 
              "LeadTimeDays", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.LeadTimeDays 
              "CycleTimeDays", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.CycleTimeDays          
-             "WorkItemRevisionSK", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemRevisionSk
+             //"WorkItemRevisionSK", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemRevisionSk
         ]
 
     //looks whether it's the last record or there's a odatanextlink porperty 
@@ -131,7 +131,7 @@ module AzureDevOps =
     //we might want to store azureToken as an env variable
     let sync azureToken project = 
         let source = DataConfiguration.AzureDevOps project
-        let rec _read hashes (url : string) : unit  = 
+        let rec _read hashes url = 
             let resp = 
                 url
                 |> request azureToken azureToken "GET" None
@@ -145,31 +145,40 @@ module AzureDevOps =
                         None
                 let rawId =  (url |> hash)
                 let hashes = rawId::hashes
-                body
-                |> Option.bind(fun body -> 
-                    if body |> isEmpty |> not then
-                        let body = 
-                            body.Replace("\\\"","'")
-                        let rawdataRecord = Cache.createDataRecord rawId source body [
-                                                                                        "url", url
-                                                                                        "recordCount", hashes 
-                                                                                                       |> List.length 
-                                                                                                       |> string
-                                                                                        "hashes", System.String.Join(",", hashes) 
-                                                                                                  |> sprintf "[%s]"
-                                                                                     ] 
-                        Rawdata.InsertOrUpdate rawdataRecord |> ignore //TODO this should be changed to a db with name azure  
+                match body with
+                Some body when body |> isEmpty |> not ->
                     body
                     |> tryNextLink
-                ) |> Option.map(fun nextlink ->   
-                       printfn "Continuing with %s" nextlink
-                       _read hashes nextlink
-                ) |> ignore
+                    |> Option.iter(fun nextlink ->   
+                           printfn "Continuing with %s" nextlink
+                           _read hashes nextlink |> ignore
+                    )
+                    
+                    let body = 
+                        body.Replace("\\\"","'")
+                    let rawdataRecord = Cache.createDataRecord rawId source body [
+                                                                                    "url", url
+                                                                                    "recordCount", hashes 
+                                                                                                   |> List.length 
+                                                                                                   |> string
+                                                                                    "hashes", System.String.Join(",", hashes) 
+                                                                                              |> sprintf "[%s]"
+                                                                                 ] 
+                    Rawdata.InsertOrUpdate rawdataRecord |> Async.Start
+                | _ -> 
+                    ()
             else 
-                eprintfn "StatusCode: %d. Message: %s" resp.StatusCode (match resp.Body with Text t -> t | _ -> "")
-                
-        project
-        |> getInitialUrl
-        |> _read []
-        
-        200,sprintf """ {"synced" : "%A", "status" : "ok"} """ project
+                let message = 
+                    match resp.Body with 
+                    Text t -> t 
+                    | _ -> ""
+                failwith <| sprintf "StatusCode: %d. Message: %s" resp.StatusCode message
+
+        try
+            project
+            |> getInitialUrl
+            |> _read []
+            200,"ok"
+        with e ->
+            Hobbes.Web.Log.errorf e.StackTrace "failed to sync Message: %s" e.Message
+            500, "failed"

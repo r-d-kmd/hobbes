@@ -10,81 +10,98 @@ open Hobbes.Helpers
 module Data = 
     let cacheRevision (source : DataConfiguration.DataSource) = 
         sprintf "%s:%s:%d" source.SourceName source.ProjectName (System.DateTime.Now.Ticks) |> hash
-
+    
     let private data configurationName =
-        let configuration = DataConfiguration.get configurationName
-        let uncachedTransformations, data =
-            Cache.findUncachedTransformations configuration
+        let rec transformData (configuration : DataConfiguration.Configuration) (transformations : Transformations.TransformationRecord.Root list) calculatedData =
+            match transformations with
+            [] -> calculatedData
+            | transformation::tail ->
+                let transformedData =  
+                    Hobbes.FSharp.Compile.expressions transformation.Lines calculatedData
 
-        let cachedTransformations = 
-            configuration.Transformations
-            |> List.filter(fun t -> 
-                uncachedTransformations 
-                |> List.tryFind(fun t' -> t = t')   
-                |> Option.isNone
-            )  
+                let nextConfiguration = 
+                    { configuration with
+                        Transformations = configuration.Transformations@[transformation.Id]
+                    } 
 
-        let tempConfig = 
-            {
-                configuration with
-                    Transformations = cachedTransformations
+                async {
+                    printfn "Caching transformation"
+                    try
+                        transformedData.ToJson(Column)
+                        |> Cache.store nextConfiguration cacheRevision
+                        |> ignore
+                    with e ->
+                        eprintfn "Failed to cache transformation result. Message: %s" e.Message
+                } |> Async.Start
+                transformData nextConfiguration tail transformedData
+
+        let readRawdata configuration =
+            async {
+                let! uncachedTransformations, data =
+                    Cache.findUncachedTransformationsAndCachedData configuration 
+
+                let! transformations = 
+                    Transformations.load uncachedTransformations
+
+                let cachedTransformations = 
+                    configuration.Transformations
+                    |> List.filter(fun t -> 
+                        uncachedTransformations 
+                        |> List.tryFind(fun t' -> t = t')   
+                        |> Option.isNone
+                    )  
+                let tempConfig = 
+                    {
+                        configuration with
+                            Transformations = cachedTransformations
+                    }
+                let data =
+                    match data with
+                    None ->
+                        debugf "Cache miss %s" configurationName
+                        match configuration.Source with
+                        DataConfiguration.AzureDevOps(account,projectName) ->
+                            log "Reading from raw"
+                            let rows  = 
+                                Hobbes.Server.Readers.AzureDevOps.readCached account projectName
+                                |> List.ofSeq
+                            log "Transforming data into matrix"
+                            rows
+                            |> DataMatrix.fromRows
+                        | _ -> failwith "Unknown source"
+                    | Some data -> 
+                        data
+                        |> Seq.map(fun (columnName,values) -> 
+                                columnName, values
+                                            |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
+                        ) 
+                        |> DataMatrix.fromTable
+
+                return transformations, data, tempConfig
             }
 
-        let transformations = 
-            Transformations.load uncachedTransformations
+        let configuration = DataConfiguration.get configurationName
+
+        async {
             
-        let cachedData = 
-            match data with
-            None ->
-                debugf "Cache miss %s" configurationName
-                match configuration.Source with
-                DataConfiguration.AzureDevOps(account,projectName) ->
-                    let rows  = 
-                        Hobbes.Server.Readers.AzureDevOps.readCached account projectName
-                        |> List.ofSeq
-                    rows
-                    |> DataMatrix.fromRows
-                | _ -> failwith "Unknown source"
-            | Some data -> 
-                data
-                |> Seq.map(fun (columnName,values) -> 
-                        columnName, values
-                                    |> Seq.map(fun (i,v) -> Hobbes.Parsing.AST.KeyType.Create i, v)
-                ) 
-                |> DataMatrix.fromTable
-        let cacheRevision = cacheRevision configuration.Source
-        let transformedData = 
-            match transformations with
-            ts when ts |> Seq.isEmpty -> cachedData
-            | transformations ->
-                transformations
-                |> Seq.fold(fun (calculatedData, (tempConfig : DataConfiguration.Configuration)) transformation -> 
-                    let transformedData =  
-                        Hobbes.FSharp.Compile.expressions transformation.Lines calculatedData
-                    let tempConfig = 
-                        { tempConfig with
-                            Transformations = tempConfig.Transformations@[transformation.Id]
-                        } 
-                    async {
-                        printfn "Caching transformation"
-                        try
-                            transformedData.ToJson(Column)
-                            |> Cache.store tempConfig cacheRevision
-                            |> ignore
-                        with e ->
-                            eprintfn "Failed to cache transformation result. Message: %s" e.Message
-                    } |> Async.Start
-                    transformedData, tempConfig
-                )  (cachedData, tempConfig)
-                |> fst
-        transformedData 
+            let! transformations, cachedData, tempConfig = readRawdata configuration
+
+            let transformedData = 
+                match transformations with
+                ts when ts |> Seq.isEmpty -> cachedData
+                | transformations ->
+                    transformData tempConfig (transformations |> List.ofSeq) cachedData
+
+            return transformedData 
+        }
 
     [<Get ("/csv/%s")>]
     let csv configuration = 
-        debugf "Getting csv for '%A'" configuration
-        let data = data configuration
-        200,data 
-        |> DataMatrix.toJson Csv
+        async {
+            debugf "Getting csv for '%A'" configuration
+            let! data = data configuration
+            return 200, data |> DataMatrix.toJson Csv
+        } |> Async.RunSynchronously
 
     [<Get ("/raw/%s") >]
     let getRaw id =

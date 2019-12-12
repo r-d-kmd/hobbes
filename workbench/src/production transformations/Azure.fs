@@ -5,7 +5,14 @@ module Azure =
 
     open Hobbes.DSL
     open General
+
     [<Workbench.Transformation 0>]
+    let userStories = 
+        [
+            only (WorkItemType.Expression == "User Story")
+        ]
+        
+    [<Workbench.Transformation 1>]
     let stateRenaming = 
         [
             rename State.Name "DetailedState"

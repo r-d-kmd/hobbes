@@ -232,27 +232,30 @@ module Cache =
         } |> Async.Start
         200,"deleting"
 
-    let findUncachedTransformations configuration =
-        let rec find key =
-            match key with
-            [] | [_]-> 
-                key, None
-            | source::project::transformations as keys->
-               match keys |> tryRetrieve with
-               None -> 
-                   match transformations with
-                   [] -> key,None
-                   | transformations -> source::project::(transformations |> List.rev |> List.tail |> List.rev) |> find
-               | data -> keys, data
-        match find (configuration |> createKey) with
-        [],_ | [_], _ | [_;_], None -> configuration.Transformations, None
-        | _::_::transformations, data ->
-            configuration.Transformations
-            |> List.filter(fun transformation ->
-                transformations
-                |> List.tryFind(fun t -> t = transformation)
-                |> Option.isNone
-            ),data
+    let findUncachedTransformationsAndCachedData configuration =
+        async{
+            let rec find key =
+                match key with
+                [] | [_]-> 
+                    key, None
+                | source::project::transformations as keys->
+                   match keys |> tryRetrieve with
+                   None -> 
+                       match transformations with
+                       [] -> key,None
+                       | transformations -> source::project::(transformations |> List.rev |> List.tail |> List.rev) |> find
+                   | data -> keys, data
+            return 
+                match find (configuration |> createKey) with
+                [],_ | [_], _ | [_;_], None -> configuration.Transformations, None
+                | _::_::transformations, data ->
+                    configuration.Transformations
+                    |> List.filter(fun transformation ->
+                        transformations
+                        |> List.tryFind(fun t -> t = transformation)
+                        |> Option.isNone
+                    ),data
+        }
             
     let private idsBySource (source : DataSource) =
         let startKey = 

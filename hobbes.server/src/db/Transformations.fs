@@ -9,8 +9,10 @@ module Transformations =
    let private db = Database.Database ("transformations", TransformationRecord.Parse, Log.loggerInstance) 
 
    let load (transformationIds : #seq<string>) = 
-      db.FilterByKeys transformationIds
-
+      async{
+          return db.FilterByKeys transformationIds
+      }
+   
    let store doc = db.InsertOrUpdate doc
 
    let tryGetRev id = db.TryGetRev id

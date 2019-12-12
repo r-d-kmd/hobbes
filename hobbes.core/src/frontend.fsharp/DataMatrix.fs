@@ -344,17 +344,25 @@ module DataStructures =
             | AST.Int exp ->
                 fun s ->
                     s |> (compileExpression exp)
-                    |> Series.mapValues(function 
-                          :? string as s -> int s :> Comp
-                          | :? int as i -> i :> Comp
-                          | :? float as f -> int f :> Comp
-                          | a -> 
-                              a 
-                              |> string 
-                              |> System.Double.Parse 
-                              |> int 
-                              :> Comp
-                          )
+                    |> Series.observations
+                    |> Seq.map(fun (k,v) ->
+                          k =>
+                              match v with
+                              :? string as s -> int s :> Comp |> Some
+                              | :? int as i -> i :> Comp |> Some
+                              | :? float as f -> int f :> Comp |> Some
+                              | a -> 
+                                  match a 
+                                        |> string 
+                                        |> System.Double.TryParse with
+                                  false,_ -> None
+                                  | true,v -> 
+                                      v
+                                      |> int 
+                                      :> Comp
+                                      |> Some
+                              )
+                    |> Series.ofOptionalObservations
             | AST.IfThisThenElse(condition,thenBody,elseBody) ->
                 let conditionExp = 
                     compileBooleanExpression condition

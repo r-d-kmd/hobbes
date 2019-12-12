@@ -47,10 +47,21 @@ module AzureDevOps =
     
     //The first url to start with, if there's already some stored data
     let private getInitialUrl (account,projectName) =
+        let filters = 
+            System.String.Join(" and ",
+                [
+                    "IsLastRevisionOfDay", "eq", "true"
+                    "WorkItemType", "ne", "'Task'"
+                ] |> List.map(fun (a,b,c) -> sprintf "%s %s %s" a b c)
+            ).Replace(" ", "%20")
+            
         let initialUrl = 
             let selectedFields = 
                (",", azureFields |> List.map fst) |> System.String.Join
-            sprintf "https://analytics.dev.azure.com/%s/%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s,Iteration&$filter=IsLastRevisionOfDay%%20eq%%20true%%20and%%20WorkItemRevisionSK%%20gt%%20%d" account projectName selectedFields
+            let path = 
+                (sprintf "/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s,Iteration&$filter=%s and WorkItemRevisionSK gt " selectedFields filters).Replace(" ", "%20")
+
+            sprintf "https://analytics.dev.azure.com/%s/%s%s%d" account projectName path
         try
             match  DataConfiguration.AzureDevOps (account,projectName) |> Rawdata.tryLatestId with
             Some workItemRevisionId -> 

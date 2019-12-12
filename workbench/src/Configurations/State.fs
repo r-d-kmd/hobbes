@@ -8,6 +8,7 @@ module State =
       Project.Flowerpot 
       ||| Project.Gandalf 
       ||| Project.Delta 
+      ||| Project.Momentum
       ||| Project.AzureDevOps
   
   [<Configuration(Projects)>]

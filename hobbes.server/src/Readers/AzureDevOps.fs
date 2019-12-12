@@ -161,7 +161,7 @@ module AzureDevOps =
                     body
                     |> tryNextLink
                     |> Option.iter(fun nextlink ->   
-                           printfn "Continuing with %s" nextlink
+                           Hobbes.Web.Log.logf "Continuing with %s" nextlink
                            _read hashes nextlink |> ignore
                     )
                     

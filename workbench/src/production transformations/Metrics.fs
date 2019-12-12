@@ -15,30 +15,30 @@ module Metrics =
                   State.Expression 
                   Count 
                   WorkItemId.Expression
-
-            create SprintNumber.Name Keys
-            sort by SprintNumber.Name
         ]
     
     [<Workbench.Transformation 1>]
     let expandingCompletionBySprint =
         [
             slice columns [SprintNumber.Name; "Done"]
+            index rows by SprintNumber.Expression
             sort by SprintNumber.Name
             create (column "Burn up") (expanding Sum (!> "Done")) 
             create (column "Velocity") ((moving Mean 3 (!> "Done")))
-            index rows by SprintNumber.Expression
-            create SprintNumber.Name Keys
-            sort by SprintNumber.Name
             create (column "Burn up Prediction") ((linear extrapolationLimited) (!> "Burn up") 10 10)
+            slice columns [
+                            SprintNumber.Name
+                            "Done"
+                            "Velocity"
+                            "Burn up"
+                            "Burn up Prediction"
+                          ]
         ]
         
     [<Workbench.Transformation 1>]
     let sprintVelocity =
         [
-            sort by SprintNumber.Name
             index rows by (int SprintNumber.Expression)
             create (column "Velocity")  (moving Mean 3 (!> "Done"))
-            create (column SprintNumber.Name) Keys
             slice columns [SprintNumber.Name; "Velocity"]
         ]

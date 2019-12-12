@@ -622,41 +622,58 @@ module DataStructures =
             | AST.CreateColumn (exp, nameOfNewColumn) -> 
                 let compiledExpression = compileExpression frame exp
                 let resultingSeries = compiledExpression (keySeries)
-                frame?(nameOfNewColumn) <- resultingSeries
-                frame
+                let newframe = Frame([nameOfNewColumn],[resultingSeries])
+                let result = 
+                    frame
+                    |> Frame.join JoinKind.Outer newframe
+                let col =
+                    result.GetColumn nameOfNewColumn
+                    |> Series.observationsAll
+                    |> List.ofSeq
+                result
             | AST.Pivot(rowKeyExpression,columnKeyExpression,valueExpression, reduction) ->
                 let rowkey,compiledExpressionFunc = compileTempColumn "__rowkey__" rowKeyExpression
                 compiledExpressionFunc frame keySeries
                 let columnkey,compiledExpressionFunc = compileTempColumn "__columnkey__" columnKeyExpression 
                 compiledExpressionFunc frame keySeries
-
-                frame
-                |> Frame.pivotTable 
-                    (fun _ r -> 
-                        (r.TryGet rowkey).ValueOrDefault
-                        |> AST.KeyType.Create)
-                    (fun _ r -> (r.TryGet columnkey).ValueOrDefault |> string)
-                    (fun f ->
-                          let resultsColumn,compiledExpressionFunc = compileTempColumn "__result__" valueExpression 
-                          compiledExpressionFunc f keySeries
-                          f.GetColumn resultsColumn
-                          |>(match reduction with
-                             AST.Count -> 
-                                  Series.countValues >> float
-                             | AST.Sum -> 
-                                  Stats.sum
-                             | AST.Median -> 
-                                  Stats.median
-                             | AST.Mean -> 
-                                  Stats.mean
-                             | AST.StdDev -> 
-                                  Stats.stdDev
-                             | AST.Variance -> 
-                                  Stats.variance
-                             | AST.Max -> 
-                                  Stats.max
-                             | AST.Min -> 
-                                  Stats.min ))
+                let resultingFrame = 
+                    frame
+                    |> Frame.pivotTable 
+                        (fun _ r -> 
+                            (r.TryGet rowkey).ValueOrDefault
+                            |> AST.KeyType.Create)
+                        (fun _ r -> (r.TryGet columnkey).ValueOrDefault |> string)
+                        (fun f ->
+                              let resultsColumn,compiledExpressionFunc = compileTempColumn "__result__" valueExpression 
+                              compiledExpressionFunc f keySeries
+                              f.GetColumn resultsColumn
+                              |>(match reduction with
+                                 AST.Count -> 
+                                      Series.countValues >> float
+                                 | AST.Sum -> 
+                                      Stats.sum
+                                 | AST.Median -> 
+                                      Stats.median
+                                 | AST.Mean -> 
+                                      Stats.mean
+                                 | AST.StdDev -> 
+                                      Stats.stdDev
+                                 | AST.Variance -> 
+                                      Stats.variance
+                                 | AST.Max -> 
+                                      Stats.max
+                                 | AST.Min -> 
+                                      Stats.min ))
+                    |> Frame.sortRowsByKey
+                match rowKeyExpression with
+                AST.ComputationExpression.ColumnName name ->
+                    resultingFrame?(name) <- 
+                        resultingFrame.RowKeys
+                        |> Seq.map AST.KeyType.UnWrap
+                        |> Seq.cast<Comp>
+                    resultingFrame
+                | _ -> 
+                    resultingFrame
         let reduce reduction = 
             let aggregate f = 
                 frame
@@ -704,11 +721,20 @@ module DataStructures =
                                 frame?(indexByColumnName) <- 
                                     (exp keySeries)
                                 indexByColumnName
-                        let res = 
+                        let resultingFrame = 
                             frame
                             |> Frame.indexRows columnName
                             |> Frame.mapRowKeys(AST.KeyType.Create)
-                        res
+                            |> Frame.sortRowsByKey
+                        match exp with
+                        AST.ColumnName name ->
+                            resultingFrame?(name) <-
+                                resultingFrame.RowKeys
+                                |> Seq.map AST.KeyType.UnWrap
+                                |> Seq.cast<Comp>
+                            resultingFrame
+                        | _ -> 
+                            resultingFrame
                 | AST.SortBy columnName ->
                      Frame.sortRows columnName
                 | AST.DenseRows->

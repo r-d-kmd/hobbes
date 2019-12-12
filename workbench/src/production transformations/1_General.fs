@@ -52,8 +52,3 @@ module General =
         [
             group by ([SprintName; WorkItemId]|> List.map string) => ( maxby ChangedDate.Expression)
         ]
-    [<Workbench.Transformation 0>]
-    let onlyUserStory =
-        [
-            only (WorkItemType.Expression == "User Story")
-        ]

@@ -9,14 +9,6 @@ module State =
       ||| Project.Gandalf 
       ||| Project.Delta 
       ||| Project.AzureDevOps
-
-  [<Configuration(Projects)>]
-  let onlyUserStories =
-      <@
-          [
-            Transformations.General.onlyUserStory
-          ]
-      @>
   
   [<Configuration(Projects)>]
   let baseInformations : Quotations.Expr<Hobbes.DSL.Statements list list> =
@@ -26,7 +18,6 @@ module State =
   let userStoriesFoldedBySprint =
       <@
           [
-            Transformations.General.onlyUserStory
             Transformations.General.foldBySprint
           ]
       @>  
@@ -35,7 +26,6 @@ module State =
   let stateBySprint =
       <@
           [
-            Transformations.General.onlyUserStory
             Transformations.General.foldBySprint
             Transformations.Metrics.stateCountBySprint
           ]
@@ -45,7 +35,6 @@ module State =
   let expandingCompletionBySprint =
       <@
           [
-            Transformations.General.onlyUserStory
             Transformations.General.foldBySprint
             Transformations.Metrics.stateCountBySprint
             Transformations.Metrics.expandingCompletionBySprint
@@ -56,7 +45,6 @@ module State =
   let sprintVelocity =
       <@
           [
-            Transformations.General.onlyUserStory
             Transformations.General.foldBySprint
             Transformations.Metrics.stateCountBySprint
             Transformations.Metrics.sprintVelocity

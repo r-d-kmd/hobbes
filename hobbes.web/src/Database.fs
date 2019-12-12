@@ -14,17 +14,25 @@ namespace Hobbes.Web
         
     module Database =
         open FSharp.Core.Printf
+        let now() =  System.DateTime.Now.ToString()
+        let printer = fun s -> printfn "%s - %s" (now()) s
+        let eprinter = fun s -> eprintfn "%s - %s" (now()) s
         let consoleLogger =
                 { new ILog with
-                    member __.Log msg   = printfn "%s" msg
-                    member __.Error stackTrace msg = eprintfn "%s StackTrace: \n %s" msg stackTrace
-                    member __.Debug msg = printfn "%s" msg
+                    member __.Log msg   = sprintf "%s" msg |> printer
+                    member __.Error stackTrace msg = 
+                           (if System.String.IsNullOrWhiteSpace(stackTrace) then
+                             sprintf "%s" msg
+                            else
+                             sprintf "%s StackTrace: \n %s" msg stackTrace)
+                           |> eprinter
+                    member __.Debug msg = sprintf "%s" msg |> printer
                     member __.Logf<'a> (format : LogFormatter<'a>) = 
-                        kprintf ignore format 
+                        ksprintf printer format 
                     member __.Errorf<'a> _ (format : LogFormatter<'a>) = 
-                        kprintf ignore format
+                        ksprintf eprinter format
                     member __.Debugf<'a> (format : LogFormatter<'a>) = 
-                        kprintf ignore format
+                        ksprintf printer format
                 }  
 
         let private user = env "COUCHDB_USER" "admin"

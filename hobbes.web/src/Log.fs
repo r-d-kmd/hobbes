@@ -59,7 +59,13 @@ module Log =
                              "message" : "%s"}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) logType (stacktrace |> jsonify) (msg |> jsonify)
         if env "LOG_LOCATION" "console" = "console" then
             //let's print log messages to console when running locally
-            printfn "%s. \nStackTrace: %A" msg stacktrace
+            let now() =  System.DateTime.Now.ToString()
+            let printer = fun s -> printfn "%s - %s" (now()) s
+            (if System.String.IsNullOrWhiteSpace(stacktrace) then
+              sprintf "%s" msg
+             else
+              sprintf "%s StackTrace: \n %s" msg stacktrace)
+            |> printer
         else
             async {
                try

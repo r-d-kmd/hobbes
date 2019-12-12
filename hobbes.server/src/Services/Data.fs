@@ -25,13 +25,13 @@ module Data =
                     } 
 
                 async {
-                    printfn "Caching transformation"
+                    debug "Caching transformation"
                     try
                         transformedData.ToJson(Column)
                         |> Cache.store nextConfiguration cacheRevision
                         |> ignore
                     with e ->
-                        eprintfn "Failed to cache transformation result. Message: %s" e.Message
+                        errorf e.StackTrace "Failed to cache transformation result. Message: %s" e.Message
                 } |> Async.Start
                 transformData nextConfiguration tail transformedData
 
@@ -160,6 +160,8 @@ module Data =
         let token =
             match configuration.Source with
             DataConfiguration.DataSource.AzureDevOps(account,_)  ->
-               (env (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_")) null)
+                let varName = 
+                    sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_")
+                env varName null
             | source -> failwithf "Not supported. %A"source
         sync configurationName token

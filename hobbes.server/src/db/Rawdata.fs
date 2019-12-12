@@ -73,7 +73,9 @@ module Rawdata =
         startKey
      
     let InsertOrUpdate doc = 
-        db.InsertOrUpdate doc
+        async{
+            db.InsertOrUpdate doc |> ignore
+        }
 
     let getState id = 
         match db.TryGet id with

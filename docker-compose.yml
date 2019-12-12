@@ -9,18 +9,20 @@ services:
     ports:
       - 8085:8085
     environment:
-      - COUCHDB_USER=admin 
-      - COUCHDB_PASSWORD=password
-      - SERVER_PORT=8085
-      - KEY_SUFFIX=2804de67ba6979c756e8759e44fe4
+      - COUCHDB_USER=${COUCHDB_USER} 
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
+      - SERVER_PORT=${SERVER_PORT}
+      - KEY_SUFFIX=${KEY_SUFFIX}
       - DB_SERVER_URL=http://db-svc:5984/
+      - AZURE_TOKEN_KMDDK=${AZURE_TOKEN_KMDDK}
+      - AZURE_TOKEN_TIME_PAYROLL_KMDDK=${AZURE_TOKEN_TIME_PAYROLL_KMDDK}
 
   db-svc:
     image: apache/couchdb
     container_name: db-svc
     environment:
-      - COUCHDB_USER=admin 
-      - COUCHDB_PASSWORD=password
+      - COUCHDB_USER=${COUCHDB_USER} 
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
     expose: 
       - 5984
     ports:
@@ -33,16 +35,16 @@ services:
     expose:
       - 8085
     environment:
-      - COUCHDB_USER=admin 
-      - COUCHDB_PASSWORD=password
+      - COUCHDB_USER=${COUCHDB_USER} 
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
+      - SERVER_PORT=${SERVER_PORT}
       - DB_SERVER_URL=http://collectordb-svc:5984/
-      - SERVER_PORT=8085
   collectordb-svc:
     image: apache/couchdb
     container_name: collectordb-svc
     environment:
-      - COUCHDB_USER=admin 
-      - COUCHDB_PASSWORD=password
+      - COUCHDB_USER=${COUCHDB_USER} 
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
     expose: 
       - 5984
     volumes:

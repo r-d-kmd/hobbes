@@ -348,8 +348,7 @@ module DataStructures =
                     |> Seq.map(fun (k,v) ->
                           k =>
                               match v with
-                              :? string as s -> int s :> Comp |> Some
-                              | :? int as i -> i :> Comp |> Some
+                              :? int as i -> i :> Comp |> Some
                               | :? float as f -> int f :> Comp |> Some
                               | a -> 
                                   match a 

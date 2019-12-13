@@ -263,21 +263,13 @@ module DataStructures =
                 let formatter (groups : string []) = 
                     result
                     |> List.fold(fun acc token ->
-                        let s = 
-                            match token with
-                            AST.RegExGroupIdentifier n ->
-                                try
-                                    groups.[n]
-                                with 
-                                  | :? IndexOutOfRangeException ->
-                                      eprintfn "Didn't find group %d in groups %A" n groups
-                                      reraise()
-                                  | e -> 
-                                      eprintfn "Failed to create regex result. Message: %s" e.Message
-                                      reraise()
-                            | AST.RegExResultString literal ->
-                                literal
-                        s::acc
+                        match token with
+                        AST.RegExGroupIdentifier n ->
+                            match groups |> Array.tryItem n with
+                            None -> acc
+                            | Some g -> g::acc
+                        | AST.RegExResultString literal ->
+                            literal::acc
                     ) []
                     |> List.rev
                     |> System.String.Concat
@@ -352,17 +344,25 @@ module DataStructures =
             | AST.Int exp ->
                 fun s ->
                     s |> (compileExpression exp)
-                    |> Series.mapValues(function 
-                          :? string as s -> int s :> Comp
-                          | :? int as i -> i :> Comp
-                          | :? float as f -> int f :> Comp
-                          | a -> 
-                              a 
-                              |> string 
-                              |> System.Double.Parse 
-                              |> int 
-                              :> Comp
-                          )
+                    |> Series.observations
+                    |> Seq.map(fun (k,v) ->
+                          k =>
+                              match v with
+                              :? string as s -> int s :> Comp |> Some
+                              | :? int as i -> i :> Comp |> Some
+                              | :? float as f -> int f :> Comp |> Some
+                              | a -> 
+                                  match a 
+                                        |> string 
+                                        |> System.Double.TryParse with
+                                  false,_ -> None
+                                  | true,v -> 
+                                      v
+                                      |> int 
+                                      :> Comp
+                                      |> Some
+                              )
+                    |> Series.ofOptionalObservations
             | AST.IfThisThenElse(condition,thenBody,elseBody) ->
                 let conditionExp = 
                     compileBooleanExpression condition

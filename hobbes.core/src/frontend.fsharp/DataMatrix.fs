@@ -809,12 +809,23 @@ module DataStructures =
             frame
             |> Frame.cols
             |> Series.observations
-            |> Seq.map(fun (columnName, values) -> columnName, values |> Series.observations)
-            |> Seq.filter(fun (_,values) -> values |> Seq.isEmpty |> not)
+            |> Seq.map(fun (columnName, values) -> 
+                columnName, 
+                values 
+                |> Series.observationsAll
+                |> Seq.map(fun (k,v) -> 
+                    k, 
+                    match v with
+                    None -> null
+                    | Some v -> v
+                )
+
+            ) |> Seq.filter(fun (_,values) -> values |> Seq.isEmpty |> not)
 
         let serialiseValue (_,value : obj) = 
             match value with
-            :? string as s -> sprintf """ "%s" """ s
+            null -> "null"
+            | :? string as s -> sprintf """ "%s" """ s
             | :? bool as b -> 
                     if b then "true" else "false"
             | :? int as i -> i |> string

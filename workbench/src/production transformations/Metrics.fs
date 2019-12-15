@@ -32,8 +32,15 @@ module Metrics =
             create (column "Velocity") ((moving Mean 3 (!> "Done")))
             //Create a column called Burn up Prediction thats a linear extrapolation ten rows ahead based on the last ten rows of the data set
             create (column "Burn up Prediction") ((linear extrapolationLimited) (!> "Burn up") 10 10)
+            //drop the sprint number column (to recreate from the index with the new values from the extrapolation)
+            slice columns [
+                "Burn up"
+                "Done"
+                "Velocity"
+                "Burn up Prediction"
+            ]
             //required to populate the Sprint number column with the predicted values
-            index rows by SprintNumber.Expression
+            create SprintNumber.Name Keys
         ]
         
     [<Workbench.Transformation 1>]

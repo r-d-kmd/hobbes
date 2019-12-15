@@ -623,8 +623,8 @@ module DataStructures =
                 let resultingSeries = compiledExpression (keySeries)
                 let newframe = Frame([nameOfNewColumn],[resultingSeries])
                 let result = 
-                    frame
-                    |> Frame.join JoinKind.Outer newframe
+                    newframe
+                    |> Frame.join JoinKind.Outer frame
                 let col =
                     result.GetColumn nameOfNewColumn
                     |> Series.observationsAll

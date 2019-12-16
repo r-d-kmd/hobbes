@@ -285,13 +285,11 @@ module DataStructures =
                     let groups = 
                         match matches with 
                         [] -> 
-                            eprintfn "No matches. Input: %s Pattern: %s" input pattern
                             []
                         | [h] -> 
                             h.Groups 
                             |> List.ofSeq
                         | _ -> 
-                            printfn "Found multiple groups. Collecting as different matches"
                             matches 
                             |> List.ofSeq 
                             |> List.collect(fun m -> m.Groups |> List.ofSeq)
@@ -423,9 +421,11 @@ module DataStructures =
                     match length with
                     None -> id
                     | Some length ->
-                        Series.rev
-                        >> Series.take length
-                        >> Series.rev
+                        fun s -> 
+                            s
+                            |> Series.rev
+                            |> Series.take (min length (s |> Series.countKeys))
+                            |> Series.rev
 
                 let knownValuesExpr = 
                     (knownValues
@@ -539,14 +539,13 @@ module DataStructures =
                         |> series
                         |> Series.mapValues(fun c -> c:> Comp)
 
-        and compileTempColumn defaultName exp =
-               match exp with
-               AST.ComputationExpression.ColumnName name -> 
-                   name, (fun _ _ -> ())   
-               | _ ->
-                   defaultName, 
-                       (fun frame keySeries ->
-                           frame?(defaultName) <- (compileExpression frame exp keySeries))
+        and compileTempColumn defaultName exp (cont : Comp option -> Comp) =
+                defaultName, 
+                   (fun frame keySeries ->
+                       frame?(defaultName) <- (
+                           compileExpression frame exp keySeries)
+                           |> Series.mapAll (fun _ r ->  r |> cont |> Some)
+                       )
                    
         
         and compileBooleanExpression exp : Series<AST.KeyType,Comp> -> Series<AST.KeyType,Comp> = 
@@ -593,7 +592,12 @@ module DataStructures =
                     | AST.GreaterThanOrEqual -> (>=) 
                     | AST.LessThan -> (<)           
                     | AST.LessThanOrEqual -> (<=)    
-                    | AST.EqualTo -> (=)
+                    | AST.EqualTo -> 
+                         fun a b ->
+                            match a,b with
+                            null,null -> true
+                            | null,_ | _,null -> false 
+                            | _ -> a = b
                     | AST.Contains ->
                         fun lhs rhs ->
                             let lhsString = lhs |> string
@@ -631,19 +635,32 @@ module DataStructures =
                     |> List.ofSeq
                 result
             | AST.Pivot(rowKeyExpression,columnKeyExpression,valueExpression, reduction) ->
-                let rowkey,compiledExpressionFunc = compileTempColumn "__rowkey__" rowKeyExpression
+                let rowkey,compiledExpressionFunc = compileTempColumn "__rowkey__" rowKeyExpression (fun r ->
+                                                                                                       r  |> AST.KeyType.OfOption
+                                                                                                       :> Comp)
                 compiledExpressionFunc frame keySeries
-                let columnkey,compiledExpressionFunc = compileTempColumn "__columnkey__" columnKeyExpression 
+                let columnkey,compiledExpressionFunc = compileTempColumn "__columnkey__" columnKeyExpression (fun r ->
+                                                                                                        let key = 
+                                                                                                            match r with
+                                                                                                            None -> ""
+                                                                                                            | Some v -> 
+                                                                                                                v |> string
+                                                                                                        key :> Comp)
                 compiledExpressionFunc frame keySeries
-                let resultingFrame = 
+                let col = frame.GetColumn columnkey |> Series.observationsAll |> List.ofSeq
+                let row = frame.GetColumn rowkey |> Series.observationsAll |> List.ofSeq
+                assert(col <> row)
+                let resultingFrame : Frame<AST.KeyType, string>  = 
                     frame
                     |> Frame.pivotTable 
                         (fun _ r -> 
-                            (r.TryGet rowkey).ValueOrDefault
-                            |> AST.KeyType.Create)
-                        (fun _ r -> (r.TryGet columnkey).ValueOrDefault |> string)
+                            r.GetAs<AST.KeyType> rowkey
+                        )
+                        (fun _ r -> 
+                            r.GetAs<string> columnkey
+                        )
                         (fun f ->
-                              let resultsColumn,compiledExpressionFunc = compileTempColumn "__result__" valueExpression 
+                              let resultsColumn,compiledExpressionFunc = compileTempColumn "__result__" valueExpression (fun v -> (v |> OptionalValue.ofOption).ValueOrDefault)
                               compiledExpressionFunc f keySeries
                               f.GetColumn resultsColumn
                               |>(match reduction with
@@ -663,7 +680,7 @@ module DataStructures =
                                       Stats.max
                                  | AST.Min -> 
                                       Stats.min ))
-                    |> Frame.sortRowsByKey
+
                 match rowKeyExpression with
                 AST.ComputationExpression.ColumnName name ->
                     resultingFrame?(name) <- 
@@ -724,16 +741,18 @@ module DataStructures =
                             frame
                             |> Frame.indexRows columnName
                             |> Frame.mapRowKeys(AST.KeyType.Create)
-                            |> Frame.sortRowsByKey
-                        match exp with
-                        AST.ColumnName name ->
-                            resultingFrame?(name) <-
-                                resultingFrame.RowKeys
-                                |> Seq.map AST.KeyType.UnWrap
-                                |> Seq.cast<Comp>
-                            resultingFrame
-                        | _ -> 
-                            resultingFrame
+                           
+                        (match exp with
+                         AST.ColumnName name ->
+                             resultingFrame?(name) <-
+                                 resultingFrame.RowKeys
+                                 |> Seq.map AST.KeyType.UnWrap
+                                 |> Seq.cast<Comp>
+                             resultingFrame
+                         | _ -> 
+                             resultingFrame)
+                        |> Frame.sortRowsByKey
+
                 | AST.SortBy columnName ->
                      Frame.sortRows columnName
                 | AST.DenseRows->
@@ -769,7 +788,9 @@ module DataStructures =
                          | AST.Reduce reduction -> (Clustering.reduceGroup reduction)
                          | AST.Select selector ->
                              let select expression f _ grouped = 
-                                    let selectorKey, compiledExpressionFunc = compileTempColumn "__selector__" expression
+                                    let selectorKey, compiledExpressionFunc = compileTempColumn "__selector__" expression (fun r ->
+                                                                                                                               r  |> AST.KeyType.OfOption
+                                                                                                                               :> Comp)
                                     let cols = 
                                         grouped
                                         |> Frame.getCols

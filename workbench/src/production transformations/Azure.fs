@@ -11,6 +11,12 @@ module Azure =
         [
             only (WorkItemType.Expression == "User Story")
         ]
+
+    [<Workbench.Transformation 0>]
+    let onlyInSprint = 
+        [
+            only (SprintNumber.Expression |> isntMissing)
+        ]
         
     [<Workbench.Transformation 1>]
     let stateRenaming = 

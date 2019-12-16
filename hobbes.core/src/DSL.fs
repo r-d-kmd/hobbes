@@ -33,6 +33,7 @@ type Expression =
     | Extrapolation of AST.Regression * Expression * int * int option
     | RegularExpression of input : Expression * patter: string * resultSnippets : AST.RegExResultToken list
     | Ordinals
+    | Missing
     | Keys
     | Int of Expression
     with override x.ToString() =
@@ -50,6 +51,7 @@ type Expression =
                 sprintf "regex [%s] /%s/ [%s]" (input.ToString()) pattern tokens
              | Expanding (r,exp) ->
                  sprintf "expanding %s [%s]"  (toString(r)) (exp.ToString())
+             | Missing -> "missing"
              | Moving (r,windowSize, exp) ->
                  sprintf "moving %s %d [%s]"  (toString(r)) windowSize (exp.ToString())
              | Subtraction(a,b) -> sprintf " %s - %s" (a.ToString()) (b.ToString())
@@ -89,14 +91,16 @@ type Expression =
              Subtraction(e1,e2)
          static member (==) (e1:Expression, e2:string) = 
              let e2 = Expression.ParseStringOrDate e2
-             Equal(e1,e2)
+             e1 == e2
          static member (==) (e1:Expression, e2:Expression) = 
              Equal(e1,e2)
          static member (==) (e1:Expression, e2:int) = 
-             Equal(e1,e2 |> float |> NumberConstant)      
+             e1 == (e2 |> float |> NumberConstant)
+         static member (!=) (e1:Expression, e2:Expression) = 
+             Not(Equal(e1,e2))     
          static member (!=) (e1:Expression, e2:string) = 
              let e2 = Expression.ParseStringOrDate e2
-             Not(e1 == e2)
+             e1 != e2
          static member (.||) (exp1:Expression,exp2:Expression) =
              Or(exp1,exp2)
          static member (.&&) (exp1:Expression,exp2:Expression) =
@@ -282,3 +286,6 @@ let regex expr pattern tokens =
     RegularExpression(expr, pattern, tokens)
 
 let int e = Int(e)
+
+let isMissing e = e == Missing
+let isntMissing e = e != Missing 

@@ -16,7 +16,7 @@ module State =
       <@ [] @>
 
   [<Configuration(Projects)>]
-  let userStoriesFoldedBySprint =
+  let foldBySprint =
       <@
           [
             Transformations.General.foldBySprint
@@ -24,7 +24,7 @@ module State =
       @>  
       
   [<Configuration(Projects)>]
-  let stateBySprint =
+  let stateCountBySprint =
       <@
           [
             Transformations.General.foldBySprint
@@ -33,21 +33,21 @@ module State =
       @>
 
   [<Configuration(Projects)>]
-  let expandingCompletionBySprint =
+  let simpleBurnUp =
       <@
           [
             Transformations.General.foldBySprint
             Transformations.Metrics.stateCountBySprint
-            Transformations.Metrics.expandingCompletionBySprint
+            Transformations.Metrics.simpleBurnUp
           ]
       @>
-
   [<Configuration(Projects)>]
-  let sprintVelocity =
+  let burnUpWithForecast =
       <@
           [
             Transformations.General.foldBySprint
             Transformations.Metrics.stateCountBySprint
-            Transformations.Metrics.sprintVelocity
+            Transformations.Metrics.simpleBurnUp
+            Transformations.Metrics.burnUpWithForecast
           ]
       @>

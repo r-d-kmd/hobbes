@@ -68,7 +68,7 @@ test_script:
   - front_url=$(minikube ip)":30080"
   - db_url=$(minikube ip)":30084"
   - newman run https://api.getpostman.com/collections/4127812-d535bce5-ad9a-4346-acb4-311c8443c478?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url}
-  - newman run https://api.getpostman.com/collections/9463780-a7355a7a-5fe6-42b5-a1ed-877f3c9bc2f7?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url} --env-var "pat"=${PM_APIKEY}
+  - newman run https://api.getpostman.com/collections/9463780-a7355a7a-5fe6-42b5-a1ed-877f3c9bc2f7?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url} --env-var "pat"=${HOBBES_PAT}
  
 deploy_script:
   - fake build --target pushtodocker

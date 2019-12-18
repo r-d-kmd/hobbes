@@ -46,6 +46,7 @@ before_build:
   - mkdir "c:\projects\hobbes\hobbes.server\db\data"
   - mkdir "c:\projects\hobbes\collectors\db\data"
   - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --vm-driver=none --memory=4096
+  - eval $(minikube docker-env)
 build_script: 
  
   - cd hobbes.server/src
@@ -53,7 +54,6 @@ build_script:
   - cd ../..
   - fake build --target builddocker
   - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-  - fake build --target PushAlpha
   
 test_script:
   - cd kubernetes
@@ -64,7 +64,6 @@ test_script:
   - while [[ $(kubectl get pods -l app=azuredevopscollector -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting azuredevops collector" && sleep 1; done
   - kubectl get all
   - cd ../
-  
   - front_url=$(minikube ip)":30080"
   - db_url=$(minikube ip)":30084"
   - newman run https://api.getpostman.com/collections/4127812-d535bce5-ad9a-4346-acb4-311c8443c478?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url}

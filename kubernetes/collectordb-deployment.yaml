@@ -30,4 +30,20 @@ spec:
           mountPath: /opt/couchdb/data
       restartPolicy: Always
 status: {}
-
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collectordb-svc
+spec:
+  type: NodePort
+  ports:
+  - name: "5984"
+    port: 5984
+    targetPort: 5984
+    nodePort: 30094
+  selector:
+    app: collectordb
+status:
+  loadBalancer: {}
+---

@@ -107,17 +107,19 @@ module Data =
     let getRaw id =
         Rawdata.get id
 
-    let sync configurationName azureToken =
-        let configuration = DataConfiguration.get configurationName
+    let sync (configuration : DataConfiguration.Configuration) =
         let cacheRevision = cacheRevision configuration.Source
-
-        let syncId = Rawdata.createSyncStateDocument cacheRevision configuration.Source
+        let (statusCode, syncId) =
+            match configuration.Source with
+            DataConfiguration.AzureDevOps(account,projectName) ->
+                sprintf "/sync/%s/%s" account projectName 
+                |> Hobbes.Server.Request.get    
+            | _ -> 
+                let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
+                eprintfn "%s" msg
+                404, msg                             
         async {
             try
-                match configuration.Source with
-                DataConfiguration.AzureDevOps(account,projectName) ->
-                    let statusCode,body = Hobbes.Server.Readers.AzureDevOps.sync azureToken (account,projectName)
-                    logf "Sync finised with statusCode %d and result %s" statusCode body
                     if statusCode >= 200 && statusCode < 300 then 
                         debug "Invalidating cache"
                         Cache.invalidateCache configuration.Source cacheRevision |> Async.RunSynchronously
@@ -136,32 +138,20 @@ module Data =
                             with e ->
                                 errorf e.StackTrace "Failed to transform data. Message: %s" e.Message
                         ) 
-                        Rawdata.setSyncCompleted cacheRevision configuration.Source 
                     else
                         let msg = sprintf "Syncronization failed. Message: %s" body
                         eprintfn "%s" msg
-                        Rawdata.setSyncFailed msg cacheRevision configuration.Source  
                 | _ -> 
-                    let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
-                    eprintfn "%s" msg
-                    Rawdata.setSyncFailed msg cacheRevision  configuration.Source 
+                    
             with e ->
-                Rawdata.setSyncFailed e.Message cacheRevision configuration.Source
         } |> Async.Start
         200, syncId
         
     [<Get ("/sync/%s") >]
     let syncronize configurationName = 
         let configuration = DataConfiguration.get configurationName
-        configuration.Source 
-        |> Admin.clearProject  
-        |> ignore
+        //configuration.Source 
+        //|> Admin.clearProject  
+        //|> ignore
         Admin.clearCache() |> ignore
-        let token =
-            match configuration.Source with
-            DataConfiguration.DataSource.AzureDevOps(account,_)  ->
-                let varName = 
-                    sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_")
-                env varName null
-            | source -> failwithf "Not supported. %A"source
-        sync configurationName token
+        sync configuration

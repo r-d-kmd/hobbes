@@ -17,28 +17,26 @@ module Root =
         let cacheRevision = cacheRevision source
         let syncId = Rawdata.createSyncStateDocument cacheRevision source
         
-        async {
-            try
-                match source with
-                DataConfiguration.AzureDevOps(account,projectName) -> 
-                    let statusCode,body = AzureDevOps.sync token (account,projectName)
-                    Log.logf "Sync finised with statusCode %d and result %s" statusCode body
-                    if statusCode >= 200 && statusCode < 300 then 
-                        //TODO: if caching failed in server, we shouldn't setSyncCompleted?
-                        Rawdata.setSyncCompleted cacheRevision source 
-                    else
-                        let msg = sprintf "Syncronization failed. Message: %s" body
-                        eprintfn "%s" msg
-                        Rawdata.setSyncFailed msg cacheRevision source  
-                | source -> 
-                    let msg = sprintf "Error: The source %s, wasn't AzureDevOps" source.SourceName
+        try
+            match source with
+            DataConfiguration.AzureDevOps(account,projectName) -> 
+                let statusCode,body = AzureDevOps.sync token (account,projectName)
+                Log.logf "Sync finised with statusCode %d and result %s" statusCode body
+                if statusCode >= 200 && statusCode < 300 then 
+                    //TODO: if caching failed in server, we shouldn't setSyncCompleted?
+                    Rawdata.setSyncCompleted cacheRevision source 
+                else
+                    let msg = sprintf "Syncronization failed. Message: %s" body
                     eprintfn "%s" msg
-                    Rawdata.setSyncFailed msg cacheRevision source
-            with e ->
-                eprintfn "Sync failed due to exception: %s" e.Message
-                Rawdata.setSyncFailed e.Message cacheRevision source
-        } |> Async.Start
-        200, syncId
+                    Rawdata.setSyncFailed msg cacheRevision source  
+            | source -> 
+                let msg = sprintf "Error: The source %s, wasn't AzureDevOps" source.SourceName
+                eprintfn "%s" msg
+                Rawdata.setSyncFailed msg cacheRevision source
+        with e ->
+            eprintfn "Sync failed due to exception: %s" e.Message
+            Rawdata.setSyncFailed e.Message cacheRevision source
+        statusCode, sprintf "%s:%s" syncId body //TODO Body could have : present
 
     [<Get "/ping">]
     let ping () =
@@ -62,7 +60,9 @@ module Root =
     [<Get ("/sync/%s/%s")>]
     let sync ((account : string), (project : string)) =
 
+
         let dataSource = DataConfiguration.DataSource.AzureDevOps (account, project)
+        Rawdata.clearProject dataSource
         let token = (env (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_")) null)
         synchronize dataSource token           
 

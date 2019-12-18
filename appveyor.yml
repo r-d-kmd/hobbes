@@ -53,10 +53,10 @@ build_script:
   - cd ../..
   - fake build --target builddocker
   - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-  - fake build --target PushAlpha
   
 test_script:
   - cd kubernetes
+  - sudo eval $(minikube docker-env)
   - kubectl apply -f db-deployment.yaml,db-svc.yaml,db-volume.yaml,hobbes-deployment.yaml,hobbes-svc.yaml,collectordb-volume.yaml,collectordb-deployment.yaml,collectordb-svc.yaml,azuredevops-deployment.yaml,azuredevops-svc.yaml
   - while [[ $(kubectl get pods -l app=db -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for database" && sleep 1; done
   - while [[ $(kubectl get pods -l app=hobbes-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for hobbes-server" && sleep 1; done

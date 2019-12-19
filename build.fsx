@@ -39,6 +39,19 @@ let build configuration workingDir =
 let fake workdir = 
     run "fake" workdir "build"
 
+let deploy workdir =
+    run "fake" workdir "build --target Redeploy"
+
+Target.create "DeployServer" (fun _ ->
+    deploy "./hobbes.server/src"
+)
+
+Target.create "DeployAzure" (fun _ ->
+    deploy "./collectors/collectors.AzureDevOps/src"
+)
+
+Target.create "Deploy" ignore
+
 Target.create "BuildServer" (fun _ ->
     fake "./hobbes.server/src" 
 )
@@ -293,6 +306,13 @@ Target.create "PushToDocker" (fun _ ->
         push tag
     ) 
 )
+
+"DeployServer"
+    ==> "Deploy"
+
+"DeployAzure"
+    ==> "Deploy"
+
 
 "Clean" 
     ==> "BaseImages"

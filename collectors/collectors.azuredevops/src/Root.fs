@@ -42,7 +42,7 @@ module Root =
 
     [<Get "/ping">]
     let ping () =
-        200, "pong"
+        200, "pongobongo"
 
     [<Get ("/raw/%s/%s")>]
     let raw ((account : string), (project : string)) : int * string =

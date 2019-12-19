@@ -42,15 +42,15 @@ let fake workdir =
 let deploy workdir =
     run "fake" workdir "build --target Redeploy"
 
-Target.create "DeployServer" (fun _ ->
+Target.create "RedeployServer" (fun _ ->
     deploy "./hobbes.server/src"
 )
 
-Target.create "DeployAzure" (fun _ ->
+Target.create "RedeployAzure" (fun _ ->
     deploy "./collectors/collectors.AzureDevOps/src"
 )
 
-Target.create "Deploy" ignore
+Target.create "Redeploy" ignore
 
 Target.create "BuildServer" (fun _ ->
     fake "./hobbes.server/src" 
@@ -307,11 +307,11 @@ Target.create "PushToDocker" (fun _ ->
     ) 
 )
 
-"DeployServer"
-    ==> "Deploy"
+"RedeployServer"
+    ==> "Redeploy"
 
-"DeployAzure"
-    ==> "Deploy"
+"RedeployAzure"
+    ==> "Redeploy"
 
 
 "Clean" 

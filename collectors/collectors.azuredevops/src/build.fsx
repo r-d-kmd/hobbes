@@ -1,12 +1,5 @@
 open System
-#r "paket: 
-nuget Fake
-nuget Fake.Core
-nuget Fake.Core.Target
-nuget Fake.DotNet
-nuget Fake.DotNet.NuGet
-nuget Fake.IO.FileSystem
-nuget Fake.DotNet.Cli //"
+#r "paket: groupref build //"
 
 #if !FAKE
 #r "netstandard"
@@ -16,6 +9,8 @@ nuget Fake.DotNet.Cli //"
 open Fake.Core
 open Fake.IO
 open Fake.DotNet
+open Fake
+open Fake.Tools.Git
 
 let run command workingDir args = 
     let arguments = 
@@ -30,44 +25,12 @@ let run command workingDir args =
     |> ignore
 
 let serverPath = Path.getFullName "./"
-let deployDir = Path.getFullName "./deploy"
-
-let buildImage dockerfile _ = 
-    let workingDir = "../"
-    let arguments = 
-        (workingDir
-        |> Path.getFullName
-        |> Path.getDirectory).Split([|'/'; '\\'|], StringSplitOptions.RemoveEmptyEntries)
-        |> Array.last
-        |> (
-            match dockerfile with
-            None -> 
-                fun t -> sprintf "build -t %s ." (t.ToLower())
-            | Some dockerfile -> 
-                fun t -> sprintf "build -f %s -t %s ." dockerfile  (t.ToLower())
-        )
-        |> String.split ' '
-        |> Arguments.OfArgs
-    RawCommand ("docker", arguments)
-        |> CreateProcess.fromCommand
-        |> CreateProcess.withWorkingDirectory workingDir
-        |> CreateProcess.ensureExitCode
-        |> Proc.run
-        |> ignore
+let deployDir = Path.getFullName "../deploy"
 
 Target.create "Clean" (fun _ ->
     [ deployDir ]
     |> Shell.cleanDirs
 )
-
-Target.create "Restart" (fun _ ->
-    buildImage (Some "Dockerfile.debug") ()
-    let compose = run "docker-compose" "."
-    compose "kill azuredevopscollector"
-    compose "rm -f azuredevopscollector"
-    compose "up azuredevopscollector"
-)
-
 
 let runDotNet cmd workingDir args =
     let result =
@@ -78,16 +41,7 @@ let build configuration workingDir =
     let args = sprintf "--output ../bin/%s --configuration %s" configuration configuration
     runDotNet "build" workingDir args
 
-Target.create "Build" (fun _ ->
-    build "Debug" serverPath
-)
-
-Target.create "Debug" (fun _ ->
-    let serverDir = Path.combine deployDir "Server"
-
-    let publishArgs = sprintf "publish -c Debug -o \"%s\"" serverDir
-    runDotNet publishArgs serverPath ""
-)
+Target.create "Build"  ignore
 
 Target.create "Bundle" (fun _ ->
     let serverDir = Path.combine deployDir "Server"
@@ -96,23 +50,70 @@ Target.create "Bundle" (fun _ ->
     runDotNet publishArgs serverPath ""
 )
 
-Target.create "Redeploy" (fun _ ->
-    run "kubectl" "../../../kubernetes" "scale --replicas=0 -f azuredevops-deployment.yaml"
-    run "kubectl" "../../../kubernetes" "scale --replicas=1 -f azuredevops-deployment.yaml"
-   |> ignore
+
+Target.create "Debug" (fun _ ->
+    run "fake" "../../" "build -t DebugCommon"
+    let serverDir = Path.combine deployDir "Server"
+
+    let publishArgs = sprintf "publish -c Debug -o \"%s\"" serverDir
+    runDotNet publishArgs serverPath ""
 )
 
 
+let buildImage dockerfile _ = 
+    let workingDir = "../"
+    let arguments = 
+        (workingDir
+        |> Path.getFullName
+        |> Path.getDirectory).ToLower().Split([|'/'; '\\'|], StringSplitOptions.RemoveEmptyEntries)
+        |> Array.last
+        |> (
+            match dockerfile with
+            None -> 
+                sprintf "build -t %s ."
+            | Some dockerfile -> 
+                sprintf "build -f %s -t %s ." dockerfile  
+        )
+        |> String.split ' '
+        |> Arguments.OfArgs
+    RawCommand ("docker", arguments)
+        |> CreateProcess.fromCommand
+        |> CreateProcess.withWorkingDirectory workingDir
+        |> CreateProcess.ensureExitCode
+        |> Proc.run
+        |> ignore
+
+Target.create "Restart" (fun _ ->
+    
+    buildImage (Some "Dockerfile.debug") ()
+    
+    let compose = run "docker-compose" "../../"
+    compose "kill azuredevopscollector"
+    compose "rm -f azuredevopscollector"
+    compose "up azuredevopscollector"
+)
+
+Target.create "Redeploy" (fun _ ->
+    run "kubectl" "../../../kubernetes" "scale --replicas=0 -f azuredevops-deployment.yaml"
+    run "kubectl" "../../../kubernetes" "scale --replicas=1 -f azuredevops-deployment.yaml"
+    |> ignore
+)
+
+
+Target.create "BuildImage" (buildImage None)
+
+Target.create "ReleaseBuild" ignore
+
 open Fake.Core.TargetOperators
 
-"Build"
+"ReleaseBuild"
     ==> "Redeploy"
 
 "Clean" 
     ==> "Bundle" 
-    ==> "Build"
+    ==> "BuildImage"  
+    ==> "ReleaseBuild"
 
-"Debug"
-    ==> "Restart"
+"Bundle" ==> "Build"
 
-Target.runOrDefaultWithArguments "Build"
+Target.runOrDefaultWithArguments "ReleaseBuild"

@@ -188,6 +188,11 @@ module Routing =
                 this.SafeCall method [|arg1;arg2;arg3|]
             this.GenerateRouteWithArgs<('a * 'b * 'c)> state f path verb
 
+        member private this.LocalWithArgs5<'a, 'b, 'c, 'd, 'e>(state, path, verb, method : System.Reflection.MethodInfo) = 
+            let f (arg1 : 'a, arg2 : 'b, arg3 : 'c, arg4 : 'd, arg5 : 'e) = 
+                this.SafeCall method [|arg1;arg2;arg3;arg4;arg5|]
+            this.GenerateRouteWithArgs<('a * 'b * 'c * 'd * 'e)> state f path verb        
+
         member private this.LocalWithBody(state, path, verb, method) = 
             let f body = 
                 this.SafeCall method [|body|]
@@ -222,6 +227,11 @@ module Routing =
         member this.WithArgs3(state, action : Expr<('a * 'b * 'c) -> int * string>) : RouterState =
             let path,method,verb = this.FindMethodAndPath action
             this.LocalWithArgs3<'a, 'b, 'c>(state,path, verb, method)
+
+        [<CustomOperation("withArgs5")>]
+        member this.WithArgs5(state, action : Expr<('a * 'b * 'c * 'd * 'e) -> int * string>) : RouterState =
+            let path,method,verb = this.FindMethodAndPath action
+            this.LocalWithArgs5<'a, 'b, 'c, 'd, 'e>(state,path, verb, method)        
 
         [<CustomOperation "collect">]
         member this.Collect(state, areaPath : string) : RouterState =
@@ -265,6 +275,7 @@ module Routing =
                     | 1 -> this.LocalWithArg(state, path, att.Verb, method)
                     | 2 -> this.LocalWithArgs(state, path, att.Verb, method)
                     | 3 -> this.LocalWithArgs3(state, path, att.Verb, method)
+                    | 5 -> this.LocalWithArgs5(state, path, att.Verb, method)
                     | _ -> failwithf "Don't know how to handle the arguments of %s" att.Path
             ) state
             

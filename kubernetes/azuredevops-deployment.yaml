@@ -24,6 +24,10 @@ spec:
           value: "8085"
         - name: DB_SERVER_URL
           value: http://collectordb-svc:5984/
+        - name: AZURE_TOKEN_KMDDK
+          value: ${AZURE_TOKEN_KMDDK}
+        - name: AZURE_TOKEN_TIME_PAYROLL_KMDDK
+          value: ${AZURE_TOKEN_TIME_PAYROLL_KMDDK}
         imagePullPolicy: Never
         image: collectors.azuredevops
         name: collectors-azuredevops

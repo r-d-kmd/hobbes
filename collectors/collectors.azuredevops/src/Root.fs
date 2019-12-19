@@ -10,37 +10,46 @@ open Hobbes.Helpers
 [<RouteArea ("/", false)>]
 module Root =
 
-    let cacheRevision (source : DataConfiguration.DataSource) = 
-        sprintf "%s:%s:%d" source.SourceName source.ProjectName (System.DateTime.Now.Ticks) |> hash
+    [<Get "/createSyncDoc/%s/%s/%s">]
+    let createSyncDoc ((account : string), (project : string), (revision : string)) =
+        let dataSource = DataConfiguration.DataSource.AzureDevOps (account, project)
+        200, Rawdata.createSyncStateDocument revision dataSource
+
+    [<Get "/test/%s/%s/%s">]
+    let test (arg1, arg2, arg3) =
+        200, sprintf "%s%s%s" arg1 arg2 arg3    
+
+    [<Get "/setSync/%s/%s/%s/%s/%s">]
+    let setSync ((completed : string), account, project, (revision : string), msg) =
+        let dataSource = DataConfiguration.DataSource.AzureDevOps (account, project)
+        match completed.ToLower() with
+          "true"  -> Rawdata.setSyncCompleted revision dataSource
+                     200, "SyncDoc set to completed"
+        | "false" -> Rawdata.setSyncFailed msg revision dataSource
+                     200, "SyncDoc set to Failed"
+        | _       -> 404, """first argument has to be "true" or "false" """
 
     let synchronize source token =
-        let cacheRevision = cacheRevision source
-        let syncId = Rawdata.createSyncStateDocument cacheRevision source
-        
         try
             match source with
             DataConfiguration.AzureDevOps(account,projectName) -> 
                 let statusCode,body = AzureDevOps.sync token (account,projectName)
                 Log.logf "Sync finised with statusCode %d and result %s" statusCode body
-                if statusCode >= 200 && statusCode < 300 then 
-                    //TODO: if caching failed in server, we shouldn't setSyncCompleted?
-                    Rawdata.setSyncCompleted cacheRevision source 
-                else
+                if statusCode < 200 && statusCode >= 300 then 
                     let msg = sprintf "Syncronization failed. Message: %s" body
                     eprintfn "%s" msg
-                    Rawdata.setSyncFailed msg cacheRevision source  
+                statusCode, body                 
             | source -> 
                 let msg = sprintf "Error: The source %s, wasn't AzureDevOps" source.SourceName
                 eprintfn "%s" msg
-                Rawdata.setSyncFailed msg cacheRevision source
+                404, msg
         with e ->
             eprintfn "Sync failed due to exception: %s" e.Message
-            Rawdata.setSyncFailed e.Message cacheRevision source
-        statusCode, sprintf "%s:%s" syncId body //TODO Body could have : present
+            404, e.Message
 
     [<Get "/ping">]
     let ping () =
-        200, "pong"
+        200, "pongo bongo mongo"
 
     [<Get ("/raw/%s/%s")>]
     let raw ((account : string), (project : string)) : int * string =
@@ -59,8 +68,6 @@ module Root =
 
     [<Get ("/sync/%s/%s")>]
     let sync ((account : string), (project : string)) =
-
-
         let dataSource = DataConfiguration.DataSource.AzureDevOps (account, project)
         Rawdata.clearProject dataSource
         let token = (env (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_")) null)

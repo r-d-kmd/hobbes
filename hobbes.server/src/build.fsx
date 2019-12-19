@@ -108,12 +108,22 @@ Target.create "Restart" (fun _ ->
     compose "up hobbes"
 )
 
+Target.create "Redeploy" (fun _ ->
+    run "kubectl" "../../kubernetes" "scale --replicas=0 -f hobbes-deployment.yaml"
+    run "kubectl" "../../kubernetes" "scale --replicas=1 -f hobbes-deployment.yaml"
+    |> ignore
+)
+
 
 Target.create "BuildImage" (buildImage None)
 
 Target.create "ReleaseBuild" ignore
 
 open Fake.Core.TargetOperators
+
+"ReleaseBuild"
+    ==> "Redeploy"
+
 "Clean" 
     ==> "SetAssemblyInfo"
     ==> "Bundle" 

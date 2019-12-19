@@ -107,51 +107,60 @@ module Data =
     let getRaw id =
         Rawdata.get id
 
-    let sync (configuration : DataConfiguration.Configuration) =
-        let cacheRevision = cacheRevision configuration.Source
-        let (statusCode, syncId) =
+    let invalidateCache statusCode body (configuration : DataConfiguration.Configuration) =
+        try
+            let cacheRevision = cacheRevision configuration.Source
+            if statusCode >= 200 && statusCode < 300 then 
+                debug "Invalidating cache"
+                Cache.invalidateCache configuration.Source cacheRevision |> Async.RunSynchronously
+                debug "Recalculating"
+                
+                let configurations = DataConfiguration.configurationsBySource configuration.Source
+                debugf "Found %d configurations to recalculate" (configurations |> Seq.length) 
+                configurations
+                |> Seq.iter(fun configuration -> 
+                    debugf "Starting async calculation of %s" configuration
+                    try
+                        debugf "Getting data for configuration: %s" configuration
+                        data configuration |> ignore //this forces the cache to be repopulated
+                        if statusCode > 299 then 
+                            errorf null "Failed to transform data. Status: %d" statusCode
+                    with e ->
+                        errorf e.StackTrace "Failed to transform data. Message: %s" e.Message
+                )
+                true, ""
+            else
+                let msg = sprintf "Syncronization failed. Message: %s" body
+                eprintfn "%s" msg
+                false, msg
+        with e ->
+            false, e.Message   
+
+    [<Get ("/sync/%s") >]
+    let synchronize configurationName =
+        let configuration = DataConfiguration.get configurationName
+        Admin.clearCache() |> ignore
+        
+        let revision = cacheRevision configuration.Source
+        let statusCode, syncId =
             match configuration.Source with
-            DataConfiguration.AzureDevOps(account,projectName) ->
-                sprintf "/sync/%s/%s" account projectName 
-                |> Hobbes.Server.Request.get    
+            DataConfiguration.AzureDevOps(account, project)   ->
+                sprintf "createSyncDoc/%s/%s/%s" account project revision
+                |> Hobbes.Server.Request.get 
+            | _                                               ->
+                let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
+                eprintfn "%s" msg
+                404, msg        
+        async {
+            match configuration.Source with
+            DataConfiguration.AzureDevOps(account,project) ->
+                let statusCode, body = sprintf "sync/%s/%s" account project
+                                       |> Hobbes.Server.Request.get  
+                let completed, msg = invalidateCache statusCode body configuration
+                sprintf "setSync/%s/%s/%s/%s/%s" (string completed) account project revision msg
+                |> Hobbes.Server.Request.get |> ignore                              
             | _ -> 
                 let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
                 eprintfn "%s" msg
-                404, msg                             
-        async {
-            try
-                    if statusCode >= 200 && statusCode < 300 then 
-                        debug "Invalidating cache"
-                        Cache.invalidateCache configuration.Source cacheRevision |> Async.RunSynchronously
-                        debug "Recalculating"
-                        
-                        let configurations = DataConfiguration.configurationsBySource configuration.Source
-                        debugf "Found %d configurations to recalculate" (configurations |> Seq.length) 
-                        configurations
-                        |> Seq.iter(fun configuration -> 
-                            debugf "Starting async calculation of %s" configuration
-                            try
-                                debugf "Getting data for configuration: %s" configuration
-                                data configuration |> ignore //this forces the cache to be repopulated
-                                if statusCode > 299 then 
-                                    errorf null "Failed to transform data. Status: %d" statusCode
-                            with e ->
-                                errorf e.StackTrace "Failed to transform data. Message: %s" e.Message
-                        ) 
-                    else
-                        let msg = sprintf "Syncronization failed. Message: %s" body
-                        eprintfn "%s" msg
-                | _ -> 
-                    
-            with e ->
-        } |> Async.Start
-        200, syncId
-        
-    [<Get ("/sync/%s") >]
-    let syncronize configurationName = 
-        let configuration = DataConfiguration.get configurationName
-        //configuration.Source 
-        //|> Admin.clearProject  
-        //|> ignore
-        Admin.clearCache() |> ignore
-        sync configuration
+        } |> Async.Start                    
+        statusCode, syncId

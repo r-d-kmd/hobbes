@@ -13,8 +13,9 @@ let cacheInvalidation configName =
     |> Cache.invalidateCache
 
 let sync configuration azureToken= 
-    let _,key = Hobbes.Server.Services.Data.sync configuration azureToken
-    printfn "sync key: %s" key
+    //let _,key = Hobbes.Server.Services.Data.sync configuration azureToken
+    //printfn "sync key: %s" key
+    ()
     
 let test azureToken  = 
     //Implementation.initDb() |> ignore

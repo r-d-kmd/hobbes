@@ -19,6 +19,9 @@ let private appRouter = router {
     withArgs <@ raw @>
     withArgs <@ sync @>
     withArg <@ getState @>
+    withArgs3 <@ createSyncDoc @>
+    withArgs3 <@ test @>
+    withArgs5 <@ setSync @>
 } 
 
 let private app = application {

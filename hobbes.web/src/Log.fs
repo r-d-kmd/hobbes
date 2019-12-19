@@ -90,7 +90,7 @@ module Log =
        ksprintf (writeLogMessage Error stacktrace) format
  
     let debugf format =
-        ksprintf ( writeLogMessage Debug null) format
+       ksprintf ( writeLogMessage Debug null) format
 
     let timed requestName (ms : int64) = 
         let doc = sprintf """{"timestamp" : "%s",

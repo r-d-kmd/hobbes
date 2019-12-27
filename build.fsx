@@ -39,6 +39,19 @@ let build configuration workingDir =
 let fake workdir = 
     run "fake" workdir "build"
 
+let deploy workdir =
+    run "fake" workdir "build --target Redeploy"
+
+Target.create "DeployServer" (fun _ ->
+    deploy "./hobbes.server/src"
+)
+
+Target.create "DeployAzure" (fun _ ->
+    deploy "./collectors/collectors.AzureDevOps/src"
+)
+
+Target.create "Deploy" ignore
+
 Target.create "BuildServer" (fun _ ->
     fake "./hobbes.server/src" 
 )
@@ -293,31 +306,15 @@ Target.create "PushToDocker" (fun _ ->
         push tag
     ) 
 )
-Target.create "PushAlpha" (fun _ ->
-    let dockerOrg = "kmdrd"
-    let run = run "docker"
-    dockerFiles
-    |> Seq.iter(fun path ->
-        let path = System.IO.Path.GetFullPath path
-        let workingDir = System.IO.Path.GetDirectoryName path
-   
-        let push (tag : string) = 
-            let tag = tag.ToLower()
-            let t = createDockerTag dockerOrg tag + ":" + "alpha"
-            sprintf "tag %s %s" tag t
-             |> run workingDir 
-            
-            let args = sprintf "push %s" <| t
-            printfn "Executing: $ docker %s" args
-            run workingDir args
-            
-        let tag = workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last
-      
 
-        push tag
-    ) 
-)
-"Clean"
+"DeployServer"
+    ==> "Deploy"
+
+"DeployAzure"
+    ==> "Deploy"
+
+
+"Clean" 
     ==> "BaseImages"
 
 "ReleaseBuild"
@@ -326,7 +323,6 @@ Target.create "PushAlpha" (fun _ ->
     ==> "Build"
 
 "BuildDocker" 
-    ?=>"PushAlpha"
     ==> "Build"
 
 Target.runOrDefaultWithArguments "Build"

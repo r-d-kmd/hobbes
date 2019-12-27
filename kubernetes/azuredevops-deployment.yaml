@@ -24,8 +24,8 @@ spec:
           value: "8085"
         - name: DB_SERVER_URL
           value: http://collectordb-svc:5984/
-        imagePullPolicy: Always
-        image: kmdrd/hobbes-collectors.azuredevops:alpha
+        imagePullPolicy: Never
+        image: collectors.azuredevops
         name: collectors-azuredevops
         resources: {}
       restartPolicy: Always

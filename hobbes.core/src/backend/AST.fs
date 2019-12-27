@@ -145,11 +145,16 @@ module AST =
                         | _ -> o
                     | List lst -> 
                         lst |> List.map KeyType.UnWrap :> obj
-                    | Missing -> null                  
+                    | Missing -> null     
+            static member OfOption (o : 'a option) = 
+                match o with
+                None -> Missing
+                | Some v -> 
+                    v |> KeyType.Create
             static member Create (i : obj) = 
                 match i with
                 null -> Missing
-                | :? KeyType as k -> k |> KeyType.UnWrap |> KeyType.Create
+                | :? KeyType as k -> k
                 | :? string as s -> 
                     Text(s) 
                 | :? System.DateTime as d ->

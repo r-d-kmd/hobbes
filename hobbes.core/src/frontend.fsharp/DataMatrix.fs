@@ -724,7 +724,7 @@ module DataStructures =
                             frame
                             |> Frame.indexRows columnName
                             |> Frame.mapRowKeys(AST.KeyType.Create)
-                            |> Frame.sortRowsByKey
+                            |> Frame.sortRowsByKey 
                         match exp with
                         AST.ColumnName name ->
                             resultingFrame?(name) <-

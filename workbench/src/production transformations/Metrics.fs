@@ -10,11 +10,14 @@ module Metrics =
     [<Workbench.Transformation 0>]
     let stateCountBySprint = 
         [
+            //Create a pivot table
             pivot 
+                  //Use the sprint number as the row key
                   SprintNumber.Expression 
+                  //Use the state column as column key
                   State.Expression 
-                  Count 
-                  WorkItemId.Expression
+                  //count the number of workitemids
+                  Count WorkItemId.Expression
         ]
     
     [<Workbench.Transformation 1>]
@@ -34,12 +37,4 @@ module Metrics =
             create (column "Burn up Prediction") ((linear extrapolationLimited) (!> "Burn up") 10 10)
             //required to populate the Sprint number column with the predicted values
             index rows by SprintNumber.Expression
-        ]
-        
-    [<Workbench.Transformation 1>]
-    let sprintVelocity =
-        [
-            index rows by (int SprintNumber.Expression)
-            create (column "Velocity")  (moving Mean 3 (!> "Done"))
-            slice columns [SprintNumber.Name; "Velocity"]
         ]

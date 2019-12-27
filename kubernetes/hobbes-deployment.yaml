@@ -22,8 +22,8 @@ spec:
           value: 2804de67ba6979c756e8759e44fe4
         - name: SERVER_PORT
           value: "8085"
-        imagePullPolicy: Always
-        image: kmdrd/hobbes-hobbes.server:alpha
+        imagePullPolicy: Never
+        image: hobbes.server
         name: hobbes-server
         resources: {}
       restartPolicy: Always

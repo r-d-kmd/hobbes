@@ -96,7 +96,18 @@ Target.create "Bundle" (fun _ ->
     runDotNet publishArgs serverPath ""
 )
 
+Target.create "Redeploy" (fun _ ->
+    run "kubectl" "../../../kubernetes" "scale --replicas=0 -f azuredevops-deployment.yaml"
+    run "kubectl" "../../../kubernetes" "scale --replicas=1 -f azuredevops-deployment.yaml"
+   |> ignore
+)
+
+
 open Fake.Core.TargetOperators
+
+"Build"
+    ==> "Redeploy"
+
 "Clean" 
     ==> "Bundle" 
     ==> "Build"
@@ -104,4 +115,4 @@ open Fake.Core.TargetOperators
 "Debug"
     ==> "Restart"
 
-Target.runOrDefaultWithArguments "build"
+Target.runOrDefaultWithArguments "Build"

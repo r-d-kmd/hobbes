@@ -220,8 +220,8 @@ namespace Hobbes.Web
                       | Put -> "PUT", "to"
                       | Delete -> "DELETE", "from"
 
-                log.Debugf "database password %s" pwd  
-                log.Debugf "database user %s" user                  
+                log.Debugf "database password (%s)" pwd  
+                log.Debugf "database user (%s)" user                  
                     
                 log.Debugf "%sting %A %s %s" m url direction databaseName
                 

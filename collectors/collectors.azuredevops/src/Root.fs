@@ -35,7 +35,7 @@ module Root =
             DataConfiguration.AzureDevOps(account,projectName) -> 
                 let statusCode,body = AzureDevOps.sync token (account,projectName)
                 Log.logf "Sync finised with statusCode %d and result %s" statusCode body
-                if statusCode < 200 && statusCode >= 300 then 
+                if statusCode < 200 || statusCode >= 300 then 
                     let msg = sprintf "Syncronization failed. Message: %s" body
                     eprintfn "%s" msg
                 statusCode, body                 

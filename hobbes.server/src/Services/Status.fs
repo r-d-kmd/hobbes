@@ -13,4 +13,3 @@ module Status =
     let getSyncState syncId =
         sprintf "status/sync/%s" syncId
         |> get
-        //200, (Rawdata.getState syncId).ToString()

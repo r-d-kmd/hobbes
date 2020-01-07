@@ -14,23 +14,14 @@ spec:
     spec:
       containers:
       - env:
-        - name: COUCHDB_PASSWORD
-          value: password
-        - name: COUCHDB_USER
-          value: admin
-        - name: KEY_SUFFIX
-          value: 2804de67ba6979c756e8759e44fe4
-        - name: SERVER_PORT
-          value: "8085"
         - name: DB_SERVER_URL
           value: http://collectordb-svc:5984/
-        - name: AZURE_TOKEN_KMDDK
-          value: ${AZURE_TOKEN_KMDDK}
-        - name: AZURE_TOKEN_TIME_PAYROLL_KMDDK
-          value: ${AZURE_TOKEN_TIME_PAYROLL_KMDDK}
         imagePullPolicy: Never
         image: collectors.azuredevops
         name: collectors-azuredevops
         resources: {}
+        envFrom:
+        - secretRef:
+            name: env
       restartPolicy: Always
 status: {}

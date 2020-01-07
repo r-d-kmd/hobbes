@@ -82,11 +82,13 @@ module AzureDevOps =
             ]
         match body with
         None -> 
-            Http.Request(url,
+            Hobbes.Web.Log.logf "\nBefore request\n"
+            Hobbes.Web.Log.logf "\nurl: %s\n\ntoken: %s" url user     
+            Http.AsyncRequest(url,
                 httpMethod = httpMethod, 
                 silentHttpErrors = true,
                 headers = headers
-            )
+            ) |> Async.RunSynchronously
         | Some body ->
             Http.Request(url,
                 httpMethod = httpMethod, 
@@ -142,12 +144,13 @@ module AzureDevOps =
     //we might want to store azureToken as an env variable
     let sync azureToken project = 
         let source = DataConfiguration.AzureDevOps project
-        printfn "LOOK HERE:::: %s and %s and %s" azureToken (fst project) (snd project)
         Hobbes.Web.Log.logf "%s" azureToken
         let rec _read hashes url = 
+            Hobbes.Web.Log.logf "\nCALLED READ\n" 
             let resp = 
                 url
                 |> request azureToken azureToken "GET" None
+            Hobbes.Web.Log.logf "\nDid a request\n"                        
             if resp.StatusCode = 200 then
                 let body = 
                     match resp.Body with
@@ -188,10 +191,13 @@ module AzureDevOps =
                 failwith <| sprintf "StatusCode: %d. Message: %s" resp.StatusCode message
 
         try
-            project
-            |> getInitialUrl
+            let lars  = project
+                        |> getInitialUrl
+            Hobbes.Web.Log.logf "\nGot this far\n"                     
+            lars                    
             |> _read []
             200,"ok"
         with e ->
-            Hobbes.Web.Log.errorf e.StackTrace "failed to sync Message: %s" e.Message
-            500, "failed"
+            let msg = sprintf "failed to sync Message: %s" e.Message
+            Hobbes.Web.Log.errorf e.StackTrace "%s" msg
+            500, msg

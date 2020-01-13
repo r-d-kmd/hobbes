@@ -13,7 +13,7 @@ module Root =
     let ping() = 
         let app = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application
         
-        200,sprintf """{"AppVerberaberaberasion": "%s", "runtimeFramework" : "%s", "appName" : "%s"}""" app.ApplicationVersion app.RuntimeFramework.FullName app.ApplicationName
+        200,sprintf """{"AppaaaaaxaxaxaxaxaVerberaberaberasion": "%s", "runtimeFramework" : "%s", "appName" : "%s"}""" app.ApplicationVersion app.RuntimeFramework.FullName app.ApplicationName
     type UserSpec = FSharp.Data.JsonProvider<"""{"name" : "kjlkj", "token" : "lkælk"}""">
 
     [<Put ("/key", true) >] 

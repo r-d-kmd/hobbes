@@ -49,7 +49,7 @@ before_build:
   - mkdir "c:\projects\hobbes\collectors\db\data"
   - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --vm-driver=none --memory=4096
   - eval $(minikube docker-env)
-  - ${ENV_FILE} | kubectl apply -f -
+  - echo ${ENV_FILE} | kubectl apply -f -
 
 build_script: 
  

@@ -3,6 +3,8 @@ image:
   - Ubuntu
 
 environment:
+  ENV_FILE:
+    secure: IgPPvAWmLiNFrb+uKl7GM8wXmrgxYr3TfcwG9sUbQD3JA+laOxzooIF9eGTulwW7/ELAKEUh/xHHhJCm7gLh344J56PhUd4+uqpPmBn+RRP1WHkZETn6ZFVpjjGjNgeHcy4We2uGSs67DWNoN5G5e7XXvFKAQJvilLclYIg2RNSbYcztGhdv+I23ldBnCEIa9Zu1CTwMjDd3p4c0CHegTZPKEDgDQM8PgVRMUEKx53RFqiMdqUh2BYrLnue2Kg8j3cjn8pPNSR3vI51y6/+nFEWmeIZ7OgTl1ySgdGwFb+2HTFcouBsBqhHoR6Ss1VzL7hGp09TiVrlXJxMQwPdNewmXSijBiJa8yGy2XKnnW5Uyi+zQAtPCoplJ/9XKsMvt5rtNzBq8ajGVoAkCdM58LiwFRq+H0/qR5H6NosIJSBYkTT8RFV+A+SCpxlPRqCKC45BIeUAfxMhHUr8aSw6AeooOQ9kjQi0g5TQcR1h/3mjVJaekS3VQ8eW1iMEY7ZxU1nkQlql30UdMz/GIVn5e0YDu3c1ybhvWG/HpPWGAbqKNMGLFDBHAurdX0cswutkf
   DOCKER_USER:
     secure: CbwbpNPxLV9AwhjSpIz7LA==
   DOCKER_PASS:
@@ -47,6 +49,8 @@ before_build:
   - mkdir "c:\projects\hobbes\collectors\db\data"
   - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --vm-driver=none --memory=4096
   - eval $(minikube docker-env)
+  - ${ENV-ENV_FILE} | kubectl apply -f -
+
 build_script: 
  
   - cd hobbes.server/src

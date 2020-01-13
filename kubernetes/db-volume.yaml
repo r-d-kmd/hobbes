@@ -11,7 +11,7 @@ spec:
     - ReadWriteMany
   hostPath: 
     path: "../hobbes.server/db/data"
-----
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

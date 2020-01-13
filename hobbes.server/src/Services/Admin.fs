@@ -92,7 +92,7 @@ module Admin =
         
     [<Get ("/list/rawdata")>]
     let listRawdata() = 
-        Rawdata.list() |> formatDBList "rawdata"           
+        Hobbes.Server.Request.get "list/rawdata"           
 
     [<Get("/list/log")>]
     let listLog() = 
@@ -120,7 +120,8 @@ module Admin =
 
     [<Delete ("/raw/%s")>]
     let deleteRaw (id : string) = 
-        Rawdata.delete id
+        sprintf "/raw/%s" id 
+        |> Hobbes.Server.Request.delete
 
     [<Delete ("/cache/%s")>]
     let deleteCache (id : string) = 
@@ -132,7 +133,7 @@ module Admin =
 
     [<Delete ("/clear/rawdata")>]
     let clearRawdata () = 
-        Rawdata.clear()
+        Hobbes.Server.Request.delete "clear/rawdata"
 
     let clearProject = Rawdata.clearProject
     

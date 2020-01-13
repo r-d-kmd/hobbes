@@ -16,11 +16,15 @@ let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
     fetch <@ ping @>
+    fetch <@ listRawdata @>
+    withArg <@ deleteRaw @>
+    fetch <@ clearRawdata @>
+    withArg <@ getRaw @>
+
     withArgs <@ raw @>
     withArgs <@ sync @>
     withArg <@ getState @>
     withArgs3 <@ createSyncDoc @>
-    withArgs3 <@ test @>
     withArgs5 <@ setSync @>
 } 
 

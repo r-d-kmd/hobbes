@@ -46,7 +46,8 @@ module AzureDevOps =
         data.Value |> Array.isEmpty
     
     //The first url to start with, if there's already some stored data
-    let private getInitialUrl (account,projectName) =
+    let private getInitialUrl ((account : string),projectName) =
+        let account = account.Replace("_", "-")
         let filters = 
             System.String.Join(" and ",
                 [
@@ -81,9 +82,7 @@ module AzureDevOps =
                 HttpRequestHeaders.ContentType HttpContentTypes.Json
             ]
         match body with
-        None -> 
-            Hobbes.Web.Log.logf "\nBefore request\n"
-            Hobbes.Web.Log.logf "\nurl: %s\n\ntoken: %s" url user     
+        None ->    
             Http.AsyncRequest(url,
                 httpMethod = httpMethod, 
                 silentHttpErrors = true,
@@ -146,11 +145,9 @@ module AzureDevOps =
         let source = DataConfiguration.AzureDevOps project
         Hobbes.Web.Log.logf "%s" azureToken
         let rec _read hashes url = 
-            Hobbes.Web.Log.logf "\nCALLED READ\n" 
             let resp = 
                 url
-                |> request azureToken azureToken "GET" None
-            Hobbes.Web.Log.logf "\nDid a request\n"                        
+                |> request azureToken azureToken "GET" None                 
             if resp.StatusCode = 200 then
                 let body = 
                     match resp.Body with
@@ -191,10 +188,8 @@ module AzureDevOps =
                 failwith <| sprintf "StatusCode: %d. Message: %s" resp.StatusCode message
 
         try
-            let lars  = project
-                        |> getInitialUrl
-            Hobbes.Web.Log.logf "\nGot this far\n"                     
-            lars                    
+            project
+            |> getInitialUrl                                   
             |> _read []
             200,"ok"
         with e ->

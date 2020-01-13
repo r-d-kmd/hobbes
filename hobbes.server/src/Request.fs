@@ -11,8 +11,11 @@ module Request =
     | Text t -> t
 
     let request method path =
-        let response = Http.Request(url+path, httpMethod = method, silentHttpErrors = true)
+        let response = Http.Request(url+path, httpMethod = method, silentHttpErrors = true, customizeHttpRequest = (fun request -> request.Timeout <- System.Int32.MaxValue ; request))
         response.StatusCode, (readBody response.Body)
 
     let get path =
         request HttpMethod.Get path
+
+    let delete path =
+        request HttpMethod.Delete path    

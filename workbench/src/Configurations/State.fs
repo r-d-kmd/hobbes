@@ -40,6 +40,7 @@ module State =
             Transformations.Metrics.stateCountBySprint
             Transformations.Metrics.simpleBurnUp
           ]
+
       @>
   [<Configuration(Projects)>]
   let burnUpWithForecast =

@@ -10,14 +10,37 @@ open Hobbes.Helpers
 [<RouteArea ("/", false)>]
 module Root =
 
+    let formatDBList name list =
+        let stringList = 
+            list
+            |> Seq.map (sprintf "%A")
+
+        let body = 
+            System.String.Join(",", stringList)
+            |> sprintf """{"%s" : [%s]}""" name 
+
+        200, body  
+
+    [<Get "/list/rawdata">]
+    let listRawdata() =
+        Rawdata.list() |> formatDBList "rawdata"
+
+    [<Delete "/raw/%s">]
+    let deleteRaw id =
+        Rawdata.delete id  
+
+    [<Delete "/clear/rawdata">]
+    let clearRawdata() =
+        Rawdata.clear()  
+
+    [<Get "/raw/%s">]
+    let getRaw id =
+        Rawdata.get id
+
     [<Get "/createSyncDoc/%s/%s/%s">]
     let createSyncDoc ((account : string), (project : string), (revision : string)) =
         let dataSource = DataConfiguration.DataSource.AzureDevOps (account, project)
-        200, Rawdata.createSyncStateDocument revision dataSource
-
-    [<Get "/test/%s/%s/%s">]
-    let test (arg1, arg2, arg3) =
-        200, sprintf "%s%s%s" arg1 arg2 arg3    
+        200, Rawdata.createSyncStateDocument revision dataSource  
 
     [<Get "/setSync/%s/%s/%s/%s/%s">]
     let setSync ((completed : string), account, project, (revision : string), msg) =
@@ -26,7 +49,7 @@ module Root =
           "true"  -> Rawdata.setSyncCompleted revision dataSource
                      200, "SyncDoc set to completed"
         | "false" -> Rawdata.setSyncFailed msg revision dataSource
-                     200, "SyncDoc set to Failed"
+                     200, "SyncDoc set to failed"
         | _       -> 404, """first argument has to be "true" or "false" """
 
     let synchronize source token =
@@ -51,20 +74,16 @@ module Root =
     let ping () =
         200, "ping"
 
-    [<Get ("/raw/%s/%s")>]
-    let raw ((account : string), (project : string)) : int * string =
-        let rows =  
-            AzureDevOps.readCached account project
-            |> Seq.sortBy fst
-            |> Seq.map(fun (_,values) ->
-                System.String.Join(",", 
-                    values
-                    |> List.map(fun (columnName,value) ->
-                        sprintf """ "%s":%A""" columnName value
-                    )
-                ) |> sprintf "{%s}"
-            )
-        200, System.String.Join(",",rows) |> sprintf "[%s]"        
+    [<Get ("/readCached/%s/%s")>]
+    let raw (account, project) =
+        let res = AzureDevOps.readCached account project 
+                  |> Seq.map (fun (_, v) -> v
+                                            |> List.map (fun (n, v) -> sprintf "(%s, %A)" n v))
+
+        let actualRes = System.String.Join(",", res)                                    
+                        |> sprintf """{"stuff" : [%s]}"""                         
+                                
+        200, actualRes    
 
     [<Get ("/sync/%s/%s")>]
     let sync ((account : string), (project : string)) =

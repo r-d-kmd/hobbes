@@ -105,7 +105,8 @@ module Data =
 
     [<Get ("/raw/%s") >]
     let getRaw id =
-        Rawdata.get id
+        sprintf "raw/%s" id
+        |> Hobbes.Server.Request.get
 
     let invalidateCache statusCode body (configuration : DataConfiguration.Configuration) =
         try
@@ -156,9 +157,10 @@ module Data =
             DataConfiguration.AzureDevOps(account,project) ->
                 let statusCode, body = sprintf "sync/%s/%s" account project
                                        |> Hobbes.Server.Request.get  
-                let completed, msg = invalidateCache statusCode body configuration
-                sprintf "setSync/%s/%s/%s/%s/%s" (string completed) account project revision msg
-                |> Hobbes.Server.Request.get |> ignore                              
+                let completed, _ = invalidateCache statusCode body configuration
+                sprintf "setSync/%s/%s/%s/%s/%s" (string completed) account project revision "-"
+                |> Hobbes.Server.Request.get
+                |> ignore                 
             | _ -> 
                 let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
                 eprintfn "%s" msg

@@ -12,10 +12,12 @@ module Metrics =
         [
             only (SprintNumber.Expression |> isntMissing)
             pivot 
+                  //Use the sprint number as the row key
                   SprintNumber.Expression 
+                  //Use the state column as column key
                   State.Expression 
-                  Count 
-                  WorkItemId.Expression
+                  //count the number of workitemids
+                  Count WorkItemId.Expression
         ]
     
     [<Workbench.Transformation 1>]

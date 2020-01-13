@@ -36,6 +36,7 @@ module General =
                     x.ToString()
 
     [<Workbench.Transformation 1>]
+    //used to limit the amount of data that's kept in memory for calculations
     let baseData =
         [
             [
@@ -50,5 +51,9 @@ module General =
     [<Workbench.Transformation 0>]
     let foldBySprint = 
         [
-            group by ([SprintName; WorkItemId]|> List.map string) => ( maxby ChangedDate.Expression)
+            //group by the tuple sprint name and workitem id
+            group by ([SprintName; WorkItemId]|> List.map string) => 
+                 //keep the row in each group where the ChangedDate is the highest 
+                 //Ie keep the latest change of the work item in that particular sprint
+                ( maxby ChangedDate.Expression)
         ]

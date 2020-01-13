@@ -80,6 +80,7 @@ module AzureDevOps =
                 HttpRequestHeaders.BasicAuth user pwd
                 HttpRequestHeaders.ContentType HttpContentTypes.Json
             ]
+        eprintf "\nURL ?!?!?!?!?!?\n: %s" url        
         match body with
         None -> 
             Http.Request(url,

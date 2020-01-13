@@ -5,7 +5,7 @@ module Environment =
     let env name defaultValue = 
             match System.Environment.GetEnvironmentVariable name with
             null -> defaultValue
-            | v -> v
+            | v -> v.Trim()
     
     let hash (input : string) =
         use md5Hash = System.Security.Cryptography.MD5.Create()

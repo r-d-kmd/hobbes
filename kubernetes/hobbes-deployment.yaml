@@ -13,15 +13,9 @@ spec:
         app: hobbes-server
     spec:
       containers:
-      - env:
-        - name: COUCHDB_PASSWORD
-          value: password
-        - name: COUCHDB_USER
-          value: admin
-        - name: KEY_SUFFIX
-          value: 2804de67ba6979c756e8759e44fe4
-        - name: SERVER_PORT
-          value: "8085"
+      - envFrom:
+        - secretRef:
+            name: env
         imagePullPolicy: Never
         image: hobbes.server
         name: hobbes-server

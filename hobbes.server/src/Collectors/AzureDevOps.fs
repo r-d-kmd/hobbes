@@ -25,39 +25,39 @@ module AzureDevOps =
         request HttpMethod.Delete path   
 
     let listRawdata() =
-        get "list/rawdata"     
+        get "admin/list/rawdata"     
 
     let deleteRaw id =
-        sprintf "raw/%s" id 
+        sprintf "admin/raw/%s" id 
         |> delete    
 
     let clearRawdata() =
-        get "clear/rawdata"  
+        get "admin/clear/rawdata"  
 
     let getSyncState syncId =
         sprintf "status/sync/%s" syncId
         |> get
 
     let createSyncDoc account project revision =
-        sprintf "createSyncDoc/%s/%s/%s" account project revision
+        sprintf "admin/createSyncDoc/%s/%s/%s" account project revision
         |> get     
 
     let setSync completed account project revision msg =
-        sprintf "setSync/%s/%s/%s/%s/%s" (string completed) account project revision msg
+        sprintf "admin/setSync/%s/%s/%s/%s/%s" (string completed) account project revision msg
         |> get
 
     let setSyncCompleted account project revision =
         setSync "true" account project revision "-"    
 
     let setSyncFailed account project revision msg =
-        setSync "true" account project revision msg      
+        setSync "false" account project revision msg      
 
     let sync account project =
-        sprintf "sync/%s/%s" account project
+        sprintf "data/sync/%s/%s" account project
         |> requestNoTimeOut HttpMethod.Get      
 
     let getRaw id =
-        sprintf "raw/%s" id
+        sprintf "admin/raw/%s" id
         |> get    
 
     type RawdataCache = JsonProvider<"""{
@@ -74,8 +74,11 @@ module AzureDevOps =
         |> List.ofArray     
 
     let readCached account project =
-        sprintf "readCached/%s/%s" account project
-        |> get
-        |> snd
-        |> formatRawdataCache              
+        let stuff = sprintf "data/readCached/%s/%s" account project
+                    |> get
+                    |> snd
+                    |> formatRawdataCache
+
+        Hobbes.Web.Log.debugf "%s" ((stuff.[0] |> snd).[0] |> fst)
+        stuff                           
         

@@ -10,7 +10,7 @@ spec:
   accessModes:
     - ReadWriteMany
   hostPath: 
-    path: "../hobbes.server/db/data"
+    path: "data"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

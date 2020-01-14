@@ -13,8 +13,14 @@ let private port = env "port" "8085"
 
 let adminRouter = 
    router {
-       withArgs <@ raw @>
-       withArgs <@ sync @>
+       fetch <@ listRawdata @>
+       withArg <@ deleteRaw @>
+       fetch <@ clearRawdata @>
+       withArg <@ getRaw @>
+       fetch <@ initDb @>
+        
+       withArgs3 <@ createSyncDoc @>
+       withArgs5 <@ setSync @>
     }
 
 let statusRouter = 
@@ -24,14 +30,8 @@ let statusRouter =
 
 let dataRouter = 
     router {
-        fetch <@ listRawdata @>
-        withArg <@ deleteRaw @>
-        fetch <@ clearRawdata @>
-        withArg <@ getRaw @>
-        fetch <@ initDb @>
-        
-        withArgs3 <@ createSyncDoc @>
-        withArgs5 <@ setSync @>
+       withArgs <@ sync @>
+       withArgs <@ readCached @>
     }
     
 let private appRouter = router {

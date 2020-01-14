@@ -144,7 +144,6 @@ module AzureDevOps =
     //we might want to store azureToken as an env variable
     let sync azureToken project = 
         let source = DataConfiguration.AzureDevOps project
-        Hobbes.Web.Log.logf "%s" azureToken
         let rec _read hashes url = 
             let resp = 
                 url

@@ -29,8 +29,9 @@ module Root =
     let deleteRaw id =
         Rawdata.delete id  
 
-    [<Delete "/clear/rawdata">]
+    [<Get "/clear/rawdata">]
     let clearRawdata() =
+        Log.logf "clear has been hit"
         Rawdata.clear()  
 
     [<Get "/raw/%s">]
@@ -77,14 +78,15 @@ module Root =
     [<Get ("/readCached/%s/%s")>]
     let raw (account, project) =
         let res = AzureDevOps.readCached account project 
-                  |> Seq.map (fun (_, v) -> v
-                                            |> List.map (fun (n, v) -> sprintf "(%s, %A)" n v))
+                  |> Seq.map (fun (_, v) -> let jsonfied = v
+                                                        |> List.map (fun (n, v) -> (sprintf """["%s", "%A"]""" n v).Replace("\"\"", "\"") )
+                                            System.String.Join(",", jsonfied)
+                                            |> sprintf """[%s]"""
+                             )
 
-        let actualRes = System.String.Join(",", res)                                    
-                        |> sprintf """{"stuff" : [%s]}"""                         
-                                
-        200, actualRes    
-
+        200, System.String.Join(",", res)  
+             |> sprintf """{"stuff" : [%s]}"""                                                                     
+             
     [<Get ("/sync/%s/%s")>]
     let sync ((account : string), (project : string)) =
         let dataSource = DataConfiguration.DataSource.AzureDevOps (account, project)

@@ -67,6 +67,9 @@ module Rawdata =
         Database.Database("rawdata", CacheRecord.Parse, Log.loggerInstance)
                 .AddView "WorkItemRevisions"
 
+    let delete (id : string) = 
+        200, (db.Delete id).ToString()                  
+
     let keys (source : DataConfiguration.DataSource) = 
         let startKey = 
             sprintf """["%s","%s"]""" source.SourceName source.ProjectName
@@ -113,9 +116,9 @@ module Rawdata =
                     async { 
                         let status,body = delete id
                         if status > 299 then
-                            Log.errorf "" "Couldn't delete cache %s. Messahe: %s" id body
+                            Log.errorf "" "Couldn't delete Rawdata %s. Message: %s" id body
                         else
-                            Log.debugf "Deleted cache %s" id
+                            Log.debugf "Deleted Rawdata %s" id
                     }
                 ) |> Async.Parallel
             return ()
@@ -166,6 +169,3 @@ module Rawdata =
 
     let get (id : string) = 
         200, (db.Get id).ToString()
-
-    let delete (id : string) = 
-        200, (db.Delete id).ToString()      

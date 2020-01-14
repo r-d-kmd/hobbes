@@ -5,11 +5,27 @@ open Hobbes.Server.Db
 open Hobbes.Server.Routing
 open Hobbes.FSharp.DataStructures
 open Hobbes.Helpers
+open FSharp.Data
 
 [<RouteArea "/data">]
 module Data = 
     let cacheRevision (source : DataConfiguration.DataSource) = 
         sprintf "%s:%s:%d" source.SourceName source.ProjectName (System.DateTime.Now.Ticks) |> hash
+
+    type RawdataCache = JsonProvider<"""{
+        "stuff" : [[["string1", "object1"]]]
+    }""">    
+
+    let readThatShit shit =
+        (shit
+        |> RawdataCache.Parse).Stuff
+        |> Array.mapi (fun i x -> i, x 
+                                     |> Array.map (fun y -> (y.[0], unbox y.[1]))
+                                     |> List.ofArray
+                      )
+        |> List.ofArray                
+
+                                                            
     
     let private data configurationName =
         let rec transformData (configuration : DataConfiguration.Configuration) (transformations : Transformations.TransformationRecord.Root list) calculatedData =
@@ -63,8 +79,10 @@ module Data =
                         DataConfiguration.AzureDevOps(account,projectName) ->
                             log "Reading from raw"
                             let rows  = 
-                                Hobbes.Server.Readers.AzureDevOps.readCached account projectName
-                                |> List.ofSeq
+                                sprintf "readCached/%s/%s" account projectName
+                                |> Hobbes.Server.Request.get
+                                |> snd
+                                |> readThatShit
                             log "Transforming data into matrix"
                             rows
                             |> DataMatrix.fromRows

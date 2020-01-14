@@ -1,14 +1,14 @@
-namespace Collector.AzureDevOps
+namespace Collector.AzureDevOps.Services
 
-open Hobbes.Web.Database
-open Hobbes.Server.Db
-open Hobbes.Web
 open Hobbes.Server.Routing
-open Hobbes.Server.Readers
+open Collector.AzureDevOps.Db
+open Hobbes.Server.Db
+open Hobbes.Web.Database
+open Hobbes.Web
 open Hobbes.Helpers
 
-[<RouteArea ("/", false)>]
-module Root =
+[<RouteArea ("/admin", false)>]
+module Admin =
 
     let formatDBList name list =
         let stringList = 
@@ -31,7 +31,6 @@ module Root =
 
     [<Get "/clear/rawdata">]
     let clearRawdata() =
-        Log.logf "clear has been hit"
         Rawdata.clear()  
 
     [<Get "/raw/%s">]
@@ -53,53 +52,7 @@ module Root =
                      200, "SyncDoc set to failed"
         | _       -> 404, """first argument has to be "true" or "false" """
 
-    let synchronize source token =
-        try
-            match source with
-            DataConfiguration.AzureDevOps(account,projectName) -> 
-                let statusCode,body = AzureDevOps.sync token (account,projectName)
-                Log.logf "Sync finised with statusCode %d and result %s" statusCode body
-                if statusCode < 200 || statusCode >= 300 then 
-                    let msg = sprintf "Syncronization failed. Message: %s" body
-                    eprintfn "%s" msg
-                statusCode, body                 
-            | source -> 
-                let msg = sprintf "Error: The source %s, wasn't AzureDevOps" source.SourceName
-                eprintfn "%s" msg
-                404, msg
-        with e ->
-            eprintfn "Sync failed due to exception: %s" e.Message
-            404, e.Message
-
-    [<Get "/ping">]
-    let ping () =
-        200, "ping"
-
-    [<Get ("/readCached/%s/%s")>]
-    let raw (account, project) =
-        let res = AzureDevOps.readCached account project 
-                  |> Seq.map (fun (_, v) -> let jsonfied = v
-                                                        |> List.map (fun (n, v) -> (sprintf """["%s", "%A"]""" n v).Replace("\"\"", "\"") )
-                                            System.String.Join(",", jsonfied)
-                                            |> sprintf """[%s]"""
-                             )
-
-        200, System.String.Join(",", res)  
-             |> sprintf """{"stuff" : [%s]}"""                                                                     
-             
-    [<Get ("/sync/%s/%s")>]
-    let sync ((account : string), (project : string)) =
-        let dataSource = DataConfiguration.DataSource.AzureDevOps (account, project)
-        Rawdata.clearProject dataSource
-        let token = (env (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_")) null)
-        synchronize dataSource token           
-
-    [<Get ("/status/sync/%s")>]
-    let getState id =
-        200, Rawdata.getState id
-
-    let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
-            
+    let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =  
         async {
             let! doc = System.IO.File.ReadAllTextAsync file |> Async.AwaitTask
             if System.String.IsNullOrWhiteSpace (CouchDoc.Parse doc).Rev |> not then failwithf "Initialization documents shouldn't have _revs %s" file
@@ -124,6 +77,7 @@ module Root =
             return res
         }
 
+    [<Get "/init">]
     let initDb () =
         let dbs = 
             [
@@ -172,4 +126,4 @@ module Root =
                 200,msg
             with e ->
                 Log.errorf e.StackTrace "Error in init: %s" e.Message
-                500,e.Message
+                500,e.Message    

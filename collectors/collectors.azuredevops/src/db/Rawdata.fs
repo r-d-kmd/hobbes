@@ -1,11 +1,10 @@
 #nowarn "3061"
-namespace Hobbes.Server.Db
+namespace Collector.AzureDevOps.Db
 
-open Cache
+open Hobbes.Server.Db.Cache
 open FSharp.Data
 open Hobbes.Web
 open Hobbes.Server.Db
-open Hobbes.Web.Log
 
 module Rawdata =
         

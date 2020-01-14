@@ -4,7 +4,8 @@ open Hobbes.Web.Database
 open Hobbes.Web.Log
 open Hobbes.Server.Db
 open Hobbes.Server.Routing
-open Hobbes.Helpers
+open Hobbes.Server.Collectors
+open Hobbes.Helpers.Environment
 
 [<RouteArea "/admin">]
 module Admin = 
@@ -92,7 +93,7 @@ module Admin =
         
     [<Get ("/list/rawdata")>]
     let listRawdata() = 
-        Hobbes.Server.Request.get "list/rawdata"           
+        AzureDevOps.listRawdata()               
 
     [<Get("/list/log")>]
     let listLog() = 
@@ -120,8 +121,7 @@ module Admin =
 
     [<Delete ("/raw/%s")>]
     let deleteRaw (id : string) = 
-        sprintf "raw/%s" id 
-        |> Hobbes.Server.Request.delete
+        AzureDevOps.deleteRaw id
 
     [<Delete ("/cache/%s")>]
     let deleteCache (id : string) = 
@@ -133,8 +133,7 @@ module Admin =
 
     [<Get ("/clear/rawdata")>]
     let clearRawdata () = 
-        logf "HERE IT IS???"
-        Hobbes.Server.Request.get "clear/rawdata"
+        AzureDevOps.clearRawdata()
     
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
         

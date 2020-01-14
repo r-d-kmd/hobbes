@@ -27,7 +27,10 @@
     <None Include="db/documents/*.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Compile Include="Root.fs" />
+    <Compile Include="Services/Root.fs" />
+    <Compile Include="Services/Admin.fs" />
+    <Compile Include="Services/Data.fs" />
+    <Compile Include="Services/Status.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
   <Import Project="..\..\..\.paket\Paket.Restore.targets" />

@@ -1,0 +1,81 @@
+namespace Hobbes.Server.Collectors
+
+open FSharp.Data
+
+module AzureDevOps =
+
+    let url = "http://azuredevopscollector-svc:8085/"
+
+    let readBody = function
+    | Binary b -> System.Text.Encoding.ASCII.GetString b
+    | Text t -> t
+
+    let request method path =
+        let response = Http.Request(url+path, httpMethod = method, silentHttpErrors = true)
+        response.StatusCode, (readBody response.Body)
+
+    let requestNoTimeOut method path =
+        let response = Http.Request(url+path, httpMethod = method, silentHttpErrors = true, customizeHttpRequest = (fun request -> request.Timeout <- System.Int32.MaxValue ; request))
+        response.StatusCode, (readBody response.Body)        
+
+    let get path =
+        request HttpMethod.Get path
+
+    let delete path =
+        request HttpMethod.Delete path   
+
+    let listRawdata() =
+        get "list/rawdata"     
+
+    let deleteRaw id =
+        sprintf "raw/%s" id 
+        |> delete    
+
+    let clearRawdata() =
+        get "clear/rawdata"  
+
+    let getSyncState syncId =
+        sprintf "status/sync/%s" syncId
+        |> get
+
+    let createSyncDoc account project revision =
+        sprintf "createSyncDoc/%s/%s/%s" account project revision
+        |> get     
+
+    let setSync completed account project revision msg =
+        sprintf "setSync/%s/%s/%s/%s/%s" (string completed) account project revision msg
+        |> get
+
+    let setSyncCompleted account project revision =
+        setSync "true" account project revision "-"    
+
+    let setSyncFailed account project revision msg =
+        setSync "true" account project revision msg      
+
+    let sync account project =
+        sprintf "sync/%s/%s" account project
+        |> requestNoTimeOut HttpMethod.Get      
+
+    let getRaw id =
+        sprintf "raw/%s" id
+        |> get    
+
+    type RawdataCache = JsonProvider<"""{
+        "data" : [[["string1", "object1"]]]
+    }""">    
+
+    let formatRawdataCache rawdataCache =
+        (rawdataCache
+        |> RawdataCache.Parse).Data
+        |> Array.mapi (fun i x -> i, x 
+                                     |> Array.map (fun y -> (y.[0], unbox y.[1]))
+                                     |> List.ofArray
+                      )
+        |> List.ofArray     
+
+    let readCached account project =
+        sprintf "readCached/%s/%s" account project
+        |> get
+        |> snd
+        |> formatRawdataCache              
+        

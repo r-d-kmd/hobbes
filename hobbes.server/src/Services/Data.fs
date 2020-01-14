@@ -5,28 +5,13 @@ open Hobbes.Server.Db
 open Hobbes.Server.Routing
 open Hobbes.FSharp.DataStructures
 open Hobbes.Helpers
-open FSharp.Data
+open Hobbes.Server.Collectors
 
 [<RouteArea "/data">]
 module Data = 
     let cacheRevision (source : DataConfiguration.DataSource) = 
         sprintf "%s:%s:%d" source.SourceName source.ProjectName (System.DateTime.Now.Ticks) |> hash
-
-    type RawdataCache = JsonProvider<"""{
-        "stuff" : [[["string1", "object1"]]]
-    }""">    
-
-    let readThatShit shit =
-        (shit
-        |> RawdataCache.Parse).Stuff
-        |> Array.mapi (fun i x -> i, x 
-                                     |> Array.map (fun y -> (y.[0], unbox y.[1]))
-                                     |> List.ofArray
-                      )
-        |> List.ofArray                
-
                                                             
-    
     let private data configurationName =
         let rec transformData (configuration : DataConfiguration.Configuration) (transformations : Transformations.TransformationRecord.Root list) calculatedData =
             match transformations with
@@ -79,10 +64,7 @@ module Data =
                         DataConfiguration.AzureDevOps(account,projectName) ->
                             log "Reading from raw"
                             let rows  = 
-                                sprintf "readCached/%s/%s" account projectName
-                                |> Hobbes.Server.Request.get
-                                |> snd
-                                |> readThatShit
+                                AzureDevOps.readCached account projectName
                             log "Transforming data into matrix"
                             rows
                             |> DataMatrix.fromRows
@@ -123,8 +105,7 @@ module Data =
 
     [<Get ("/raw/%s") >]
     let getRaw id =
-        sprintf "raw/%s" id
-        |> Hobbes.Server.Request.get
+        AzureDevOps.getRaw id
 
     let invalidateCache statusCode body (configuration : DataConfiguration.Configuration) =
         try
@@ -164,8 +145,7 @@ module Data =
         let statusCode, syncId =
             match configuration.Source with
             DataConfiguration.AzureDevOps(account, project)   ->
-                sprintf "createSyncDoc/%s/%s/%s" account project revision
-                |> Hobbes.Server.Request.get 
+                AzureDevOps.createSyncDoc account project revision
             | _                                               ->
                 let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
                 eprintfn "%s" msg
@@ -173,11 +153,11 @@ module Data =
         async {
             match configuration.Source with
             DataConfiguration.AzureDevOps(account,project) ->
-                let statusCode, body = sprintf "sync/%s/%s" account project
-                                       |> Hobbes.Server.Request.get  
-                let completed, _ = invalidateCache statusCode body configuration
-                sprintf "setSync/%s/%s/%s/%s/%s" (string completed) account project revision "-"
-                |> Hobbes.Server.Request.get
+                let statusCode, body = AzureDevOps.sync account project  
+                let completed, msg = invalidateCache statusCode body configuration
+                if completed 
+                then AzureDevOps.setSyncCompleted account project revision
+                else AzureDevOps.setSyncFailed account project revision msg
                 |> ignore                 
             | _ -> 
                 let msg = sprintf "No collector found for: %s" configuration.Source.SourceName

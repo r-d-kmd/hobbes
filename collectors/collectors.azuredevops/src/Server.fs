@@ -2,30 +2,45 @@ open Saturn
 open Giraffe
 open Microsoft.AspNetCore.Http
 open Hobbes.Server.Routing
-open Collector.AzureDevOps.Root
+open Collector.AzureDevOps.Services.Root
+open Collector.AzureDevOps.Services.Data
+open Collector.AzureDevOps.Services.Status
+open Collector.AzureDevOps.Services.Admin
+open Hobbes.Helpers.Environment
 
-let env name = 
-    System.Environment.GetEnvironmentVariable name
+let private port = env "port" "8085"
+                   |> int
 
-let private port = 
-    match env "port" with
-    null -> 8085
-    | p -> int p
+let adminRouter = 
+   router {
+       withArgs <@ raw @>
+       withArgs <@ sync @>
+    }
+
+let statusRouter = 
+    router {
+        withArg <@ getState @>
+    }
+
+let dataRouter = 
+    router {
+        fetch <@ listRawdata @>
+        withArg <@ deleteRaw @>
+        fetch <@ clearRawdata @>
+        withArg <@ getRaw @>
+        fetch <@ initDb @>
+        
+        withArgs3 <@ createSyncDoc @>
+        withArgs5 <@ setSync @>
+    }
     
 let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
     fetch <@ ping @>
-    fetch <@ listRawdata @>
-    withArg <@ deleteRaw @>
-    fetch <@ clearRawdata @>
-    withArg <@ getRaw @>
-
-    withArgs <@ raw @>
-    withArgs <@ sync @>
-    withArg <@ getState @>
-    withArgs3 <@ createSyncDoc @>
-    withArgs5 <@ setSync @>
+    forward "/admin" adminRouter
+    forward "/status" statusRouter
+    forward "/data" dataRouter
 } 
 
 let private app = application {

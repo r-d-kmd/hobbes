@@ -1,7 +1,8 @@
-namespace Hobbes.Server.Readers
+namespace Collector.AzureDevOps.Reader
 module AzureDevOps =
 
     open FSharp.Data
+    open Collector.AzureDevOps.Db
     open Hobbes.Server.Db
 
     //Helper method for optional properties of the data record
@@ -80,8 +81,7 @@ module AzureDevOps =
             [
                 HttpRequestHeaders.BasicAuth user pwd
                 HttpRequestHeaders.ContentType HttpContentTypes.Json
-            ]
-        eprintf "\nURL ?!?!?!?!?!?\n: %s" url        
+            ]       
         match body with
         None ->    
             Http.AsyncRequest(url,

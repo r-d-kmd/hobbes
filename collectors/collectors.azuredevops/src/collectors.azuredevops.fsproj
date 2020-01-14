@@ -19,12 +19,12 @@
     <Compile Include="../../../hobbes.server/src/Reflection.fs" />
     <Compile Include="../../../hobbes.server/src/db/DataConfiguration.fs" />
     <Compile Include="../../../hobbes.server/src/db/Cache.fs" />
-    <Compile Include="../../../hobbes.server/src/db/Rawdata.fs" />
+    <Compile Include="db/Rawdata.fs" />
     <Compile Include="db/Uniform.fs" />
-    <Compile Include="../../../hobbes.server/src/Readers/AzureDevOps.fs" />
+    <Compile Include="Reader/AzureDevOps.fs" />
     <Compile Include="../../../hobbes.server/src/Security.fs" />
     <Compile Include="../../../hobbes.server/src/Routing.fs" />
-    <None Include="../../../hobbes.server/src/db/**/**/*.json">
+    <None Include="db/documents/*.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <Compile Include="Root.fs" />

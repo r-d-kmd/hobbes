@@ -20,11 +20,9 @@
     <Compile Include="db/Transformations.fs" />
     <Compile Include="db/DataConfiguration.fs" />
     <Compile Include="db/Cache.fs" />
-    <Compile Include="db/Rawdata.fs" />
     <None Include="db/documents/**/*.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Compile Include="Readers/*.fs" />
     <Compile Include="Request.fs"/>
     <Compile Include="Security.fs" />
     <Compile Include="Routing.fs" />

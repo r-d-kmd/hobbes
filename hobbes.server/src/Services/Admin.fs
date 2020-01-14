@@ -135,8 +135,6 @@ module Admin =
     let clearRawdata () = 
         logf "HERE IT IS???"
         Hobbes.Server.Request.get "clear/rawdata"
-
-    let clearProject = Rawdata.clearProject
     
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
         
@@ -171,7 +169,6 @@ module Admin =
         let dbs = 
             [
                 "transformations"
-                "rawdata"
                 "configurations"
                 "cache"
                 "log"

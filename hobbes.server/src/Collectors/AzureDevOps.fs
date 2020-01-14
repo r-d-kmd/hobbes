@@ -74,11 +74,8 @@ module AzureDevOps =
         |> List.ofArray     
 
     let readCached account project =
-        let stuff = sprintf "data/readCached/%s/%s" account project
-                    |> get
-                    |> snd
-                    |> formatRawdataCache
+        sprintf "data/readCached/%s/%s" account project
+        |> get
+        |> snd
+        |> formatRawdataCache                      
 
-        Hobbes.Web.Log.debugf "%s" ((stuff.[0] |> snd).[0] |> fst)
-        stuff                           
-        

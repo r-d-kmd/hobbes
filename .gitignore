@@ -20,4 +20,4 @@ workbench.json
 hobbes.server/db/data1/
 .lib/
 .env
-./kubernetes/env.yaml
+kubernetes/env.yaml

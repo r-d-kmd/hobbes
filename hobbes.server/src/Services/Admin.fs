@@ -120,7 +120,7 @@ module Admin =
 
     [<Delete ("/raw/%s")>]
     let deleteRaw (id : string) = 
-        sprintf "/raw/%s" id 
+        sprintf "raw/%s" id 
         |> Hobbes.Server.Request.delete
 
     [<Delete ("/cache/%s")>]
@@ -131,9 +131,10 @@ module Admin =
     let clearCache () = 
         Cache.clear()
 
-    [<Delete ("/clear/rawdata")>]
+    [<Get ("/clear/rawdata")>]
     let clearRawdata () = 
-        Hobbes.Server.Request.delete "clear/rawdata"
+        logf "HERE IT IS???"
+        Hobbes.Server.Request.get "clear/rawdata"
 
     let clearProject = Rawdata.clearProject
     

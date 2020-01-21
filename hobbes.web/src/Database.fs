@@ -218,10 +218,7 @@ namespace Hobbes.Web
                       Get -> "GET", "from"
                       | Post -> "POST", "to"
                       | Put -> "PUT", "to"
-                      | Delete -> "DELETE", "from"
-
-                log.Debugf "database password (%s)" pwd  
-                log.Debugf "database user (%s)" user                  
+                      | Delete -> "DELETE", "from"          
                     
                 log.Debugf "%sting %A %s %s" m url direction databaseName
                 

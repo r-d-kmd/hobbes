@@ -103,7 +103,7 @@ module Admin =
             errorCode, msg
          | None ->
             try
-                let documentDir = "./documents"
+                let documentDir = "db/documents"
                 if System.IO.Directory.Exists documentDir |> not then failwith "Document folder not found"
                 (System.IO.Directory.EnumerateDirectories(documentDir)
                 |> Seq.collect(fun dir -> 

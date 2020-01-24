@@ -225,6 +225,7 @@ namespace Hobbes.Web
                 let headers =
                     [
                         yield HttpRequestHeaders.BasicAuth user pwd
+                        HttpRequestHeaders.KeepAlive "true"
                         yield HttpRequestHeaders.ContentType HttpContentTypes.Json
                         if rev |> Option.isSome then yield HttpRequestHeaders.IfMatch rev.Value
                     ]

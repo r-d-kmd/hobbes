@@ -18,6 +18,9 @@ module AzureDevOps =
         let response = Http.Request(url+path, httpMethod = method, silentHttpErrors = true, customizeHttpRequest = (fun request -> request.Timeout <- System.Int32.MaxValue ; request))
         response.StatusCode, (readBody response.Body)        
 
+    let getNoTimeOut path =
+        requestNoTimeOut HttpMethod.Get path
+
     let get path =
         request HttpMethod.Get path
 
@@ -75,7 +78,7 @@ module AzureDevOps =
 
     let readCached account project =
         sprintf "data/readCached/%s/%s" account project
-        |> get
+        |> getNoTimeOut
         |> snd
         |> formatRawdataCache                      
 

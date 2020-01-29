@@ -24,6 +24,7 @@ module Rawdata =
         "State":"User stories created",
         "Priority":2,
         "StateCategory":"Resolved",
+        "StoryPoints": 2.0,
         "LeadTimeDays" : 200.1,
         "CycleTimeDays" : 9080.122,
         "Iteration":{

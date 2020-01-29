@@ -30,7 +30,6 @@ module AzureDevOps =
              "CycleTimeDays", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.CycleTimeDays          
              //"WorkItemRevisionSK", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemRevisionSk
         ]
-
     //looks whether it's the last record or there's a odatanextlink porperty 
     //which signals that the data has been paged and that we're not at the last page yet
     let private tryNextLink (data : string) = 
@@ -84,6 +83,7 @@ module AzureDevOps =
             ]       
         match body with
         None ->
+            Hobbes.Web.Log.logf "%s" url
             Http.AsyncRequest(url,
                 httpMethod = httpMethod, 
                 silentHttpErrors = true,
@@ -160,16 +160,10 @@ module AzureDevOps =
                 let hashes = rawId::hashes
                 match body with
                 Some body when body |> isEmpty |> not ->
-                    body
-                    |> tryNextLink
-                    |> Option.iter(fun nextlink ->   
-                           Hobbes.Web.Log.logf "Continuing with %s" nextlink
-                           _read hashes nextlink |> ignore
-                    )
-                    
-                    let body = 
+
+                    let body' = 
                         body.Replace("\\\"","'")
-                    let rawdataRecord = Cache.createDataRecord rawId source body [
+                    let rawdataRecord = Cache.createDataRecord rawId source body' [
                                                                                     "url", url
                                                                                     "recordCount", hashes 
                                                                                                    |> List.length 
@@ -178,6 +172,14 @@ module AzureDevOps =
                                                                                               |> sprintf "[%s]"
                                                                                  ] 
                     Rawdata.InsertOrUpdate rawdataRecord |> Async.Start
+
+                    body
+                    |> tryNextLink
+                    |> Option.iter(fun nextlink ->   
+                           Hobbes.Web.Log.logf "Continuing with %s" nextlink
+                           _read hashes nextlink
+                    )
+                    
                 | _ -> 
                     ()
             else 

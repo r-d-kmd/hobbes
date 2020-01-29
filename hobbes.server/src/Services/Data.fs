@@ -35,7 +35,7 @@ module Data =
                         errorf e.StackTrace "Failed to cache transformation result. Message: %s" e.Message
                 } |> Async.Start
                 transformData nextConfiguration tail transformedData
-
+f
         let readRawdata configuration =
             async {
                 let! uncachedTransformations, data =

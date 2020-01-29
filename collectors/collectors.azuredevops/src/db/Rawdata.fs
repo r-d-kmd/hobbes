@@ -164,7 +164,7 @@ module Rawdata =
                     }
                 ) |> Async.Parallel
             return ()
-        } |> Async.Start
+        } |> Async.RunSynchronously
 
     let get (id : string) = 
         200, (db.Get id).ToString()

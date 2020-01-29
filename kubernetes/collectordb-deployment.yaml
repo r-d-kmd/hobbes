@@ -28,11 +28,6 @@ spec:
         volumeMounts:
         - name: collectordb-storage
           mountPath: /opt/couchdb/data
-        resources: 
-          limits:
-            memory: "2000Mi"
-          requests:
-            memory: "1000Mi"
       restartPolicy: Always
 status: {}
 ---

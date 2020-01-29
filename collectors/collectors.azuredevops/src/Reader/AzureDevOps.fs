@@ -29,6 +29,8 @@ module AzureDevOps =
              "LeadTimeDays", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.LeadTimeDays 
              "CycleTimeDays", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.CycleTimeDays          
              //"WorkItemRevisionSK", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemRevisionSk
+
+             "StoryPoints", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.StoryPoints
         ]
     //looks whether it's the last record or there's a odatanextlink porperty 
     //which signals that the data has been paged and that we're not at the last page yet
@@ -122,6 +124,7 @@ module AzureDevOps =
                     match row.Iteration with
                     Some iteration ->
                         [
+                           "Iteration.IterationPath", box iteration.IterationPath
                            "Iteration.IterationLevel1", asObj iteration.IterationLevel1 
                            "Iteration.IterationLevel2", asObj iteration.IterationLevel2 
                            "Iteration.IterationLevel3", asObj iteration.IterationLevel3 

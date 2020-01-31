@@ -28,7 +28,7 @@ module Metrics =
             //moving mean and expanding sum only make sense if we are sure we know the order
             sort by SprintNumber.Name
             //Create a column called Burn up thats the expanding sum ie running total of the done column
-            create (column "Burn up") (expanding Sum (!> "Done")) 
+            //create (column "Burn up") (expanding Sum (!> "Done")) 
             //Create a column named Velocity that's the moving mean of 'Done' of the last three rows
             create (column "Velocity") ((moving Mean 3 (!> "Done")))
         ]
@@ -51,4 +51,15 @@ module Metrics =
             //required to populate the Sprint number column with the predicted values
             create SprintNumber.Name Keys
         ]
+
+    [<Workbench.Transformation 1>]
+    let simpleVelocity =
+        [
+            //remove all other columns than those metioned
+            slice columns [SprintNumber.Name; "Done"]
+            //moving mean and expanding sum only make sense if we are sure we know the order
+            sort by SprintNumber.Name
+            //Create a column named Velocity that's the moving mean of 'Done' of the last three rows
+            create (column "Velocity") ((moving Mean 3 (!> "Done")))
+        ]  
         

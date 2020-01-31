@@ -57,6 +57,8 @@ module State =
   let velocityMovingMean = 
       <@
           [
-              Transformations.Momentum.velocityMean
+            Transformations.General.foldBySprint
+            Transformations.Metrics.stateCountBySprint
+            Transformations.Metrics.simpleBurnUp
           ]
       @>

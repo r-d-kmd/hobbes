@@ -187,7 +187,7 @@ module Cache =
         let record = createCacheRecord configuration data Synced None (Some cacheRevision)
 
         try
-            db.InsertOrUpdate record |> ignore
+            db.InsertOrUpdate (record.Replace("\\","\\\\")) |> ignore
         with e ->
             Log.errorf e.StackTrace "Failed to cache data. Reason: %s" e.Message
             Log.debug data

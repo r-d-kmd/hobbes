@@ -48,7 +48,7 @@ Target.create "Run" (fun p ->
         [] -> ""
         | args ->
             System.String.Join(" ", args)
-    run "dotnet" "." (sprintf "run -- %s" args)
+    run "dotnet" "." (sprintf "run --%s" args)
 )
 
 

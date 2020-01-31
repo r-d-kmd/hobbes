@@ -5,11 +5,15 @@ VisualStudioVersion = 15.0.28307.779
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Collectors.AzureDevOps", "collectors\collectors.AzureDevOps\src\Collectors.AzureDevOps.fsproj", "{E5BD7848-C166-47B5-A48F-6268518A9F37}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes", "hobbes.core\src\hobbes.fsproj", "{0962680D-200D-459D-BFEF-D4C0D1AFB23E}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes", "hobbes.core\src\hobbes.core.fsproj", "{0962680D-200D-459D-BFEF-D4C0D1AFB23E}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.helpers", "hobbes.helpers\src\hobbes.helpers.fsproj", "{EB676B32-B4A9-4E60-BB45-2BCAF8F42F87}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.server", "hobbes.server\src\hobbes.server.fsproj", "{74E62B25-8EF9-4427-B14D-40709AF1BF04}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workbench", "workbench", "{41E0836E-070A-4D93-A44B-3B83B481897B}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "hobbes.workbench", "workbench\src\hobbes.workbench.fsproj", "{96DA42A9-E6A6-4558-B026-3CD156A720BA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,11 +37,18 @@ Global
 		{74E62B25-8EF9-4427-B14D-40709AF1BF04}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{74E62B25-8EF9-4427-B14D-40709AF1BF04}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{74E62B25-8EF9-4427-B14D-40709AF1BF04}.Release|Any CPU.Build.0 = Release|Any CPU
+		{96DA42A9-E6A6-4558-B026-3CD156A720BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{96DA42A9-E6A6-4558-B026-3CD156A720BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{96DA42A9-E6A6-4558-B026-3CD156A720BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{96DA42A9-E6A6-4558-B026-3CD156A720BA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CE1A5CA1-3698-4267-BD8D-F5D07FAC19A1}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{96DA42A9-E6A6-4558-B026-3CD156A720BA} = {41E0836E-070A-4D93-A44B-3B83B481897B}
 	EndGlobalSection
 EndGlobal

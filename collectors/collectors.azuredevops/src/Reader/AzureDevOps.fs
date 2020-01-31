@@ -19,7 +19,7 @@ module AzureDevOps =
              //"RevisedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.RevisedDate
              "WorkItemId",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemId 
              //"IsLastRevisionOfDay" , fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.IsLastRevisionOfDay
-             //"Title",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.Title 
+             "Title",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.Title 
              "ChangedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
              "WorkItemType",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemType 
              //"CreatedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
@@ -31,6 +31,7 @@ module AzureDevOps =
              //"WorkItemRevisionSK", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemRevisionSk
 
              "StoryPoints", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.StoryPoints
+
         ]
     //looks whether it's the last record or there's a odatanextlink porperty 
     //which signals that the data has been paged and that we're not at the last page yet
@@ -62,7 +63,7 @@ module AzureDevOps =
             let selectedFields = 
                (",", azureFields |> List.map fst) |> System.String.Join
             let path = 
-                (sprintf "/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=%s,Iteration&$filter=%s and WorkItemRevisionSK gt " selectedFields filters).Replace(" ", "%20")
+                (sprintf "/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&$select=%s,Iteration&$filter=%s and WorkItemRevisionSK gt " selectedFields filters).Replace(" ", "%20")
 
             sprintf "https://analytics.dev.azure.com/%s/%s%s%d" account projectName path
         try
@@ -128,16 +129,24 @@ module AzureDevOps =
                            "Iteration.IterationLevel2", asObj iteration.IterationLevel2 
                            "Iteration.IterationLevel3", asObj iteration.IterationLevel3 
                            "Iteration.IterationLevel4", asObj iteration.IterationLevel4
+                           "Iteration.StartDate", box iteration.StartDate
+                           "Iteration.EndDate", box iteration.EndDate
                            "Iteration.Number", iteration.Number |> box
                         ]
-                    | None -> 
-                        []
+                    | None -> []
+                let areaProperty =
+                    match row.Area with
+                    Some area ->
+                        [
+                            "Area.AreaPath", box area.AreaPath
+                        ]
+                    | None -> []
                 let properties = 
                     azureFields
                     |> List.map(fun (name, getter) ->
                         name, getter row
                     )
-                index,(iterationProperties@properties)
+                index,(iterationProperties@areaProperty@properties)
             )
         rows
 

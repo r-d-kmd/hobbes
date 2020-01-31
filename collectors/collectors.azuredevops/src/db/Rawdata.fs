@@ -27,9 +27,14 @@ module Rawdata =
         "StoryPoints": 2.0,
         "LeadTimeDays" : 200.1,
         "CycleTimeDays" : 9080.122,
+        "Area": {
+                "AreaPath": "Momentum"
+            },
         "Iteration":{
             "IterationName":"Gandalf",
             "Number":159,
+            "StartDate": "2017-05-15T00:00:00+02:00",
+            "EndDate": "2017-05-28T23:59:59.999+02:00",
             "IterationPath":"Gandalf",
             "IterationLevel1":"Gandalf",
             "IterationLevel2":"Gandalf",

@@ -139,7 +139,7 @@ module Cache =
 
     let createDataRecord (key : string) (source : DataSource) (data : string) keyValue =
         let key = key.ToLower()
-        let data = data.Replace("\\","\\\\")
+        let data = if isNull data then data else data.Replace("\\", "\\\\")
         let record = 
             (sprintf """{
                         "_id" : "%s",

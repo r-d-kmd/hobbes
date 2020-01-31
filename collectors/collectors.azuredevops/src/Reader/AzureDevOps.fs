@@ -85,7 +85,6 @@ module AzureDevOps =
             ]       
         match body with
         None ->
-            Hobbes.Web.Log.logf "%s" url
             Http.AsyncRequest(url,
                 httpMethod = httpMethod, 
                 silentHttpErrors = true,

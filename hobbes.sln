@@ -11,15 +11,9 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.helpers", "hobbes.he
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.server", "hobbes.server\src\hobbes.server.fsproj", "{74E62B25-8EF9-4427-B14D-40709AF1BF04}"
 EndProject
-<<<<<<< HEAD
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workbench", "workbench", "{41E0836E-070A-4D93-A44B-3B83B481897B}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "hobbes.workbench", "workbench\src\hobbes.workbench.fsproj", "{96DA42A9-E6A6-4558-B026-3CD156A720BA}"
-=======
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workbench", "workbench", "{9DB6C33A-ECFB-4BD2-9169-0BF8C13289B8}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "hobbes.workbench", "workbench\src\hobbes.workbench.fsproj", "{D3CEB2F1-0D7D-4373-85D2-032835243B1E}"
->>>>>>> 404a33dd4f387aa293222e83df2e3d134bf90d0f
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,17 +37,10 @@ Global
 		{74E62B25-8EF9-4427-B14D-40709AF1BF04}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{74E62B25-8EF9-4427-B14D-40709AF1BF04}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{74E62B25-8EF9-4427-B14D-40709AF1BF04}.Release|Any CPU.Build.0 = Release|Any CPU
-<<<<<<< HEAD
 		{96DA42A9-E6A6-4558-B026-3CD156A720BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{96DA42A9-E6A6-4558-B026-3CD156A720BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{96DA42A9-E6A6-4558-B026-3CD156A720BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{96DA42A9-E6A6-4558-B026-3CD156A720BA}.Release|Any CPU.Build.0 = Release|Any CPU
-=======
-		{D3CEB2F1-0D7D-4373-85D2-032835243B1E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D3CEB2F1-0D7D-4373-85D2-032835243B1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D3CEB2F1-0D7D-4373-85D2-032835243B1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D3CEB2F1-0D7D-4373-85D2-032835243B1E}.Release|Any CPU.Build.0 = Release|Any CPU
->>>>>>> 404a33dd4f387aa293222e83df2e3d134bf90d0f
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -62,10 +49,6 @@ Global
 		SolutionGuid = {CE1A5CA1-3698-4267-BD8D-F5D07FAC19A1}
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-<<<<<<< HEAD
 		{96DA42A9-E6A6-4558-B026-3CD156A720BA} = {41E0836E-070A-4D93-A44B-3B83B481897B}
-=======
-		{D3CEB2F1-0D7D-4373-85D2-032835243B1E} = {9DB6C33A-ECFB-4BD2-9169-0BF8C13289B8}
->>>>>>> 404a33dd4f387aa293222e83df2e3d134bf90d0f
 	EndGlobalSection
 EndGlobal

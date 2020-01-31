@@ -52,3 +52,11 @@ module State =
             Transformations.Metrics.burnUpWithForecast
           ]
       @>
+
+  [<Configuration(Projects)>]
+  let velocityMovingMean = 
+      <@
+          [
+              Transformations.Momentum.velocityMean
+          ]
+      @>

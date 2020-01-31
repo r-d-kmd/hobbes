@@ -192,7 +192,6 @@ module Cache =
         with e ->
             Log.errorf e.StackTrace "Failed to cache data. Reason: %s" e.Message
             Log.debug data
-        Log.debug "\nI got to this spot\n"
         (CacheRecord.Parse record).Data.ToString()
 
     let private tryRetrieve cacheKey =

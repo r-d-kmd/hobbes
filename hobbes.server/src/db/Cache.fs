@@ -139,6 +139,7 @@ module Cache =
 
     let createDataRecord (key : string) (source : DataSource) (data : string) keyValue =
         let key = key.ToLower()
+        let data = data.Replace("\\","\\\\")
         let record = 
             (sprintf """{
                         "_id" : "%s",
@@ -150,7 +151,7 @@ module Cache =
                          source.SourceName
                          source.ProjectName
                          (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
-
+                          
                          (if data |> isNull then 
                               "" 
                           else 
@@ -184,7 +185,7 @@ module Cache =
 
     let store configuration cacheRevision (data : string) =
 
-        let record = (createCacheRecord configuration data Synced None (Some cacheRevision)).Replace("\\","\\\\")
+        let record = createCacheRecord configuration data Synced None (Some cacheRevision)
 
         try
             db.InsertOrUpdate record |> ignore

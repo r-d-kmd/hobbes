@@ -184,13 +184,14 @@ module Cache =
 
     let store configuration cacheRevision (data : string) =
 
-        let record = createCacheRecord configuration data Synced None (Some cacheRevision)
+        let record = (createCacheRecord configuration data Synced None (Some cacheRevision)).Replace("\\","\\\\")
 
         try
-            db.InsertOrUpdate (record.Replace("\\","\\\\")) |> ignore
+            db.InsertOrUpdate record |> ignore
         with e ->
             Log.errorf e.StackTrace "Failed to cache data. Reason: %s" e.Message
             Log.debug data
+        Log.debug "\nI got to this spot\n"
         (CacheRecord.Parse record).Data.ToString()
 
     let private tryRetrieve cacheKey =

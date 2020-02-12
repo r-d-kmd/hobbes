@@ -25,14 +25,14 @@ module Metrics =
     let bugCountBySprint =
         [
             only (SprintNumber.Expression |> isntMissing)
-            only ((contains State.Expression [
+            only ((contains WorkItemType.Expression [
                                       !!> "Bug"
                                       ] ))
             pivot 
                   //Use the sprint number as the row key
                   SprintNumber.Expression
                   //Use the state column as column key
-                  State.Expression 
+                  (!> "SimpleState")
                   //count the number of workitemids
                   Count WorkItemId.Expression
         ]    

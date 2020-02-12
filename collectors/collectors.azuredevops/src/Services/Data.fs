@@ -40,7 +40,10 @@ module Data =
     let readCached (account, project) =
         let res = AzureDevOps.readCached account project 
                   |> Seq.map (fun (_, nv) -> let jsonfied = nv
-                                                            |> List.map (fun (n, v) -> (sprintf """["%s", "%A"]""" n v).Replace("\"\"", "\"").Replace("\\", "\\\\") )
+                                                            |> List.map (fun (n, v) -> let v = if isNull v || (v :? option<obj> && (unbox<option<obj>> v).IsNone)
+                                                                                               then "null"
+                                                                                               else sprintf "\"%A\"" v
+                                                                                       (sprintf """["%s", %s]""" n v).Replace("\"\"", "\"").Replace("\\", "\\\\"))
                                              System.String.Join(",", jsonfied)
                                              |> sprintf """[%s]"""
                              )

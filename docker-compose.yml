@@ -29,9 +29,9 @@ services:
       - 5984:5984
     volumes:
       - ./hobbes.server/db/data:/opt/couchdb/data
-  azuredevopscollector:
+  azuredevopscollector-svc:
     image: collectors.azuredevops
-    container_name: azuredevopscollector
+    container_name: azuredevopscollector-svc
     expose:
       - 8085
     environment:
@@ -39,6 +39,8 @@ services:
       - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
       - SERVER_PORT=${SERVER_PORT}
       - DB_SERVER_URL=http://collectordb-svc:5984/
+      - AZURE_TOKEN_KMDDK=${AZURE_TOKEN_KMDDK}
+      - AZURE_TOKEN_TIME_PAYROLL_KMDDK=${AZURE_TOKEN_TIME_PAYROLL_KMDDK}
   collectordb-svc:
     image: apache/couchdb
     container_name: collectordb-svc
@@ -47,5 +49,7 @@ services:
       - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
     expose: 
       - 5984
+    ports:
+      - 5994:5984
     volumes:
       - ./collectors/db/data:/opt/couchdb/data

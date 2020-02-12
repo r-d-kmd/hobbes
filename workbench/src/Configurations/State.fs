@@ -54,11 +54,31 @@ module State =
       @>
 
   [<Configuration(Projects)>]
-  let velocityMovingMean = 
+  let workItemMovingMean = 
       <@
           [
             Transformations.General.foldBySprint
             Transformations.Metrics.stateCountBySprint
-            Transformations.Metrics.simpleBurnUp
+            Transformations.Metrics.workItemDoneMovingMean
+          ]
+      @>
+
+  [<Configuration(Projects)>]
+  let storyPointsMovingMean = 
+      <@
+          [
+            Transformations.General.foldBySprint
+            Transformations.Metrics.storyPointSumBySprint
+            Transformations.Metrics.storyPointMovingMean
+          ]
+      @>
+
+  [<Configuration(Projects)>]
+  let bugsPerSprint = 
+      <@
+          [
+            Transformations.General.foldBySprint
+            Transformations.Metrics.bugCountBySprint
+            Transformations.Metrics.bugsPerSprint
           ]
       @>

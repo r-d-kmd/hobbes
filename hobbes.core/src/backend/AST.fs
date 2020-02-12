@@ -155,8 +155,7 @@ module AST =
                 match i with
                 null -> Missing
                 | :? KeyType as k -> k
-                | :? string as s -> 
-                    Text(s) 
+                | :? string as s -> Text(s)                
                 | :? System.DateTime as d ->
                     DateTime(d)                
                 | :? System.UInt16 as a -> 

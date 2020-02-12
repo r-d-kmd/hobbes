@@ -949,7 +949,7 @@ module DataStructures =
                                 row
                                 |> Series.observations
                                 |> Seq.map(fun (columnName, value) ->
-                                   sprintf """ "%s":%A""" columnName value 
+                                   sprintf """ "%s":%A""" columnName value
                                 )
                             ) |> sprintf "{%s}"
                         )

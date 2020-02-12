@@ -13,14 +13,46 @@ module Metrics =
             only (SprintNumber.Expression |> isntMissing)
             pivot 
                   //Use the sprint number as the row key
-                  SprintNumber.Expression 
+                  SprintNumber.Expression
+                  //Use the state column as column key
+                  //State.Expression 
+                  (!> "SimpleState")
+                  //count the number of workitemids
+                  Count WorkItemId.Expression
+        ]
+
+    [<Workbench.Transformation 1>]
+    let bugCountBySprint =
+        [
+            only (SprintNumber.Expression |> isntMissing)
+            only ((contains State.Expression [
+                                      !!> "Bug"
+                                      ] ))
+            pivot 
+                  //Use the sprint number as the row key
+                  SprintNumber.Expression
                   //Use the state column as column key
                   State.Expression 
                   //count the number of workitemids
                   Count WorkItemId.Expression
-        ]
+        ]    
+
+    [<Workbench.Transformation 2>]
+    let storyPointSumBySprint = 
+        [
+            only (SprintNumber.Expression |> isntMissing)
+            only ((!> "StoryPoints") |> isntMissing)
+            pivot 
+                  //Use the sprint number as the row key
+                  SprintNumber.Expression
+                  //Use the state column as column key
+                  //State.Expression 
+                  (!> "SimpleState")
+                  //count the number of workitemids
+                  Sum (!> "StoryPoints")
+        ]    
     
-    [<Workbench.Transformation 1>]
+    [<Workbench.Transformation 3>]
     let simpleBurnUp =
         [
             //remove all other columns than those metioned
@@ -28,12 +60,12 @@ module Metrics =
             //moving mean and expanding sum only make sense if we are sure we know the order
             sort by SprintNumber.Name
             //Create a column called Burn up thats the expanding sum ie running total of the done column
-            //create (column "Burn up") (expanding Sum (!> "Done")) 
+            create (column "Burn up") (expanding Sum (!> "Done")) 
             //Create a column named Velocity that's the moving mean of 'Done' of the last three rows
             create (column "Velocity") ((moving Mean 3 (!> "Done")))
         ]
 
-    [<Workbench.Transformation 2>]
+    [<Workbench.Transformation 4>]
     let burnUpWithForecast =
         [
             //index the rows by sprint number
@@ -52,14 +84,38 @@ module Metrics =
             create SprintNumber.Name Keys
         ]
 
-    [<Workbench.Transformation 1>]
-    let simpleVelocity =
+    [<Workbench.Transformation 5>]
+    let workItemDoneMovingMean =
         [
             //remove all other columns than those metioned
             slice columns [SprintNumber.Name; "Done"]
             //moving mean and expanding sum only make sense if we are sure we know the order
             sort by SprintNumber.Name
             //Create a column named Velocity that's the moving mean of 'Done' of the last three rows
-            create (column "Velocity") ((moving Mean 3 (!> "Done")))
+            create (column "Moving Mean") ((moving Mean 3 (!> "Done")))
+        ]
+
+    [<Workbench.Transformation 6>]
+    let storyPointMovingMean =
+        [
+            //remove all other columns than those metioned
+            slice columns [SprintNumber.Name; "Done"]
+            //rename done to something better
+            rename "Done" "StoryPoints"
+            //moving mean and expanding sum only make sense if we are sure we know the order
+            sort by SprintNumber.Name
+            //Create a column named Velocity that's the moving mean of 'Done' of the last three rows
+            create (column "Moving Mean") ((moving Mean 3 (!> "StoryPoints")))
         ]  
+
+    [<Workbench.Transformation 7>]
+    let bugsPerSprint =
+        [
+            //remove all other columns than those metioned
+            slice columns [SprintNumber.Name; "Done"]
+            //rename done to something better
+            rename "Done" "Bugs"
+            //moving mean and expanding sum only make sense if we are sure we know the order
+            sort by SprintNumber.Name
+        ]        
         

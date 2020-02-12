@@ -56,6 +56,7 @@ module AzureDevOps =
                 [
                     "IsLastRevisionOfDay", "eq", "true"
                     "WorkItemType", "ne", "'Task'"
+                    "IsCurrent", "eq", "true"
                 ] |> List.map(fun (a,b,c) -> sprintf "%s %s %s" a b c)
             ).Replace(" ", "%20")
             

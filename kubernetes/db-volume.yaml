@@ -6,7 +6,7 @@ metadata:
     volume: db-volume
 spec:
   capacity:
-    storage: 10Gi
+    storage: 3Gi
   accessModes:
     - ReadWriteMany
   hostPath: 

@@ -21,6 +21,7 @@ module Rawdata =
         "WorkItemType":"Feature",
         "ChangedDate":"2016-12-22T09:22:40.967+01:00",
         "CreatedDate":"2016-12-19T11:19:08.42+01:00",
+        "ClosedDate": "2018-09-13T16:14:24.323+02:00",
         "State":"User stories created",
         "Priority":2,
         "StateCategory":"Resolved",

@@ -19,6 +19,7 @@
     <Compile Include="../../../hobbes.server/src/Reflection.fs" />
     <Compile Include="../../../hobbes.server/src/db/DataConfiguration.fs" />
     <Compile Include="../../../hobbes.server/src/db/Cache.fs" />
+    <Compile Include="../../../shared/Shared.fs" />
     <Compile Include="db/Rawdata.fs" />
     <Compile Include="db/Uniform.fs" />
     <Compile Include="Reader/AzureDevOps.fs" />

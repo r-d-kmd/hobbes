@@ -82,3 +82,11 @@ module State =
             Transformations.Metrics.bugsPerSprint
           ]
       @>
+
+  [<Configuration(Projects)>]
+  let martin = 
+      <@
+          [
+            Transformations.Metrics.martin
+          ]
+      @>

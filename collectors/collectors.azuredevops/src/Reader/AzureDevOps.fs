@@ -4,39 +4,12 @@ module AzureDevOps =
     open FSharp.Data
     open Collector.AzureDevOps.Db
     open Hobbes.Server.Db
+    open Hobbes.Shared.RawdataTypes
 
-    //Helper method for optional properties of the data record
-    let inline private asObj v =
-        match v with
-        Some v -> 
-            v |> box
-        | None -> 
-            null
-    //These are the fields we read in (all other fields are disregarded)
-    //and a function to type them correctly
-    let private azureFields = 
-        [
-             //"RevisedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.RevisedDate
-             "WorkItemId",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemId 
-             //"IsLastRevisionOfDay" , fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.IsLastRevisionOfDay
-             //"Title",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.Title 
-             "ChangedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
-             "WorkItemType",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemType 
-             "CreatedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
-             "ClosedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ClosedDate
-             "State", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.State 
-             "StateCategory",fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.StateCategory 
-             //"Priority", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.Priority 
-             "LeadTimeDays", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.LeadTimeDays 
-             "CycleTimeDays", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.CycleTimeDays          
-             //"WorkItemRevisionSK", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemRevisionSk
-             "StoryPoints", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.StoryPoints
-
-        ]
     //looks whether it's the last record or there's a odatanextlink porperty 
     //which signals that the data has been paged and that we're not at the last page yet
     let private tryNextLink (data : string) = 
-        let data = Rawdata.AzureDevOpsAnalyticsRecord.Parse data
+        let data = AzureDevOpsAnalyticsRecord.Parse data
         try
             if System.String.IsNullOrWhiteSpace(data.OdataNextLink) |> not then
                 Some data.OdataNextLink
@@ -45,7 +18,7 @@ module AzureDevOps =
         with _ -> None
     //If there's no work item records returned, this will return true
     let isEmpty (data : string) = 
-        let data = Rawdata.AzureDevOpsAnalyticsRecord.Parse data
+        let data = AzureDevOpsAnalyticsRecord.Parse data
         data.Value |> Array.isEmpty
     
     //The first url to start with, if there's already some stored data
@@ -118,38 +91,8 @@ module AzureDevOps =
             (account, project)
             |> DataConfiguration.AzureDevOps 
             |> Rawdata.bySource
-        let rows = 
-            raw
-            |> Seq.mapi(fun index row ->
-                let iterationProperties =
-                    match row.Iteration with
-                    Some iteration ->
-                        [
-                           "Iteration.IterationPath", box iteration.IterationPath
-                           "Iteration.IterationLevel1", asObj iteration.IterationLevel1 
-                           "Iteration.IterationLevel2", asObj iteration.IterationLevel2 
-                           "Iteration.IterationLevel3", asObj iteration.IterationLevel3 
-                           "Iteration.IterationLevel4", asObj iteration.IterationLevel4
-                           "Iteration.StartDate", box iteration.StartDate
-                           "Iteration.EndDate", box iteration.EndDate
-                           "Iteration.Number", iteration.Number |> box
-                        ]
-                    | None -> []
-                let areaProperty =
-                    match row.Area with
-                    Some area ->
-                        [
-                            "Area.AreaPath", box area.AreaPath
-                        ]
-                    | None -> []
-                let properties = 
-                    azureFields
-                    |> List.map(fun (name, getter) ->
-                        name, getter row
-                    )
-                index,(iterationProperties@areaProperty@properties)
-            )
-        rows
+
+        raw
 
     //TODO should be async and in parallel-ish
     //part of the API (see server to how it's exposed)

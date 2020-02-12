@@ -1,6 +1,7 @@
 namespace Hobbes.Server.Collectors
 
 open FSharp.Data
+open Hobbes.Shared.RawdataTypes
 
 module AzureDevOps =
 
@@ -63,23 +64,42 @@ module AzureDevOps =
         sprintf "admin/raw/%s" id
         |> get    
 
-    type RawdataCache = JsonProvider<"""{
-        "data" : [[["string1", "object1"], ["string1", null]]]
-    }""">    
-
     let formatRawdataCache rawdataCache =
-        (rawdataCache
-        |> RawdataCache.Parse).Data
-        |> Array.mapi (fun i x -> i, x 
-                                     |> Array.map (fun y -> (let v = if y.Length < 2 then null else y.[1] 
-                                                            y.[0], unbox v))
-                                     |> List.ofArray
-                      )
-        |> List.ofArray     
+        rawdataCache
+        |> Seq.mapi(fun index (row : AzureDevOpsAnalyticsRecord.Value) ->
+            let iterationProperties =
+                match (row.Iteration) with
+                Some iteration ->
+                    [
+                       "Iteration.IterationPath", box iteration.IterationPath
+                       "Iteration.IterationLevel1", asObj iteration.IterationLevel1 
+                       "Iteration.IterationLevel2", asObj iteration.IterationLevel2 
+                       "Iteration.IterationLevel3", asObj iteration.IterationLevel3 
+                       "Iteration.IterationLevel4", asObj iteration.IterationLevel4
+                       "Iteration.StartDate", asObj iteration.StartDate
+                       "Iteration.EndDate", asObj iteration.EndDate
+                       "Iteration.Number", iteration.Number |> box
+                    ]
+                | None -> []
+            let areaProperty =
+                match row.Area with
+                Some area ->
+                    [
+                        "Area.AreaPath", box area.AreaPath
+                    ]
+                | None -> []
+            let properties = 
+                azureFields
+                |> List.map(fun (name, getter) ->
+                    name, getter row
+                )
+            index,(iterationProperties@areaProperty@properties)
+        )   
 
     let readCached account project =
-        sprintf "data/readCached/%s/%s" account project
+        (sprintf "data/readCached/%s/%s" account project
         |> getNoTimeOut
         |> snd
-        |> formatRawdataCache                      
+        |> AzureDevOpsAnalyticsRecord.Parse).Value
+        |> formatRawdataCache                   
 

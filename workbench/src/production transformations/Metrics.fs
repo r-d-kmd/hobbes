@@ -118,4 +118,10 @@ module Metrics =
             //moving mean and expanding sum only make sense if we are sure we know the order
             sort by SprintNumber.Name
         ]        
+
+    [<Workbench.Transformation 8>]
+    let martin =
+        [
+            slice columns [WorkItemId.Name; "Area.AreaPath"; "Iteration.IterationPath"; State.Name; "StoryPoints"; "ClosedDate"; "CreatedDate"; WorkItemType.Name; "Iteration.EndDate"; "Iteration.StartDate"]
+        ]    
         

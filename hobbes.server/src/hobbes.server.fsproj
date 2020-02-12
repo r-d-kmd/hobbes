@@ -23,6 +23,7 @@
     <None Include="db/documents/**/*.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <Compile Include="../../shared/Shared.fs"/>
     <Compile Include="Collectors/AzureDevOps.fs"/>
     <Compile Include="Security.fs" />
     <Compile Include="Routing.fs" />

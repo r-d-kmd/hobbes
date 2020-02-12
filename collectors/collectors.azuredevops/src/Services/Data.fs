@@ -6,6 +6,7 @@ open Hobbes.Server.Db
 open Collector.AzureDevOps.Reader
 open Hobbes.Web
 open Hobbes.Helpers
+open FSharp.Data
 
 
 [<RouteArea ("/data", false)>]
@@ -38,15 +39,6 @@ module Data =
 
     [<Get ("/readCached/%s/%s")>]
     let readCached (account, project) =
-        let res = AzureDevOps.readCached account project 
-                  |> Seq.map (fun (_, nv) -> let jsonfied = nv
-                                                            |> List.map (fun (n, v) -> let v = if isNull v || (v :? option<obj> && (unbox<option<obj>> v).IsNone)
-                                                                                               then "null"
-                                                                                               else sprintf "\"%A\"" v
-                                                                                       (sprintf """["%s", %s]""" n v).Replace("\"\"", "\"").Replace("\\", "\\\\"))
-                                             System.String.Join(",", jsonfied)
-                                             |> sprintf """[%s]"""
-                             )
-                             
-        200, System.String.Join(",", res)  
-             |> sprintf """{"data" : [%s]}"""              
+        let res = (",", Seq.map (fun x -> x.ToString()) (AzureDevOps.readCached account project))
+                  |> System.String.Join
+        200, sprintf """{"value" : [%s]}""" res

@@ -64,14 +64,15 @@ module AzureDevOps =
         |> get    
 
     type RawdataCache = JsonProvider<"""{
-        "data" : [[["string1", "object1"]]]
+        "data" : [[["string1", "object1"], ["string1", null]]]
     }""">    
 
     let formatRawdataCache rawdataCache =
         (rawdataCache
         |> RawdataCache.Parse).Data
         |> Array.mapi (fun i x -> i, x 
-                                     |> Array.map (fun y -> (y.[0], unbox y.[1]))
+                                     |> Array.map (fun y -> (let v = if y.Length < 2 then null else y.[1] 
+                                                            y.[0], unbox v))
                                      |> List.ofArray
                       )
         |> List.ofArray     

@@ -47,7 +47,7 @@ Target.create "RedeployServer" (fun _ ->
 )
 
 Target.create "RedeployAzure" (fun _ ->
-    deploy "./collectors/collectors.AzureDevOps/src"
+    deploy "./collectors/collectors.azuredevops/src"
 )
 
 Target.create "Redeploy" ignore
@@ -61,7 +61,7 @@ Target.create "BuildWorkbench" (fun _ ->
 )
 
 Target.create "BuildAzureDevOpsCollector" (fun _ ->
-    fake "./collectors/collectors.AzureDevOps/src"
+    fake "./collectors/collectors.azuredevops/src"
 )
 
 Target.create "Build" ignore

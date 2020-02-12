@@ -6,19 +6,13 @@ module Azure =
     open Hobbes.DSL
     open General
 
-    [<Workbench.Transformation 0>]
-    let userStories = 
-        [
-            only (WorkItemType.Expression == "User Story")
-        ]
-
-    [<Workbench.Transformation 0>]
+    [<Workbench.Transformation 1>]
     let onlyInSprint = 
         [
             only (SprintNumber.Expression |> isntMissing)
         ]
         
-    [<Workbench.Transformation 1>]
+    (*[<Workbench.Transformation 2>]
     let stateRenaming = 
         [
             rename State.Name "DetailedState"
@@ -33,4 +27,18 @@ module Azure =
                                     ( 
                                       (If (!> "StateCategory" == !!> "InProgress") (Then !!> "Doing") (Else !!> "Todo" ))
                                     )))
+        ]*)
+
+    [<Workbench.Transformation 3>]
+    let stateRenaming =
+        [
+            create "SimpleState" (If (contains State.Expression [
+                                         !!> "Closed"
+                                         !!> "Ready for release"
+                                         ] )
+                                (Then 
+                                    (!!> "Done"))
+                                (Else
+                                    (!!> "NotDone"))
+                                 )                                     
         ]

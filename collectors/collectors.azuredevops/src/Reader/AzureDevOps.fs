@@ -29,8 +29,7 @@ module AzureDevOps =
              "LeadTimeDays", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.LeadTimeDays 
              "CycleTimeDays", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.CycleTimeDays          
              //"WorkItemRevisionSK", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemRevisionSk
-
-             "StoryPoints", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.StoryPoints
+             "StoryPoints", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.StoryPoints
 
         ]
     //looks whether it's the last record or there's a odatanextlink porperty 

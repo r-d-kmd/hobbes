@@ -23,7 +23,7 @@ module AzureDevOps =
              "ChangedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
              "WorkItemType",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemType 
              "CreatedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
-             "ClosedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ClosedDate
+             "ClosedDate", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.ClosedDate 
              "State", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.State 
              "StateCategory",fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.StateCategory 
              //"Priority", fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> asObj row.Priority 

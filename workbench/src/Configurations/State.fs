@@ -10,6 +10,8 @@ module State =
       ||| Project.Delta 
       ||| Project.Momentum
       ||| Project.AzureDevOps
+      ||| Project.Nexus
+      ||| Project.UVskole
   
   [<Configuration(Projects)>]
   let baseInformations : Quotations.Expr<Hobbes.DSL.Statements list list> =

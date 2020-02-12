@@ -65,7 +65,7 @@ type Expression =
              | Gt(a,b) ->  sprintf " (%s) > (%s)" (a.ToString()) (b.ToString())
              | Not e -> sprintf "!(%s)" (e.ToString())
              | Keys -> "keys"
-             | DateTimeConstant d -> sprintf "\'%s\'" (d.ToString(culture))
+             | DateTimeConstant d -> sprintf "\'%s\'" (d.ToString "dd/MM/yyyy")
              | Ordinals -> "ordinals"
              | Regression(reg, inputs, outputs) ->
                  let regStr = 

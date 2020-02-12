@@ -851,8 +851,8 @@ module DataStructures =
             | :? int as i -> i |> string
             | :? float as f -> f |> string
             | :? decimal as d -> d |> string
-            | :? DateTime as d -> sprintf """ "%s" """ (d.ToString())
-            | :? DateTimeOffset as d -> sprintf """ "%s" """ (d.ToString())
+            | :? DateTime as d -> sprintf """ "%s" """ (d.ToString "dd/MM/yyyy")
+            | :? DateTimeOffset as d -> sprintf """ "%s" """ (d.ToString "dd/MM/yyyy")
             | _ -> sprintf "%A" value
 
         member private ___.Columns 
@@ -965,7 +965,11 @@ module DataStructures =
                                            |> Seq.map(fun (_,v) -> 
                                                match v with
                                                None -> ""
-                                               | Some v -> v.ToString().Replace(":",";")
+                                               | Some v -> let v = match (v : obj) with
+                                                                     :? DateTimeOffset as d -> d.ToString "dd/MM/yyyy" |> box
+                                                                   | :? DateTime as d -> d.ToString "dd/MM/yyyy" |> box
+                                                                   | v -> v
+                                                           v.ToString().Replace(":",";")
                                            ) |> List.ofSeq)
                          ) |> Seq.transpose
                          |> Seq.map(fun s -> System.String.Join(":",s))

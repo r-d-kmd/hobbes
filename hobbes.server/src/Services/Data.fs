@@ -12,7 +12,25 @@ module Data =
     let cacheRevision (source : DataConfiguration.DataSource) = 
         sprintf "%s:%s:%d" source.SourceName source.ProjectName (System.DateTime.Now.Ticks) |> hash
                                                             
-    let private data configurationName =
+    let rec private data configurationName =
+
+        (*let tryGetSubConfigs (configuration : DataConfiguration.Configuration) =
+            let rec aux (configs : string list) (matrix : IDataMatrix) =
+                match configs with 
+                | []    -> log "Combined all subConfigs"
+                           matrix
+                | x::xs -> logf "Retrieving subConfig: %s" x
+                           aux xs (matrix.Combine (Async.RunSynchronously (data x)))
+
+            if configuration.SubConfigs.Length <= 1 
+            then failwith "Less than 2 configurations in subconfigs is not legal"
+            else
+                let c, cs = configuration.SubConfigs |> List.head, configuration.SubConfigs |> List.tail
+                logf "Retrieving subConfig: %s" c
+                let matrix = Async.RunSynchronously (data c)
+                aux cs matrix      *)
+
+
         let rec transformData (configuration : DataConfiguration.Configuration) (transformations : Transformations.TransformationRecord.Root list) calculatedData =
             match transformations with
             [] -> calculatedData
@@ -63,11 +81,14 @@ module Data =
                         match configuration.Source with
                         DataConfiguration.AzureDevOps(account,projectName) ->
                             log "Reading from raw"
-                            let rows  = 
-                                AzureDevOps.readCached account projectName
-                            log "Transforming data into matrix"
-                            rows
-                            |> DataMatrix.fromRows
+                            match configuration.SubConfigs.IsEmpty with
+                            | true ->   let rows  = 
+                                            AzureDevOps.readCached account projectName
+                                        log "Transforming data into matrix"
+                                        rows
+                                        |> DataMatrix.fromRows
+                            | false -> failwith "SubConfigs are not Implemented yet"
+                                       //tryGetSubConfigs configuration                                    
                         | _ -> failwith "Unknown source"
                     | Some data -> 
                         data
@@ -92,8 +113,8 @@ module Data =
                 | transformations ->
                     transformData tempConfig (transformations |> List.ofSeq) cachedData
 
-            return transformedData 
-        }
+            return (transformedData)
+        } 
 
     [<Get ("/csv/%s")>]
     let csv configuration = 

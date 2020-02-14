@@ -6,6 +6,7 @@ module RawdataTypes =
 
     type AzureDevOpsAnalyticsRecord = JsonProvider<"""{
       "@odata.context": "https://analytics.dev.azure.com/kmddk/flowerpot/_odata/v2.0/$metadata#WorkItemRevisions(WorkItemId,WorkItemType,State,StateCategory,Iteration)",
+      "timeStamp" : "ojsdfidsj",
       "value": [
         {
         "WorkItemId":3833,

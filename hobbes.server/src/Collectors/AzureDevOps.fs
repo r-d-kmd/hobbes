@@ -64,7 +64,7 @@ module AzureDevOps =
         sprintf "admin/raw/%s" id
         |> get    
 
-    let formatRawdataCache rawdataCache =
+    let formatRawdataCache rawdataCache (timeStamp : string ) =
         rawdataCache
         |> Seq.mapi(fun index (row : AzureDevOpsAnalyticsRecord.Value) ->
             let iterationProperties =
@@ -93,13 +93,15 @@ module AzureDevOps =
                 |> List.map(fun (name, getter) ->
                     name, getter row
                 )
-            index,(iterationProperties@areaProperty@properties)
+            let timeStamp =
+                ["TimeStamp", box timeStamp]            
+            index,(iterationProperties@areaProperty@properties@timeStamp)
         )   
 
     let readCached account project =
-        (sprintf "data/readCached/%s/%s" account project
-        |> getNoTimeOut
-        |> snd
-        |> AzureDevOpsAnalyticsRecord.Parse).Value
-        |> formatRawdataCache                   
+        let rawDataAndTS = (sprintf "data/readCached/%s/%s" account project
+                           |> getNoTimeOut
+                           |> snd
+                           |> AzureDevOpsAnalyticsRecord.Parse)      
+        formatRawdataCache rawDataAndTS.Value rawDataAndTS.TimeStamp             
 

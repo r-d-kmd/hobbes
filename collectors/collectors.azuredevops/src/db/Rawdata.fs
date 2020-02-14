@@ -46,6 +46,7 @@ module Rawdata =
         let doc = createCacheRecord {
                                        Source = source
                                        Transformations = []
+                                       SubConfigs = []
                                     } null state message revision
         db.InsertOrUpdate(doc) |> ignore
         (doc |> CacheRecord.Parse).Id

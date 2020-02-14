@@ -122,6 +122,6 @@ module Metrics =
     [<Workbench.Transformation 8>]
     let martin =
         [
-            slice columns [WorkItemId.Name; "Area.AreaPath"; "Iteration.IterationPath"; State.Name; "StoryPoints"; "ClosedDate"; "CreatedDate"; WorkItemType.Name; "Iteration.EndDate"; "Iteration.StartDate"]
+            slice columns [WorkItemId.Name; "Area.AreaPath"; "Iteration.IterationPath"; State.Name; "StoryPoints"; "ClosedDate"; "CreatedDate"; WorkItemType.Name; "Iteration.EndDate"; "Iteration.StartDate"; "TimeStamp"]
         ]    
         

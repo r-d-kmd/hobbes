@@ -16,3 +16,10 @@ module Delta =
             rename "Iteration.IterationLevel3" SprintName.Name
             create (column SprintNumber.Name) (int (regex (!> "Sprint Name") "[Ss][Pp][Rr][Ii][Nn][Tt] [^\\d]*([\\d]+).*" [``$1``]))
         ]
+
+    [<Workbench.Transformation 1>]
+    let onlyInSprint = 
+        [
+            only (SprintNumber.Expression |> isntMissing)
+        ]    
+    

@@ -39,6 +39,8 @@ module Data =
 
     [<Get ("/readCached/%s/%s")>]
     let readCached (account, project) =
-        let res = (",", Seq.map (fun x -> x.ToString()) (AzureDevOps.readCached account project))
+        let raw, timeStamp = AzureDevOps.readCached account project
+        let res = (",", Seq.map (fun x -> x.ToString()) raw)
                   |> System.String.Join
-        200, sprintf """{"value" : [%s]}""" res
+        200, sprintf """{"value" : [%s],
+                         "timeStamp" : "%s"}""" res timeStamp

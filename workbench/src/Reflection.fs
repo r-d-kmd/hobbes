@@ -10,7 +10,9 @@ type Source =
 
 [<System.FlagsAttribute>]
 type Project =
-    Delta = 256
+    UVskole = 1024
+    | Nexus = 512
+    | Delta = 256
     | EzEnergy = 128
     | Gandalf = 64
     | Momentum = 32
@@ -56,7 +58,9 @@ module Project =
         | Project.Flowerpot::_ -> "flowerpot"
         | Project.AzureDevOps::_ -> "azuredevops"
         | Project.Delta::_ -> "delta"
-        | _ -> failwith "Can't happen"
+        | Project.Nexus::_ -> "nexus"
+        | Project.UVskole::_ -> "uvskole"
+        | _ -> failwith "Can happen"
 
     let configString (s: Project) =
         let p = s |> toList |> List.head //removes any source 'projects'

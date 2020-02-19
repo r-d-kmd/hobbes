@@ -9,7 +9,7 @@ type Environment =
 
 type CLIArguments =
     Tests
-    | Publish
+    | Publish of string
     | Sync of string
     | BackSync
     | Environment of Environment
@@ -18,7 +18,7 @@ with
         member s.Usage =
             match s with
             | Tests -> "Flags that the tests should be run"
-            | Publish -> "Publish the transformations to either development or production (set by environment)"
+            | Publish _ -> "Publish the transformations to either development or production (set by environment or given as arg (prod/dev) if using workbench.json)"
             | Sync _ -> "When sync-ing a project from azure"
             | Environment _ -> "Environment to publish transformations to"
             | BackSync _ -> "Used to sync fromproduction to development"
@@ -95,13 +95,18 @@ let main args =
     match results with
     None -> 0
     | Some results ->
+        let publish = results.TryGetResult Publish
         let settingsFile = "workbench.json"
         let settings = 
             match results.TryGetResult Environment with
             None -> 
                 
                 if System.IO.File.Exists settingsFile then 
-                    (settingsFile |> WorkbenchSettings.Load).Development
+                    match publish with 
+                    | Some v when v.ToLower() = "prod" -> (settingsFile |> WorkbenchSettings.Load).Production
+                    | Some v when v.ToLower() = "dev"  -> (settingsFile |> WorkbenchSettings.Load).Development
+                    | _                                -> (settingsFile |> WorkbenchSettings.Load).Development
+                    
                 else
                      match env "WORKBENCH_ENVIRONMENT" null with
                      null -> failwith "No settings file and no env var"
@@ -118,7 +123,6 @@ let main args =
             
         let test = results.TryGetResult Tests 
         let sync = results.TryGetResult Sync
-        let publish = results.TryGetResult Publish
         let backsync = results.TryGetResult BackSync
         let listTransformationsPath = "/admin/list/transformations"
         let listConfigPath = "/admin/list/configurations"

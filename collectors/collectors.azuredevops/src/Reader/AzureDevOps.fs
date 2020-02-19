@@ -91,8 +91,12 @@ module AzureDevOps =
             (account, project)
             |> DataConfiguration.AzureDevOps 
             |> Rawdata.bySource
+        Hobbes.Web.Log.logf "\n\n\n\n azure devops:%s \n\n\n\n\n\n" project
+        let timeStamp = ((Rawdata.getState (sprintf "azure devops:%s" project) 
+                        |> Cache.CacheRecord.Parse).TimeStamp
+                        |> System.DateTime.Parse).ToString("dd/MM/yyyy H:mm").Replace(":", ";")       
 
-        raw
+        raw, timeStamp
 
     //TODO should be async and in parallel-ish
     //part of the API (see server to how it's exposed)

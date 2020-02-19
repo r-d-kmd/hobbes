@@ -5,12 +5,6 @@ module Azure =
 
     open Hobbes.DSL
     open General
-
-    [<Workbench.Transformation 1>]
-    let onlyInSprint = 
-        [
-            only (SprintNumber.Expression |> isntMissing)
-        ]
         
     (*[<Workbench.Transformation 2>]
     let stateRenaming = 

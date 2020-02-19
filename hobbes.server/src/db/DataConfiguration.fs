@@ -21,7 +21,8 @@ module DataConfiguration =
             "account" : "kmddk",
             "project" : "gandalf"
         },
-        "transformations" : ["transformation 1", "transformation 2"]
+        "transformations" : ["transformation 1", "transformation 2"],
+        "subConfigs": ["Config1", "Config2"]
     },{
         "_id" : "name",
         "rallly" : {
@@ -71,6 +72,7 @@ module DataConfiguration =
         {
             Source : DataSource
             Transformations : string list
+            SubConfigs : string list
         }
 
     let store doc = 
@@ -108,4 +110,8 @@ module DataConfiguration =
             Transformations = 
                 record.Transformations 
                 |> List.ofArray
+
+            SubConfigs = 
+                record.SubConfigs
+                |> List.ofArray            
         }

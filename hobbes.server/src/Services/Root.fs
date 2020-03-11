@@ -9,6 +9,10 @@ open Hobbes.Helpers
 [<RouteArea ("/", false)>]
 module Root =
     
+    [<Get "/">]
+    let test() = 
+        200, "test"
+    
     [<Get "/ping" >] 
     let ping() = 
         let app = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application

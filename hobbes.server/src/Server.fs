@@ -49,6 +49,7 @@ let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "Api 404")
     
     fetch <@ ping @> 
+    fetch <@ test @>
     withBody <@ key @>
     fetch <@ initDb @>
     forward "/admin" adminRouter

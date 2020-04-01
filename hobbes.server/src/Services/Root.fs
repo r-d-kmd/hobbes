@@ -16,7 +16,7 @@ module Root =
     [<Get "/ping" >] 
     let ping() = 
         let app = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application
-        200,sprintf """{"Appversion": "%s", "Dafuq??runtimeFramework" : "%s", "appName" : "%s"}""" app.ApplicationVersion app.RuntimeFramework.FullName app.ApplicationName
+        200,sprintf """{"Appversion": "%s", "runtimeFramework" : "%s", "appName" : "%s"}""" app.ApplicationVersion app.RuntimeFramework.FullName app.ApplicationName
     
     type UserSpec = FSharp.Data.JsonProvider<"""{"name" : "kjlkj", "token" : "elkælk"}""">
 

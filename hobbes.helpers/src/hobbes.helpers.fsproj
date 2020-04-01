@@ -3,7 +3,7 @@
   <PropertyGroup>
     <RootNamespace>Hobbes.Helpers</RootNamespace>
     <OutputType>Library</OutputType>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Environment.fs" />

@@ -28,7 +28,7 @@ module Data =
                 let c, cs = configuration.SubConfigs |> List.head, configuration.SubConfigs |> List.tail
                 logf "Retrieving subConfig: %s" c
                 let matrix = Async.RunSynchronously (data c)
-                aux cs matrix      *)
+                aux cs matrix     *)
 
 
         let rec transformData (configuration : DataConfiguration.Configuration) (transformations : Transformations.TransformationRecord.Root list) calculatedData =

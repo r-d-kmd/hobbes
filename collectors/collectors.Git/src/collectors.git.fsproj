@@ -19,6 +19,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Services/Root.fs" />
+    <Compile Include="Services/Data.fs" />
     <Compile Include="Reader.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>

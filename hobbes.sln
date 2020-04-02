@@ -15,6 +15,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workbench", "workbench", "{
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "hobbes.workbench", "workbench\src\hobbes.workbench.fsproj", "{96DA42A9-E6A6-4558-B026-3CD156A720BA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "collectors", "collectors", "{363165AB-CDD5-41B0-997F-A150F14C9B02}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "collectors.Git", "collectors.Git", "{02625079-DC72-4E9E-A873-DE4F9C59BC83}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "collectors.git", "collectors\collectors.Git\src\collectors.git.fsproj", "{F86DB3D1-C4FD-4156-B0A2-98F40319C242}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +47,10 @@ Global
 		{96DA42A9-E6A6-4558-B026-3CD156A720BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{96DA42A9-E6A6-4558-B026-3CD156A720BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{96DA42A9-E6A6-4558-B026-3CD156A720BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F86DB3D1-C4FD-4156-B0A2-98F40319C242}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F86DB3D1-C4FD-4156-B0A2-98F40319C242}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F86DB3D1-C4FD-4156-B0A2-98F40319C242}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F86DB3D1-C4FD-4156-B0A2-98F40319C242}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,5 +60,7 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{96DA42A9-E6A6-4558-B026-3CD156A720BA} = {41E0836E-070A-4D93-A44B-3B83B481897B}
+		{02625079-DC72-4E9E-A873-DE4F9C59BC83} = {363165AB-CDD5-41B0-997F-A150F14C9B02}
+		{F86DB3D1-C4FD-4156-B0A2-98F40319C242} = {02625079-DC72-4E9E-A873-DE4F9C59BC83}
 	EndGlobalSection
 EndGlobal

@@ -1,2 +1,2 @@
 FROM kmdrd/release
-ENTRYPOINT [ "dotnet", "collectors.azuredevops.dll" ]
+ENTRYPOINT [ "dotnet", "collectors.git.dll" ]

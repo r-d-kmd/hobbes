@@ -1,23 +1,21 @@
-namespace Collector.GIt.Services
+namespace Collector.Git.Services
 
 open Hobbes.Server.Routing
-open Hobbes.Server.Db
-open Hobbes.Web
-open Hobbes.Helpers
-open FSharp.Data
 
 
 [<RouteArea ("/data", false)>]
 module Data =
-
-    let synchronize source token =
-                                                                
-             
+     
     [<Get ("/sync/%s/%s")>]
-    let sync (url, _) =
-        Collector.Git.Reader.sync "RSL" url
+    let sync (url, (pwd: string)) =
+       Collector.Git.Reader.sync "RSL" pwd url
+       200,"Synced"
+
     [<Get ("/data/%s/%s")>]
     let read (url,(dataset : string)) =
-        match dataset.ToLower() with
-        "commits" -> Collector.Git.Reader.commits url
-        | "branches" -> Collector.Git.Reader.branches url
+        let res = 
+            match dataset.ToLower() with
+            "commits" -> Collector.Git.Reader.commits url
+            | "branches" -> Collector.Git.Reader.branches url
+            | _ -> failwith "unknown dataset"
+        200,res

@@ -149,7 +149,7 @@ module Routing =
                 let e = innerMost e
                     
                 Log.errorf e.StackTrace "Invocation failed: %s. Method name: %s. Parameters: %s " e.Message method.Name (System.String.Join(",",method.GetParameters() |> Array.map(fun p -> p.Name)))
-                500, "Invocation error"
+                500, "Call resulted in an invocation error"
 
         member private this.GenerateRouteWithArgs<'a> state (f : 'a -> int * string) path verb = 
             let pathf = PrintfFormat<_,_,_,_,'a>(path)

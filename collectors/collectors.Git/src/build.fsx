@@ -88,14 +88,14 @@ Target.create "Restart" (fun _ ->
     buildImage (Some "Dockerfile.debug") ()
     
     let compose = run "docker-compose" "../../"
-    compose "kill azuredevopscollector"
-    compose "rm -f azuredevopscollector"
-    compose "up azuredevopscollector"
+    compose "kill gitgitcollector"
+    compose "rm -f gitcollector"
+    compose "up gitcollector"
 )
 
 Target.create "Redeploy" (fun _ ->
-    run "kubectl" "../../../kubernetes" "scale --replicas=0 -f azuredevops-deployment.yaml"
-    run "kubectl" "../../../kubernetes" "scale --replicas=1 -f azuredevops-deployment.yaml"
+    run "kubectl" "../../../kubernetes" "scale --replicas=0 -f gitcollector-deployment.yaml"
+    run "kubectl" "../../../kubernetes" "scale --replicas=1 -f gitcollector-deployment.yaml"
     |> ignore
 )
 

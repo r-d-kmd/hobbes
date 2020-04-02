@@ -1,0 +1,7 @@
+Microsoft.Extensions.PlatformAbstractions
+group GitCollector
+    LibGit2Sharp
+group web
+    Saturn
+    Giraffe
+    FSharp.Data

@@ -1,4 +1,5 @@
 source https://www.nuget.org/api/v2
+
 version 5.243.0
 framework: netcoreapp3.1
 storage: none
@@ -6,16 +7,29 @@ storage: none
 nuget Accord.MachineLearning
 nuget Argu
 nuget Deedle
-nuget FSharp.Data
-nuget FParsec
-nuget FSharp.Formatting
+
+nuget FParsec ~> 1.1
 nuget FSharp.Interop.Dynamic 
+
 nuget Microsoft.Extensions.PlatformAbstractions
 nuget Microsoft.VisualStudio.Services.Client
-nuget Saturn
-nuget Giraffe
 
-group build   
+group web
+    source https://www.nuget.org/api/v2 
+    framework: auto-detect
+    storage: none
+    nuget Saturn
+    nuget Giraffe
+    nuget FSharp.Data ~> 3.3
+
+group GitCollector
+    source https://www.nuget.org/api/v2 
+    framework: auto-detect
+    storage: none
+    nuget LibGit2Sharp
+
+group build
+    
     source https://www.nuget.org/api/v2 
     framework: netstandard2.0
     storage: none

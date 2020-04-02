@@ -1,4 +1,6 @@
-Saturn
-Giraffe
-FSharp.Data
 Argu
+
+group web
+    Saturn
+    Giraffe
+    FSharp.Data

@@ -22,3 +22,4 @@ kubernetes/env.JSON
 .lib/
 .env
 kubernetes/env.yaml
+repositories/

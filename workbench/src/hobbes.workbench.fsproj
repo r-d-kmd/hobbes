@@ -10,12 +10,16 @@
     <Reference Include="hobbes.helpers">
       <HintPath>../../.lib/hobbes.helpers.dll</HintPath>
     </Reference>
-    <Reference Include="hobbes.web">
-      <HintPath>../../.lib/hobbes.web.dll</HintPath>
-    </Reference>
-    <Reference Include="hobbes.server">
-      <HintPath>../../hobbes.server/deploy/Server/hobbes.server.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="../../hobbes.web/src/hobbes.web.fsproj">
+      <Name>hobbes.web</Name>
+    </ProjectReference>
+    <ProjectReference Include="../../hobbes.server/src/hobbes.server.fsproj">
+      <Name>hobbes.server</Name>
+    </ProjectReference>
+    <ProjectReference Include="../../collectors/collectors.Git/src/collectors.git.fsproj">
+      <Project>{F2A71F9B-5D33-465A-A702-920D77279786}</Project>
+      <Name>collectors.git</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Reflection.fs" />

@@ -1,4 +1,4 @@
-namespace Collector.AzureDevOps.Services
+namespace Collector.Git.Services
 
 open Hobbes.Server.Routing
 

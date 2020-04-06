@@ -31,7 +31,7 @@ services:
 
 install:
   - docker version
-  - dotnet tool install fake-cli -g
+  - dotnet tool install --global fake-cli
   - dotnet tool install --global --version 5.241.2 paket
   - npm install -s -g --unicode=false newman
   
@@ -81,6 +81,3 @@ test_script:
  
 deploy_script:
   - fake build --target pushtodocker
-
-
-

@@ -1,9 +1,6 @@
 
 FROM kmdrd/sdk:stretch
 
-# copy csproj and restore as distinct layers
-ONBUILD COPY ./src/*.fsproj .
-
 # copy and publish app and libraries
 ONBUILD COPY ./src/ .
 ONBUILD RUN dotnet publish -c release -o /app

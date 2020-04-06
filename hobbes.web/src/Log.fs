@@ -72,7 +72,7 @@ module Log =
                   if logType >= logLevel then
                       doc |>_logger
                with e ->
-                   eprintfn "Failed to insert log doc %s. Message: %s StackTRace %s" doc e.Message e.StackTrace
+                   eprintfn "Failed to insert log doc %s. Message: %s StackTrace %s" doc e.Message e.StackTrace
             } |> Async.Start
     let log msg =
         writeLogMessage Info null msg

@@ -17,23 +17,8 @@ let sync configuration azureToken=
     //printfn "sync key: %s" key
     ()
 
-let git projectName repoName =
-    let repos = 
-     [
-         "MemberUI", "gkghmibwqmtyfsekylepvwuwez44etts4wsdg4kunrzbmdrp32cq"
-         "GandalfBackend", "stmwerd3yadmx7tmlbsg7ylf7y5grhyc7zhwu244oct2q2sb7zaq"
-     ] |> Map.ofList 
-    let remoteUrl = sprintf "https://kmddk.visualstudio.com/%s/_git/%s" projectName repoName
-    //Collector.Git.Reader.sync "RSL" repos.[repoName] remoteUrl 
-    let branches = Collector.Git.Reader.branches remoteUrl
-    let commits = Collector.Git.Reader.commits remoteUrl
-    printfn "%s" branches
-    printfn "%s" commits
-
 let test azureToken  = 
     //Implementation.initDb() |> ignore
-    
-    git "Gandalf" "GandalfBackend"
-    //sync "delta.State.userStoriesFoldedBySprint" azureToken //"flowerpot.State.stateBySprint" //"gandalf.State.expandingCompletionBySprint" 
+    sync "delta.State.userStoriesFoldedBySprint" azureToken //"flowerpot.State.stateBySprint" //"gandalf.State.expandingCompletionBySprint" 
     //getData (*"flowerpot.State.stateBySprint"*) "flowerpot.State.expandingCompletionBySprint"
     

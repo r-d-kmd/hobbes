@@ -12,6 +12,7 @@ nuget FSharp.Interop.Dynamic
 
 nuget Microsoft.Extensions.PlatformAbstractions
 nuget Microsoft.VisualStudio.Services.Client
+nuget FSharp.Core
 
 group web
     source https://www.nuget.org/api/v2 
@@ -19,12 +20,11 @@ group web
     storage: none
     nuget Saturn
     nuget Giraffe
-    nuget FSharp.Data ~> 3.3
+    nuget FSharp.Data
 
 group GitCollector
     source https://www.nuget.org/api/v2 
     framework: auto-detect
-    storage: none
     nuget LibGit2Sharp
 
 group build

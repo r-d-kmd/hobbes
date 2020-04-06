@@ -1,4 +1,4 @@
-FROM kmdrd/sdk:stretch AS build
+FROM kmdrd/sdk:hobbes-stretch AS build
 
 # final stage/image
 FROM kmdrd/aspnet:stretch

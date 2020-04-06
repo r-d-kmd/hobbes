@@ -15,7 +15,7 @@ COPY paket.dependencies .
 COPY .paket/ /source/.paket/
 COPY .lib/ /source/.lib/
 
-paket install
+ONBULD paket install
 
 # copy csproj and restore as distinct layers
 ONBUILD COPY ./src/*.fsproj .

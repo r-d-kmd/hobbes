@@ -18,7 +18,7 @@ module Root =
         let app = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application
         200,sprintf """{"Appversion": "%s", "runtimeFramework" : "%s", "appName" : "%s"}""" app.ApplicationVersion app.RuntimeFramework.FullName app.ApplicationName
     
-    type UserSpec = FSharp.Data.JsonProvider<"""{"name" : "kjlkj", "token" : "lkælk"}""">
+    type UserSpec = FSharp.Data.JsonProvider<"""{"name" : "kjlkj", "token" : "elkælk"}""">
 
     [<Put ("/key", true) >] 
     let key userStr =

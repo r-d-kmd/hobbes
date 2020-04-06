@@ -57,7 +57,7 @@ ENV PATH="$PATH:/root/.dotnet/tools"
 RUN dotnet tool install --global Paket
 
 COPY paket.dependencies .
-COPY .paket/ /source/.paket/
+COPY .paket/ /source/../.paket/
 COPY .lib/ /source/.lib/
 
 ONBUILD RUN paket install

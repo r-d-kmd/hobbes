@@ -16,10 +16,6 @@
     <ProjectReference Include="../../hobbes.server/src/hobbes.server.fsproj">
       <Name>hobbes.server</Name>
     </ProjectReference>
-    <ProjectReference Include="../../collectors/collectors.Git/src/collectors.git.fsproj">
-      <Project>{F2A71F9B-5D33-465A-A702-920D77279786}</Project>
-      <Name>collectors.git</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Reflection.fs" />

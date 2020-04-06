@@ -32,10 +32,12 @@ module Reader =
             )
         
         if System.IO.Directory.Exists repoDir then
+            printfn "Deleting old repo"
             System.IO.Directory.Delete(repoDir,true)
 
         let options = CloneOptions()
         options.CredentialsProvider <- ca
+        printfn "Cloning repo %s into %s" url repoDir
         Repository.Clone(url, repoDir, options) |> ignore
 
     let commits url = 

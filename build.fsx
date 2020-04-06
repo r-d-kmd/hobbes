@@ -307,6 +307,16 @@ Target.create "PushToDocker" (fun _ ->
     ) 
 )
 
+Target.create "CopyDlls" (fun _ ->
+    let cp src = System.IO.File.Copy(src + "/src/bin/Release/netcoreapp3.1/*.*","./collectors/collectors.Git/.lib/") 
+    [
+        "hobbes.core"
+        "hobbes.helpers"
+        "hobbes.web"
+        "hobbes.server"
+    ] |> List.iter cp  
+)
+
 "RedeployServer"
     ==> "Redeploy"
 
@@ -316,6 +326,9 @@ Target.create "PushToDocker" (fun _ ->
 
 "Clean" 
     ==> "BaseImages"
+
+"BuildCommon"
+    ==> "CopyDlls"
 
 "ReleaseBuild"
     ==> "BaseImages"

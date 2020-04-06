@@ -58,7 +58,6 @@ build_script:
   - cd hobbes.server/src
   - fake build --target SetAssemblyInfo
   - cd ../..
-  - docker build -f docker/stretch/Dockerfile.sdk-local .
   - fake build --target builddocker
   - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
   

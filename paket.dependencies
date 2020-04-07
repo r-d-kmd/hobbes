@@ -10,7 +10,6 @@ nuget Deedle
 nuget FParsec ~> 1.1
 nuget FSharp.Interop.Dynamic 
 
-nuget Microsoft.Extensions.PlatformAbstractions
 nuget Microsoft.VisualStudio.Services.Client
 nuget FSharp.Core
 
@@ -21,6 +20,7 @@ group web
     nuget Saturn
     nuget Giraffe
     nuget FSharp.Data
+    nuget Microsoft.Extensions.PlatformAbstractions
 
 group GitCollector
     source https://www.nuget.org/api/v2 

@@ -16,7 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Reflection.fs" />
     <Compile Include="db/Transformations.fs" />
     <Compile Include="db/DataConfiguration.fs" />
     <Compile Include="db/Cache.fs" />
@@ -25,8 +24,6 @@
     </None>
     <Compile Include="../../shared/Shared.fs"/>
     <Compile Include="Collectors/AzureDevOps.fs"/>
-    <Compile Include="Security.fs" />
-    <Compile Include="Routing.fs" />
     <Compile Include="Services/Admin.fs" />
     <Compile Include="Services/Status.fs" />
     <Compile Include="Services/Data.fs" />

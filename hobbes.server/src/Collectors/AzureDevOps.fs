@@ -103,5 +103,5 @@ module AzureDevOps =
                            |> getNoTimeOut
                            |> snd
                            |> AzureDevOpsAnalyticsRecord.Parse)      
-        formatRawdataCache rawDataAndTS.Value rawDataAndTS.TimeStamp             
+        formatRawdataCache rawDataAndTS.Value  rawDataAndTS.TimeStamp             
 

@@ -6,25 +6,25 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="hobbes.core">
-      <HintPath>../../../.lib/hobbes.core.dll</HintPath>
+      <HintPath>.lib/hobbes.core.dll</HintPath>
     </Reference>
     <Reference Include="hobbes.helpers">
-      <HintPath>../../../.lib/hobbes.helpers.dll</HintPath>
+      <HintPath>.lib/hobbes.helpers.dll</HintPath>
     </Reference>
     <Reference Include="hobbes.web">
-      <HintPath>../../../.lib/hobbes.web.dll</HintPath>
+      <HintPath>.lib/hobbes.web.dll</HintPath>
+    </Reference>
+    <Reference Include="hobbes.server">
+      <HintPath>.lib/hobbes.server.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="../../../hobbes.server/src/Reflection.fs" />
-    <Compile Include="../../../hobbes.server/src/db/DataConfiguration.fs" />
-    <Compile Include="../../../hobbes.server/src/db/Cache.fs" />
-    <Compile Include="../../../shared/Shared.fs" />
+    <Compile Include="db/DataConfiguration.fs" />
+    <Compile Include="db/Cache.fs" />
+    <Compile Include="Shared.fs" />
     <Compile Include="db/Rawdata.fs" />
     <Compile Include="db/Uniform.fs" />
     <Compile Include="Reader/AzureDevOps.fs" />
-    <Compile Include="../../../hobbes.server/src/Security.fs" />
-    <Compile Include="../../../hobbes.server/src/Routing.fs" />
     <None Include="db/documents/*.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -34,5 +34,5 @@
     <Compile Include="Services/Status.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
-  <Import Project="..\..\..\.paket\Paket.Restore.targets" />
+  <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

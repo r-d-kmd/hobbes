@@ -28,7 +28,6 @@ group GitCollector
     nuget LibGit2Sharp
 
 group build
-    
     source https://www.nuget.org/api/v2 
     framework: netstandard2.0
     storage: none

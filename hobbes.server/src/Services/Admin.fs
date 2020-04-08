@@ -3,7 +3,7 @@ namespace Hobbes.Server.Services
 open Hobbes.Web.Database
 open Hobbes.Web.Log
 open Hobbes.Server.Db
-open Hobbes.Server.Routing
+open Hobbes.Web.Routing
 open Hobbes.Server.Collectors
 open Hobbes.Helpers.Environment
 

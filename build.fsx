@@ -10,7 +10,7 @@ open Fake.SystemHelper
 open Fake.Core
 open Fake.DotNet
 open Fake.IO
-
+let dockerOrg = "kmdrd"
 let run command workingDir args = 
     let arguments = 
         match args |> String.split ' ' with
@@ -157,23 +157,11 @@ Target.create "Clean" (fun _ ->
     ]
 )
 
-Target.create "BaseImages" (fun _ ->
-    [
-        "base"
-        "release"
-        "debug"
-    ] |> List.iter(fun n ->
-        sprintf "build -f Dockerfile.%s -t kmdrd/%s ." n n
-        |> run "docker" "./docker"
-    )
-)
-
 let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.2.default"
 
 let createDockerTag dockerOrg (tag : string) = sprintf "%s/hobbes-%s" dockerOrg (tag.ToLower())
 
 Target.create "BuildDocker" (fun _ -> 
-    let dockerOrg = "kmdrd"
     let run = run "docker"
      
     printfn "Found docker files: (%A)" dockerFiles
@@ -200,6 +188,34 @@ Target.create "BuildDocker" (fun _ ->
 
         let tag = (workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last).ToLower()
         build tag
+    ) 
+)
+
+Target.create "BuildBaseImages" (fun _ -> 
+    
+    let run = run "docker"
+    let dockerFiles =         
+         [
+             "deps"
+             "runtime"
+             "aspnet"
+             "sdk"
+             "sdk-hobbes"
+         ] |> List.collect(fun name ->
+             [
+                "./docker/Dockerfile." + name, name
+                "./docker/stretch/Dockerfile." + name, name + ":stretch"
+             ]
+         )
+
+    dockerFiles
+    |> Seq.iter(fun (path,tag) ->
+        if File.exists path then
+            let tag = dockerOrg + "/" + tag.ToLower()
+            
+            sprintf "build -f %s -t %s ." path tag
+            |> run "."
+
     ) 
 )
 
@@ -258,12 +274,10 @@ buildCommon DotNet.BuildConfiguration.Debug ==> "DebugCommon"
 
 let tools = 
     [
-        """hobbes.server/src/hobbes.server.fsproj""", package DotNet.BuildConfiguration.Release serverPackageDir
-        """collectors/collectors.azuredevops/src/collectors.azuredevops.fsproj""", package DotNet.BuildConfiguration.Release collectorPackageDir
         """workbench/src/hobbes.workbench.fsproj""", package DotNet.BuildConfiguration.Release commonLibDir
     ]
 
-(tools
+tools
 |> List.fold(fun prev (projectFile, pack) ->     
     let targetName = 
         System.IO.Path.GetFileNameWithoutExtension(projectFile)
@@ -273,14 +287,13 @@ let tools =
     prev
        ==> targetName
  ) "BuildCommon"
-) ==> "ReleaseBuild"
+
 
 Target.create "Publish" (fun _ -> 
     run "dotnet" "./workbench/src" "run -- --publish" 
 )
 
 Target.create "PushToDocker" (fun _ ->
-    let dockerOrg = "kmdrd"
     let run = run "docker"
     
     dockerFiles
@@ -307,35 +320,18 @@ Target.create "PushToDocker" (fun _ ->
     ) 
 )
 
-Target.create "CopyDlls" (fun _ ->
-    let cp src = System.IO.File.Copy(src + "/src/bin/Release/netcoreapp3.1/*.*","./collectors/collectors.Git/.lib/") 
-    [
-        "hobbes.core"
-        "hobbes.helpers"
-        "hobbes.web"
-        "hobbes.server"
-    ] |> List.iter cp  
-)
-
 "RedeployServer"
     ==> "Redeploy"
 
 "RedeployAzure"
     ==> "Redeploy"
 
-
-"Clean" 
-    ==> "BaseImages"
-
-"BuildCommon"
-    ==> "CopyDlls"
-
 "ReleaseBuild"
-    ==> "BaseImages"
     ==> "BuildDocker"
     ==> "Build"
 
-"BuildDocker" 
-    ==> "Build"
+"BuildCommon"
+    ==> "BuildBaseImages"
+
 
 Target.runOrDefaultWithArguments "Build"

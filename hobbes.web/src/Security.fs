@@ -6,6 +6,7 @@ open Hobbes.Web.Database
 open Hobbes.Helpers
 
 module Security =
+
     [<Literal>]
     let private Basic = "basic "
     let private encoding = System.Text.Encoding.UTF8

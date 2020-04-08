@@ -1,6 +1,0 @@
-
-FROM kmdrd/sdk:stretch
-
-# copy and publish app and libraries
-ONBUILD COPY ./src/ .
-ONBUILD RUN dotnet publish -c release -o /app

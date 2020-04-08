@@ -2,7 +2,7 @@ namespace Hobbes.Server.Services
 
 open Hobbes.Web.Log
 open Hobbes.Server.Db
-open Hobbes.Server.Routing
+open Hobbes.Web.Routing
 open Hobbes.FSharp.DataStructures
 open Hobbes.Helpers
 open Hobbes.Server.Collectors

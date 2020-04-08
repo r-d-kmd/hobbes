@@ -32,6 +32,9 @@ services:
 install:
   - docker version
   - dotnet tool install --global fake-cli
+  - npm version
+  - npm install -g npm@latest
+  - npm version
   - npm install -s -g --unicode=false newman
   
   - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl

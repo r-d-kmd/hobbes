@@ -116,13 +116,38 @@ module Data =
             return (transformedData)
         } 
 
+
+    let isSyncing configurationName =
+        let configuration = DataConfiguration.get configurationName
+        match configuration.Source with
+        DataConfiguration.AzureDevOps(account, project)   ->
+            let syncId = ("azure devops:" + project)
+            log syncId
+            let _, stateDoc = AzureDevOps.getSyncState syncId
+            let stateDoc = Cache.CacheRecord.Parse stateDoc
+            let state = stateDoc.State
+                        |> Cache.SyncStatus.Parse
+            syncId ,state = Cache.SyncStatus.Started
+        | _                                               ->
+            let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
+            eprintfn "%s" msg
+            "No collector found", false
+
+
     [<Get ("/csv/%s")>]
     let csv configuration = 
         async {
-            debugf "Getting csv for '%A'" configuration
-            let! data = data configuration
-            return 200, data |> DataMatrix.toJson Csv
+            let syncId, syncing = isSyncing configuration
+            if syncing
+            then return 489, sprintf "Sync currently running for %s, please wait." syncId
+            else
+                debugf "Getting csv for '%A'" configuration
+                let! data = data configuration
+                return 200, data |> DataMatrix.toJson Csv
         } |> Async.RunSynchronously
+
+    
+        
 
     [<Get ("/raw/%s") >]
     let getRaw id =
@@ -155,10 +180,10 @@ module Data =
                 eprintfn "%s" msg
                 false, msg
         with e ->
-            false, e.Message   
+            false, e.Message
 
-    [<Get ("/sync/%s") >]
-    let synchronize configurationName =
+    [<Get ("/fSync/%s") >]
+    let fSync configurationName =
         let configuration = DataConfiguration.get configurationName
         Admin.clearCache() |> ignore
         
@@ -185,3 +210,12 @@ module Data =
                 eprintfn "%s" msg
         } |> Async.Start                    
         statusCode, syncId
+
+    [<Get ("/sync/%s") >]
+    let sync configurationName =
+        let syncId, syncing = isSyncing configurationName
+        log syncId
+        logf "%A" syncing
+        if syncing
+        then 489, sprintf "Sync currently running for %s, please wait." syncId
+        else fSync configurationName

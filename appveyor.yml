@@ -34,7 +34,8 @@ install:
   - dotnet tool install --global fake-cli
   - npm version
   - npm install -g npm@latest
-  - npm n latest
+  - npm install -g n
+  - n latest
   - npm version
   - npm install -s -g --unicode=false newman
   

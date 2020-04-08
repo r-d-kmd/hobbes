@@ -32,7 +32,6 @@ services:
 install:
   - docker version
   - dotnet tool install --global fake-cli
-  - dotnet tool install --global --version 5.241.2 paket
   - npm install -s -g --unicode=false newman
   
   - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
@@ -46,7 +45,6 @@ install:
   - sudo apt install conntrack
   
 before_build:
-  - paket install
   - mkdir "c:\projects\hobbes\hobbes.server\db\data"
   - mkdir "c:\projects\hobbes\collectors\db\data"
   - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --vm-driver=none --memory=4096
@@ -54,11 +52,6 @@ before_build:
   - echo ${ENV_FILE} | kubectl apply -f -
 
 build_script: 
- 
-  - cd hobbes.server/src
-  - fake build --target SetAssemblyInfo
-  - cd ../..
-  - fake build --target buildbaseimages
   - fake build
   - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
   

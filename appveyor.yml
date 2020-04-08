@@ -52,11 +52,6 @@ before_build:
   - echo ${ENV_FILE} | kubectl apply -f -
 
 build_script: 
- 
-  # - cd hobbes.server/src
-  # - fake build --target SetAssemblyInfo
-  - cd ../..
-  # - fake build --target buildbaseimages
   - fake build
   - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
   

@@ -19,7 +19,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="db/Transformations.fs" />
     <Compile Include="db/DataConfiguration.fs" />
     <Compile Include="db/Cache.fs" />

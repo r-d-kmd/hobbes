@@ -1,6 +1,6 @@
 open Saturn
 open Giraffe
-open Hobbes.Server.Routing
+open Hobbes.Web.Routing
 open Hobbes.Server.Services.Admin
 open Hobbes.Server.Services.Data
 open Hobbes.Server.Services.Root

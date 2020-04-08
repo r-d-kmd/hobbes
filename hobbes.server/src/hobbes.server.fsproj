@@ -3,15 +3,19 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
+  <PropertyGroup>
+    <RelativePath Condition="$(BUILD_ENV) == 'docker'">/</RelativePath>
+    <RelativePath Condition="$(RelativePath) == ''">../../../</RelativePath>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="hobbes.core">
-      <HintPath>../../.lib/hobbes.core.dll</HintPath>
+    <Reference Include="$(RelativePath).lib/hobbes.core.dll">
+      <HintPath>$(RelativePath).lib/hobbes.core.dll</HintPath>
     </Reference>
     <Reference Include="hobbes.helpers">
-      <HintPath>../../.lib/hobbes.helpers.dll</HintPath>
+      <HintPath>$(RelativePath).lib/hobbes.helpers.dll</HintPath>
     </Reference>
     <Reference Include="hobbes.web">
-      <HintPath>../../.lib/hobbes.web.dll</HintPath>
+      <HintPath>$(RelativePath).lib/hobbes.web.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -22,7 +26,7 @@
     <None Include="db/documents/**/*.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Compile Include="../../shared/Shared.fs"/>
+    <Compile Include="Shared.fs"/>
     <Compile Include="Collectors/AzureDevOps.fs"/>
     <Compile Include="Services/Admin.fs" />
     <Compile Include="Services/Status.fs" />
@@ -30,5 +34,5 @@
     <Compile Include="Services/Root.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
-  <Import Project="..\..\.paket\Paket.Restore.targets" />
+  <Import Project="$(RelativePath).paket/Paket.Restore.targets" />
 </Project>

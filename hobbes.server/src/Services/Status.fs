@@ -1,7 +1,7 @@
 namespace Hobbes.Server.Services
 
 open Hobbes.Server.Db
-open Hobbes.Server.Routing
+open Hobbes.Web.Routing
 open FSharp.Data
 open Hobbes.Server.Collectors
 

@@ -2,8 +2,8 @@ namespace Hobbes.Server.Services
 
 open Hobbes.Web.Database
 open Hobbes.Web.Log
-open Hobbes.Server.Routing
-open Hobbes.Server.Security
+open Hobbes.Web.Routing
+open Hobbes.Web.Security
 open Hobbes.Helpers
 
 [<RouteArea ("/", false)>]

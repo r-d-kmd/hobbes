@@ -1,6 +1,6 @@
 namespace Workbench
 
-open Hobbes.Server.Reflection
+open Hobbes.Web.Reflection
 
 type Source = 
     AzureDevOps = 1

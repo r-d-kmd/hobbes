@@ -3,7 +3,7 @@ namespace Hobbes.Web
 open FSharp.Quotations.Patterns
 open System.Reflection
 
-module internal Reflection = 
+module Reflection = 
     let tryGetAttribute<'a> (m:MemberInfo) : 'a option= 
         match m.GetCustomAttributes(typeof<'a>,false) with
         [||] -> None

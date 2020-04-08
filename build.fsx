@@ -191,29 +191,42 @@ Target.create "BuildDocker" (fun _ ->
     ) 
 )
 
-Target.create "BuildBaseImages" (fun _ -> 
-    
-    let run = run "docker"
-    let dockerFiles =         
+let baseDockerFiles =         
          [
              "deps"
              "runtime"
              "aspnet"
              "sdk"
-             "sdk-hobbes"
+             "sdk:hobbes"
          ] |> List.collect(fun name ->
              [
                 "./docker/Dockerfile." + name, name
-                "./docker/stretch/Dockerfile." + name, name + ":stretch"
+                "./docker/stretch/Dockerfile." + name, name + (if name.Contains ":" then "-" else ":") + "stretch"
              ]
          )
 
-    dockerFiles
+Target.create "BuildBaseImages" (fun _ -> 
+    
+    let run = run "docker"
+    baseDockerFiles
     |> Seq.iter(fun (path,tag) ->
         if File.exists path then
             let tag = dockerOrg + "/" + tag.ToLower()
             
             sprintf "build -f %s -t %s ." path tag
+            |> run "."
+
+    ) 
+)
+
+Target.create "PushBaseImages" (fun _ -> 
+    
+    let run = run "docker"
+    baseDockerFiles
+    |> Seq.iter(fun (path,tag) ->
+        if File.exists path then
+            let tag = dockerOrg + "/" + tag.ToLower()
+            sprintf "push %s" tag
             |> run "."
 
     ) 
@@ -332,6 +345,6 @@ Target.create "PushToDocker" (fun _ ->
 
 "BuildCommon"
     ==> "BuildBaseImages"
-
+    ==> "PushBaseImages"
 
 Target.runOrDefaultWithArguments "Build"

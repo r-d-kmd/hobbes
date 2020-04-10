@@ -41,7 +41,8 @@ let dataRouter =
     router {
         pipe_through verifiedPipe
         withArg <@ csv @> 
-        withArg <@ synchronize @>
+        withArg <@ fSync @>
+        withArg <@ sync @>
         withArg <@ getRaw @>
     }
 

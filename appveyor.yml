@@ -51,9 +51,11 @@ before_build:
   - eval $(minikube docker-env) 
   - echo ${ENV_FILE} | kubectl apply -f -
 
-build_script: 
-  - fake build
+build_script:
   - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
+  - DEPENDENCIES=$(git show HEAD --name-only  paket.dependencies | grep paket.dependencies)
+  - [ -z "$DEPENDENCIES" ] && echo "Skipping base images since the dependencies haven't changed" || fake build --target PushBaseImages
+  - fake build
   
 test_script:
   - cd kubernetes

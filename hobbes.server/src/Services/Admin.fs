@@ -31,6 +31,8 @@ module Admin =
 
                 Some n -> n.ToString()
                 | _ -> sprintf "%A" setting.Value.String.Value
+            log value
+            log (sprintf "%A" value)
             if status > 300 then
                 status,msg
             else
@@ -40,7 +42,7 @@ module Admin =
                                         "_config"
                                         setting.Area
                                         setting.Name
-                           ],value)
+                           ],sprintf "%A"value)
         ) (200, "not started")
 
     [<Put ("/settings", true)>]

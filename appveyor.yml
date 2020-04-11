@@ -53,10 +53,10 @@ before_build:
 
 build_script:
   - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-  - "DEPENDENCIES=$(git show HEAD --name-only  paket.dependencies | grep paket.dependencies\
-     || git show HEAD --name-only hobbes.helpers | grep hobbes.helpers\
-     || git show HEAD --name-only hobbes.core | grep hobbes.core\
-     || git show HEAD --name-only hobbes.web | grep hobbes.web)"
+  - DEPENDENCIES=$(git show HEAD --name-only  paket.dependencies | grep paket.dependencies)
+  - DEPENDENCIES=DEPENDENCIES || $(git show HEAD --name-only hobbes.helpers | grep hobbes.helpers)
+  - DEPENDENCIES=DEPENDENCIES || $(git show HEAD --name-only hobbes.core | grep hobbes.core)
+  - DEPENDENCIES=DEPENDENCIES || $(git show HEAD --name-only hobbes.web | grep hobbes.web)
   - [ -z "$DEPENDENCIES" ] && echo "Skipping base images since the dependencies haven't changed" || fake build --target PushBaseImages
   - fake build
   

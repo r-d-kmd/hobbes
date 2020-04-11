@@ -57,7 +57,7 @@ build_script:
   - DEPENDENCIES=DEPENDENCIES || $(git show HEAD --name-only hobbes.helpers | grep hobbes.helpers)
   - DEPENDENCIES=DEPENDENCIES || $(git show HEAD --name-only hobbes.core | grep hobbes.core)
   - DEPENDENCIES=DEPENDENCIES || $(git show HEAD --name-only hobbes.web | grep hobbes.web)
-  - "[ -z '$DEPENDENCIES' ] && echo 'Skipping base images since the dependencies have not changed' || fake build --target PushBaseImages!
+  - "[ -z '$DEPENDENCIES' ] && echo 'Skipping base images since the dependencies have not changed' || fake build --target PushBaseImages"
   - fake build
   
 test_script:

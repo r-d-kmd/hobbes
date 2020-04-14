@@ -11,7 +11,12 @@ open FSharp.Data
 
 [<RouteArea ("/data", false)>]
 module Data =
-
+    type private Config = JsonProvider<"""{
+            "_id" : "name",
+            "source" : "azuredevops",
+            "account" : "kmddk",
+            "project" : "gandalf"
+        }""">
     let synchronize source token =
         try
             match source with
@@ -30,16 +35,18 @@ module Data =
             eprintfn "Sync failed due to exception: %s" e.Message
             404, e.Message                                                                   
              
-    [<Get ("/sync/%s/%s")>]
-    let sync ((account : string), (project : string)) =
-        let dataSource = DataConfiguration.DataSource.AzureDevOps (account, project)
+    [<Post ("/sync/", true)>]
+    let sync confDoc =
+        let conf = Config.Parse confDoc
+        let dataSource = DataConfiguration.DataSource.AzureDevOps (conf.Account, conf.Project)
         Rawdata.clearProject dataSource
-        let token = (env (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_")) null)
+        let token = (env (sprintf "AZURE_TOKEN_%s" <| conf.Account.ToUpper().Replace("-","_")) null)
         synchronize dataSource token   
 
-    [<Get ("/readCached/%s/%s")>]
-    let readCached (account, project) =
-        let raw, timeStamp = AzureDevOps.readCached account project
+    [<Post ("/readCached/", true)>]
+    let read confDoc =
+        let conf = Config.Parse confDoc
+        let raw, timeStamp = AzureDevOps.readCached conf.Account conf.Project
         let res = (",", Seq.map (fun x -> x.ToString()) raw)
                   |> System.String.Join
         200, sprintf """{"value" : [%s],

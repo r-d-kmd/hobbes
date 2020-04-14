@@ -16,7 +16,22 @@ module AzureDevOps =
         response.StatusCode, (readBody response.Body)
 
     let requestNoTimeOut method path =
-        let response = Http.Request(url+path, httpMethod = method, silentHttpErrors = true, customizeHttpRequest = (fun request -> request.Timeout <- System.Int32.MaxValue ; request))
+        let response = 
+            Http.Request(url+path, 
+                         httpMethod = method, 
+                         silentHttpErrors = true, 
+                         customizeHttpRequest = (fun request -> request.Timeout <- System.Int32.MaxValue ; request)
+                        )
+        response.StatusCode, (readBody response.Body)        
+    
+    let postNoTimeOut path body=
+        let response = 
+            Http.Request(url+path, 
+                         httpMethod = HttpMethod.Post, 
+                         silentHttpErrors = true, 
+                         customizeHttpRequest = (fun request -> request.Timeout <- System.Int32.MaxValue ; request),
+                         body = HttpRequestBody.TextRequest body
+                        )
         response.StatusCode, (readBody response.Body)        
 
     let getNoTimeOut path =
@@ -56,49 +71,83 @@ module AzureDevOps =
     let setSyncFailed account project revision msg =
         setSync "false" account project revision msg      
 
-    let sync account project =
+    let _sync account project =
         sprintf "data/sync/%s/%s" account project
-        |> requestNoTimeOut HttpMethod.Get      
+        |> requestNoTimeOut HttpMethod.Get
+
+    let sync conf =
+        let status,resp = postNoTimeOut "data/sync/" conf
+        //TODO this obviously needs to go
+        if status < 400 && status >= 200  then 
+            setSyncCompleted conf "" ""
+        else 
+            setSyncFailed "" "" "" ""
+        |> ignore
+        status,resp  
 
     let getRaw id =
         sprintf "admin/raw/%s" id
         |> get    
 
-    let formatRawdataCache rawdataCache (timeStamp : string ) =
-        rawdataCache
-        |> Seq.mapi(fun index (row : AzureDevOpsAnalyticsRecord.Value) ->
-            let iterationProperties =
-                match (row.Iteration) with
-                Some iteration ->
-                    [
-                       "Iteration.IterationPath", box iteration.IterationPath
-                       "Iteration.IterationLevel1", asObj iteration.IterationLevel1 
-                       "Iteration.IterationLevel2", asObj iteration.IterationLevel2 
-                       "Iteration.IterationLevel3", asObj iteration.IterationLevel3 
-                       "Iteration.IterationLevel4", asObj iteration.IterationLevel4
-                       "Iteration.StartDate", asObj iteration.StartDate
-                       "Iteration.EndDate", asObj iteration.EndDate
-                       "Iteration.Number", iteration.Number |> box
-                    ]
-                | None -> []
-            let areaProperty =
-                match row.Area with
-                Some area ->
-                    [
-                        "Area.AreaPath", box area.AreaPath
-                    ]
-                | None -> []
-            let properties = 
-                azureFields
-                |> List.map(fun (name, getter) ->
-                    name, getter row
-                )
-            let timeStamp =
-                ["TimeStamp", box timeStamp]            
-            index,(iterationProperties@areaProperty@properties@timeStamp)
-        )   
+    let read conf =
+        let status,response = postNoTimeOut "data/read" conf
+        if status < 300 && status >= 200 then 
+            let data = 
+                response 
+                |> Hobbes.Server.Db.DataConfiguration.Data.Parse
+            let columnNames = data.Names
+            
+            data.Values
+            |> Seq.mapi(fun index row ->
+                index,  row
+                        |> Seq.map(fun r -> 
+                            match r.JsonValue with
+                            JsonValue.String v -> box v
+                            | JsonValue.Number v -> box v
+                            | JsonValue.Float v -> box v
+                            | JsonValue.Boolean v -> box v
+                            | JsonValue.Null -> null
+                            | e -> failwithf "only simple values allowed but got %A" e
+                        ) |> Seq.zip columnNames
+            )
+        else failwithf "Got an unexpected response: %d - %s" status response
+         
 
-    let readCached account project =
+    [<System.Obsolete>]
+    let _read account project =
+        let formatRawdataCache rawdataCache (timeStamp : string ) =
+            rawdataCache
+            |> Seq.mapi(fun index (row : AzureDevOpsAnalyticsRecord.Value) ->
+                let iterationProperties =
+                    match (row.Iteration) with
+                    Some iteration ->
+                        [
+                           "Iteration.IterationPath", box iteration.IterationPath
+                           "Iteration.IterationLevel1", asObj iteration.IterationLevel1 
+                           "Iteration.IterationLevel2", asObj iteration.IterationLevel2 
+                           "Iteration.IterationLevel3", asObj iteration.IterationLevel3 
+                           "Iteration.IterationLevel4", asObj iteration.IterationLevel4
+                           "Iteration.StartDate", asObj iteration.StartDate
+                           "Iteration.EndDate", asObj iteration.EndDate
+                           "Iteration.Number", iteration.Number |> box
+                        ]
+                    | None -> []
+                let areaProperty =
+                    match row.Area with
+                    Some area ->
+                        [
+                            "Area.AreaPath", box area.AreaPath
+                        ]
+                    | None -> []
+                let properties = 
+                    azureFields
+                    |> List.map(fun (name, getter) ->
+                        name, getter row
+                    )
+                let timeStamp =
+                    ["TimeStamp", box timeStamp]            
+                index,(iterationProperties@areaProperty@properties@timeStamp)
+            )   
         let rawDataAndTS = (sprintf "data/readCached/%s/%s" account project
                            |> getNoTimeOut
                            |> snd

@@ -11,7 +11,21 @@ open Hobbes.Server.Collectors
 module Data = 
     let cacheRevision (source : DataConfiguration.DataSource) = 
         sprintf "%s:%s:%d" source.SourceName source.ProjectName (System.DateTime.Now.Ticks) |> hash
-                                                            
+
+    let confDoc source =
+        //TODO: this match should be removed 
+        match source with
+        DataConfiguration.AzureDevOps(account,_) as s ->
+                sprintf """{
+                    "source" : "%s",
+                    "account" : "%s",
+                    "project" : "%s"
+                }""" s.SourceName account s.ProjectName      
+        | _ -> 
+            let msg = sprintf "No collector found for: %s" source.SourceName
+            eprintfn "%s" msg
+            failwith msg              
+
     let rec private data configurationName =
 
         (*let tryGetSubConfigs (configuration : DataConfiguration.Configuration) =
@@ -79,11 +93,11 @@ module Data =
                     None ->
                         debugf "Cache miss %s" configurationName
                         match configuration.Source with
-                        DataConfiguration.AzureDevOps(account,projectName) ->
+                        DataConfiguration.AzureDevOps _ ->
                             log "Reading from raw"
                             match configuration.SubConfigs.IsEmpty with
                             | true ->   let rows  = 
-                                            AzureDevOps.readCached account projectName
+                                            configuration.Source |> confDoc |> AzureDevOps.read 
                                         log "Transforming data into matrix"
                                         rows
                                         |> DataMatrix.fromRows
@@ -138,8 +152,8 @@ module Data =
     let csv configuration = 
         async {
             let syncId, syncing = isSyncing configuration
-            if syncing
-            then return 489, sprintf "Sync currently running for %s, please wait." syncId
+            if syncing then 
+                return 489, sprintf "Sync currently running for %s, please wait." syncId
             else
                 debugf "Getting csv for '%A'" configuration
                 let! data = data configuration
@@ -185,6 +199,8 @@ module Data =
     [<Get ("/fSync/%s") >]
     let fSync configurationName =
         let configuration = DataConfiguration.get configurationName
+
+        //TODO: all the house keeping belongs in the collector
         Admin.clearCache() |> ignore
         
         let revision = cacheRevision configuration.Source
@@ -197,17 +213,7 @@ module Data =
                 eprintfn "%s" msg
                 404, msg        
         async {
-            match configuration.Source with
-            DataConfiguration.AzureDevOps(account,project) ->
-                let statusCode, body = AzureDevOps.sync account project  
-                let completed, msg = invalidateCache statusCode body configuration
-                if completed 
-                then AzureDevOps.setSyncCompleted account project revision
-                else AzureDevOps.setSyncFailed account project revision msg
-                |> ignore                 
-            | _ -> 
-                let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
-                eprintfn "%s" msg
+            configuration.Source |> confDoc |> AzureDevOps.sync  |> ignore
         } |> Async.Start                    
         statusCode, syncId
 
@@ -216,6 +222,7 @@ module Data =
         let syncId, syncing = isSyncing configurationName
         log syncId
         logf "%A" syncing
-        if syncing
-        then 489, sprintf "Sync currently running for %s, please wait." syncId
-        else fSync configurationName
+        if syncing then 
+            489, sprintf "Sync currently running for %s, please wait." syncId
+        else 
+            fSync configurationName

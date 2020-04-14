@@ -5,6 +5,12 @@ open Hobbes.Web.Log
 open Hobbes.Web
 
 module DataConfiguration =
+    type internal Data = JsonProvider<"""{
+        "names" : ["a","n"], 
+        "values" : [
+            [{}],
+            [{}]
+        ]}""">
     type private ConfigurationRecord = JsonProvider<"""[{
           "_id": "flowerpot.State.onlyUserStories",
           "_rev": "5-b6433576152e3d1d8c7183499ce5b565",
@@ -15,7 +21,15 @@ module DataConfiguration =
             "Azure.stateRenaming",
             "General.onlyUserStory"
           ]
-        },{
+        }, {
+            "_id" : "name",
+            "source" : "azuredevops",
+            "account" : "kmddk",
+            "project" : "gandalf",
+            "transformations" : ["transformation 1", "transformation 2"],
+            "subConfigs": ["Config1", "Config2"]
+        },
+        {
         "_id" : "name",
         "azureDevOps" : {
             "account" : "kmddk",
@@ -40,6 +54,7 @@ module DataConfiguration =
     let private db = 
         Database.Database("configurations", ConfigurationRecord.Parse, Log.loggerInstance) 
                  .AddView(sourceView)
+    [<System.Obsolete>]
     type DataSource = 
         AzureDevOps of account: string * projectName: string
         | Rally of projectName : string

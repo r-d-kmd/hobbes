@@ -5,7 +5,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <RelativePath Condition="$(BUILD_ENV) == 'docker'">/</RelativePath>
-    <RelativePath Condition="$(RelativePath) == ''">../../../</RelativePath>
+    <RelativePath Condition="$(RelativePath) == ''">../../</RelativePath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="$(RelativePath).lib/hobbes.core.dll">

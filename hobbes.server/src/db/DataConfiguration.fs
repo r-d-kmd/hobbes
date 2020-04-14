@@ -5,12 +5,7 @@ open Hobbes.Web.Log
 open Hobbes.Web
 
 module DataConfiguration =
-    type internal Data = JsonProvider<"""{
-        "names" : ["a","n"], 
-        "values" : [
-            [{}],
-            [{}]
-        ]}""">
+    type internal Data = JsonProvider<""" {"columnNames" : ["a","b"], "rows" : [[0,"hk",null,2.,3,4,"2019-01.01"],[0.4,1.2,2.4,3.5,4.1],["x","y","z"],["2019-01.01","2019-01.01"]]} """>
     type private ConfigurationRecord = JsonProvider<"""[{
           "_id": "flowerpot.State.onlyUserStories",
           "_rev": "5-b6433576152e3d1d8c7183499ce5b565",

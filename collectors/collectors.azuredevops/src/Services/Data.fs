@@ -46,7 +46,7 @@ module Data =
     [<Post ("/read/", true)>]
     let read confDoc =
         let conf = Config.Parse confDoc
-        let raw, timeStamp = AzureDevOps.readCached conf.Account conf.Project
+        let raw, timeStamp = AzureDevOps.read conf.Account conf.Project
         let res = (",", Seq.map (fun x -> x.ToString()) raw)
                   |> System.String.Join
         200, sprintf """{"columnNames" : [%s],

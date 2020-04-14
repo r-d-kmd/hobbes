@@ -43,11 +43,12 @@ module Data =
         let token = (env (sprintf "AZURE_TOKEN_%s" <| conf.Account.ToUpper().Replace("-","_")) null)
         synchronize dataSource token   
 
-    [<Post ("/readCached/", true)>]
+    [<Post ("/read/", true)>]
     let read confDoc =
         let conf = Config.Parse confDoc
         let raw, timeStamp = AzureDevOps.readCached conf.Account conf.Project
         let res = (",", Seq.map (fun x -> x.ToString()) raw)
                   |> System.String.Join
-        200, sprintf """{"value" : [%s],
+        200, sprintf """{"columnNames" : [%s],
+                         ""
                          "timeStamp" : "%s"}""" res timeStamp

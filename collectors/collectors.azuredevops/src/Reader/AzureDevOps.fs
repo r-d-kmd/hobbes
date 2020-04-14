@@ -85,16 +85,86 @@ module AzureDevOps =
                     sBuilder.Append(d.ToString("x2"))
             ) sBuilder).ToString()
 
+    let formatRawdataCache (timeStamp : string ) rawdataCache =
+        let jsonString (s : string) = 
+            "\"" +
+             s.Replace(",", "\u066B") //"It's a comma but won't interfer with CSV format/parsing"
+              .Replace("\"","\\\"") 
+            + "\""
+        let columnNames = 
+            (",", [
+                    "TimeStamp"
+                    "Area.AreaPath"
+                    "Iteration.IterationPath"
+                    "Iteration.IterationLevel1"
+                    "Iteration.IterationLevel2"
+                    "Iteration.IterationLevel3"
+                    "Iteration.IterationLevel4"
+                    "Iteration.StartDate"
+                    "Iteration.EndDate"
+                    "Iteration.Number"
+                ] @ (azureFields |> List.map fst)
+                |> List.map jsonString)
+            |> System.String.Join
+            |> sprintf "[%s]"
+        let rows = 
+            ("",rawdataCache
+                |> Seq.map(fun (row : AzureDevOpsAnalyticsRecord.Value) ->
+                    let iterationProperties =
+                        match (row.Iteration) with
+                        Some iteration ->
+                            [
+                               box iteration.IterationPath
+                               asObj iteration.IterationLevel1 
+                               asObj iteration.IterationLevel2 
+                               asObj iteration.IterationLevel3 
+                               asObj iteration.IterationLevel4
+                               asObj iteration.StartDate
+                               asObj iteration.EndDate
+                               iteration.Number |> box
+                            ]
+                        | None -> []
+                    let areaProperty =
+                        match row.Area with
+                        Some area -> box area.AreaPath
+                        | None -> null
+                    let properties = 
+                        azureFields
+                        |> List.map(fun (name, getter) ->
+                            getter row
+                        )
+                    let timeStamp =
+                        box timeStamp
+                    (",",
+                     (timeStamp::areaProperty::iterationProperties@properties)
+                     |> List.map(fun v -> 
+                        match v with 
+                        null -> ""
+                        | :? string as s -> 
+                            jsonString s
+                        | v -> string v
+                    )) |> System.String.Join
+                    |> sprintf "[%s]"
+                )) |> System.String.Join
+                |> sprintf "[%s]"
+        sprintf """{
+           "names" : %s,
+           "rows" : %s
+           }
+        """ columnNames rows
+
     //Reads data from the raw data store. This should be exposed as part of the API in some form 
-    let readCached account project =
+    let read account project =
+        let timeStamp = ((Rawdata.getState (sprintf "azure devops:%s" project) 
+                        |> Cache.CacheRecord.Parse).TimeStamp
+                        |> System.DateTime.Parse).ToString("dd/MM/yyyy H:mm").Replace(":", ";")  
         let raw = 
             (account, project)
             |> DataConfiguration.AzureDevOps 
             |> Rawdata.bySource
-        Hobbes.Web.Log.logf "\n\n\n\n azure devops:%s \n\n\n\n\n\n" project
-        let timeStamp = ((Rawdata.getState (sprintf "azure devops:%s" project) 
-                        |> Cache.CacheRecord.Parse).TimeStamp
-                        |> System.DateTime.Parse).ToString("dd/MM/yyyy H:mm").Replace(":", ";")       
+            |> formatRawdataCache timeStamp
+
+        Hobbes.Web.Log.logf "\n\n\n\n azure devops:%s \n\n\n\n\n\n" project     
 
         raw, timeStamp
 

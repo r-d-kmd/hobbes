@@ -30,8 +30,10 @@ let statusRouter =
 
 let dataRouter = 
     router {
-       withArgs <@ sync @>
-       withArgs <@ readCached @>
+       //make a POST ops instead and let the arguments be in the body
+       //to make it more flexible and "same" signature for all collectors
+       withBody <@ sync @> 
+       withBody <@ read @>
     }
     
 let private appRouter = router {

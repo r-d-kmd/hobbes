@@ -59,7 +59,13 @@ module Routing =
             } 
 
     let withBodyNoArgs name f : HttpHandler = 
-        withBody name (fun body _ -> f body) ()
+        let f = (fun body _ -> f body)
+        fun next (ctx : HttpContext) ->
+            task {
+                let! body = ctx.ReadBodyFromRequestAsync()
+                let f = f body
+                return! ((noArgs name f) next ctx)
+            }
 
     let verifiedPipe = 
         pipeline {

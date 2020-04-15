@@ -9,4 +9,6 @@ module Status =
     
     [<Get ("/sync/%s")>]
     let getState id =
-        200, Rawdata.getState id
+        match Rawdata.getState id with
+        None -> 404, "No sync doc found"
+        | Some s -> 200,s

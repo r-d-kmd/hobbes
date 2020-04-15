@@ -1,7 +1,7 @@
 FROM kmdrd/sdk:stretch
 
 ENV BUILD_ENV docker
-COPY .lib/ /source/../.lib/
+COPY .lib/ ../.lib/
 
 # copy and publish app and libraries
 ONBUILD COPY ./src/ .

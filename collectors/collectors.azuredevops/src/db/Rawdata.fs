@@ -38,9 +38,8 @@ module Rawdata =
         }
 
     let getState id = 
-        match db.TryGet id with
-        None -> "not stated"
-        | Some s -> s.ToString()
+        db.TryGet id
+        |> Option.bind(fun s -> s.ToString() |> Some)
 
     let setSyncState state message revision source = 
         let doc = createCacheRecord {
@@ -97,16 +96,21 @@ module Rawdata =
         ) 
 
     let bySource source = 
-        source
-        |> projectsBySource
-        |> Seq.collect(fun s -> 
-            match s.JsonValue.Properties() |> Seq.tryFind(fun (n,_) -> n = "data") with
-            Some _ -> 
-
-                let data = s.Data :> obj :?> AzureDevOpsAnalyticsRecord.Root
-                data.Value
-            | None -> [||]
-        )
+        let s =
+            source
+            |> projectsBySource
+            |> Seq.collect(fun s -> 
+                s.JsonValue.Properties() |> Seq.tryFind(fun (n,_) -> n = "data")
+                |> Option.bind(fun _ -> 
+                    try
+                        let data = s.Data :> obj :?> AzureDevOpsAnalyticsRecord.Root
+                        data.Value |> Some
+                    with _ -> None
+                ) |> Option.orElse (Some Array.empty)
+                |> Option.get
+            )
+        if s |> Seq.isEmpty then None
+        else Some s
 
     let clearProject (source : DataConfiguration.DataSource) =
         async {

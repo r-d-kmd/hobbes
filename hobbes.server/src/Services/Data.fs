@@ -66,11 +66,12 @@ module Data =
                         DataConfiguration.AzureDevOps _ ->
                             log "Reading from raw"
                             match configuration.SubConfigs.IsEmpty with
-                            | true ->   let rows  = 
-                                            configuration.Source.ConfDoc |> AzureDevOps.read 
-                                        log "Transforming data into matrix"
-                                        rows
-                                        |> DataMatrix.fromRows
+                            | true ->   
+                                let rows  = 
+                                    configuration.Source.ConfDoc |> AzureDevOps.read 
+                                log "Transforming data into matrix"
+                                rows
+                                |> DataMatrix.fromRows
                             | false -> failwith "SubConfigs are not Implemented yet"
                                        //tryGetSubConfigs configuration                                    
                         | _ -> failwith "Unknown source"
@@ -100,25 +101,32 @@ module Data =
             return (transformedData)
         } 
 
-
+    //TODO move housekeeping to collector
     let isSyncing configurationName =
-        let configuration = DataConfiguration.get configurationName
-        match configuration.Source with
-        DataConfiguration.AzureDevOps(account, project)   ->
-            let syncId = ("azure devops:" + project)
-            log syncId
-            let statusCode, stateDoc = AzureDevOps.getSyncState syncId
-            if statusCode = 404 then
-                syncId,false
-            else
-                let stateDoc = Cache.CacheRecord.Parse stateDoc
-                let state = stateDoc.State
-                            |> Cache.SyncStatus.Parse
-                syncId ,state = Cache.SyncStatus.Started
-        | _                                               ->
-            let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
-            eprintfn "%s" msg
-            "No collector found", false
+        let configuration =
+            try
+                DataConfiguration.get configurationName |> Some
+            with _ -> 
+               None
+        if configuration.IsNone then configurationName, false
+        else
+            let configuration = configuration.Value
+            match configuration.Source with
+            DataConfiguration.AzureDevOps(account, project)   ->
+                let syncId = ("azure devops:" + project)
+                log syncId
+                let statusCode, stateDoc = AzureDevOps.getSyncState syncId
+                if statusCode = 404 then
+                    syncId,false
+                else
+                    let stateDoc = Cache.CacheRecord.Parse stateDoc
+                    let state = stateDoc.State
+                                |> Cache.SyncStatus.Parse
+                    syncId ,state = Cache.SyncStatus.Started
+            | _                                               ->
+                let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
+                eprintfn "%s" msg
+                "No collector found", false
 
 
     [<Get ("/csv/%s")>]
@@ -133,8 +141,6 @@ module Data =
                 return 200, data |> DataMatrix.toJson Csv
         } |> Async.RunSynchronously
 
-    
-        
 
     [<Get ("/raw/%s") >]
     let getRaw id =

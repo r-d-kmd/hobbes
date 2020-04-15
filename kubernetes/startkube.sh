@@ -1,1 +1,1 @@
-minikube start --vm-driver hyperv --hyperv-virtual-switch "Primary Virtual Switch" --memory=4096
+minikube start --vm-driver docker

@@ -191,45 +191,61 @@ Target.create "BuildDocker" (fun _ ->
     ) 
 )
 
-let baseDockerFiles =         
+let genericDockerFiles =         
          [
              "deps"
              "runtime"
              "aspnet"
              "sdk"
-             "sdk:hobbes"
          ] |> List.collect(fun name ->
              [
                 "./docker/Dockerfile." + name, name
-                "./docker/stretch/Dockerfile." + name, name + (if name.Contains ":" then "-" else ":") + "stretch"
+                "./docker/stretch/Dockerfile." + name, name + "-stretch"
              ]
          )
 
-Target.create "BuildBaseImages" (fun _ -> 
-    
-    let run = run "docker"
-    baseDockerFiles
-    |> Seq.iter(fun (path,tag) ->
+let baseDockerFiles = 
+    [
+        "./docker/Dockerfile.sdk-hobbes", "sdk:hobbes"
+        "./docker/stretch/Dockerfile.sdk-hobbes", "sdk:hobbes-stretch"
+    ]
+
+let buildImages = 
+    Seq.iter(fun (path,(tag : string)) ->
         if File.exists path then
             let tag = dockerOrg + "/" + tag.ToLower()
             
             sprintf "build -f %s -t %s ." path tag
-            |> run "."
-
+            |> run "docker" "."
     ) 
+
+Target.create "BuildGenericImages" (fun _ -> 
+    
+    genericDockerFiles
+    |> buildImages
 )
 
-Target.create "PushBaseImages" (fun _ -> 
+
+Target.create "BuildBaseImages" (fun _ -> 
     
-    let run = run "docker"
     baseDockerFiles
-    |> Seq.iter(fun (path,tag) ->
+    |> buildImages
+)
+
+let pushImages = 
+    Seq.iter(fun (path,(tag : string)) ->
         if File.exists path then
             let tag = dockerOrg + "/" + tag.ToLower()
             sprintf "push %s" tag
-            |> run "."
-
+            |> run "docker" "."
     ) 
+
+Target.create "PushBaseImages" (fun _ -> 
+    baseDockerFiles |> pushImages
+)
+
+Target.create "PushGenericImages" (fun _ -> 
+    genericDockerFiles |> pushImages
 )
 
 //Set to 'Normal' to have more information when trouble shooting 
@@ -258,7 +274,6 @@ let commonLibs =
 
 Target.create "BuildCommon" ignore
 Target.create "DebugCommon" ignore
-Target.create "ReleaseBuild" ignore
 Target.create "StartCommon" ignore
 
 open Fake.Core.TargetOperators
@@ -338,12 +353,14 @@ Target.create "PushToDocker" (fun _ ->
 "RedeployAzure"
     ==> "Redeploy"
 
-"ReleaseBuild"
-    ==> "BuildDocker"
+"BuildDocker"
     ==> "Build"
 
 "BuildCommon"
     ==> "BuildBaseImages"
     ==> "PushBaseImages"
+
+"BuildGenericImages"
+    ==> "PushGenericImages"
 
 Target.runOrDefaultWithArguments "Build"

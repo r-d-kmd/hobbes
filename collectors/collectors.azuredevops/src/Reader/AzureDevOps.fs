@@ -155,18 +155,22 @@ module AzureDevOps =
 
     //Reads data from the raw data store. This should be exposed as part of the API in some form 
     let read account project =
-        let timeStamp = ((Rawdata.getState (sprintf "azure devops:%s" project) 
-                        |> Cache.CacheRecord.Parse).TimeStamp
-                        |> System.DateTime.Parse).ToString("dd/MM/yyyy H:mm").Replace(":", ";")  
+        let timeStamp = 
+            (match Rawdata.getState (sprintf "azure devops:%s" project) with
+            Some s -> 
+                ((s |> Cache.CacheRecord.Parse).TimeStamp
+                 |> System.DateTime.Parse)
+            | None -> System.DateTime.Now).ToString("dd/MM/yyyy H:mm").Replace(":", ";")
+
         let raw = 
             (account, project)
             |> DataConfiguration.AzureDevOps 
             |> Rawdata.bySource
             |> formatRawdataCache timeStamp
 
-        Hobbes.Web.Log.logf "\n\n\n\n azure devops:%s \n\n\n\n\n\n" project     
+        Hobbes.Web.Log.logf "\n\n azure devops:%s \n\n" project     
 
-        raw, timeStamp
+        raw
 
     //TODO should be async and in parallel-ish
     //part of the API (see server to how it's exposed)

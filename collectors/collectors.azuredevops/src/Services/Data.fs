@@ -35,7 +35,7 @@ module Data =
             eprintfn "Sync failed due to exception: %s" e.Message
             404, e.Message                                                                   
              
-    [<Post ("/sync/", true)>]
+    [<Post ("/sync", true)>]
     let sync confDoc =
         let conf = Config.Parse confDoc
         let dataSource = DataConfiguration.DataSource.AzureDevOps (conf.Account, conf.Project)
@@ -43,12 +43,11 @@ module Data =
         let token = (env (sprintf "AZURE_TOKEN_%s" <| conf.Account.ToUpper().Replace("-","_")) null)
         synchronize dataSource token   
 
-    [<Post ("/read/", true)>]
+    [<Post ("/read", true)>]
     let read confDoc =
         let conf = Config.Parse confDoc
-        let raw, timeStamp = AzureDevOps.read conf.Account conf.Project
-        let res = (",", Seq.map (fun x -> x.ToString()) raw)
-                  |> System.String.Join
-        200, sprintf """{"columnNames" : [%s],
-                         ""
-                         "timeStamp" : "%s"}""" res timeStamp
+        let raw = AzureDevOps.read conf.Account conf.Project
+        match raw with
+        Some rawData ->
+            200, rawData
+        | None -> 404,"No data found"

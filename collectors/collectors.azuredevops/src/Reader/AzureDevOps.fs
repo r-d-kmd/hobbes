@@ -166,7 +166,7 @@ module AzureDevOps =
             (account, project)
             |> DataConfiguration.AzureDevOps 
             |> Rawdata.bySource
-            |> formatRawdataCache timeStamp
+            |> Option.bind((formatRawdataCache timeStamp) >> Some)
 
         Hobbes.Web.Log.logf "\n\n azure devops:%s \n\n" project     
 

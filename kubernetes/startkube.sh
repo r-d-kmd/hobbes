@@ -1,1 +1,2 @@
-minikube start --vm-driver docker
+set $PATH=$PATH:/Applications/VirtualBox.app/
+minikube start --vm-driver virtualbox

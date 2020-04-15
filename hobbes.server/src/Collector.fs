@@ -6,9 +6,8 @@ open Hobbes.Server.Db
 module AzureDevOps =
 
     
-    let private collectorUrl collectorName path = 
-        let url = sprintf "http://%scollector-svc:8085/%s" collectorName path
-        printfn "url: %s" url
+    let private collectorUrl (collectorName : string) path = 
+        let url = sprintf "http://%scollector-svc:8085/%s" (collectorName.Replace(" ","")) path
         url
 
     let private readBody = function
@@ -28,9 +27,11 @@ module AzureDevOps =
                         )
         response.StatusCode, (readBody response.Body)        
     
-    let private postNoTimeOut collectorName path body=
+    let private postNoTimeOut collectorName path body =
+        let url = collectorUrl collectorName path
+        printfn "url: %s" url
         let response = 
-            Http.Request(collectorUrl collectorName path,
+            Http.Request(url,
                          httpMethod = HttpMethod.Post, 
                          silentHttpErrors = true, 
                          customizeHttpRequest = (fun request -> request.Timeout <- System.Int32.MaxValue ; request),

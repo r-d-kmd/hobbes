@@ -7,46 +7,35 @@ open Collector.AzureDevOps.Reader
 open Hobbes.Web
 open Hobbes.Helpers
 open FSharp.Data
-
+open Hobbes.Shared.RawdataTypes
 
 [<RouteArea ("/data", false)>]
 module Data =
-    type private Config = JsonProvider<"""{
-            "_id" : "name",
-            "source" : "azuredevops",
-            "account" : "kmddk",
-            "project" : "gandalf"
-        }""">
-    let synchronize source token =
+   
+    let synchronize (config : Config.Root) token =
         try
-            match source with
-            DataConfiguration.AzureDevOps(account,projectName) -> 
-                let statusCode,body = AzureDevOps.sync token (account,projectName)
-                Log.logf "Sync finised with statusCode %d and result %s" statusCode body
-                if statusCode < 200 || statusCode >= 300 then 
-                    let msg = sprintf "Syncronization failed. Message: %s" body
-                    eprintfn "%s" msg
-                statusCode, body                 
-            | source -> 
-                let msg = sprintf "Error: The source %s, wasn't AzureDevOps" source.SourceName
+            let statusCode, body = AzureDevOps.sync token config
+            Log.logf "Sync finised with statusCode %d and result %s" statusCode body
+            if statusCode < 200 || statusCode >= 300 then 
+                let msg = sprintf "Syncronization failed. Message: %s" body
                 eprintfn "%s" msg
-                404, msg
+            statusCode, body                 
         with e ->
             eprintfn "Sync failed due to exception: %s" e.Message
             404, e.Message                                                                   
              
     [<Post ("/sync", true)>]
     let sync confDoc =
-        let conf = Config.Parse confDoc
-        let dataSource = DataConfiguration.DataSource.AzureDevOps (conf.Account, conf.Project)
-        Rawdata.clearProject dataSource
+        let conf = Hobbes.Shared.RawdataTypes.Config.Parse confDoc
+        Admin.createSyncDoc conf |> ignore
+        Rawdata.clearProject conf
         let token = (env (sprintf "AZURE_TOKEN_%s" <| conf.Account.ToUpper().Replace("-","_")) null)
-        synchronize dataSource token   
+        synchronize conf token   
 
     [<Post ("/read", true)>]
     let read confDoc =
         let conf = Config.Parse confDoc
-        let raw = AzureDevOps.read conf.Account conf.Project
+        let raw = AzureDevOps.read conf
         match raw with
         Some rawData ->
             200, rawData

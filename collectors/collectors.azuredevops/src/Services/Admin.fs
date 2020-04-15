@@ -6,6 +6,7 @@ open Hobbes.Server.Db
 open Hobbes.Web.Database
 open Hobbes.Web
 open Hobbes.Helpers
+open Hobbes.Shared.RawdataTypes
 
 [<RouteArea ("/admin", false)>]
 module Admin =
@@ -27,7 +28,7 @@ module Admin =
 
     [<Delete "/raw/%s">]
     let deleteRaw id =
-        Rawdata.delete id  
+        Rawdata.delete id       
 
     [<Get "/clear/rawdata">]
     let clearRawdata() =
@@ -37,18 +38,17 @@ module Admin =
     let getRaw id =
         Rawdata.get id
 
-    [<Get "/createSyncDoc/%s/%s/%s">]
-    let createSyncDoc ((account : string), (project : string), (revision : string)) =
-        let dataSource = DataConfiguration.DataSource.AzureDevOps (account, project)
-        200, Rawdata.createSyncStateDocument revision dataSource  
-
+    let createSyncDoc (config : Config.Root) (revision : string) =
+        200, Rawdata.createSyncStateDocument revision config
+        
     [<Get "/setSync/%s/%s/%s/%s/%s">]
     let setSync ((completed : string), account, project, (revision : string), msg) =
         let dataSource = DataConfiguration.DataSource.AzureDevOps (account, project)
+        
         match completed.ToLower() with
-          "true"  -> Rawdata.setSyncCompleted revision dataSource
+          "true"  -> Rawdata.setSyncCompleted revision (dataSource.ConfDoc |> Config.Parse)
                      200, "SyncDoc set to completed"
-        | "false" -> Rawdata.setSyncFailed msg revision dataSource
+        | "false" -> Rawdata.setSyncFailed msg revision (dataSource.ConfDoc |> Config.Parse)
                      200, "SyncDoc set to failed"
         | _       -> 404, """first argument has to be "true" or "false" """
 

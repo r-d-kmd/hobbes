@@ -74,6 +74,19 @@ module DataConfiguration =
                         | Jira  _ -> "jira"
                         | Test -> "test"
                         | Unsupported -> "Unsupported source"
+             member this.ConfDoc 
+                with get() =
+                    //TODO: this match should be removed 
+                    match this with
+                    AzureDevOps(account,_) as s ->
+                            sprintf """{
+                                "source" : "%s",
+                                "account" : "%s",
+                                "project" : "%s"
+                            }""" s.SourceName account s.ProjectName 
+                    | _ -> 
+                        failwith "This is deprecated"
+
     
     //TODO: Should be able to depend on other configuratiuons
     //with the result of the transformations of either to be joined together on the index

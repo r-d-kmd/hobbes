@@ -9,42 +9,12 @@ open Hobbes.Server.Collectors
 
 [<RouteArea "/data">]
 module Data = 
-    let cacheRevision (source : DataConfiguration.DataSource) = 
-        sprintf "%s:%s:%d" source.SourceName source.ProjectName (System.DateTime.Now.Ticks) |> hash
+    let cacheRevision confDoc = 
+        sprintf "%s:%d" confDoc (System.DateTime.Now.Ticks) |> hash
 
-    let confDoc source =
-        //TODO: this match should be removed 
-        match source with
-        DataConfiguration.AzureDevOps(account,_) as s ->
-                sprintf """{
-                    "source" : "%s",
-                    "account" : "%s",
-                    "project" : "%s"
-                }""" s.SourceName account s.ProjectName      
-        | _ -> 
-            let msg = sprintf "No collector found for: %s" source.SourceName
-            eprintfn "%s" msg
-            failwith msg              
+                  
 
     let rec private data configurationName =
-
-        (*let tryGetSubConfigs (configuration : DataConfiguration.Configuration) =
-            let rec aux (configs : string list) (matrix : IDataMatrix) =
-                match configs with 
-                | []    -> log "Combined all subConfigs"
-                           matrix
-                | x::xs -> logf "Retrieving subConfig: %s" x
-                           aux xs (matrix.Combine (Async.RunSynchronously (data x)))
-
-            if configuration.SubConfigs.Length <= 1 
-            then failwith "Less than 2 configurations in subconfigs is not legal"
-            else
-                let c, cs = configuration.SubConfigs |> List.head, configuration.SubConfigs |> List.tail
-                logf "Retrieving subConfig: %s" c
-                let matrix = Async.RunSynchronously (data c)
-                aux cs matrix     *)
-
-
         let rec transformData (configuration : DataConfiguration.Configuration) (transformations : Transformations.TransformationRecord.Root list) calculatedData =
             match transformations with
             [] -> calculatedData
@@ -97,7 +67,7 @@ module Data =
                             log "Reading from raw"
                             match configuration.SubConfigs.IsEmpty with
                             | true ->   let rows  = 
-                                            configuration.Source |> confDoc |> AzureDevOps.read 
+                                            configuration.Source.ConfDoc |> AzureDevOps.read 
                                         log "Transforming data into matrix"
                                         rows
                                         |> DataMatrix.fromRows
@@ -169,7 +139,7 @@ module Data =
 
     let invalidateCache statusCode body (configuration : DataConfiguration.Configuration) =
         try
-            let cacheRevision = cacheRevision configuration.Source
+            let cacheRevision = configuration.Source.ConfDoc |> cacheRevision
             if statusCode >= 200 && statusCode < 300 then 
                 debug "Invalidating cache"
                 Cache.invalidateCache configuration.Source cacheRevision |> Async.RunSynchronously
@@ -198,24 +168,13 @@ module Data =
 
     [<Get ("/fSync/%s") >]
     let fSync configurationName =
-        let configuration = DataConfiguration.get configurationName
 
-        //TODO: all the house keeping belongs in the collector
-        Admin.clearCache() |> ignore
-        
-        let revision = cacheRevision configuration.Source
-        let statusCode, syncId =
-            match configuration.Source with
-            DataConfiguration.AzureDevOps(account, project)   ->
-                AzureDevOps.createSyncDoc account project revision
-            | _                                               ->
-                let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
-                eprintfn "%s" msg
-                404, msg        
+        let configuration = DataConfiguration.get configurationName
+        let status, body = Admin.clearCache()
         async {
-            configuration.Source |> confDoc |> AzureDevOps.sync  |> ignore
-        } |> Async.Start                    
-        statusCode, syncId
+            configuration.Source.ConfDoc |> AzureDevOps.sync  |> ignore
+        } |> Async.Start
+        status,body
 
     [<Get ("/sync/%s") >]
     let sync configurationName =

@@ -5,6 +5,7 @@ open Hobbes.Web
 open Hobbes.Server.Db
 open Hobbes.Web
 open Hobbes.Web.Log
+open Hobbes.Shared.RawdataTypes
 
 module Cache = 
     
@@ -128,8 +129,8 @@ module Cache =
     let private createKeyFromList  (cacheKey : string list) =  
         System.String.Join(":",cacheKey).ToLower()
 
-    let private createKey (configuration : Configuration) = 
-        configuration.Source.SourceName::configuration.Source.ProjectName::configuration.Transformations
+    let private createKey (configuration : Config.Root) = 
+        configuration.Source::configuration.Project::(configuration.Transformations |> Array.toList)
 
     let InsertOrUpdate doc = 
         db.InsertOrUpdate doc
@@ -137,7 +138,7 @@ module Cache =
     let list() = 
         db.ListIds()
 
-    let createDataRecord (key : string) (source : DataSource) (data : string) keyValue =
+    let createDataRecord (key : string) (config : Config.Root) (data : string) keyValue =
         let key = key.ToLower()
         let data = if isNull data then data else data.Replace("\\", "\\\\")
         let record = 
@@ -148,8 +149,8 @@ module Cache =
                         "timeStamp" : "%s"
                         %s%s
                     }""" key
-                         source.SourceName
-                         source.ProjectName
+                         config.Source
+                         config.Project
                          (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
                           
                          (if data |> isNull then 
@@ -168,20 +169,20 @@ module Cache =
 
         //validate that the model fits expectations
         assert(parsedRecord.Id = key)
-        assert(parsedRecord.Source = source.SourceName)
-        assert(parsedRecord.Project = source.ProjectName)
+        assert(parsedRecord.Source = config.Source)
+        assert(parsedRecord.Project = config.Project)
 
         record
 
-    let createCacheRecord configuration (data : string) (state : SyncStatus) message cacheRevision =
+    let createCacheRecord (config : Config.Root) (data : string) (state : SyncStatus) message cacheRevision =
         let cacheKey = 
-            configuration 
+            config
             |> createKey 
             |> createKeyFromList
-        createDataRecord cacheKey configuration.Source data [
-                                                               if cacheRevision |> Option.isSome then yield "revision", string cacheRevision.Value
-                                                               yield "state", string state
-                                                               if message |> Option.isSome then yield "message", message.Value]
+        createDataRecord cacheKey config data [
+                                               if cacheRevision |> Option.isSome then yield "revision", string cacheRevision.Value
+                                               yield "state", string state
+                                               if message |> Option.isSome then yield "message", message.Value]
 
     let store configuration cacheRevision (data : string) =
 
@@ -251,7 +252,7 @@ module Cache =
                 [],_ | [_], _ | [_;_], None -> configuration.Transformations, None
                 | _::_::transformations, data ->
                     configuration.Transformations
-                    |> List.filter(fun transformation ->
+                    |> Array.filter(fun transformation ->
                         transformations
                         |> List.tryFind(fun t -> t = transformation)
                         |> Option.isNone
@@ -280,7 +281,7 @@ module Cache =
     let retrieveRaw key = 
         db.Get [key]
 
-    let retrieve (configuration : Configuration) =
+    let retrieve (configuration : Config.Root) =
        (
            configuration
            |> createKey

@@ -23,9 +23,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Shared.fs" />
     <Compile Include="db/DataConfiguration.fs" />
     <Compile Include="db/Cache.fs" />
-    <Compile Include="Shared.fs" />
     <Compile Include="db/Rawdata.fs" />
     <Compile Include="db/Uniform.fs" />
     <Compile Include="Reader/AzureDevOps.fs" />

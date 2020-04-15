@@ -29,7 +29,16 @@ module Data =
         let conf = Hobbes.Shared.RawdataTypes.Config.Parse confDoc
         Admin.createSyncDoc conf |> ignore
         Rawdata.clearProject conf
-        let token = (env (sprintf "AZURE_TOKEN_%s" <| conf.Account.ToUpper().Replace("-","_")) null)
+        let account = 
+            if System.String.IsNullOrWhiteSpace conf.Account then
+                "kmddk"
+            else
+                conf.Account
+
+        let tokenName = (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_"))
+        let token = (env tokenName null)
+
+        Log.logf "Using token from %s=%s " tokenName token
         synchronize conf token   
 
     [<Post ("/read", true)>]

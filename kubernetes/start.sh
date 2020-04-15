@@ -1,2 +1,2 @@
-kubectl apply -f db-deployment.yaml,db-svc.yaml,db-volume.yaml,hobbes-deployment.yaml,hobbes-svc.yaml,collectordb-volume.yaml,collectordb-deployment.yaml,collectordb-svc.yaml,azuredevops-deployment.yaml,azuredevops-svc.yam
+kubectl apply -f db-deployment.yaml,db-svc.yaml,db-volume.yaml,hobbes-deployment.yaml,hobbes-svc.yaml,collectordb-volume.yaml,collectordb-deployment.yaml,collectordb-svc.yaml,azuredevops-deployment.yaml,azuredevops-svc.yaml
 open "http://$(minikube ip):30080"

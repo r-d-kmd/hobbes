@@ -6,7 +6,10 @@ open Hobbes.Server.Db
 module AzureDevOps =
 
     
-    let private collectorUrl collectorName path= sprintf "http://%scollector-svc:8085/%s" collectorName path
+    let private collectorUrl collectorName path = 
+        let url = sprintf "http://%scollector-svc:8085/%s" collectorName path
+        printfn "url: %s" url
+        url
 
     let private readBody = function
     | Binary b -> System.Text.Encoding.ASCII.GetString b

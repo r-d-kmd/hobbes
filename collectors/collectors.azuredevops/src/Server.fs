@@ -18,8 +18,6 @@ let adminRouter =
        fetch <@ clearRawdata @>
        withArg <@ getRaw @>
        fetch <@ initDb @>
-        
-       withArgs3 <@ createSyncDoc @>
        withArgs5 <@ setSync @>
     }
 

@@ -22,8 +22,8 @@ module AzureDevOps =
         data.Value |> Array.isEmpty
     
     //The first url to start with, if there's already some stored data
-    let private getInitialUrl ((account : string),projectName) =
-        let account = account.Replace("_", "-")
+    let private getInitialUrl (config : Config.Root)=
+        let account = config.Account.Replace("_", "-")
         let filters = 
             System.String.Join(" and ",
                 [
@@ -39,9 +39,9 @@ module AzureDevOps =
             let path = 
                 (sprintf "/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&$select=%s,Iteration&$filter=%s and WorkItemRevisionSK gt " selectedFields filters).Replace(" ", "%20")
 
-            sprintf "https://analytics.dev.azure.com/%s/%s%s%d" account projectName path
+            sprintf "https://analytics.dev.azure.com/%s/%s%s%d" account config.Project path
         try
-            match  DataConfiguration.AzureDevOps (account,projectName) |> Rawdata.tryLatestId with
+            match  config |> Rawdata.tryLatestId with
             Some workItemRevisionId -> 
                 initialUrl workItemRevisionId
             | None -> 
@@ -154,29 +154,28 @@ module AzureDevOps =
         """ columnNames rows
 
     //Reads data from the raw data store. This should be exposed as part of the API in some form 
-    let read account project =
+    let read (config : Config.Root) =
         let timeStamp = 
-            (match Rawdata.getState (sprintf "azure devops:%s" project) with
+            (match sprintf "%s:%s" config.Source config.Project |> Rawdata.getState with
             Some s -> 
                 ((s |> Cache.CacheRecord.Parse).TimeStamp
                  |> System.DateTime.Parse)
             | None -> System.DateTime.Now).ToString("dd/MM/yyyy H:mm").Replace(":", ";")
 
         let raw = 
-            (account, project)
-            |> DataConfiguration.AzureDevOps 
+            config
             |> Rawdata.bySource
             |> Option.bind((formatRawdataCache timeStamp) >> Some)
 
-        Hobbes.Web.Log.logf "\n\n azure devops:%s \n\n" project     
+        Hobbes.Web.Log.logf "\n\n azure devops:%s \n\n" config.Project     
 
         raw
 
     //TODO should be async and in parallel-ish
     //part of the API (see server to how it's exposed)
     //we might want to store azureToken as an env variable
-    let sync azureToken project = 
-        let source = DataConfiguration.AzureDevOps project
+    let sync azureToken (config : Config.Root) = 
+        
         let rec _read hashes url = 
             let resp = 
                 url
@@ -196,7 +195,7 @@ module AzureDevOps =
 
                     let body' = 
                         body.Replace("\\\"","'")
-                    let rawdataRecord = Cache.createDataRecord rawId source body' [
+                    let rawdataRecord = Cache.createDataRecord rawId config body' [
                                                                                     "url", url
                                                                                     "recordCount", hashes 
                                                                                                    |> List.length 
@@ -223,7 +222,7 @@ module AzureDevOps =
                 failwith <| sprintf "StatusCode: %d. Message: %s" resp.StatusCode message
 
         try
-            project
+            config
             |> getInitialUrl                                   
             |> _read []
             200,"ok"

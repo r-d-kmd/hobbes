@@ -41,12 +41,8 @@ module Rawdata =
         db.TryGet id
         |> Option.bind(fun s -> s.ToString() |> Some)
 
-    let setSyncState state message revision source = 
-        let doc = createCacheRecord {
-                                       Source = source
-                                       Transformations = []
-                                       SubConfigs = []
-                                    } null state message revision
+    let setSyncState state message revision config = 
+        let doc = createCacheRecord config null state message revision
         db.InsertOrUpdate(doc) |> ignore
         (doc |> CacheRecord.Parse).Id
 
@@ -55,8 +51,8 @@ module Rawdata =
     let updateSync event revision = setSyncState Updated (Some event) (Some revision) >> ignore
     let createSyncStateDocument revision = setSyncState Started None (Some revision)
 
-    let tryLatestId (source : DataConfiguration.DataSource) =
-        None //should ideal return the latest workitem id but view in production are unstable
+    let tryLatestId (config : Config.Root) =
+        None //should ideal return the latest workitem id but views in production are unstable
 
     let list = 
         db.ListIds
@@ -82,13 +78,13 @@ module Rawdata =
         } |> Async.Start
         200,"deleting"
     
-    let projectsBySource (source : DataConfiguration.DataSource) = 
+    let projectsBySource (config : Config.Root) = 
         //this could be done with a view but the production environment often exceeds the time limit.
         //we haven't got enough documents for a missing index to be a problem and since it's causing problems 
         //reliance on an index has been removed
         db.List() 
         |> Seq.filter(fun doc -> 
-           doc.Source = source.SourceName && doc.Project = source.ProjectName
+           doc.Source = config.Source && doc.Project = config.Project
            && (doc.JsonValue.Properties() 
                |> Seq.tryFind(fun (name,v) -> 
                    name = "data" 
@@ -112,10 +108,10 @@ module Rawdata =
         if s |> Seq.isEmpty then None
         else Some s
 
-    let clearProject (source : DataConfiguration.DataSource) =
+    let clearProject (config : Hobbes.Shared.RawdataTypes.Config.Root) =
         async {
             let! _ = 
-                source
+                config
                 |> projectsBySource
                 |> Seq.map(fun p -> 
                     async {

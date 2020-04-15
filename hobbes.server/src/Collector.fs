@@ -1,9 +1,11 @@
 namespace Hobbes.Server.Collectors
 
 open FSharp.Data
+open Hobbes.Server.Db
 
 module AzureDevOps =
 
+    
     let private collectorUrl collectorName path= sprintf "http://%scollector-svc:8085/%s" collectorName path
 
     let private readBody = function
@@ -58,12 +60,7 @@ module AzureDevOps =
     [<System.Obsolete("Azure specific")>]
     let internal getSyncState syncId =
         sprintf "status/sync/%s" syncId
-        |> get
-
-    [<System.Obsolete("Azure specific")>]
-    let internal createSyncDoc account project revision =
-        sprintf "admin/createSyncDoc/%s/%s/%s" account project revision
-        |> get     
+        |> get  
 
     [<System.Obsolete("Azure specific")>]
     let private setSync completed account project revision msg =
@@ -78,7 +75,6 @@ module AzureDevOps =
     let private setSyncFailed account project revision msg =
         setSync "false" account project revision msg      
 
-    [<System.Obsolete("Azure specific")>]
     let sync conf =
         let collectorName = (conf |> Hobbes.Server.Db.DataConfiguration.ConfigurationRecord.Parse).Source.Value.ToLower()
         let status,response = postNoTimeOut collectorName "data/sync/" conf

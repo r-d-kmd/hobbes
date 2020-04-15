@@ -107,11 +107,14 @@ module Data =
         DataConfiguration.AzureDevOps(account, project)   ->
             let syncId = ("azure devops:" + project)
             log syncId
-            let _, stateDoc = AzureDevOps.getSyncState syncId
-            let stateDoc = Cache.CacheRecord.Parse stateDoc
-            let state = stateDoc.State
-                        |> Cache.SyncStatus.Parse
-            syncId ,state = Cache.SyncStatus.Started
+            let statusCode, stateDoc = AzureDevOps.getSyncState syncId
+            if statusCode = 404 then
+                syncId,false
+            else
+                let stateDoc = Cache.CacheRecord.Parse stateDoc
+                let state = stateDoc.State
+                            |> Cache.SyncStatus.Parse
+                syncId ,state = Cache.SyncStatus.Started
         | _                                               ->
             let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
             eprintfn "%s" msg

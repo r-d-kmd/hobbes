@@ -177,6 +177,7 @@ module AzureDevOps =
     let sync azureToken (config : Config.Root) = 
         
         let rec _read hashes url = 
+            Hobbes.Web.Log.logf "syncing with %s@%s" azureToken url
             let resp = 
                 url
                 |> request azureToken azureToken "GET" None                 

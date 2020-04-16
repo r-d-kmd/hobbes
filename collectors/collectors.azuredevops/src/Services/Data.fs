@@ -26,7 +26,7 @@ module Data =
              
     [<Post ("/sync", true)>]
     let sync confDoc =
-        let conf = Hobbes.Shared.RawdataTypes.Config.Parse confDoc
+        let conf = Config.Parse confDoc
         Admin.createSyncDoc conf |> ignore
         Rawdata.clearProject conf
         let account = 

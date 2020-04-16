@@ -88,11 +88,11 @@ module AzureDevOps =
     let formatRawdataCache (timeStamp : string ) rawdataCache =
         let jsonString (s : string) = 
             "\"" +
-             s.Replace(",", "\u066B") //"It's a comma but won't interfer with CSV format/parsing"
+             s.Replace(":", ";") 
               .Replace("\"","\\\"") 
             + "\""
         let columnNames = 
-            (",", [
+            (":", [
                     "TimeStamp"
                     "Area.AreaPath"
                     "Iteration.IterationPath"
@@ -135,13 +135,15 @@ module AzureDevOps =
                         )
                     let timeStamp =
                         box timeStamp
-                    (",",
+                    (":",
                      (timeStamp::areaProperty::iterationProperties@properties)
                      |> List.map(fun v -> 
                         match v with 
-                        null -> ""
+                        null -> "null"
                         | :? string as s -> 
                             jsonString s
+                        | :? System.DateTime as d -> 
+                            d |> string |> jsonString
                         | v -> string v
                     )) |> System.String.Join
                     |> sprintf "[%s]"

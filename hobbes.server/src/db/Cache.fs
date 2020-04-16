@@ -105,6 +105,7 @@ module Cache =
                    record.ColumnNames
                    |> Array.indexed
                    |> Array.fold(fun map (i,columnName) ->
+                       assert(values.Length > i)
                        let columnValues = values.[i]
                        match map |> Map.tryFind columnName with
                        None -> map.Add(columnName, columnValues)

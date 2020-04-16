@@ -152,7 +152,7 @@ module AzureDevOps =
                 )) |> System.String.Join
                 |> sprintf "[%s]"
         sprintf """{
-           "names" : %s,
+           "columnNames" : %s,
            "rows" : %s
            }
         """ columnNames rows

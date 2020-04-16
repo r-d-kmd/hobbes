@@ -95,7 +95,7 @@ module Admin =
         
     [<Get ("/list/rawdata")>]
     let listRawdata() = 
-        AzureDevOps.listRawdata()               
+        Collector.listRawdata()               
 
     [<Get("/list/log")>]
     let listLog() = 
@@ -123,7 +123,7 @@ module Admin =
 
     [<Delete ("/raw/%s")>]
     let deleteRaw (id : string) = 
-        AzureDevOps.deleteRaw id
+        Collector.deleteRaw id
 
     [<Delete ("/cache/%s")>]
     let deleteCache (id : string) = 
@@ -135,7 +135,7 @@ module Admin =
 
     [<Get ("/clear/rawdata")>]
     let clearRawdata () = 
-        AzureDevOps.clearRawdata()
+        Collector.clearRawdata()
     
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
         

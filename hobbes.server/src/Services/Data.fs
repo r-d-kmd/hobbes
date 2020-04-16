@@ -15,30 +15,25 @@ module Data =
                   
 
     let rec private data configurationName =
-        let rec transformData (configuration : DataConfiguration.Configuration) (transformations : Transformations.TransformationRecord.Root list) calculatedData =
-            match transformations with
+        let rec transformData searchKey transformations (allTransformations : Transformations.TransformationRecord.Root list) calculatedData =
+            match allTransformations with
             [] -> calculatedData
             | transformation::tail ->
                 let transformedData =  
                     Hobbes.FSharp.Compile.expressions transformation.Lines calculatedData
 
-                let nextConfiguration = 
-                    { configuration with
-                        Transformations = configuration.Transformations@[transformation.Id]
-                    } 
-
                 async {
                     debug "Caching transformation"
                     try
                         transformedData.ToJson(Column)
-                        |> Cache.store nextConfiguration cacheRevision
+                        |> Cache.store transformations searchKey cacheRevision
                         |> ignore
                     with e ->
                         errorf e.StackTrace "Failed to cache transformation result. Message: %s" e.Message
                 } |> Async.Start
-                transformData nextConfiguration tail transformedData
+                transformData searchKey transformations tail transformedData
 
-        let readRawdata configuration =
+        let readRawdata (configuration : DataConfiguration.Configuration) =
             async {
                 let! uncachedTransformations, data =
                     Cache.findUncachedTransformationsAndCachedData configuration 
@@ -48,33 +43,25 @@ module Data =
 
                 let cachedTransformations = 
                     configuration.Transformations
-                    |> List.filter(fun t -> 
+                    |> Array.filter(fun t -> 
                         uncachedTransformations 
                         |> List.tryFind(fun t' -> t = t')   
                         |> Option.isNone
-                    )  
-                let tempConfig = 
-                    {
-                        configuration with
-                            Transformations = cachedTransformations
-                    }
+                    )
+
                 let data =
                     match data with
                     None ->
                         debugf "Cache miss %s" configurationName
-                        match configuration.Source with
-                        DataConfiguration.AzureDevOps _ ->
-                            log "Reading from raw"
-                            match configuration.SubConfigs.IsEmpty with
-                            | true ->   
-                                let rows  = 
-                                    configuration.Source.ConfDoc |> AzureDevOps.read 
-                                log "Transforming data into matrix"
-                                rows
-                                |> DataMatrix.fromRows
-                            | false -> failwith "SubConfigs are not Implemented yet"
-                                       //tryGetSubConfigs configuration                                    
-                        | _ -> failwith "Unknown source"
+                        match configuration.SubConfigs |> Array.isEmpty with
+                        true ->   
+                            let rows  = 
+                                configuration.JsonValue.ToString() |> Collector.read 
+                            log "Transforming data into matrix"
+                            rows
+                            |> DataMatrix.fromRows
+                        | false -> 
+                            failwith "SubConfigs are not Implemented yet"
                     | Some data -> 
                         data
                         |> Seq.map(fun (columnName,values) -> 
@@ -83,20 +70,20 @@ module Data =
                         ) 
                         |> DataMatrix.fromTable
 
-                return transformations, data, tempConfig
+                return transformations, data, cachedTransformations
             }
 
         let configuration = DataConfiguration.get configurationName
 
         async {
             
-            let! transformations, cachedData, tempConfig = readRawdata configuration
+            let! transformations, cachedData, cachedTransformations = readRawdata configuration
 
             let transformedData = 
                 match transformations with
                 ts when ts |> Seq.isEmpty -> cachedData
                 | transformations ->
-                    transformData tempConfig (transformations |> List.ofSeq) cachedData
+                    transformData configuration.SearchKey (cachedTransformations |> List.ofArray) (transformations |> List.ofSeq) cachedData
 
             return transformedData
         } 
@@ -111,23 +98,16 @@ module Data =
         if configuration.IsNone then configurationName, false
         else
             let configuration = configuration.Value
-            match configuration.Source with
-            DataConfiguration.AzureDevOps(account, project)   ->
-                let syncId = ("azure devops:" + project)
-                log syncId
-                let statusCode, stateDoc = AzureDevOps.getSyncState syncId
-                if statusCode = 404 then
-                    syncId,false
-                else
-                    let stateDoc = Cache.CacheRecord.Parse stateDoc
-                    let state = stateDoc.State
-                                |> Cache.SyncStatus.Parse
-                    syncId ,state = Cache.SyncStatus.Started
-            | _                                               ->
-                let msg = sprintf "No collector found for: %s" configuration.Source.SourceName
-                eprintfn "%s" msg
-                "No collector found", false
-
+            let syncId = configuration.SearchKey
+            log syncId
+            let statusCode, stateDoc = Collector.getSyncState configuration.Source syncId
+            if statusCode = 404 then
+                syncId,false
+            else
+                let stateDoc = Cache.CacheRecord.Parse stateDoc
+                let state = stateDoc.State
+                            |> Cache.SyncStatus.Parse
+                syncId ,state = Cache.SyncStatus.Started
 
     [<Get ("/csv/%s")>]
     let csv configuration =  
@@ -144,14 +124,14 @@ module Data =
 
     [<Get ("/raw/%s") >]
     let getRaw id =
-        AzureDevOps.getRaw id
+        Collector.getRaw id
 
     let invalidateCache statusCode body (configuration : DataConfiguration.Configuration) =
         try
-            let cacheRevision = configuration.Source.ConfDoc |> cacheRevision
+            let cacheRevision = configuration.JsonValue.ToString() |> cacheRevision
             if statusCode >= 200 && statusCode < 300 then 
                 debug "Invalidating cache"
-                Cache.invalidateCache configuration.Source cacheRevision |> Async.RunSynchronously
+                Cache.invalidateCache configuration cacheRevision |> Async.RunSynchronously
                 debug "Recalculating"
                 
                 let configurations = DataConfiguration.configurationsBySource configuration.Source
@@ -179,11 +159,13 @@ module Data =
     let fSync configurationName =
 
         let configuration = DataConfiguration.get configurationName
-        let status, body = Admin.clearCache()
+        let status, _ = Admin.clearCache()
         async {
-            configuration.Source.ConfDoc |> AzureDevOps.sync  |> ignore
+            let status,msg = configuration.JsonValue.ToString() |> Collector.sync
+            if status >= 400 then
+              errorf null "failed to sync. %d - %s" status msg
         } |> Async.Start
-        status,body
+        status,"syncing"
 
     [<Get ("/sync/%s") >]
     let sync configurationName =

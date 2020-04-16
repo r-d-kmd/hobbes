@@ -29,7 +29,7 @@ module AzureDevOps =
     
     let private postNoTimeOut collectorName path body =
         let url = collectorUrl collectorName path
-        printfn "url: %s" url
+        printfn "url of post: %s" url
         let response = 
             Http.Request(url,
                          httpMethod = HttpMethod.Post, 
@@ -37,14 +37,30 @@ module AzureDevOps =
                          customizeHttpRequest = (fun request -> request.Timeout <- System.Int32.MaxValue ; request),
                          body = HttpRequestBody.TextRequest body
                         )
-        response.StatusCode, (readBody response.Body)        
+        let resp = readBody response.Body
+        printfn "body: %s" resp
+        response.StatusCode, resp
 
     let private getNoTimeOut path =
         requestNoTimeOut HttpMethod.Get path
 
+    let private post path body =
+        let url = collectorUrl "azuredevops" path
+        printfn "** posting to %s. path: %s body: %s" url path body
+        let response = 
+            Http.Request(url, 
+                         httpMethod = HttpMethod.Post, 
+                         silentHttpErrors = true,
+                         body = HttpRequestBody.TextRequest body
+                        )
+
+        response.StatusCode, (readBody response.Body)
+
+    [<System.Obsolete("Azure specific")>]
     let private get path =
         request HttpMethod.Get  "azuredevops" path
 
+    [<System.Obsolete("Azure specific")>]
     let private delete path =
         request HttpMethod.Delete  "azuredevops" path   
 
@@ -80,8 +96,8 @@ module AzureDevOps =
         setSync "false" account project revision msg      
 
     let sync conf =
-        let collectorName = (conf |> Hobbes.Server.Db.DataConfiguration.ConfigurationRecord.Parse).Source.Value.ToLower()
-        let status,response = postNoTimeOut collectorName "data/sync/" conf
+        let collectorName = (conf |> DataConfiguration.ConfigurationRecord.Parse).Source.Value.ToLower()
+        let status,response = postNoTimeOut collectorName "data/sync" conf
         //TODO this obviously needs to go
         if status < 400 && status >= 200  then 
             setSyncCompleted conf "" ""
@@ -96,12 +112,12 @@ module AzureDevOps =
         |> get    
 
     let read conf =
-        let collectorName = (conf |> Hobbes.Server.Db.DataConfiguration.ConfigurationRecord.Parse).Source.Value.ToLower()
-        let status,response = postNoTimeOut collectorName "data/read/" conf
+        let collectorName = (conf |> DataConfiguration.ConfigurationRecord.Parse).Source.Value.ToLower()
+        let status,response = postNoTimeOut collectorName "data/read" conf
         if status < 300 && status >= 200 then 
             let data = 
                 response 
-                |> Hobbes.Server.Db.DataConfiguration.Data.Parse
+                |> DataConfiguration.Data.Parse
             let columnNames = data.ColumnNames
             
             data.Rows

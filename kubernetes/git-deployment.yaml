@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitcollector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitcollector
+  template:
+    metadata:
+      labels:
+        app: gitcollector
+    spec:
+      containers:
+      - env:
+        imagePullPolicy: Never
+        image: collectors.git
+        name: collectors-git
+      restartPolicy: Always
+status: {}

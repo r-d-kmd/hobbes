@@ -88,11 +88,11 @@ module AzureDevOps =
     let formatRawdataCache (timeStamp : string ) rawdataCache =
         let jsonString (s : string) = 
             "\"" +
-             s.Replace(":", ";") 
-              .Replace("\"","\\\"") 
+             s.Replace("\"","\\\"") 
+              .Replace("\\","\\\\") 
             + "\""
         let columnNames = 
-            (":", [
+            (",", [
                     "TimeStamp"
                     "Area.AreaPath"
                     "Iteration.IterationPath"
@@ -108,7 +108,7 @@ module AzureDevOps =
             |> System.String.Join
             |> sprintf "[%s]"
         let rows = 
-            ("",rawdataCache
+            (",",rawdataCache
                 |> Seq.map(fun (row : AzureDevOpsAnalyticsRecord.Value) ->
                     let iterationProperties =
                         match (row.Iteration) with
@@ -135,7 +135,7 @@ module AzureDevOps =
                         )
                     let timeStamp =
                         box timeStamp
-                    (":",
+                    (",",
                      (timeStamp::areaProperty::iterationProperties@properties)
                      |> List.map(fun v -> 
                         match v with 
@@ -144,6 +144,8 @@ module AzureDevOps =
                             jsonString s
                         | :? System.DateTime as d -> 
                             d |> string |> jsonString
+                        | :? System.DateTimeOffset as d -> 
+                            d.ToLocalTime() |> string |> jsonString
                         | v -> string v
                     )) |> System.String.Join
                     |> sprintf "[%s]"

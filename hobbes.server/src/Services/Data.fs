@@ -98,7 +98,7 @@ module Data =
                 | transformations ->
                     transformData tempConfig (transformations |> List.ofSeq) cachedData
 
-            return (transformedData)
+            return transformedData
         } 
 
     //TODO move housekeeping to collector
@@ -130,16 +130,16 @@ module Data =
 
 
     [<Get ("/csv/%s")>]
-    let csv configuration = 
-        async {
-            let syncId, syncing = isSyncing configuration
-            if syncing then 
-                return 489, sprintf "Sync currently running for %s, please wait." syncId
-            else
-                debugf "Getting csv for '%A'" configuration
-                let! data = data configuration
-                return 200, data |> DataMatrix.toJson Csv
-        } |> Async.RunSynchronously
+    let csv configuration =  
+        let syncId, syncing = isSyncing configuration
+        if syncing then 
+            489, sprintf "Sync currently running for %s, please wait." syncId
+        else
+            debugf "Getting csv for '%A'" configuration
+            let data = data configuration |> Async.RunSynchronously
+            let csv = data |> DataMatrix.toJson Csv
+            printfn "CSV: %s" csv
+            200, csv
 
 
     [<Get ("/raw/%s") >]

@@ -35,7 +35,7 @@ let dataRouter =
     }
     
 let private appRouter = router {
-    not_found_handler (setStatusCode 404 >=> text "Api 404")
+    not_found_handler (setStatusCode 404 >=> text "The requested ressource does not exist")
     
     fetch <@ ping @>
     forward "/admin" adminRouter

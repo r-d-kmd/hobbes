@@ -11,8 +11,8 @@ let private port = env "port" "8085"
 
 let dataRouter = 
     router {
-       withArgs <@ sync @>
-       withArgs <@ read @>
+       withBody <@ sync @>
+       withBody <@ read @>
     }
     
 let private appRouter = router {

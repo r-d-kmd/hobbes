@@ -1,3 +1,6 @@
+APPS=(db hobbes collectordb azuredevops git)
+VOLUMES=(db collectordb)
+
 function getname(){
    POD_NAME=$(kubectl get all | grep pod/.*$1)
    POD_NAME="$( cut -d ' ' -f 1 <<< "$POD_NAME" )"; echo "$POD_NAME"
@@ -10,9 +13,12 @@ function logs(){
 }
 
 function restart(){
-    FILE_NAME=$(ls *$1*-deployment.yaml)
-    kubectl scale --replicas=0 -f $FILE_NAME
-    kubectl scale --replicas=1 -f $FILE_NAME
+    for var in "$@"
+    do
+        FILE_NAME=$(ls *$var*-deployment.yaml)
+        kubectl scale --replicas=0 -f $FILE_NAME
+        kubectl scale --replicas=1 -f $FILE_NAME
+    done
 }
 
 function all(){
@@ -36,12 +42,18 @@ function listServices(){
     minikube service list
 }
 
-function start(){
+function build(){
     eval $(minikube -p minikube docker-env)
     cd .. && fake build
+}
+
+function start(){
+    build
     cd kubernetes
     kubectl apply -f env.JSON
-    kubectl apply -f db-deployment.yaml,db-svc.yaml,db-volume.yaml,hobbes-deployment.yaml,hobbes-svc.yaml,collectordb-volume.yaml,collectordb-deployment.yaml,collectordb-svc.yaml,azuredevops-deployment.yaml,azuredevops-svc.yaml
+    
+    for i in "${APPS[@]}"; do kubectl apply -f $i-deployment.yaml,$i-svc.yaml; done
+    for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
 }
 
 function startkube(){
@@ -50,5 +62,7 @@ function startkube(){
 }
 
 function update(){
-    kubectl apply -f git-deployment.yaml,git-svc.yaml,azuredevops-deployment.yaml,azuredevops-svc.yaml,collectordb-deployment.yaml,collectordb-svc.yaml,collectordb-volume.yaml,hobbes-deployment.yaml,db-deployment.yaml,hobbes-svc.yaml,db-svc.yaml,db-volume.yaml,env.JSON
+    for i in "${APPS[@]}"; do kubectl apply -f $i-deployment.yaml,$i-svc.yaml; done
+    for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
+    kubectl apply -f env.JSON
 }

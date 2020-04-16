@@ -11,4 +11,4 @@ module Status =
 
     [<Get ("/sync/%s")>] 
     let getSyncState syncId =
-        AzureDevOps.getSyncState syncId
+        Collector.getSyncState "" syncId

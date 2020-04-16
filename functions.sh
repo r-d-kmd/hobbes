@@ -1,21 +1,29 @@
 APPS=(db hobbes collectordb azuredevops git)
 VOLUMES=(db collectordb)
 
-function getname(){
-   POD_NAME=$(kubectl get all | grep pod/.*$1)
-   POD_NAME="$( cut -d ' ' -f 1 <<< "$POD_NAME" )"; echo "$POD_NAME"
+function getName(){
+   local POD_NAME=$(kubectl get all | grep pod/.*$1)
+   local POD_NAME="$( cut -d ' ' -f 1 <<< "$POD_NAME" )"; echo "$POD_NAME"
    echo $POD_NAME
 }
 
+function getAppName(){
+   local SERVICE_NAME=$(kubectl get all | grep service/.*$1 \
+                        | cut -d ' ' -f 1 \
+                        | cut -d '/' -f 2)
+   local APP_NAME=${SERVICE_NAME::${#SERVICE_NAME}-4}
+   echo $APP_NAME
+}
+
 function logs(){
-    getname $1
+    local POD_NAME=getName $1
     kubectl logs $2 $POD_NAME
 }
 
 function restart(){
     for var in "$@"
     do
-        FILE_NAME=$(ls *$var*-deployment.yaml)
+        local FILE_NAME=$(ls *$var*-deployment.yaml)
         kubectl scale --replicas=0 -f $FILE_NAME
         kubectl scale --replicas=1 -f $FILE_NAME
     done
@@ -34,7 +42,8 @@ function clean(){
 }
 
 function describe(){
-    NAME=$(kubectl get pods -l app=$1 -o name)
+    local NAME=$(getAppName $1)
+    local NAME=$(kubectl get pods -l app=$NAME -o name)
     kubectl describe ${NAME}
 }
 

@@ -1,5 +1,6 @@
 namespace Collector.Git
 open LibGit2Sharp
+open Hobbes.Web.Log
 
 module Reader =
 
@@ -29,19 +30,41 @@ module Reader =
             )
         
         if System.IO.Directory.Exists repoDir then
-            Hobbes.Web.Log.log "Deleting old repo"
+            log "Deleting old repo"
             System.IO.Directory.Delete(repoDir,true)
 
         let options = CloneOptions()
         options.CredentialsProvider <- ca
-        Hobbes.Web.Log.logf "Cloning repo %s into %s" url repoDir
+        logf "Cloning repo %s into %s" url repoDir
         Repository.Clone(url, repoDir, options) |> ignore
-        Hobbes.Web.Log.logf "Done cloning repo %s into %s" url repoDir
+        logf "Done cloning repo %s into %s" url repoDir
+    
+    type Commit = {
+        Time : System.DateTime
+        Message : string
+        Author : string
+    }
 
-    let commits url = 
-        let repoDir = repoDir url
-        use repo = new Repository(repoDir)
-        repo.Commits
+    let commits url : Commit list = 
+        try
+            let repoDir = repoDir url
+            logf "opening repo at %s" repoDir
+            use repo = new Repository(repoDir)
+            logf "Repo opened"
+            (*repo.Commits //avoid lazy evaluation since that might cause a memory overwrite issue
+            |> List.ofSeq 
+            |> List.map(fun commit ->
+                logf "reading commit: %s" commit.Id.Sha
+                {
+                    Time = commit.Author.When.ToLocalTime().DateTime
+                    Message = commit.MessageShort
+                    Author = commit.Author.Email
+                }
+            )*)
+            []
+        with e ->
+            errorf e.StackTrace "Failed when reading commits. %s" e.Message
+            []
            
     type BranchData = {
         TreeName : string
@@ -54,6 +77,7 @@ module Reader =
         use repo = new Repository(repoDir)
         let branches = repo.Branches
         branches
+        |> List.ofSeq
         |> Seq.map(fun branch -> 
             let commits = 
                 branch.Commits
@@ -75,6 +99,6 @@ module Reader =
                 TreeName = treeName
                 LifeTimeInHours = branchLifeTimeInHours
             }
-        )
+         ) 
         
         

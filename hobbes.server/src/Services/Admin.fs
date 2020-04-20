@@ -91,17 +91,12 @@ module Admin =
     let listTransformations() = 
         Transformations.list()
         |> Seq.map(fun t -> t.Id) 
-        |> formatDBList "transformations"
-        
-    [<Get ("/list/rawdata")>]
-    let listRawdata() = 
-        Collector.listRawdata()               
+        |> formatDBList "transformations"             
 
     [<Get("/list/log")>]
     let listLog() = 
         list()
         |> Seq.map LogRecord.Parse
-        |> Seq.filter(fun record -> record.Type <> "requestTiming")
         |> Seq.sortByDescending(fun record -> record.Timestamp)
         |> Seq.map(fun logRecord ->
             let st = 
@@ -116,14 +111,11 @@ module Admin =
     [<Put ("/configuration",true)>]
     let storeConfigurations doc = 
         try
+            assert(System.String.IsNullOrWhiteSpace((doc |> DataConfiguration.ConfigurationRecord.Parse).SearchKey) |> not)
             DataConfiguration.store doc |> ignore
             200,sprintf """{"configuration":%s, "status" : "ok" }""" doc
         with _ -> 
             500,"internal server error"
-
-    [<Delete ("/raw/%s")>]
-    let deleteRaw (id : string) = 
-        Collector.deleteRaw id
 
     [<Delete ("/cache/%s")>]
     let deleteCache (id : string) = 
@@ -132,10 +124,6 @@ module Admin =
     [<Delete ("/clear/cache")>]
     let clearCache () = 
         Cache.clear()
-
-    [<Get ("/clear/rawdata")>]
-    let clearRawdata () = 
-        Collector.clearRawdata()
     
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
         

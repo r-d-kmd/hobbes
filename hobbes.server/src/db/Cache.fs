@@ -11,7 +11,7 @@ module Cache =
     type CacheRecord = JsonProvider<"""{
         "_id" : "name",
         "timeStamp" : "24-09-2019",
-        "serachKey" : "lækljk",
+        "searchKey" : "lækljk",
         "state" : "Sync state",
         "revision" : "lkjlkj",
         "data" : {

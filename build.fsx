@@ -6,7 +6,7 @@ open Fake.SystemHelper
 #r "netstandard"
 #r "Facades/netstandard" // https://github.com/ionide/ionide-vscode-fsharp/issues/839#issuecomment-396296095
 #endif
-
+//https://stackoverflow.com/questions/31148101/how-to-use-nuget-install-package-for-f-script-without-a-solution
 open Fake.Core
 open Fake.DotNet
 open Fake.IO
@@ -226,7 +226,7 @@ Target.create "BuildGenericImages" (fun _ ->
 )
 
 
-Target.create "BuildBaseImages" (fun _ -> 
+Target.create "BuildSdkImages" (fun _ -> 
     
     baseDockerFiles
     |> buildImages
@@ -357,7 +357,7 @@ Target.create "PushToDocker" (fun _ ->
     ==> "Build"
 
 "BuildCommon"
-    ==> "BuildBaseImages"
+    ==> "BuildSdkImages"
     ==> "PushBaseImages"
 
 "BuildGenericImages"

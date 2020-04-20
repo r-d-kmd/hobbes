@@ -27,6 +27,11 @@ module DataConfiguration =
             "subConfigs": ["Config1", "Config2"]
         }]""", SampleIsList = true>
     type Configuration = ConfigurationRecord.Root
+    let parse doc = 
+        let configuration = doc |> ConfigurationRecord.Parse
+        assert(System.String.IsNullOrWhiteSpace(configuration.SearchKey) |> not)
+        assert(System.String.IsNullOrWhiteSpace(configuration.Source) |> not)
+        configuration
 
     let private sourceView = "bySource"
     let private db = 

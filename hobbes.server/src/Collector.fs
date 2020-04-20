@@ -4,8 +4,6 @@ open FSharp.Data
 open Hobbes.Server.Db
 
 module Collector =
-
-    
     let private collectorUrl (collectorName : string) path = 
         let url = sprintf "http://%scollector-svc:8085/%s" (collectorName.Replace(" ","")) path
         url
@@ -56,66 +54,16 @@ module Collector =
 
         response.StatusCode, (readBody response.Body)
 
-    [<System.Obsolete("Azure specific")>]
     let private get collectorName path =
-        request HttpMethod.Get  collectorName path
-
-    [<System.Obsolete("Azure specific")>]
-    let private delete path =
-        request HttpMethod.Delete  "azuredevops" path   
-
-    [<System.Obsolete("Azure specific")>]
-    let internal listRawdata() =
-        get "azuredevops" "admin/list/rawdata"     
-
-    [<System.Obsolete("Azure specific")>]
-    let internal deleteRaw id =
-        sprintf "admin/raw/%s" id 
-        |> delete    
-
-    [<System.Obsolete("Azure specific")>]
-    let internal clearRawdata() =
-        get "azuredevops" "admin/clear/rawdata"  
-
+        request HttpMethod.Get  collectorName path 
     
-    let internal getSyncState collectorName syncId =
-        try
-            sprintf "status/sync/%s" syncId
-            |> get collectorName 
-        with _ -> 
-            failwith "Not implemented" //200,"{}" TODO needs to be completed
-
-    [<System.Obsolete("Azure specific")>]
-    let private setSync completed account project revision msg =
-        sprintf "admin/setSync/%s/%s/%s/%s/%s" (string completed) account project revision msg
-        |> get"azuredevops" 
-
-    [<System.Obsolete("Azure specific")>]
-    let private setSyncCompleted account project revision =
-        setSync "true" account project revision "-"    
-
-    [<System.Obsolete("Azure specific")>]
-    let private setSyncFailed account project revision msg =
-        setSync "false" account project revision msg      
-
     let sync conf =
-        let collectorName = (conf |> DataConfiguration.ConfigurationRecord.Parse).Source.ToLower()
+        let collectorName = (conf |> DataConfiguration.parse).Source.ToLower()
         let status,response = postNoTimeOut collectorName "data/sync" conf
-        //TODO this obviously needs to go
-        if status < 400 && status >= 200  then 
-            setSyncCompleted conf "" ""
-        else 
-            setSyncFailed "" "" "" ""
-        |> ignore
-        status,response  
-        
-    [<System.Obsolete("Azure specific")>]
-    let getRaw id =
-        sprintf "admin/raw/%s" id
-        |> get "azuredevops"    
+        status,response
 
     let read conf =
-        let collectorName = (conf |> DataConfiguration.ConfigurationRecord.Parse).Source.ToLower()
+        let collectorName = (conf |> DataConfiguration.parse).Source.ToLower()
         let status,response = postNoTimeOut collectorName "data/read" conf
         if status < 300 && status >= 200 then 
             let data = 
@@ -137,4 +85,5 @@ module Collector =
                       ) |> Seq.zip columnNames
             )    
         else 
-            failwithf "Got an unexpected response: %d - %s" status response
+            Hobbes.Web.Log.errorf null "Got an unexpected response: %d - %s. Configuration: %s" status response conf
+            Seq.empty

@@ -44,9 +44,9 @@ module DataConfiguration =
     let list() = 
         db.List()
 
-    let configurationsBySource sourceKey = 
+    let configurationsBySource searchKey = 
         db.Views.[sourceView].List((fun s -> s.Trim '\"'),
-                                  startKey =  sourceKey)
+                                  startKey =  searchKey)
         
 
     let get configurationName =

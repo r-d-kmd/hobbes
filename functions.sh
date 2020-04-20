@@ -44,8 +44,9 @@ function clean(){
     kubectl delete --all secrets
 }
 
-function build(){
+function build(){    
     eval $(minikube -p minikube docker-env)
+    ECHO "Starting Build"
     cd ..
     if [ -z "$1" ]
     then
@@ -54,6 +55,7 @@ function build(){
         fake build --target "hobbes.$1"
     fi
     cd kubernetes
+    echo "Done building"
 }
 
 function describe(){
@@ -66,18 +68,13 @@ function listServices(){
     minikube service list
 }
 
-function mainBuild(){
-    eval $(minikube -p minikube docker-env)
-    cd .. && fake build
-}
-
 function start() {
-    mainBuild
-    cd kubernetes
-    kubectl apply -f env.JSON
-    
+    build
+    kubectl apply -f env.JSON;
+
     for i in "${APPS[@]}"; do kubectl apply -f $i-deployment.yaml,$i-svc.yaml; done
     for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
+
 }
 
 function startkube(){

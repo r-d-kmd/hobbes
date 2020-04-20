@@ -2,7 +2,7 @@
     "_id": "_design/default",
     "views": {
       "srcproj": {
-        "map": "function (doc) {\n             var srcproj = [doc.source,doc.project];\n emit(srcproj, doc._id);\n}"
+        "map": "function (doc) {\n             var srcproj = doc.searchKey;\n emit(srcproj, doc._id);\n}"
       }
     },
     "language": "javascript"

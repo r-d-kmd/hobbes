@@ -16,7 +16,6 @@ let adminRouter =
        fetch <@ listRawdata @>
        withArg <@ deleteRaw @>
        fetch <@ clearRawdata @>
-       withArg <@ getRaw @>
        fetch <@ initDb @>
     }
 

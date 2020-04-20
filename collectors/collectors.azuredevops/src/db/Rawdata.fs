@@ -41,12 +41,17 @@ module Rawdata =
         }""">
 
     let searchKey (config : AzureDevOpsConfig.Root) = 
-        config.Account + config.Project
+        "azure devops" + config.Project
 
     let parseConfiguration doc = 
        let config = AzureDevOpsConfig.Parse doc
+       
+       if System.String.IsNullOrWhiteSpace config.Project then failwithf "Didn't supply a project %s" doc
+       if System.String.IsNullOrWhiteSpace config.Account then failwithf "Account can't be empty %s" doc
+
        let searchKey = (config |> searchKey)
-       assert(System.String.IsNullOrWhiteSpace searchKey |> not)
+       if System.String.IsNullOrWhiteSpace searchKey then failwithf "SeachKey can't be empty %s" doc
+       
        config
 
     type private WorkItemRevisionRecord = JsonProvider<"""
@@ -108,6 +113,7 @@ module Rawdata =
             ]
 
         createDataRecord key searchKey data values
+
     type private RawList = JsonProvider<"""["id_a","id_b"]""">
     let private db = 
         Database.Database("rawdata", AzureDevOpsData.Parse, Log.loggerInstance)
@@ -122,11 +128,8 @@ module Rawdata =
     let delete (id : string) = 
         200, (db.Delete id).ToString()                  
 
-    let keys (source : DataConfiguration.DataSource) = 
-        let startKey = 
-            sprintf """["%s","%s"]""" source.SourceName source.ProjectName
-        startKey
-
+    let private keys (config : AzureDevOpsConfig.Root) = 
+        config |> searchKey
 
     let getState id = 
         db.TryGet id
@@ -173,9 +176,13 @@ module Rawdata =
         //this could be done with a view but the production environment often exceeds the time limit.
         //we haven't got enough documents for a missing index to be a problem and since it's causing problems 
         //reliance on an index has been removed
-        db.List() 
+        let docs = db.List() 
+        let configSearchKey = (config |> searchKey)
+
+        Log.logf "projects by source (%s): %A" configSearchKey docs
+        docs
         |> Seq.filter(fun doc -> 
-           doc.SearchKey = (config |> searchKey)
+           (doc.JsonValue.ToString() |> AzureDevOpsConfig.Parse |> searchKey) = configSearchKey
            && (doc.JsonValue.Properties() 
                |> Seq.tryFind(fun (name,v) -> 
                    name = "data" 
@@ -183,9 +190,12 @@ module Rawdata =
         ) 
 
     let bySource (source : AzureDevOpsConfig.Root) = 
-        let s =
+        let data =
             source
             |> projectsBySource
+        Log.logf "Rawdata by source: %A" (data |> List.ofSeq)
+        let result = 
+            data
             |> Seq.collect(fun s -> 
                 s.JsonValue.Properties() |> Seq.tryFind(fun (n,_) -> n = "data")
                 |> Option.bind(fun _ -> 
@@ -196,8 +206,8 @@ module Rawdata =
                 ) |> Option.orElse (Some Array.empty)
                 |> Option.get
             )
-        if s |> Seq.isEmpty then None
-        else Some s
+        if result |> Seq.isEmpty then None
+        else Some result
 
     let clearProject (config : AzureDevOpsConfig.Root) =
         async {
@@ -215,6 +225,3 @@ module Rawdata =
                 ) |> Async.Parallel
             return ()
         } |> Async.RunSynchronously
-
-    let get (id : string) = 
-        200, (db.Get id).ToString()

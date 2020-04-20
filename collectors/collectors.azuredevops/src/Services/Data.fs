@@ -56,7 +56,17 @@ module Data =
         let conf = parseConfiguration confDoc
         
         let raw = Reader.read conf
+            
         match raw with
         Some rawData ->
+            let result = rawData |> Hobbes.Shared.RawdataTypes.DataResult.Parse
+            
+            assert(result.ColumnNames.Length > 0)
+            assert(result.RowCount = result.Rows.Length)
+            assert(result.RowCount = 0 || result.ColumnNames.Length = result.Rows.[0].Numbers.Length + result.Rows.[0].Strings.Length)
+
+            Log.logf "Data returned: %s" rawData
+            
             200, rawData
-        | None -> 404,"No data found"
+        | None -> 
+            404,"No data found"

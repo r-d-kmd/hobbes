@@ -149,7 +149,7 @@ module Cache =
         let record = 
             (sprintf """{
                         "_id" : "%s",
-                        "serchKey" : "%s"
+                        "serchKey" : "%s",
                         "timeStamp" : "%s"
                         %s%s
                     }""" key

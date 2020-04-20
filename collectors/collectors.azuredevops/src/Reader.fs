@@ -24,7 +24,11 @@ module Reader =
     
     //The first url to start with, if there's already some stored data
     let private getInitialUrl (config : AzureDevOpsConfig.Root)=
-        let account = config.Account.Replace("_", "-")
+        let account = 
+            let acc = config.Account.Replace("_", "-")
+            if System.String.IsNullOrWhiteSpace(acc) then "kmddk"
+            else acc
+
         let filters = 
             System.String.Join(" and ",
                 [
@@ -152,21 +156,23 @@ module Reader =
                     )) |> System.String.Join
                     |> sprintf "[%s]"
                 )) |> System.String.Join
-                |> sprintf "[%s]"
+                |> sprintf "[%s]"        
         sprintf """{
            "searchKey" : "%s",
            "columnNames" : %s,
-           "rows" : %s
+           "rows" : %s,
+           "rowCount" : %d
            }
-        """ searchKey columnNames rows
+        """ searchKey columnNames rows (rawdataCache |> Seq.length)
 
     //Reads data from the raw data store. This should be exposed as part of the API in some form 
     let read (config : AzureDevOpsConfig.Root) =
         let searchKey = (config |> searchKey)
+        
         assert(System.String.IsNullOrWhiteSpace searchKey |> not)
 
         let timeStamp = 
-            (match sprintf "%s:%s" config.Source config.Project |> Rawdata.getState with
+            (match config |> Rawdata.searchKey |> Rawdata.getState with
             Some s -> 
                 ((s |> Cache.CacheRecord.Parse).TimeStamp
                  |> System.DateTime.Parse)

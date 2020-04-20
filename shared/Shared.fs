@@ -10,6 +10,14 @@ module RawdataTypes =
             "transformations" : ["jlk","lkjlk"],
             "subconfigs" : ["jlk","lkjlk"]
         }""">
+
+    type internal DataResult = JsonProvider<"""{
+         "columnNames" : ["kjkl","kjlkj"],
+         "rows" : [["dsfsd","kjlk"],[2.0,1.3]],
+         "rowCount" : 2,
+         "searchKey" : "lhlk"
+    }""">
+
     type AzureDevOpsAnalyticsRecord = JsonProvider<"""{
       "@odata.context": "https://analytics.dev.azure.com/kmddk/flowerpot/_odata/v2.0/$metadata#WorkItemRevisions(WorkItemId,WorkItemType,State,StateCategory,Iteration)",
       "timeStamp" : "ojsdfidsj",

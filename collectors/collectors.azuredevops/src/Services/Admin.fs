@@ -35,10 +35,6 @@ module Admin =
     let clearRawdata() =
         Rawdata.clear()  
 
-    [<Get "/raw/%s">]
-    let getRaw id =
-        Rawdata.get id
-
     let createSyncDoc (config : AzureDevOpsConfig.Root) (revision : string) =
         200, Rawdata.createSyncStateDocument revision config
 

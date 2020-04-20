@@ -11,7 +11,6 @@ type CLIArguments =
     Tests
     | Publish of string
     | Sync of string
-    | BackSync
     | Environment of Environment
 with
     interface IArgParserTemplate with
@@ -21,7 +20,6 @@ with
             | Publish _ -> "Publish the transformations to either development or production (set by environment or given as arg (prod/dev) if using workbench.json)"
             | Sync _ -> "When sync-ing a project from azure"
             | Environment _ -> "Environment to publish transformations to"
-            | BackSync _ -> "Used to sync fromproduction to development"
 
 let parse stmt =
     let stmt = stmt |> string
@@ -140,43 +138,7 @@ let main args =
             
         let test = results.TryGetResult Tests 
         let sync = results.TryGetResult Sync
-        let backsync = results.TryGetResult BackSync
-        let listTransformationsPath = "/admin/list/transformations"
-        let listConfigPath = "/admin/list/configurations"
-        let listRawdataPath = "/admin/list/rawdata"
-        if backsync.IsSome && System.IO.File.Exists settingsFile then
-            let settings = WorkbenchSettings.Load settingsFile
-            let prod = settings.Production
-
-            let rawKeys = 
-                (prod.Host + listRawdataPath |> getString prod.Hobbes
-                 |> RawdataKeyList.Parse).Rawdata
-
-            let db = Database.Database("rawdata",ignore,Database.consoleLogger)
-            rawKeys
-            |> Array.iter(fun key ->
-                let doc = 
-                    prod.Host + "/admin/raw/" + key |> getString prod.Hobbes
-                doc.Replace("_rev","prodRev") |> db.InsertOrUpdate |> ignore
-            )
-
-            let db = Database.Database("transformations",ignore,Database.consoleLogger)
-            let configurations = 
-                (prod.Host + listTransformationsPath |> getString prod.Hobbes
-                 |> TransformationList.Parse).Transformations
-                |> Array.map(fun doc -> doc.ToString().Replace("_rev","prodRev"))
-            configurations
-            |> Array.iter(db.InsertOrUpdate >> ignore)
-
-            let db = Database.Database("configurations",ignore,Database.consoleLogger)
-            let configurations = 
-                (prod.Host + listConfigPath |> getString prod.Hobbes
-                 |> ConfigurationsList.Parse).Configurations
-                |> Array.map(fun doc -> doc.ToString().Replace("\"_rev\"","\"prodRev\""))
-            configurations
-            |> Array.iter(db.InsertOrUpdate >> ignore)
-            0
-        elif  test.IsSome || (sync.IsNone && publish.IsNone) then
+        if  test.IsSome || (sync.IsNone && publish.IsNone) then
             settings.Azure.TimePayrollKmddk |> Workbench.Tests.test|> ignore
             printfn "Press enter to exit..."
             System.Console.ReadLine().Length

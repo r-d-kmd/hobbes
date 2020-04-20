@@ -149,7 +149,7 @@ module Cache =
         let record = 
             (sprintf """{
                         "_id" : "%s",
-                        "serchKey" : "%s",
+                        "searchKey" : "%s",
                         "timeStamp" : "%s"
                         %s%s
                     }""" key
@@ -168,6 +168,11 @@ module Cache =
                                   |> Seq.map(fun (k,v) -> sprintf """%A:%A""" k v)
                               ) |> sprintf """,%s"""
                          ))
+        let parsedRecord = record |> CacheRecord.Parse
+        
+        assert(parsedRecord.SearchKey = searchKey)
+        assert(parsedRecord.Id = key)
+
         record
 
     let createCacheRecord key searchKey (data : string) (state : SyncStatus) message cacheRevision =

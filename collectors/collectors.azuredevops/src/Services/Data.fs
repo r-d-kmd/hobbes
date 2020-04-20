@@ -3,18 +3,17 @@ namespace Collector.AzureDevOps.Services
 open Hobbes.Server.Routing
 open Collector.AzureDevOps.Db
 open Hobbes.Server.Db
-open Collector.AzureDevOps.Reader
 open Hobbes.Web
 open Hobbes.Helpers
-open FSharp.Data
-open Hobbes.Shared.RawdataTypes
+open Collector.AzureDevOps.Db.Rawdata
+open Collector.AzureDevOps
 
 [<RouteArea ("/data", false)>]
 module Data =
-   
-    let synchronize (config : Config.Root) token =
+    
+    let synchronize (config : AzureDevOpsConfig.Root) token =
         try
-            let statusCode, body = AzureDevOps.sync token config
+            let statusCode, body = Reader.sync token config
             Log.logf "Sync finised with statusCode %d and result %s" statusCode body
             if statusCode < 200 || statusCode >= 300 then 
                 let msg = sprintf "Syncronization failed. Message: %s" body
@@ -26,25 +25,37 @@ module Data =
              
     [<Post ("/sync", true)>]
     let sync confDoc =
-        let conf = Config.Parse confDoc
-        Admin.createSyncDoc conf |> ignore
-        Rawdata.clearProject conf
-        let account = 
-            if System.String.IsNullOrWhiteSpace conf.Account then
-                "kmddk"
-            else
-                conf.Account
+        let azureDevOpsConfig = parseConfiguration confDoc
+        let isSyncing = 
+            match Rawdata.getState (azureDevOpsConfig |> searchKey) with
+            None -> false
+            | Some stateDoc -> 
+                let stateDoc = Cache.CacheRecord.Parse stateDoc
+                let state = stateDoc.State
+                            |> Cache.SyncStatus.Parse
+                state = Cache.SyncStatus.Started
+        if isSyncing |> not then
+            Admin.createSyncDoc azureDevOpsConfig |> ignore
+            Rawdata.clearProject azureDevOpsConfig
+            let account = 
+                if System.String.IsNullOrWhiteSpace azureDevOpsConfig.Account then
+                    "kmddk"
+                else
+                    azureDevOpsConfig.Account
 
-        let tokenName = (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_"))
-        let token = (env tokenName null)
+            let tokenName = (sprintf "AZURE_TOKEN_%s" <| account.ToUpper().Replace("-","_"))
+            let token = (env tokenName null)
 
-        Log.logf "Using token from %s=%s " tokenName token
-        synchronize conf token   
+            Log.logf "Using token from %s=%s " tokenName token
+            synchronize azureDevOpsConfig token
+        else
+            409, "Syncronizing"   
 
     [<Post ("/read", true)>]
     let read confDoc =
-        let conf = Config.Parse confDoc
-        let raw = AzureDevOps.read conf
+        let conf = parseConfiguration confDoc
+        
+        let raw = Reader.read conf
         match raw with
         Some rawData ->
             200, rawData

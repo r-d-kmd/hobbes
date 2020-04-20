@@ -18,7 +18,6 @@ let adminRouter =
        fetch <@ clearRawdata @>
        withArg <@ getRaw @>
        fetch <@ initDb @>
-       withArgs5 <@ setSync @>
     }
 
 let statusRouter = 

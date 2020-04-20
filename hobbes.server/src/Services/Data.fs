@@ -88,43 +88,13 @@ module Data =
             return transformedData
         } 
 
-    //TODO move housekeeping to collector
-    let isSyncing configurationName =
-        let configuration =
-            try
-                DataConfiguration.get configurationName |> Some
-            with _ -> 
-               None
-        if configuration.IsNone then configurationName, false
-        else
-            let configuration = configuration.Value
-            let syncId = configuration.SearchKey
-            log syncId
-            let statusCode, stateDoc = Collector.getSyncState configuration.Source syncId
-            if statusCode = 404 then
-                syncId,false
-            else
-                let stateDoc = Cache.CacheRecord.Parse stateDoc
-                let state = stateDoc.State
-                            |> Cache.SyncStatus.Parse
-                syncId ,state = Cache.SyncStatus.Started
-
     [<Get ("/csv/%s")>]
     let csv configuration =  
-        let syncId, syncing = isSyncing configuration
-        if syncing then 
-            489, sprintf "Sync currently running for %s, please wait." syncId
-        else
-            debugf "Getting csv for '%A'" configuration
-            let data = data configuration |> Async.RunSynchronously
-            let csv = data |> DataMatrix.toJson Csv
-            printfn "CSV: %s" csv
-            200, csv
-
-
-    [<Get ("/raw/%s") >]
-    let getRaw id =
-        Collector.getRaw id
+        debugf "Getting csv for '%A'" configuration
+        let data = data configuration |> Async.RunSynchronously
+        let csv = data |> DataMatrix.toJson Csv
+        printfn "CSV: %s" csv
+        200, csv
 
     let invalidateCache statusCode body (configuration : DataConfiguration.Configuration) =
         try
@@ -169,10 +139,4 @@ module Data =
 
     [<Get ("/sync/%s") >]
     let sync configurationName =
-        let syncId, syncing = isSyncing configurationName
-        log syncId
-        logf "%A" syncing
-        if syncing then 
-            489, sprintf "Sync currently running for %s, please wait." syncId
-        else 
-            fSync configurationName
+        fSync configurationName

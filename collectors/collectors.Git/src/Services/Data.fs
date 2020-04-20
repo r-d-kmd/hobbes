@@ -37,16 +37,21 @@ module Data =
     let read confDoc =
         let conf = Config.Parse confDoc
         let columnNames,rows =
+            let url = conf.Urls.[0]
             match conf.Dataset.ToLower() with
             "commits" -> 
                 [
                     "timestamp"
                     "message"
                     "author"
-                ],  conf.Urls
-                    |> Seq.collect Collector.Git.Reader.commits
-                    |> Seq.map(fun commit ->
-                        commit.Author.When.ToLocalTime().ToString()::commit.MessageShort::[commit.Author.Email]
+                ],  (*conf.Urls
+                    |> Seq.collect*)
+                    (//fun url ->
+                        let commits = Collector.Git.Reader.commits url
+                        commits |> Seq.map(fun commit ->
+                            Hobbes.Web.Log.logf "reading commit: %s" commit.Message
+                            commit.Time.ToString()::commit.Message::[commit.Author]
+                        )
                     )
             | "branches" -> 
                 [

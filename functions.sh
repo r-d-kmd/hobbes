@@ -2,13 +2,16 @@ APPS=(db hobbes collectordb azuredevops git)
 VOLUMES=(db collectordb)
 
 function getName(){
-   local POD_NAME=$(kubectl get all | grep pod/.*$1)
-   local POD_NAME="$( cut -d ' ' -f 1 <<< "$POD_NAME" )"; echo "$POD_NAME"
+   local POD_NAME=$(kubectl get all \
+                        | grep pod/.*$1\
+                        | cut -d ' ' -f 1 \
+                        | cut -d '/' -f 2)
    echo $POD_NAME
 }
 
 function getAppName(){
-   local SERVICE_NAME=$(kubectl get all | grep service/.*$1 \
+   local SERVICE_NAME=$(kubectl get all \
+                        | grep service/.*$1 \
                         | cut -d ' ' -f 1 \
                         | cut -d '/' -f 2)
    local APP_NAME=${SERVICE_NAME::${#SERVICE_NAME}-4}
@@ -16,7 +19,7 @@ function getAppName(){
 }
 
 function logs(){
-    local POD_NAME=getName $1
+    local POD_NAME=$(getName $1)
     kubectl logs $2 $POD_NAME
 }
 
@@ -41,6 +44,18 @@ function clean(){
     kubectl delete --all secrets
 }
 
+function build(){
+    eval $(minikube -p minikube docker-env)
+    cd ..
+    if [ -z "$1" ]
+    then
+        fake build
+    else
+        fake build --target "hobbes.$1"
+    fi
+    cd kubernetes
+}
+
 function describe(){
     local NAME=$(getAppName $1)
     local NAME=$(kubectl get pods -l app=$NAME -o name)
@@ -51,13 +66,13 @@ function listServices(){
     minikube service list
 }
 
-function build(){
+function mainBuild(){
     eval $(minikube -p minikube docker-env)
     cd .. && fake build
 }
 
-function start(){
-    build
+function start() {
+    mainBuild
     cd kubernetes
     kubectl apply -f env.JSON
     
@@ -67,7 +82,7 @@ function start(){
 
 function startkube(){
     set $PATH=$PATH:/Applications/VirtualBox.app/
-    minikube start --vm-driver virtualbox
+    minikube start --vm-driver virtualbox --disk-size=75GB
 }
 
 function update(){

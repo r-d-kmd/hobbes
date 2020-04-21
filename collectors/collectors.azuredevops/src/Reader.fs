@@ -94,8 +94,8 @@ module Reader =
         assert((System.String.IsNullOrWhiteSpace searchKey) |> not)
         let jsonString (s : string) = 
             "\"" +
-             s.Replace("\"","\\\"") 
-              .Replace("\\","\\\\") 
+             s.Replace("\\","\\\\")
+              .Replace("\"","\\\"") 
             + "\""
         let columnNames = 
             (",", [

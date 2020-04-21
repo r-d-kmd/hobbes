@@ -5,8 +5,13 @@ open Hobbes.Helpers.Environment
 
 [<RouteArea ("/data", false)>]
 module Data =
+    let inline jsonString (s : string) = 
+            "\"" +
+             s.Replace("\\","\\\\") 
+              .Replace("\"","\\\"") 
+            + "\""
     let inline private toCsList (lines : seq<string>) = 
-        System.String.Join(",",lines |> Seq.map (sprintf """ "%s" """))
+        System.String.Join(",",lines |> Seq.map jsonString)
 
     type Config = FSharp.Data.JsonProvider<"""{
         "source" : "git",
@@ -59,14 +64,16 @@ module Data =
                        branch.Name::[branch.LifeTimeInHours.ToString()]
                    )
             | _ -> failwith "unknown dataset"
+
         let values = 
-           toCsList (rows
-                    |> Seq.map(toCsList >> sprintf "[%s]"))
+           System.String.Join(",",rows |> Seq.map (toCsList >> sprintf "[%s]"))
+
         let res = 
             sprintf """{
                "searchKey" : "%s",
-               "columnNames" : %s,
-               "rows" : %s,
+               "columnNames" : [%s],
+               "rows" : [%s],
                "rowCount" : %d
                }""" ("git" + conf.Project + dataset) (toCsList columnNames) values (rows |> Seq.length)
+        Hobbes.Web.Log.logf "Result: %s" res
         200,res

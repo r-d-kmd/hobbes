@@ -5,20 +5,9 @@ open Hobbes.Web
 open Hobbes.Server.Db
 open Hobbes.Web
 open Hobbes.Web.Log
+open Hobbes.Shared.RawdataTypes
 
 module Cache = 
-
-    type CacheRecord = JsonProvider<"""{
-        "_id" : "name",
-        "timeStamp" : "24-09-2019",
-        "searchKey" : "lækljk",
-        "state" : "Sync state",
-        "revision" : "lkjlkj",
-        "data" : {
-            "columnNames" : ["a","b"],
-            "values" : [["zcv","lkj"],[1.2,3.45],["2019-01-01","2019-01-01"]]
-        } 
-    }""">
 
     type SyncStatus = 
         Synced
@@ -186,6 +175,7 @@ module Cache =
         createDataRecord key searchKey data values
 
     let store transformations searchKey cacheRevision (data : string) =
+        if transformations |> List.isEmpty then failwith "Won't cache data that's not transformed"
         let key = searchKey::transformations |> createKeyFromlist
         let record = createCacheRecord key searchKey data Synced None (Some cacheRevision)
 

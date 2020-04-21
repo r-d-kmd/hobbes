@@ -50,10 +50,10 @@ module Reader =
             Some workItemRevisionId -> 
                 initialUrl workItemRevisionId
             | None -> 
-                printfn "Didn't get a work item revision id"
+                Hobbes.Web.Log.log "Didn't get a work item revision id"
                 initialUrl 0L
         with e -> 
-            eprintfn "Failed to get latest. Message: %s" e.Message
+            Hobbes.Web.Log.errorf e.StackTrace "Failed to get latest. Message: %s" e.Message
             initialUrl 0L
 
     //sends a http request   
@@ -168,7 +168,7 @@ module Reader =
     //Reads data from the raw data store. This should be exposed as part of the API in some form 
     let read (config : AzureDevOpsConfig.Root) =
         let searchKey = (config |> searchKey)
-        
+
         assert(System.String.IsNullOrWhiteSpace searchKey |> not)
 
         let timeStamp = 
@@ -239,13 +239,15 @@ module Reader =
                     Text t -> t 
                     | _ -> ""
                 failwith <| sprintf "StatusCode: %d. Message: %s" resp.StatusCode message
-
-        try
+        
+        let url = 
             config
             |> getInitialUrl                                   
+        try
+            url
             |> _read []
             200,"ok"
         with e ->
-            let msg = sprintf "failed to sync Message: %s" e.Message
+            let msg = sprintf "failed to sync Message: %s Url: %s" e.Message url
             Hobbes.Web.Log.errorf e.StackTrace "%s" msg
             500, msg

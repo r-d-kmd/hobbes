@@ -17,10 +17,10 @@ module Data =
             Log.logf "Sync finised with statusCode %d and result %s" statusCode body
             if statusCode < 200 || statusCode >= 300 then 
                 let msg = sprintf "Syncronization failed. Message: %s" body
-                eprintfn "%s" msg
+                Log.errorf null "%s" msg
             statusCode, body                 
         with e ->
-            eprintfn "Sync failed due to exception: %s" e.Message
+            Log.errorf e.StackTrace "Sync failed due to exception: %s" e.Message
             404, e.Message                                                                   
              
     [<Post ("/sync", true)>]
@@ -66,7 +66,7 @@ module Data =
             assert(result.RowCount = 0 || result.ColumnNames.Length = result.Rows.[0].Numbers.Length + result.Rows.[0].Strings.Length)
 
             Log.logf "Data returned: %s" rawData
-            
+
             200, rawData
         | None -> 
             404,"No data found"

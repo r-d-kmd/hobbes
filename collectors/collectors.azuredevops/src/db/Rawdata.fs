@@ -80,16 +80,16 @@ module Rawdata =
     let createDataRecord key searchKey (data : string) keyValue =
         
         let data = if isNull data then data else data.Replace("\\", "\\\\")
+        let timeStamp = System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)
         let record = 
             (sprintf """{
                         "_id" : "%s",
-                        "serchKey" : "%s"
+                        "searchKey" : "%s",
                         "timeStamp" : "%s"
                         %s%s
                     }""" key
                          searchKey
-                         (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
-                          
+                         timeStamp
                          (if data |> isNull then 
                               "" 
                           else 
@@ -102,6 +102,13 @@ module Rawdata =
                                   |> Seq.map(fun (k,v) -> sprintf """%A:%A""" k v)
                               ) |> sprintf """,%s"""
                          ))
+
+        let cacheRecord = record |> CacheRecord.Parse
+
+        assert(cacheRecord.SearchKey = searchKey)
+        assert(cacheRecord.Id = key)
+        assert(cacheRecord.TimeStamp = timeStamp)
+        
         record
 
     let createCacheRecord key searchKey (data : string) (state : SyncStatus) message cacheRevision =
@@ -180,14 +187,15 @@ module Rawdata =
         let configSearchKey = (config |> searchKey)
 
         Log.logf "projects by source (%s): %A" configSearchKey docs
-        docs
-        |> Seq.filter(fun doc -> 
-           (doc.JsonValue.ToString() |> AzureDevOpsConfig.Parse |> searchKey) = configSearchKey
-           && (doc.JsonValue.Properties() 
-               |> Seq.tryFind(fun (name,v) -> 
-                   name = "data" 
-               ) |> Option.isSome)
-        ) 
+        let res = 
+            docs
+            |> Seq.filter(fun doc -> 
+               let docSearchKey = doc.SearchKey 
+               Log.logf "Using %s '%s' = '%s' -> %b" doc.Id docSearchKey configSearchKey (docSearchKey = configSearchKey)
+               docSearchKey = configSearchKey
+            ) 
+        Log.logf "Project data found by source %A" res
+        res
 
     let bySource (source : AzureDevOpsConfig.Root) = 
         let data =

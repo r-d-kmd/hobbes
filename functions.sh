@@ -52,7 +52,11 @@ function build(){
     then
         fake build
     else
-        fake build --target "hobbes.$1"
+        for var in "$@"
+        do
+            fake build --target "hobbes.$var"
+        done
+        restart $1
     fi
     cd kubernetes
     echo "Done building"

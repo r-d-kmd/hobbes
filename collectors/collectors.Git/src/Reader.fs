@@ -115,8 +115,8 @@ module Reader =
         function
             | Binary b -> System.Text.Encoding.ASCII.GetString b
             | Text t -> t
-
-    let request account project path  = 
+    
+    let request account project body path  = 
         let url = sprintf "https://dev.azure.com/%s/%s/_apis/git/repositories%s?api-version=5.1" account project path
         let headers =
             [
@@ -124,19 +124,29 @@ module Reader =
                 HttpRequestHeaders.ContentType HttpContentTypes.Json
             ]       
         let resp = 
-            Http.AsyncRequest(url,
-                httpMethod = "GET", 
-                silentHttpErrors = true,
-                headers = headers
-            ) |> Async.RunSynchronously
-            
+            match body with
+            None ->
+                Http.Request(url,
+                    httpMethod = "GET",
+                    silentHttpErrors = true,
+                    headers = headers
+                ) 
+            | Some body ->
+                Http.Request(url,
+                    httpMethod = "POST",
+                    silentHttpErrors = true,
+                    headers = headers,
+                    body = HttpRequestBody.TextRequest body
+                ) 
         resp.StatusCode,resp.Body |> readBody
-        
+
+    let get account project =
+        request account project None
     
 
     let private repositories account project = 
         let statusCode, list = 
-            request account project ""
+            get account project ""
         logf "Repositories: %d %s" statusCode list
 
         if statusCode = 200 then 
@@ -163,7 +173,7 @@ module Reader =
             repositories account project
             |> Seq.collect(fun repo -> 
                 let statusCode,commits = 
-                    repo.Id |> sprintf "/%s/commits" |> request account project
+                    repo.Id |> sprintf "/%s/commits" |> get account project
                 logf "commits: %d %s" statusCode commits
                 if statusCode = 200 then 
                     let parsedCommits = 
@@ -195,18 +205,25 @@ module Reader =
        repositories account project
        |> Seq.collect(fun repo -> 
             let statusCode,branches = 
-                repo.Id |> sprintf "/%s/refbrancs" |> request account project
-            logf "branches: %d %s" statusCode branches
+                repo.Id |> sprintf "/%s/refs" |> get account project
+            
             if statusCode = 200 then 
                 let parsedBranches = 
                    branches |> BranchList.Parse
                 let branches = 
                     parsedBranches.Value
-                    |> Seq.filter(fun branch -> branch.Name.StartsWith "ref/heads/")
+                    |> Seq.filter(fun branch -> branch.Name.StartsWith "refs/heads/")
                     |> Seq.map(fun branch ->
+                        let body = 
+                            """{
+                              "itemVersion": {
+                                "versionType": "branch",
+                                "version": "develop"
+                              }
+                            }""" |> Some
                         let statusCode,commits = 
-                            repo.Id |> sprintf "/%s/commitsbranches" |> request account project
-                        logf "commit batch: %d %s" statusCode commits
+                            repo.Id |> sprintf "/%s/commitsbatch" |> request account project body
+                        
                         let branchLifeTimeInHours = 
                             if statusCode = 200 then
                                 let parsedCommits = 

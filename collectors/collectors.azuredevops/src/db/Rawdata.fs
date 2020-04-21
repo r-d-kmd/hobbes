@@ -108,7 +108,7 @@ module Rawdata =
         assert(cacheRecord.SearchKey = searchKey)
         assert(cacheRecord.Id = key)
         assert(cacheRecord.TimeStamp = timeStamp)
-        
+
         record
 
     let createCacheRecord key searchKey (data : string) (state : SyncStatus) message cacheRevision =
@@ -190,7 +190,11 @@ module Rawdata =
         let res = 
             docs
             |> Seq.filter(fun doc -> 
-               let docSearchKey = doc.SearchKey 
+               let docSearchKey = 
+                   if System.String.IsNullOrWhiteSpace doc.SearchKey then
+                       doc.Source + doc.Project
+                   else
+                      doc.SearchKey
                Log.logf "Using %s '%s' = '%s' -> %b" doc.Id docSearchKey configSearchKey (docSearchKey = configSearchKey)
                docSearchKey = configSearchKey
             ) 

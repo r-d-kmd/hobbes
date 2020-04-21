@@ -18,32 +18,32 @@ module Routing =
         w
 
     let private verify (ctx : HttpContext) =
-            let authToken = 
-                let url = ctx.GetRequestUrl()
-                printfn "Requesting access to %s" url
-                match Uri(url) with
-                uri when String.IsNullOrWhiteSpace(uri.UserInfo) |> not ->
-                    uri.UserInfo |> Some
-                | _ -> 
-                    ctx.TryGetRequestHeader "Authorization"
-                    
-            authToken
-            |> Option.bind(fun authToken ->
-                if authToken |> verifyAuthToken then
-                    Some authToken
-                else 
-                    None
-            ) |> Option.isSome
+        let authToken = 
+            let url = ctx.GetRequestUrl()
+            printfn "Requesting access to %s" url
+            match Uri(url) with
+            uri when String.IsNullOrWhiteSpace(uri.UserInfo) |> not ->
+                uri.UserInfo |> Some
+            | _ -> 
+                ctx.TryGetRequestHeader "Authorization"
+                
+        authToken
+        |> Option.bind(fun authToken ->
+            if authToken |> verifyAuthToken then
+                Some authToken
+            else 
+                None
+        ) |> Option.isSome
                
     let rec private execute name f : HttpHandler =
         fun next (ctx : HttpContext) ->
-                task {
-                    let start = watch.ElapsedMilliseconds
-                    let code, body = f()
-                    let ``end`` = watch.ElapsedMilliseconds
-                    Log.timed name (start - ``end``)
-                    return! (setStatusCode code >=> setBodyFromString body) next ctx
-                }
+            task {
+                let start = watch.ElapsedMilliseconds
+                let code, body = f()
+                let ``end`` = watch.ElapsedMilliseconds
+                Log.timed name (start - ``end``)
+                return! (setStatusCode code >=> setBodyFromString body) next ctx
+            }
 
     let noArgs name f = execute name f
 

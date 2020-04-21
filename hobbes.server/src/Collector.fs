@@ -27,7 +27,7 @@ module Collector =
     
     let private postNoTimeOut collectorName path body =
         let url = collectorUrl collectorName path
-        printfn "url of post: %s" url
+        Hobbes.Web.Log.debugf "url of post: %s" url
         let response = 
             Http.Request(url,
                          httpMethod = HttpMethod.Post, 
@@ -36,7 +36,7 @@ module Collector =
                          body = HttpRequestBody.TextRequest body
                         )
         let resp = readBody response.Body
-        printfn "body: %s" resp
+        Hobbes.Web.Log.debugf "body: %s" resp
         response.StatusCode, resp
 
     let private getNoTimeOut path =
@@ -44,7 +44,7 @@ module Collector =
 
     let private post path body =
         let url = collectorUrl "azuredevops" path
-        printfn "** posting to %s. path: %s body: %s" url path body
+        Hobbes.Web.Log.debugf "** posting to %s. path: %s body: %s" url path body
         let response = 
             Http.Request(url, 
                          httpMethod = HttpMethod.Post, 

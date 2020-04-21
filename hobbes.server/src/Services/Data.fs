@@ -15,13 +15,14 @@ module Data =
                   
 
     let rec private data configurationName =
-        let rec transformData searchKey transformations (allTransformations : Transformations.TransformationRecord.Root list) calculatedData =
-            match allTransformations with
+        let rec transformData searchKey prevTransformations (remaingTransformations : Transformations.TransformationRecord.Root list) calculatedData =
+            
+            match remaingTransformations with
             [] -> calculatedData
             | transformation::tail ->
                 let transformedData =  
                     Hobbes.FSharp.Compile.expressions transformation.Lines calculatedData
-
+                let transformations = prevTransformations@[transformation.Id]
                 async {
                     debug "Caching transformation"
                     try
@@ -93,7 +94,7 @@ module Data =
         debugf "Getting csv for '%A'" configuration
         let data = data configuration |> Async.RunSynchronously
         let csv = data |> DataMatrix.toJson Csv
-        printfn "CSV: %s" csv
+        debugf "CSV: %s" csv
         200, csv
 
     let invalidateCache statusCode body (configuration : DataConfiguration.Configuration) =
@@ -120,7 +121,7 @@ module Data =
                 true, ""
             else
                 let msg = sprintf "Syncronization failed. Message: %s" body
-                eprintfn "%s" msg
+                errorf null "%s" msg
                 false, msg
         with e ->
             false, e.Message

@@ -89,17 +89,20 @@ module Security =
         |> encrypt
 
     let private verifyKey (key : string) = 
-        match key.Split('.') with
-        [|header;payload;signature|] ->
-            let jwtPayload = JwtPayload.Parse payload
-            let user = users.Get (sprintf "org.couchdb.user:%s" jwtPayload.Name)
-            let verified = signature = getSignature user.DerivedKey header payload
-            if not verified then
-                eprintfn "Signatures didn't match"
-            verified
-        | _ -> 
-            eprintfn "Tried to gain access with %s" key
-            false
+        if (env "MASTER_USER" null) = key then true
+        else
+            match key.Split('.') with
+            [|header;payload;signature|] ->
+                
+                let jwtPayload = JwtPayload.Parse payload
+                let user = users.Get (sprintf "org.couchdb.user:%s" jwtPayload.Name)
+                let verified = signature = getSignature user.DerivedKey header payload
+                if not verified then
+                    eprintfn "Signatures didn't match"
+                verified
+            | _ -> 
+                eprintfn "Tried to gain access with %s" key
+                false
 
 
     type private AzureUser = FSharp.Data.JsonProvider<"""{"Email": " lkjljk", "User" : "lkjlkj"}""">

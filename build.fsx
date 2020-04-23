@@ -191,49 +191,44 @@ Target.create "BuildDocker" (fun _ ->
     ) 
 )
 
-let genericDockerFiles =         
-         [
-             "deps"
-             "runtime"
-             "aspnet"
-             "sdk"
-         ] |> List.collect(fun name ->
-             [
-                "./docker/Dockerfile." + name, name
-                "./docker/stretch/Dockerfile." + name, name + "-stretch"
-             ]
-         )
+let genericDockerFiles =
+    ("./docker/couchdb/","Dockerfile", "couchdb")::
+    ([
+        "aspnet"
+        "sdk"
+    ] |> List.map(fun name ->
+           ".","./docker/Dockerfile." + name, name
+        )
+      
+    )
 
 let baseDockerFiles = 
     [
-        "./docker/Dockerfile.sdk-hobbes", "sdk:hobbes"
-        "./docker/stretch/Dockerfile.sdk-hobbes", "sdk:hobbes-stretch"
+        ".","./docker/Dockerfile.sdk-hobbes", "sdk:hobbes"
+        ".","./docker/stretch/Dockerfile.sdk-hobbes", "sdk:hobbes-stretch"
     ]
 
 let buildImages = 
-    Seq.iter(fun (path,(tag : string)) ->
+    Seq.iter(fun (context,path,(tag : string)) ->
         if File.exists path then
             let tag = dockerOrg + "/" + tag.ToLower()
             
             sprintf "build -f %s -t %s ." path tag
-            |> run "docker" "."
+            |> run "docker" context
     ) 
 
 Target.create "BuildGenericImages" (fun _ -> 
-    
     genericDockerFiles
     |> buildImages
 )
 
-
 Target.create "BuildSdkImages" (fun _ -> 
-    
     baseDockerFiles
     |> buildImages
 )
 
 let pushImages = 
-    Seq.iter(fun (path,(tag : string)) ->
+    Seq.iter(fun (_,path,(tag : string)) ->
         if File.exists path then
             let tag = dockerOrg + "/" + tag.ToLower()
             sprintf "push %s" tag

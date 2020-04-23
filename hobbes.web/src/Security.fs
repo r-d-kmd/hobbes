@@ -166,8 +166,7 @@ module Security =
                         authToken.Substring(Basic.Length)
                         |> fromB64
                         |> (fun s -> 
-                            let apiKey = s.Substring(0,s.Length - 1) //skip the last character ':'
-                            apiKey
+                            s.Substring(0,s.Length - 1) //skip the last character ':'
                         ) 
                 else
                     authToken 

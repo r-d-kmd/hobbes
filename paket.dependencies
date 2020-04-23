@@ -22,26 +22,6 @@ group web
     nuget FSharp.Data
     nuget Microsoft.Extensions.PlatformAbstractions
 
-group GitCollector
-    source https://www.nuget.org/api/v2 
-    framework: auto-detect
-    nuget LibGit2Sharp
-
-group build
-    source https://www.nuget.org/api/v2 
-    framework: netstandard2.0
-    storage: none
-
-    nuget Fake ~> 5
-    nuget Fake.Core ~> 5
-    nuget Fake.Core.Target 
-    nuget Fake.DotNet
-    nuget Fake.DotNet.AssemblyInfoFile
-    nuget Fake.DotNet.Cli
-    nuget Fake.DotNet.NuGet
-    nuget Fake.IO.FileSystem
-    nuget Fake.Tools.Git
-
 group test
     source https://www.nuget.org/api/v2
     framework: auto-detect

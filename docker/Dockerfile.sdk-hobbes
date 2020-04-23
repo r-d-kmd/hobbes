@@ -1,9 +1,11 @@
-FROM kmdrd/sdk:latest
+ARG SDK_ENV=sdk:latest
+FROM kmdrd/${SDK_ENV}
 
 ENV BUILD_ENV docker
 COPY .lib/ ../.lib/
 
 # copy and publish app and libraries
+COPY shared/ ../shared/
 ONBUILD COPY ./src/ .
 
 ONBUILD RUN dotnet publish -c release -o /app

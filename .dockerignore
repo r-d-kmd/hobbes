@@ -12,8 +12,6 @@ kubernetes/
 packages/
 packaging/
 paket-files/
-shared/
-src/
 tests/
 tools/
 workbench/

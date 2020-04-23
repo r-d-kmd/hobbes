@@ -22,7 +22,7 @@ module Root =
 
     [<Put ("/key", true) >] 
     let key userStr =
-        printfn "User: %s" userStr
+        debugf "User: %s" userStr
         let user = userStr |> UserSpec.Parse
         let verifiedUser = 
             let userIds = 
@@ -30,7 +30,7 @@ module Root =
                 |> Seq.filter(fun userId -> userId.StartsWith "org.couchdb.user:") 
                 |> List.ofSeq
                 
-            printfn "Users in system: %A" userIds
+            debugf "Users in system: %A" userIds
             let isFirstUser = userIds |> List.isEmpty && System.String.IsNullOrWhiteSpace(user.Token)
             if isFirstUser ||  verifyAuthToken user.Token then
                 let token = 

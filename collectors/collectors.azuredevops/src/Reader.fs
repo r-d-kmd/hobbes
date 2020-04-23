@@ -1,11 +1,12 @@
-namespace Collector.AzureDevOps.Reader
-module AzureDevOps =
+namespace Collector.AzureDevOps
 
-    open FSharp.Data
-    open Collector.AzureDevOps.Db
-    open Hobbes.Server.Db
-    open Hobbes.Shared.RawdataTypes
+open FSharp.Data
+open Collector.AzureDevOps.Db
+open Collector.AzureDevOps.Db.Rawdata
+open Hobbes.Server.Db
+open Hobbes.Shared.RawdataTypes
 
+module Reader =
     //looks whether it's the last record or there's a odatanextlink porperty 
     //which signals that the data has been paged and that we're not at the last page yet
     let private tryNextLink (data : string) = 
@@ -22,8 +23,12 @@ module AzureDevOps =
         data.Value |> Array.isEmpty
     
     //The first url to start with, if there's already some stored data
-    let private getInitialUrl (config : Config.Root)=
-        let account = config.Account.Replace("_", "-")
+    let private getInitialUrl (config : AzureDevOpsConfig.Root)=
+        let account = 
+            let acc = config.Account.Replace("_", "-")
+            if System.String.IsNullOrWhiteSpace(acc) then "kmddk"
+            else acc
+
         let filters = 
             System.String.Join(" and ",
                 [
@@ -41,14 +46,14 @@ module AzureDevOps =
 
             sprintf "https://analytics.dev.azure.com/%s/%s%s%d" account config.Project path
         try
-            match  config |> Rawdata.tryLatestId with
+            match (config |> searchKey) |> Rawdata.tryLatestId with
             Some workItemRevisionId -> 
                 initialUrl workItemRevisionId
             | None -> 
-                printfn "Didn't get a work item revision id"
+                Hobbes.Web.Log.log "Didn't get a work item revision id"
                 initialUrl 0L
         with e -> 
-            eprintfn "Failed to get latest. Message: %s" e.Message
+            Hobbes.Web.Log.errorf e.StackTrace "Failed to get latest. Message: %s" e.Message
             initialUrl 0L
 
     //sends a http request   
@@ -85,11 +90,12 @@ module AzureDevOps =
                     sBuilder.Append(d.ToString("x2"))
             ) sBuilder).ToString()
 
-    let formatRawdataCache (timeStamp : string ) rawdataCache =
+    let formatRawdataCache searchKey (timeStamp : string ) rawdataCache =
+        assert((System.String.IsNullOrWhiteSpace searchKey) |> not)
         let jsonString (s : string) = 
             "\"" +
-             s.Replace("\"","\\\"") 
-              .Replace("\\","\\\\") 
+             s.Replace("\\","\\\\")
+              .Replace("\"","\\\"") 
             + "\""
         let columnNames = 
             (",", [
@@ -150,17 +156,23 @@ module AzureDevOps =
                     )) |> System.String.Join
                     |> sprintf "[%s]"
                 )) |> System.String.Join
-                |> sprintf "[%s]"
+                |> sprintf "[%s]"        
         sprintf """{
+           "searchKey" : "%s",
            "columnNames" : %s,
-           "rows" : %s
+           "rows" : %s,
+           "rowCount" : %d
            }
-        """ columnNames rows
+        """ searchKey columnNames rows (rawdataCache |> Seq.length)
 
     //Reads data from the raw data store. This should be exposed as part of the API in some form 
-    let read (config : Config.Root) =
+    let read (config : AzureDevOpsConfig.Root) =
+        let searchKey = (config |> searchKey)
+
+        assert(System.String.IsNullOrWhiteSpace searchKey |> not)
+
         let timeStamp = 
-            (match sprintf "%s:%s" config.Source config.Project |> Rawdata.getState with
+            (match config |> Rawdata.searchKey |> Rawdata.getState with
             Some s -> 
                 ((s |> Cache.CacheRecord.Parse).TimeStamp
                  |> System.DateTime.Parse)
@@ -168,17 +180,16 @@ module AzureDevOps =
 
         let raw = 
             config
-            |> Rawdata.bySource
-            |> Option.bind((formatRawdataCache timeStamp) >> Some)
+            |> bySource
+            |> Option.bind((formatRawdataCache searchKey timeStamp) >> Some)
 
-        Hobbes.Web.Log.logf "\n\n azure devops:%s \n\n" config.Project     
-
+        Hobbes.Web.Log.logf "\n\n azure devops:%s \n\n" (config.JsonValue.ToString())        
         raw
 
     //TODO should be async and in parallel-ish
     //part of the API (see server to how it's exposed)
     //we might want to store azureToken as an env variable
-    let sync azureToken (config : Config.Root) = 
+    let sync azureToken (config : AzureDevOpsConfig.Root) = 
         
         let rec _read hashes url = 
             Hobbes.Web.Log.logf "syncing with %s@%s" azureToken url
@@ -200,7 +211,10 @@ module AzureDevOps =
 
                     let body' = 
                         body.Replace("\\\"","'")
-                    let rawdataRecord = Cache.createDataRecord rawId config body' [
+                    let conf = 
+                        config.JsonValue.ToString()
+                        |> parseConfiguration
+                    let rawdataRecord = createDataRecord rawId (config |> searchKey) body' [
                                                                                     "url", url
                                                                                     "recordCount", hashes 
                                                                                                    |> List.length 
@@ -208,7 +222,7 @@ module AzureDevOps =
                                                                                     "hashes", System.String.Join(",", hashes) 
                                                                                               |> sprintf "[%s]"
                                                                                  ] 
-                    Rawdata.InsertOrUpdate rawdataRecord |> Async.Start
+                    insertOrUpdate rawdataRecord
 
                     body
                     |> tryNextLink
@@ -225,13 +239,15 @@ module AzureDevOps =
                     Text t -> t 
                     | _ -> ""
                 failwith <| sprintf "StatusCode: %d. Message: %s" resp.StatusCode message
-
-        try
+        
+        let url = 
             config
             |> getInitialUrl                                   
+        try
+            url
             |> _read []
             200,"ok"
         with e ->
-            let msg = sprintf "failed to sync Message: %s" e.Message
+            let msg = sprintf "failed to sync Message: %s Url: %s" e.Message url
             Hobbes.Web.Log.errorf e.StackTrace "%s" msg
             500, msg

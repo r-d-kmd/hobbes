@@ -21,7 +21,8 @@ spec:
           value: password
         - name: COUCHDB_USER
           value: admin
-        image: apache/couchdb
+        imagePullPolicy: Never
+        image: kmdrd/couchdb
         name: collectordb
         ports:
         - containerPort: 5984

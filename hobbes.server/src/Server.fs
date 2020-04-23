@@ -4,7 +4,6 @@ open Hobbes.Web.Routing
 open Hobbes.Server.Services.Admin
 open Hobbes.Server.Services.Data
 open Hobbes.Server.Services.Root
-open Hobbes.Server.Services.Status
 open Hobbes.Helpers
 
 let private port = 
@@ -18,23 +17,14 @@ let adminRouter =
         fetch    <@ listConfigurations@>
         fetch    <@ listTransformations @>
         fetch    <@ listCache @>
-        fetch    <@ listRawdata @>
         fetch    <@ listLog @> 
         fetch    <@ clearCache @> 
-        fetch    <@ clearRawdata @> 
 
-        withArg  <@ deleteRaw @>
         withArg  <@ deleteCache @>
         withArgs <@ setting @>
         
         withBody <@ configureStr @>
         withBody <@storeConfigurations@>
-    }
-
-let statusRouter = 
-    router {
-        pipe_through verifiedPipe
-        withArg <@ getSyncState @>
     }
 
 let dataRouter = 
@@ -43,7 +33,6 @@ let dataRouter =
         withArg <@ csv @> 
         withArg <@ fSync @>
         withArg <@ sync @>
-        withArg <@ getRaw @>
     }
 
 let private appRouter = router {
@@ -54,7 +43,6 @@ let private appRouter = router {
     withBody <@ key @>
     fetch <@ initDb @>
     forward "/admin" adminRouter
-    forward "/status" statusRouter
     forward "/data" dataRouter
 } 
 

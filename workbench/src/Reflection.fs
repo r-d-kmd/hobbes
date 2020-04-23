@@ -69,10 +69,10 @@ module Project =
         match s |> source with
         Project.AzureDevOps ->
             let detailedSourceConfig account = 
-                sprintf """ "azureDevOps" : {
-                                "account" : "%s",
-                                "project" : "%s"
-                            }""" account projectName
+                sprintf """ "source" : "azure devops",
+                            "account" : "%s",
+                            "project" : "%s",
+                            "searchKey" : "%s" """ account projectName ("azure devops" + projectName)
             match p with
             Project.Delta ->
                 detailedSourceConfig "time-payroll-kmddk"

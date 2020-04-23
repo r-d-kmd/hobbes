@@ -7,6 +7,7 @@ open Hobbes.Web.Database
 open Hobbes.Web
 open Hobbes.Helpers
 open Hobbes.Shared.RawdataTypes
+open Collector.AzureDevOps.Db.Rawdata
 
 [<RouteArea ("/admin", false)>]
 module Admin =
@@ -34,23 +35,8 @@ module Admin =
     let clearRawdata() =
         Rawdata.clear()  
 
-    [<Get "/raw/%s">]
-    let getRaw id =
-        Rawdata.get id
-
-    let createSyncDoc (config : Config.Root) (revision : string) =
+    let createSyncDoc (config : AzureDevOpsConfig.Root) (revision : string) =
         200, Rawdata.createSyncStateDocument revision config
-        
-    [<Get "/setSync/%s/%s/%s/%s/%s">]
-    let setSync ((completed : string), account, project, (revision : string), msg) =
-        let dataSource = DataConfiguration.DataSource.AzureDevOps (account, project)
-        
-        match completed.ToLower() with
-          "true"  -> Rawdata.setSyncCompleted revision (dataSource.ConfDoc |> Config.Parse)
-                     200, "SyncDoc set to completed"
-        | "false" -> Rawdata.setSyncFailed msg revision (dataSource.ConfDoc |> Config.Parse)
-                     200, "SyncDoc set to failed"
-        | _       -> 404, """first argument has to be "true" or "false" """
 
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =  
         async {

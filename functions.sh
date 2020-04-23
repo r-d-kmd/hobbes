@@ -1,18 +1,36 @@
-function getname(){
-   POD_NAME=$(kubectl get all | grep pod/.*$1)
-   POD_NAME="$( cut -d ' ' -f 1 <<< "$POD_NAME" )"; echo "$POD_NAME"
+APPS=(db hobbes collectordb azuredevops git)
+VOLUMES=(db collectordb)
+
+function getName(){
+   local POD_NAME=$(kubectl get all \
+                        | grep pod/$1\
+                        | cut -d ' ' -f 1 \
+                        | cut -d '/' -f 2)
    echo $POD_NAME
 }
 
+function getAppName(){
+   local SERVICE_NAME=$(kubectl get all \
+                        | grep service/$1 \
+                        | cut -d ' ' -f 1 \
+                        | cut -d '/' -f 2)
+   local APP_NAME=${SERVICE_NAME::${#SERVICE_NAME}-4}
+   echo $APP_NAME
+}
+
 function logs(){
-    getname $1
+    local POD_NAME=$(getName $1)
+    echo $POD_NAME
     kubectl logs $2 $POD_NAME
 }
 
 function restart(){
-    FILE_NAME=$(ls *$1*-deployment.yaml)
-    kubectl scale --replicas=0 -f $FILE_NAME
-    kubectl scale --replicas=1 -f $FILE_NAME
+    for var in "$@"
+    do
+        local FILE_NAME=$(ls *$var*-deployment.yaml)
+        kubectl scale --replicas=0 -f $FILE_NAME
+        kubectl scale --replicas=1 -f $FILE_NAME
+    done
 }
 
 function all(){
@@ -27,8 +45,27 @@ function clean(){
     kubectl delete --all secrets
 }
 
+function build(){    
+    eval $(minikube -p minikube docker-env)
+    ECHO "Starting Build"
+    cd ..
+    if [ -z "$1" ]
+    then
+        fake build
+    else
+        for var in "$@"
+        do
+            fake build --target "hobbes.$var"
+        done
+        restart $1
+    fi
+    cd kubernetes
+    echo "Done building"
+}
+
 function describe(){
-    NAME=$(kubectl get pods -l app=$1 -o name)
+    local NAME=$(getAppName $1)
+    local NAME=$(kubectl get pods -l app=$NAME -o name)
     kubectl describe ${NAME}
 }
 
@@ -36,19 +73,22 @@ function listServices(){
     minikube service list
 }
 
-function start(){
-    eval $(minikube -p minikube docker-env)
-    cd .. && fake build
-    cd kubernetes
-    kubectl apply -f env.JSON
-    kubectl apply -f db-deployment.yaml,db-svc.yaml,db-volume.yaml,hobbes-deployment.yaml,hobbes-svc.yaml,collectordb-volume.yaml,collectordb-deployment.yaml,collectordb-svc.yaml,azuredevops-deployment.yaml,azuredevops-svc.yaml
+function start() {
+    build
+    kubectl apply -f env.JSON;
+
+    for i in "${APPS[@]}"; do kubectl apply -f $i-deployment.yaml,$i-svc.yaml; done
+    for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
+
 }
 
 function startkube(){
     set $PATH=$PATH:/Applications/VirtualBox.app/
-    minikube start --vm-driver virtualbox
+    minikube start --vm-driver virtualbox --disk-size=75GB
 }
 
 function update(){
-    kubectl apply -f git-deployment.yaml,git-svc.yaml,azuredevops-deployment.yaml,azuredevops-svc.yaml,collectordb-deployment.yaml,collectordb-svc.yaml,collectordb-volume.yaml,hobbes-deployment.yaml,db-deployment.yaml,hobbes-svc.yaml,db-svc.yaml,db-volume.yaml,env.JSON
+    for i in "${APPS[@]}"; do kubectl apply -f $i-deployment.yaml,$i-svc.yaml; done
+    for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
+    kubectl apply -f env.JSON
 }

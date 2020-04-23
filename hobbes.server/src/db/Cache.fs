@@ -5,21 +5,9 @@ open Hobbes.Web
 open Hobbes.Server.Db
 open Hobbes.Web
 open Hobbes.Web.Log
+open Hobbes.Shared.RawdataTypes
 
 module Cache = 
-
-    type CacheRecord = JsonProvider<"""{
-        "_id" : "name",
-        "timeStamp" : "24-09-2019",
-        "source" : "lækljk",
-        "project" : "lkjlkj",
-        "state" : "Sync state",
-        "revision" : "lkjlkj",
-        "data" : {
-            "columnNames" : ["a","b"],
-            "values" : [["zcv","lkj"],[1.2,3.45],["2019-01-01","2019-01-01"]]
-        } 
-    }""">
 
     type SyncStatus = 
         Synced
@@ -126,31 +114,35 @@ module Cache =
         Database.Database("cache", CacheRecord.Parse, Log.loggerInstance) 
           .AddView(sourceView)
 
-    let private createKeyFromList  (cacheKey : string list) =  
-        System.String.Join(":",cacheKey).ToLower()
+    let private createKeyList (configuration : Configuration) =
+        let searchKey = configuration.SearchKey
+        let transformations = configuration.Transformations
+        searchKey::(transformations |> List.ofArray)
 
-    let private createKey (configuration : Configuration) = 
-        configuration.Source.SourceName::configuration.Source.ProjectName::configuration.Transformations
+    let private createKeyFromlist (keyList : #seq<string>) = 
+        System.String.Join(":",keyList).ToLower()
 
+    let private createKey configuration = 
+        createKeyList configuration
+        |> createKeyFromlist
+        
     let InsertOrUpdate doc = 
         db.InsertOrUpdate doc
         
     let list() = 
         db.ListIds()
 
-    let createDataRecord (key : string) (source : DataSource) (data : string) keyValue =
-        let key = key.ToLower()
+    let createDataRecord key searchKey (data : string) keyValue =
+        
         let data = if isNull data then data else data.Replace("\\", "\\\\")
         let record = 
             (sprintf """{
                         "_id" : "%s",
-                        "source" : "%s",
-                        "project" : "%s",
+                        "searchKey" : "%s",
                         "timeStamp" : "%s"
                         %s%s
                     }""" key
-                         source.SourceName
-                         source.ProjectName
+                         searchKey
                          (System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)) 
                           
                          (if data |> isNull then 
@@ -166,27 +158,26 @@ module Cache =
                               ) |> sprintf """,%s"""
                          ))
         let parsedRecord = record |> CacheRecord.Parse
-
-        //validate that the model fits expectations
+        
+        assert(parsedRecord.SearchKey = searchKey)
         assert(parsedRecord.Id = key)
-        assert(parsedRecord.Source = source.SourceName)
-        assert(parsedRecord.Project = source.ProjectName)
 
         record
 
-    let createCacheRecord configuration (data : string) (state : SyncStatus) message cacheRevision =
-        let cacheKey = 
-            configuration 
-            |> createKey 
-            |> createKeyFromList
-        createDataRecord cacheKey configuration.Source data [
-                                                               if cacheRevision |> Option.isSome then yield "revision", string cacheRevision.Value
-                                                               yield "state", string state
-                                                               if message |> Option.isSome then yield "message", message.Value]
+    let createCacheRecord key searchKey (data : string) (state : SyncStatus) message cacheRevision =
+        let values = 
+            [
+               if cacheRevision |> Option.isSome then yield "revision", string cacheRevision.Value
+               yield "state", string state
+               if message |> Option.isSome then yield "message", message.Value
+            ]
 
-    let store configuration cacheRevision (data : string) =
+        createDataRecord key searchKey data values
 
-        let record = createCacheRecord configuration data Synced None (Some cacheRevision)
+    let store transformations searchKey cacheRevision (data : string) =
+        if transformations |> List.isEmpty then failwith "Won't cache data that's not transformed"
+        let key = searchKey::transformations |> createKeyFromlist
+        let record = createCacheRecord key searchKey data Synced None (Some cacheRevision)
 
         try
             db.InsertOrUpdate record |> ignore
@@ -197,7 +188,7 @@ module Cache =
 
     let private tryRetrieve cacheKey =
         cacheKey
-        |> createKeyFromList
+        |> createKeyFromlist
         |> db.TryGet 
         |> Option.bind(fun (cacheRecord : CacheRecord.Root) -> 
             [
@@ -238,7 +229,7 @@ module Cache =
         async{
             let rec find key =
                 match key with
-                [] | [_]-> 
+                [] | [_] -> 
                     key, None
                 | source::project::transformations as keys->
                    match keys |> tryRetrieve with
@@ -248,10 +239,10 @@ module Cache =
                        | transformations -> source::project::(transformations |> List.rev |> List.tail |> List.rev) |> find
                    | data -> keys, data
             return 
-                match find (configuration |> createKey) with
-                [],_ | [_], _ | [_;_], None -> configuration.Transformations, None
+                match find (createKeyList configuration) with
+                [],_ | [_], _ | [_;_], None -> configuration.Transformations |> Array.toList, None
                 | _::_::transformations, data ->
-                    configuration.Transformations
+                    transformations
                     |> List.filter(fun transformation ->
                         transformations
                         |> List.tryFind(fun t -> t = transformation)
@@ -259,16 +250,16 @@ module Cache =
                     ),data
         }
             
-    let private idsBySource (source : DataSource) =
-        let startKey = 
-            sprintf """["%s","%s"]""" source.SourceName source.ProjectName
+    let private idsBySource (config : Configuration) =
+        let startKey = config.SearchKey
+        
         db.Views.[sourceView].List(CacheRecord.Parse, 
                                       startKey =  startKey)
 
-    let invalidateCache (source : DataSource) cacheRevision =
+    let invalidateCache config cacheRevision =
         async {
             let! _ = 
-                idsBySource source 
+                idsBySource config 
                 |> List.map(fun doc -> 
                                 async {
                                     if doc.Revision = cacheRevision then
@@ -285,6 +276,5 @@ module Cache =
        (
            configuration
            |> createKey
-           |> createKeyFromList
            |> db.Get
        ).Data.ToString()

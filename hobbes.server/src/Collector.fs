@@ -3,9 +3,7 @@ namespace Hobbes.Server.Collectors
 open FSharp.Data
 open Hobbes.Server.Db
 
-module AzureDevOps =
-
-    
+module Collector =
     let private collectorUrl (collectorName : string) path = 
         let url = sprintf "http://%scollector-svc:8085/%s" (collectorName.Replace(" ","")) path
         url
@@ -29,7 +27,7 @@ module AzureDevOps =
     
     let private postNoTimeOut collectorName path body =
         let url = collectorUrl collectorName path
-        printfn "url of post: %s" url
+        Hobbes.Web.Log.debugf "url of post: %s" url
         let response = 
             Http.Request(url,
                          httpMethod = HttpMethod.Post, 
@@ -38,7 +36,7 @@ module AzureDevOps =
                          body = HttpRequestBody.TextRequest body
                         )
         let resp = readBody response.Body
-        printfn "body: %s" resp
+        Hobbes.Web.Log.debugf "body: %s" resp
         response.StatusCode, resp
 
     let private getNoTimeOut path =
@@ -46,7 +44,7 @@ module AzureDevOps =
 
     let private post path body =
         let url = collectorUrl "azuredevops" path
-        printfn "** posting to %s. path: %s body: %s" url path body
+        Hobbes.Web.Log.debugf "** posting to %s. path: %s body: %s" url path body
         let response = 
             Http.Request(url, 
                          httpMethod = HttpMethod.Post, 
@@ -56,63 +54,16 @@ module AzureDevOps =
 
         response.StatusCode, (readBody response.Body)
 
-    [<System.Obsolete("Azure specific")>]
-    let private get path =
-        request HttpMethod.Get  "azuredevops" path
-
-    [<System.Obsolete("Azure specific")>]
-    let private delete path =
-        request HttpMethod.Delete  "azuredevops" path   
-
-    [<System.Obsolete("Azure specific")>]
-    let internal listRawdata() =
-        get "admin/list/rawdata"     
-
-    [<System.Obsolete("Azure specific")>]
-    let internal deleteRaw id =
-        sprintf "admin/raw/%s" id 
-        |> delete    
-
-    [<System.Obsolete("Azure specific")>]
-    let internal clearRawdata() =
-        get "admin/clear/rawdata"  
-
-    [<System.Obsolete("Azure specific")>]
-    let internal getSyncState syncId =
-        sprintf "status/sync/%s" syncId
-        |> get  
-
-    [<System.Obsolete("Azure specific")>]
-    let private setSync completed account project revision msg =
-        sprintf "admin/setSync/%s/%s/%s/%s/%s" (string completed) account project revision msg
-        |> get
-
-    [<System.Obsolete("Azure specific")>]
-    let private setSyncCompleted account project revision =
-        setSync "true" account project revision "-"    
-
-    [<System.Obsolete("Azure specific")>]
-    let private setSyncFailed account project revision msg =
-        setSync "false" account project revision msg      
-
+    let private get collectorName path =
+        request HttpMethod.Get  collectorName path 
+    
     let sync conf =
-        let collectorName = (conf |> DataConfiguration.ConfigurationRecord.Parse).Source.Value.ToLower()
+        let collectorName = (conf |> DataConfiguration.parse).Source.ToLower()
         let status,response = postNoTimeOut collectorName "data/sync" conf
-        //TODO this obviously needs to go
-        if status < 400 && status >= 200  then 
-            setSyncCompleted conf "" ""
-        else 
-            setSyncFailed "" "" "" ""
-        |> ignore
-        status,response  
-        
-    [<System.Obsolete("Azure specific")>]
-    let getRaw id =
-        sprintf "admin/raw/%s" id
-        |> get    
+        status,response
 
     let read conf =
-        let collectorName = (conf |> DataConfiguration.ConfigurationRecord.Parse).Source.Value.ToLower()
+        let collectorName = (conf |> DataConfiguration.parse).Source.ToLower()
         let status,response = postNoTimeOut collectorName "data/read" conf
         if status < 300 && status >= 200 then 
             let data = 
@@ -134,4 +85,5 @@ module AzureDevOps =
                       ) |> Seq.zip columnNames
             )    
         else 
-            failwithf "Got an unexpected response: %d - %s" status response
+            Hobbes.Web.Log.errorf null "Got an unexpected response: %d - %s. Configuration: %s" status response conf
+            Seq.empty

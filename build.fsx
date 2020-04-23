@@ -240,7 +240,8 @@ Target.create "PushSdkImages" (fun _ ->
 )
 
 Target.create "PushGenericImages" (fun _ -> 
-    genericDockerFiles |> pushImages
+    genericDockerFiles 
+    |> pushImages
 )
 
 //Set to 'Normal' to have more information when trouble shooting 

@@ -24,7 +24,19 @@ let run command workingDir args =
     |> ignore
 
 
-let dockerFiles = System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllDirectories)
+let dockerFiles = 
+    System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllDirectories)
+    |> Seq.filter(fun file ->
+        let dockerFolder = 
+            "./docker"
+            |> System.IO.Path.GetFullPath
+            |> System.IO.Path.GetDirectoryName
+        let fileFolder =
+            file
+            |> System.IO.Path.GetFullPath
+            |> System.IO.Path.GetDirectoryName
+        fileFolder <> dockerFolder
+    )
 
 let build configuration workingDir =
     let args = sprintf "--output ./bin/%s --configuration %s" configuration configuration

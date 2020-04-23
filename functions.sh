@@ -3,7 +3,7 @@ VOLUMES=(db collectordb)
 
 function getName(){
    local POD_NAME=$(kubectl get all \
-                        | grep pod/.*$1\
+                        | grep pod/$1\
                         | cut -d ' ' -f 1 \
                         | cut -d '/' -f 2)
    echo $POD_NAME
@@ -11,7 +11,7 @@ function getName(){
 
 function getAppName(){
    local SERVICE_NAME=$(kubectl get all \
-                        | grep service/.*$1 \
+                        | grep service/$1 \
                         | cut -d ' ' -f 1 \
                         | cut -d '/' -f 2)
    local APP_NAME=${SERVICE_NAME::${#SERVICE_NAME}-4}
@@ -20,6 +20,7 @@ function getAppName(){
 
 function logs(){
     local POD_NAME=$(getName $1)
+    echo $POD_NAME
     kubectl logs $2 $POD_NAME
 }
 

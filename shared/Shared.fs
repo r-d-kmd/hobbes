@@ -96,7 +96,7 @@ module RawdataTypes =
              //"Title",  fun (row : Rawdata.AzureDevOpsAnalyticsRecord.Value) -> box row.Title 
              "ChangedDate", fun (row : AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
              "WorkItemType",  fun (row : AzureDevOpsAnalyticsRecord.Value) -> box row.WorkItemType 
-             "CreatedDate", fun (row : AzureDevOpsAnalyticsRecord.Value) -> asObj row.ChangedDate 
+             "CreatedDate", fun (row : AzureDevOpsAnalyticsRecord.Value) -> asObj row.CreatedDate
              "ClosedDate", fun (row : AzureDevOpsAnalyticsRecord.Value) -> asObj row.ClosedDate
              "State", fun (row : AzureDevOpsAnalyticsRecord.Value) -> asObj row.State 
              "StateCategory",fun (row : AzureDevOpsAnalyticsRecord.Value) -> asObj row.StateCategory 

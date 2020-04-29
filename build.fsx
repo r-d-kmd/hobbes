@@ -157,8 +157,6 @@ let inline (@@) p1 p2 =
     System.IO.Path.Combine(p1,p2)
 
 let commonLibDir = "./.lib/"
-let serverPackageDir = """hobbes.server/deploy/Server"""
-let collectorPackageDir = """collectors/collectors.azuredevops/deploy/Server"""
 
 let CleanDirs dirs = 
     dirs
@@ -169,14 +167,6 @@ let CleanDirs dirs =
         printfn "Creating directory %s" dir
         System.IO.Directory.CreateDirectory(dir) |> ignore
     )   
-
-Target.create "Clean" (fun _ ->
-    CleanDirs [
-        commonLibDir
-        serverPackageDir
-        collectorPackageDir
-    ]
-)
 
 let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.2.default"
 

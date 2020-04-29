@@ -1,4 +1,4 @@
-APPS=(db hobbes collectordb azuredevops git)
+APPS=(db hobbes collectordb azuredevops git qtest)
 VOLUMES=(db collectordb)
 
 function getName(){

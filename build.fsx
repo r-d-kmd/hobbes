@@ -159,6 +159,7 @@ let inline (@@) p1 p2 =
 let commonLibDir = "./.lib/"
 let serverPackageDir = """hobbes.server/deploy/Server"""
 let collectorPackageDir = """collectors/collectors.azuredevops/deploy/Server"""
+let qtestPackageDir = """hobbes.qtest/deploy/Qtest"""
 
 let CleanDirs dirs = 
     dirs
@@ -175,6 +176,7 @@ Target.create "Clean" (fun _ ->
         commonLibDir
         serverPackageDir
         collectorPackageDir
+        qtestPackageDir
     ]
 )
 

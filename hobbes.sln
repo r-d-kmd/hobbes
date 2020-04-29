@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.779
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes", "hobbes.core\src\hobbes.core.fsproj", "{0962680D-200D-459D-BFEF-D4C0D1AFB23E}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes", "common\hobbes.core\src\hobbes.core.fsproj", "{0962680D-200D-459D-BFEF-D4C0D1AFB23E}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.helpers", "hobbes.helpers\src\hobbes.helpers.fsproj", "{EB676B32-B4A9-4E60-BB45-2BCAF8F42F87}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.helpers", "common\hobbes.helpers\src\hobbes.helpers.fsproj", "{EB676B32-B4A9-4E60-BB45-2BCAF8F42F87}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.server", "hobbes.server\src\hobbes.server.fsproj", "{74E62B25-8EF9-4427-B14D-40709AF1BF04}"
 EndProject
@@ -23,7 +23,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "collectors.AzureDevOps", "c
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "collectors.azuredevops", "collectors\collectors.AzureDevOps\src\collectors.azuredevops.fsproj", "{8BB903E3-E78F-4796-B572-A748BF09243F}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "hobbes.tests", "hobbes.core\tests\hobbes.tests.fsproj", "{EEBB26A3-7482-4753-9BD6-B88051E6ADF3}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "hobbes.tests", "common\hobbes.core\tests\hobbes.tests.fsproj", "{EEBB26A3-7482-4753-9BD6-B88051E6ADF3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hobbes.qtest", "hobbes.qtest", "{C2BDA9EC-6FD8-424B-A54C-D57229D33A52}"
 EndProject
@@ -75,7 +75,7 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
+	GlobalSection(ExtensibilityGlobals) = postSolutioncommon\
 		SolutionGuid = {CE1A5CA1-3698-4267-BD8D-F5D07FAC19A1}
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution

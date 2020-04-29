@@ -1,6 +1,15 @@
-open Fake.SystemHelper
-#r "paket: groupref build //"
+#r "paket:
+nuget Fake ~> 5 //
+nuget Fake.Core ~> 5 //
+nuget Fake.Core.Target  //
+nuget Fake.DotNet //
+nuget Fake.DotNet.AssemblyInfoFile //
+nuget Fake.DotNet.Cli //
+nuget Fake.DotNet.NuGet //
+nuget Fake.IO.FileSystem //
+nuget Fake.Tools.Git //"
 #load "./.fake/build.fsx/intellisense.fsx"
+
 
 #if !FAKE
 #r "netstandard"

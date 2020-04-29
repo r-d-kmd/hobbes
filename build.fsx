@@ -297,7 +297,7 @@ let buildCommon conf =
                 | DotNet.BuildConfiguration.Debug -> "Debug"
                 | DotNet.BuildConfiguration.Custom n -> n
 
-        let projectFile = sprintf "./%s/src/%s.fsproj" projectName projectName
+        let projectFile = sprintf "./common/%s/src/%s.fsproj" projectName projectName
     
         Target.create targetName (commonPack projectFile )
         prev

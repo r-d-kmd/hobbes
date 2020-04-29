@@ -7,7 +7,7 @@
   </PropertyGroup>
    <ItemGroup>
      <Reference Include="hobbes.helpers">
-      <HintPath>../../.lib/hobbes.helpers.dll</HintPath>
+      <HintPath>../../../.lib/hobbes.helpers.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

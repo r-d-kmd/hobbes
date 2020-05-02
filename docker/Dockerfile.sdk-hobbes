@@ -2,6 +2,8 @@ ARG SDK_ENV=sdk:latest
 FROM kmdrd/${SDK_ENV}
 
 ENV BUILD_ENV docker
+ENV PAKET_SKIP_RESTORE_TARGETS true
+
 COPY .lib/ ../.lib/
 
 # copy and publish app and libraries

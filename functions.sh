@@ -1,5 +1,5 @@
-APPS=(db hobbes collectordb azuredevops git qtest)
-VOLUMES=(db collectordb)
+APPS=(db hobbes azuredevops git qtest)
+VOLUMES=(db)
 
 function getName(){
    local POD_NAME=$(kubectl get all \

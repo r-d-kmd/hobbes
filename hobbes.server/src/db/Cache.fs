@@ -64,10 +64,10 @@ module Cache =
         Values : DataValues []
     }
 
-    type private CachedDate = JsonProvider<""" {"columnNames" : ["a","b"], "values" : [[0,1,2,3,4],[0.4,1.2,2.4,3.5,4.1],["x","y","z"],["2019-01.01","2019-01.01"]]} """>
+    type private CachedData = JsonProvider<""" {"columnNames" : ["a","b"], "values" : [[0,1,2,3,4],[0.4,1.2,2.4,3.5,4.1],["x","y","z"],["2019-01.01","2019-01.01"]]} """>
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module TableView =
-        let toTable (tableView : CachedDate.Root list) =
+        let toTable (tableView : CachedData.Root list) =
             tableView
             |> List.fold(fun (count, (map : Map<_,_>)) record ->
                 let values = 
@@ -108,7 +108,7 @@ module Cache =
             |> snd
             |> Map.toSeq
         let parse s = 
-            CachedDate.Parse s
+            CachedData.Parse s
     let private sourceView = "srcproj"
     let private db = 
         Database.Database("cache", CacheRecord.Parse, Log.loggerInstance) 

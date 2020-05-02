@@ -5,6 +5,7 @@ FROM kmdrd/aspnet
 
 WORKDIR /app
 COPY --from=build /app .
-#RUN paket update
+
+ENV DB_SERVER_URL http://db-svc:5984
 
 ENTRYPOINT [ "dotnet", "collectors.git.dll" ]

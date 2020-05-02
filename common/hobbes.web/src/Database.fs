@@ -285,6 +285,10 @@ namespace Hobbes.Web
                     failwithf "Bad format. Doc: %s" (body.Substring(0, min body.Length 500))
                 else
                     failwith body
+            
+            do 
+                if dbServerUrl |> isNull then failwith "Database server url not configured"
+                
             member this.AddView name =
                 _views <- _views.Add(name, View(tryGet,name,log))
                 this
@@ -411,7 +415,8 @@ namespace Hobbes.Web
                 status > 199 && status < 300
 
             
-            new(databaseName, parser, log) = Database(databaseName, parser, log, env "DB_SERVER_URL" "http://db-svc:5984/")
+            new(databaseName, parser, log) = Database(databaseName, parser, log, env "DB_SERVER_URL" null)
+
 
           
         let users = Database ("_users", UserRecord.Parse, consoleLogger)

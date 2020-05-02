@@ -1,7 +1,9 @@
 version: 1.0.{build}
 image: 
   - Ubuntu
-
+branches:
+  only:
+    - development
 environment:
   ENV_FILE:
     secure: 1EY0PW6l+4E/ZiuaRlC8WHb8v2J6o+YWksH852D5wIVfRnWBC6Ih6bPQMSwQ1Smm71oEOrsd8WJsabgdIkZIxinJ4chtLNBEjx2Wm32JuQziI+jvxc+Q+9YUtwrijB6xP2jHPA0n5wLEE1yHiicn6FFTFcXMJnOpizKcVkU9CgAywwJC+hXp17Vmp96jkfoDT9T+gPRSlB+N/GZubiaVXrSobSv0QTqyziDkBYRHg/DfElTuSkigaX/fDaF5OZ7jdM9QF0Th6uIHxW+OdBqb+xKZ09smfvWwkjo/1u8AsSnUR4+/mxeKXkV72w4py1zGPH4hXVOT+OOzWnSAvlR2Gwl7oAkOdoexi9X7o05Oajm5FLzFiqAzOz2ElBejPYdopqGV2xHhOAYOsLI32fq/P8NKX3gIYbRayLW/GCUE5biUDcBGVKeoU5qIMhoKF1Nhh5BOhvp/3OLKW68e+eejHD/yrN95P0yNhyzQQQl0bqhd6GPIBiFk/wPXtiqg6Pf2B8UXKzu2xtxBB2SiRRnkcZUjRi8KjlRGvIALYhWu9syCTN+TQIe6oxGh7f3j7tUyKFbATCAz6BJEz5mJtNeNCmTeUASvX0TkH7aMuumgd15nmdpSEy2sIS6gMjD026yUNU48PSBL91R71+hBFv0B6Ts89Azidc0x6GGX5204Sg4=

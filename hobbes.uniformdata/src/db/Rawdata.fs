@@ -8,8 +8,6 @@ open Hobbes.Helpers.Environment
 
 module UniformData =
 
-    type private DataRecord = JsonProvider<DataResultString>
-
     [<Literal>]
     let private UniformRecord = 
         """{
@@ -25,7 +23,7 @@ module UniformData =
      
     let private createCacheRecord key data =
         //fail if the data is invalid in form
-        data |> DataRecord.Parse |> ignore
+        data |> DataResult.Parse |> ignore
         
         let timeStamp = System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)
         let record = 

@@ -1,4 +1,4 @@
-APPS=(db hobbes azuredevops git qtest)
+APPS=(db hobbes azuredevops git qtest uniformdata)
 VOLUMES=(db)
 
 function getName(){
@@ -22,6 +22,12 @@ function logs(){
     local POD_NAME=$(getName $1)
     echo $POD_NAME
     kubectl logs $2 $POD_NAME
+}
+
+function delete(){
+    local POD_NAME=$(getName $1)
+    echo $POD_NAME
+    kubectl delete "pod/$POD_NAME"
 }
 
 function restart(){

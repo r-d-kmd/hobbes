@@ -284,11 +284,13 @@ let commonProjects =
 Target.create "BuildCommon" ignore
 Target.create "_BuildCommon" ignore
 Target.create "DebugCommon" ignore
-Target.create "StartCommon" ignore
+Target.create "PreCommon" ignore
 
 open Fake.Core.TargetOperators
+let changedFiles = Fake.Tools.Git.FileStatus.getChangedFilesInWorkingCopy "." "HEAD@{1}"
+printfn "CHANGED FILES : %A %A " (changedFiles|> List.ofSeq) (Fake.Tools.Git.Information.shortlog ".")
 let changedCommonFiles = 
-    Fake.Tools.Git.FileStatus.getAllFiles "."
+    changedFiles
     |> Seq.fold(fun l (_,(file : string)) ->
         if file.Contains "paket.dependencies" then
             (file,"paket.dependencies")::l
@@ -320,7 +322,7 @@ let buildCommon conf =
         Target.create targetName (commonPack projectFile )
         prev
             ==> targetName 
-    ) "StartCommon"
+    ) "PreCommon"
 
 buildCommon DotNet.BuildConfiguration.Release ==> "_BuildCommon"
 buildCommon DotNet.BuildConfiguration.Debug ==> "DebugCommon"
@@ -391,7 +393,7 @@ Target.create "PushToDocker" (fun _ ->
 (match changedCommonFiles with
  [] -> 
     printfn "No common files changed"
-    "StartCommon"
+    "PreCommon"
  | _ ->
     printfn "Common files have changed: %A" changedCommonFiles
     "PushSdkImages"

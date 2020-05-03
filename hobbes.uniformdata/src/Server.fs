@@ -4,7 +4,7 @@ open Hobbes.UniformData.Services.Data
 open Hobbes.Server.Routing
 open Hobbes.Helpers.Environment
 
-let private port = env "port" "8085"
+let private port = env "PORT" "8085"
                    |> int
 let private databaseServerUrl = env "DB_SERVER_URL" null
 

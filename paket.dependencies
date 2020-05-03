@@ -14,7 +14,7 @@ nuget Microsoft.VisualStudio.Services.Client
 nuget FSharp.Core
 
 group collectors
-    source https://www.nuget.org/api/v2
+    source https://www.nuget.org/api/v2 
     framework: auto-detect
     storage: none
     nuget RabbitMQ.Client

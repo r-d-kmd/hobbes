@@ -287,10 +287,9 @@ Target.create "DebugCommon" ignore
 Target.create "PreCommon" ignore
 
 open Fake.Core.TargetOperators
-let changedFiles = Fake.Tools.Git.FileStatus.getChangedFilesInWorkingCopy "." "HEAD@{1}"
-printfn "CHANGED FILES : %A %A " (changedFiles|> List.ofSeq) (Fake.Tools.Git.Information.shortlog ".")
+
 let changedCommonFiles = 
-    changedFiles
+    Fake.Tools.Git.FileStatus.getChangedFilesInWorkingCopy "." "HEAD@{1}"
     |> Seq.fold(fun l (_,(file : string)) ->
         if file.Contains "paket.dependencies" then
             (file,"paket.dependencies")::l

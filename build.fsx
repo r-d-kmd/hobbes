@@ -7,7 +7,7 @@ nuget Fake.DotNet.AssemblyInfoFile //
 nuget Fake.DotNet.Cli //
 nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
-nuget Fake.Tools.Git //"
+nuget Fake.Tools.Git ~> 5 //"
 #load "./.fake/build.fsx/intellisense.fsx"
 
 
@@ -19,6 +19,8 @@ nuget Fake.Tools.Git //"
 open Fake.Core
 open Fake.DotNet
 open Fake.IO
+
+
 let dockerOrg = "kmdrd"
 let run command workingDir args = 
     let arguments = 
@@ -216,7 +218,6 @@ let genericDockerFiles =
 let baseDockerFiles = 
     [
         ".","./docker/Dockerfile.sdk-hobbes", "sdk:hobbes"
-        ".","./docker/stretch/Dockerfile.sdk-hobbes", "sdk:hobbes-stretch"
     ]
 
 let buildImages = 
@@ -228,7 +229,7 @@ let buildImages =
             |> run "docker" context
     ) 
 
-Target.create "BuildGenericImages" (fun _ -> 
+Target.create "_BuildGenericImages" (fun _ -> 
     genericDockerFiles
     |> buildImages
 )
@@ -247,7 +248,8 @@ let pushImages =
     ) 
 
 Target.create "PushSdkImages" (fun _ -> 
-    baseDockerFiles |> pushImages
+    baseDockerFiles 
+    |> pushImages
 )
 
 Target.create "PushGenericImages" (fun _ -> 
@@ -272,24 +274,40 @@ let package conf outputDir projectFile  _ =
                         }
                    ) projectFile
 
-let commonLibs =
+let commonProjects =
     [
         "core"
         "helpers"
         "web"
-    ]
+    ] |> List.map(sprintf "hobbes.%s")
 
 Target.create "BuildCommon" ignore
+Target.create "_BuildCommon" ignore
 Target.create "DebugCommon" ignore
 Target.create "StartCommon" ignore
 
 open Fake.Core.TargetOperators
+let changedCommonFiles = 
+    Fake.Tools.Git.FileStatus.getAllFiles "."
+    |> Seq.fold(fun l (_,(file : string)) ->
+        if file.Contains "paket.dependencies" then
+            (file,"paket.dependencies")::l
+        elif file.Contains "Shared.fs" then
+            (file,"Shared.fs")::l
+        else
+            match commonProjects
+                 |> List.tryFind(file.Contains) with
+            Some commonProject -> 
+                (file,commonProject)::l
+            | None ->
+                l
+    ) []
 
 let buildCommon conf =
     let commonPack = package conf commonLibDir
-    commonLibs
-    |> List.fold (fun prev name -> 
-        let projectName = sprintf "hobbes.%s" name 
+    commonProjects
+    |> List.filter(fun f -> changedCommonFiles |> List.tryFind (fun (_,c) -> c = f) |> Option.isSome)
+    |> List.fold(fun prev projectName ->  
         let targetName =
             projectName +
                 match conf with
@@ -304,7 +322,7 @@ let buildCommon conf =
             ==> targetName 
     ) "StartCommon"
 
-buildCommon DotNet.BuildConfiguration.Release ==> "BuildCommon"
+buildCommon DotNet.BuildConfiguration.Release ==> "_BuildCommon"
 buildCommon DotNet.BuildConfiguration.Debug ==> "DebugCommon"
 
 let tools = 
@@ -321,7 +339,7 @@ tools
     Target.create targetName (pack projectFile)
     prev
        ==> targetName
- ) "BuildCommon"
+ ) "_BuildCommon"
 
 Target.create "Publish" (fun _ -> 
     run "dotnet" "./workbench/src" "run -- --publish" 
@@ -354,20 +372,34 @@ Target.create "PushToDocker" (fun _ ->
     ) 
 )
 
+"_BuildGenericImages" 
+    ?=> "BuildSdkImages"
+
+"BuildSdkImages"
+    ==> "PushSdkImages"
+    ==> "PushGenericImages"
+
+"_BuildGenericImages" 
+    ==> "PushGenericImages"
+
 "RedeployServer"
     ==> "Redeploy"
 
 "RedeployAzure"
     ==> "Redeploy"
 
-"BuildDocker"
-    ==> "Build"
+(match changedCommonFiles with
+ [] -> 
+    printfn "No common files changed"
+    "StartCommon"
+ | _ ->
+    printfn "Common files have changed: %A" changedCommonFiles
+    "PushSdkImages"
+) ==> "BuildDocker"
+  ==> "Build"
 
-"BuildCommon"
+"_BuildCommon"
     ==> "BuildSdkImages"
-    ==> "PushSdkImages"
-
-"BuildGenericImages"
-    ==> "PushGenericImages"
+    ==> "BuildCommon"
 
 Target.runOrDefaultWithArguments "Build"

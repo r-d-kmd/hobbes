@@ -1,2 +1,5 @@
 bin/
-deploy/
+**/.fake/
+**/bin/
+**/obj/
+

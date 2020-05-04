@@ -23,7 +23,6 @@
     <Compile Include="$(RelativePath)services/shared/Shared.fs" />
     <Compile Include="db/Transformations.fs" />
     <Compile Include="db/DataConfiguration.fs" />
-    <Compile Include="db/Cache.fs" />
     <None Include="db/documents/**/*.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

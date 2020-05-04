@@ -4,12 +4,15 @@ open FSharp.Data
 
 module Cache =
     [<Literal>]
-    let internal DataResultString = 
-        """{
-             "columnNames" : ["kjkl","kjlkj"],
-             "rows" : [["dsfsd","kjlk"],[2.0,1.3]],
-             "rowCount" : 2
-        }"""
+    let internal DataResultString = """ {
+            "columnNames" : ["a","b"], 
+            "rows" : [[0,"hk",null,2.,3,4,"2019-01-01"],
+                      [0.4,1.2,2.4,3.5,4.1],
+                      ["x","y","z"],
+                      ["2019-01.01","2019-01.01"]
+                     ],
+            "rowCount" : 4
+        } """
 
     [<Literal>]
     let internal CacheRecordString = 
@@ -31,10 +34,12 @@ module Cache =
                     sBuilder.Append(d.ToString("x2"))
             ) sBuilder).ToString()
 
-    let internal key source = 
-        source |> hash
+    let key (source : string) = 
+        source.Split([|' ';'\t';'\n';'\r'|],System.StringSplitOptions.RemoveEmptyEntries)
+        |> System.String.Concat
+        |> hash
      
-    let internal createCacheRecord key data =
+    let createCacheRecord key data =
         //fail if the data is invalid in form
         data |> DataResult.Parse |> ignore
         
@@ -54,6 +59,25 @@ module Cache =
         assert(cacheRecord.TimeStamp = timeStamp)
 
         record
+
+    let readData (record : CacheRecord.Root) = 
+        let data = 
+            record.Data
+        let columnNames = data.ColumnNames
+        
+        data.Rows
+        |> Seq.mapi(fun index row ->
+            index,row.JsonValue.AsArray()
+                  |> Seq.map(fun v ->
+                      match v with
+                      JsonValue.String s -> box s
+                      | JsonValue.Null -> null
+                      | JsonValue.Number n -> box n
+                      | JsonValue.Float f -> box f
+                      | JsonValue.Boolean b -> box b
+                      | v -> failwithf "Only simple values expected but got %A" v
+                  ) |> Seq.zip columnNames
+        )
 
     type Cache(name) = 
         let db = 

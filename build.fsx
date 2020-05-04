@@ -19,7 +19,7 @@ nuget Fake.Tools.Git ~> 5 //"
 open Fake.Core
 open Fake.DotNet
 open Fake.IO
-
+open Fake.IO.Globbing.Operators
 
 let dockerOrg = "kmdrd"
 let run command workingDir args = 
@@ -274,12 +274,9 @@ let package conf outputDir projectFile  _ =
                         }
                    ) projectFile
 
-let commonProjects =
-    [
-        "core"
-        "helpers"
-        "web"
-    ] |> List.map(sprintf "hobbes.%s")
+let commonProjectFiles =
+    !!("common/**/*.fsproj")
+    --("common/**/tests/*.fsproj")
 
 Target.create "BuildCommon" ignore
 Target.create "_BuildCommon" ignore
@@ -297,28 +294,22 @@ let changedCommonFiles =
             (file,"Shared.fs")::l
         elif file.Contains "docker/" then
             (file,"docker/")::l
+        elif file.Contains "common" then
+            (file,"common")::l
         else
-            match commonProjects
-                 |> List.tryFind(file.Contains) with
-            Some commonProject -> 
-                (file,commonProject)::l
-            | None ->
-                l
+            l
     ) []
 
 let buildCommon conf =
     let commonPack = package conf commonLibDir
-    commonProjects
-    |> List.filter(fun f -> changedCommonFiles |> List.tryFind (fun (_,c) -> c = f) |> Option.isSome)
-    |> List.fold(fun prev projectName ->  
+    commonProjectFiles
+    |> Seq.fold(fun prev projectFile ->  
         let targetName =
-            projectName +
+            (System.IO.Path.GetFileNameWithoutExtension projectFile) +
                 match conf with
                 DotNet.BuildConfiguration.Release -> ""
                 | DotNet.BuildConfiguration.Debug -> "Debug"
                 | DotNet.BuildConfiguration.Custom n -> n
-
-        let projectFile = sprintf "./common/%s/src/%s.fsproj" projectName projectName
     
         Target.create targetName (commonPack projectFile )
         prev

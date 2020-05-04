@@ -295,6 +295,8 @@ let changedCommonFiles =
             (file,"paket.dependencies")::l
         elif file.Contains "Shared.fs" then
             (file,"Shared.fs")::l
+        elif file.Contains "docker/" then
+            (file,"docker/")::l
         else
             match commonProjects
                  |> List.tryFind(file.Contains) with

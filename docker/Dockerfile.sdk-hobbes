@@ -7,7 +7,7 @@ ENV PAKET_SKIP_RESTORE_TARGETS true
 COPY .lib/ ../.lib/
 
 # copy and publish app and libraries
-COPY app/shared/ ../shared/
+COPY services/shared/ ../services/shared/
 ONBUILD COPY ./src/ .
 
 ONBUILD RUN dotnet publish -c release -o /app

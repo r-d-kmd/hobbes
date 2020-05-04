@@ -115,6 +115,7 @@ namespace Hobbes.Web
                 Offset : int
                 Rows : 'a []
             }
+            
         let private getBody (resp : HttpResponse) = 
             match resp.Body with
             Binary _ -> failwithf "Can't use a binary response"

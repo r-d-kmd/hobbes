@@ -6,7 +6,6 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../hobbes.server/src/hobbes.server.fsproj" />
     <ProjectReference Include="../../hobbes.core/src/hobbes.core.fsproj" />
   </ItemGroup>
   <ItemGroup>

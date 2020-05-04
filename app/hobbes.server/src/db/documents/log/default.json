@@ -1,9 +1,0 @@
-{
-    "_id": "_design/default",
-    "views": {
-        "byDate": {
-            "map": "function (doc) {\n  if(doc.timestamp && doc.message && doc.message !== \"POSTting [] to log\") {\n    emit(Date(doc.timestamp), [doc.type,doc.message]);\n  }\n}"
-        }
-    },
-    "language": "javascript"
-}

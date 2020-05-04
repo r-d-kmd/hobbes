@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RelativePath Condition="$(BUILD_ENV) == 'docker'">/</RelativePath>
+    <RelativePath Condition="$(RelativePath) == ''">../../../../</RelativePath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="hobbes.core">
+      <HintPath>$(RelativePath).lib/hobbes.core.dll</HintPath>
+    </Reference>
+    <Reference Include="hobbes.helpers">
+      <HintPath>$(RelativePath).lib/hobbes.helpers.dll</HintPath>
+    </Reference>
+    <Reference Include="hobbes.web">
+      <HintPath>$(RelativePath).lib/hobbes.web.dll</HintPath>
+    </Reference>
+    <Reference Include="hobbes.server">
+      <HintPath>$(RelativePath).lib/hobbes.server.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(RelativePath)services/shared/Shared.fs" />
+    <Compile Include="db/Rawdata.fs" />
+    <Compile Include="Reader.fs" />
+    <None Include="db/documents/*.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <Compile Include="Services/Root.fs" />
+    <Compile Include="Services/Admin.fs" />
+    <Compile Include="Services/Data.fs" />
+    <Compile Include="Services/Status.fs" />
+    <Compile Include="Server.fs" />
+  </ItemGroup>
+  <Import Project="..\..\..\..\.paket\Paket.Restore.targets" />
+</Project>

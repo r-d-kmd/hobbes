@@ -13,6 +13,7 @@
   <ItemGroup>
     <Compile Include="Database.fs" />
     <Compile Include="Log.fs" />
+    <Compile Include="Cache.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="Security.fs" />
     <Compile Include="Routing.fs" />

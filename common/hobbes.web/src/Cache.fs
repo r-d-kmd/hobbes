@@ -22,8 +22,8 @@ module Cache =
             "data" : """ + DataResultString + """
         }"""
 
-    type internal DataResult = JsonProvider<DataResultString>
-    type internal CacheRecord = JsonProvider<CacheRecordString>
+    type DataResult = JsonProvider<DataResultString>
+    type CacheRecord = JsonProvider<CacheRecordString>
 
     let internal hash (input : string) =
             use md5Hash = System.Security.Cryptography.MD5.Create()
@@ -58,7 +58,7 @@ module Cache =
         assert(cacheRecord.Id = key)
         assert(cacheRecord.TimeStamp = timeStamp)
 
-        record
+        cacheRecord
 
     let readData (record : CacheRecord.Root) = 
         let data = 
@@ -79,18 +79,46 @@ module Cache =
                   ) |> Seq.zip columnNames
         )
 
-    type Cache(name) = 
-        let db = 
-            Database.Database(name + "Cache", CacheRecord.Parse, Log.loggerInstance)
-        
-        
-        member __.InsertOrUpdate doc = 
-            async{
-                db.InsertOrUpdate doc
-                |> Log.logf "Inserted data: %s"
-            } |> Async.Start
-        
-        member __.Get (confDoc : string) = 
-            confDoc
-            |> hash
-            |> db.TryGet
+    type ICacheProvider = 
+         abstract member InsertOrUpdate : CacheRecord.Root -> unit
+         abstract member Get : string -> CacheRecord.Root option
+
+    type Cache private(provider : ICacheProvider) =
+        static let parser = CacheRecord.Parse
+        new(name) =  
+            let db = 
+                Database.Database(name + "Cache", parser, Log.loggerInstance)
+            
+            Cache {new ICacheProvider with 
+                            member __.InsertOrUpdate doc = 
+                                async{
+                                    doc.JsonValue.ToString()
+                                    |> db.InsertOrUpdate 
+                                    |> Log.logf "Inserted data: %s"
+                                } |> Async.Start
+                            
+                            member __.Get (confDoc : string) = 
+                                confDoc
+                                |> hash
+                                |> db.TryGet }
+        new(serviceName, path) =
+            Cache {new ICacheProvider with 
+                            member __.InsertOrUpdate doc = 
+                                async{
+                                    doc.JsonValue.ToString() 
+                                    |> Http.put serviceName path
+                                    |> ignore
+                                } |> Async.Start
+                            
+                            member __.Get (confDoc : string) = 
+                                let key = 
+                                    confDoc
+                                    |> hash
+                                match Http.get serviceName parser <| sprintf "/%s/%s" path key with
+                                Http.Success d -> Some d
+                                | Http.Error (code,msg) ->
+                                    Log.errorf null "Failed to load from cache. Status: %d. Message: %s" code msg
+                                    None}
+                                    
+        member __.InsertOrUpdate = provider.InsertOrUpdate
+        member __.Get = provider.Get

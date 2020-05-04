@@ -4,7 +4,7 @@ open FSharp.Data
 open Collector.AzureDevOps.Db
 open Collector.AzureDevOps.Db.Rawdata
 open Hobbes.Server.Db
-open Hobbes.Shared.CommonFunctions
+open Hobbes.Helpers.Environment
 
 module Reader =
     

@@ -1,5 +1,7 @@
-APPS=(db hobbes azuredevops git qtest uniformdata)
-VOLUMES=(db)
+APPS=$(ls *-svc.yaml | grep svc | cut -d '-' -f 1)
+VOLUMES=$(ls *-volume.yaml | grep volume | cut -d '-' -f 1)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 
 function getName(){
    local POD_NAME=$(kubectl get all \
@@ -31,12 +33,15 @@ function delete(){
 }
 
 function restart(){
+    local CURRENT_DIR=$(pwd)
+    cd $KUBERNETES_DIR
     for var in "$@"
     do
         local FILE_NAME=$(ls *$var*-deployment.yaml)
         kubectl scale --replicas=0 -f $FILE_NAME
         kubectl scale --replicas=1 -f $FILE_NAME
     done
+    cd $CURRENT_DIR
 }
 
 function all(){
@@ -54,7 +59,8 @@ function clean(){
 function build(){    
     eval $(minikube -p minikube docker-env)
     ECHO "Starting Build"
-    cd ..
+    local CURRENT_DIR=$(pwd)
+    cd $SCRIPT_DIR
     if [ -z "$1" ]
     then
         fake build
@@ -65,7 +71,7 @@ function build(){
         done
         restart $1
     fi
-    cd kubernetes
+    cd $CURRENT_DIR
     echo "Done building"
 }
 
@@ -80,12 +86,14 @@ function listServices(){
 }
 
 function start() {
+    local CURRENT_DIR=$(pwd)
+    cd $KUBERNETES_DIR
     build
     kubectl apply -f env.JSON;
 
     for i in "${APPS[@]}"; do kubectl apply -f $i-deployment.yaml,$i-svc.yaml; done
     for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
-
+    cd $CURRENT_DIR
 }
 
 function startkube(){

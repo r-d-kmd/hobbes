@@ -16,11 +16,7 @@ let adminRouter =
         withBody <@ storeTransformations @>
         fetch    <@ listConfigurations@>
         fetch    <@ listTransformations @>
-        fetch    <@ listCache @>
         fetch    <@ listLog @> 
-        fetch    <@ clearCache @> 
-
-        withArg  <@ deleteCache @>
         withArgs <@ setting @>
         
         withBody <@ configureStr @>
@@ -31,8 +27,6 @@ let dataRouter =
     router {
         pipe_through verifiedPipe
         withArg <@ csv @> 
-        withArg <@ fSync @>
-        withArg <@ sync @>
     }
 
 let private appRouter = router {

@@ -103,9 +103,8 @@ module Rawdata =
                               ) |> sprintf """,%s"""
                          ))
 
-        let cacheRecord = record |> CacheRecord.Parse
+        let cacheRecord = record |> Cache.CacheRecord.Parse
 
-        assert(cacheRecord.SearchKey = searchKey)
         assert(cacheRecord.Id = key)
         assert(cacheRecord.TimeStamp = timeStamp)
 

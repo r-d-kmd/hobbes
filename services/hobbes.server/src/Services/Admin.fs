@@ -81,11 +81,6 @@ module Admin =
         DataConfiguration.list()
         |> Seq.map(fun t -> t.Id) 
         |> formatDBList "configurations"
-
-    [<Get ("/list/cache")>]
-    let listCache() = 
-        Cache.list()
-        |> formatDBList "cache"
         
     [<Get ("/list/transformations")>]
     let listTransformations() = 
@@ -116,14 +111,6 @@ module Admin =
             200,sprintf """{"configuration":%s, "status" : "ok" }""" doc
         with _ -> 
             500,"internal server error"
-
-    [<Delete ("/cache/%s")>]
-    let deleteCache (id : string) = 
-        Cache.delete id
-
-    [<Delete ("/clear/cache")>]
-    let clearCache () = 
-        Cache.clear()
     
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
         

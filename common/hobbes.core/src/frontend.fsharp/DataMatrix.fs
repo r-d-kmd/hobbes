@@ -177,8 +177,13 @@ module Clustering =
 module DataStructures =
     type JsonTableFormat = 
         Column
-        | Row
+        | Rows
         | Csv
+    let inline private jsonString (s : string) = 
+        "\"" +
+         s.Replace("\\","\\\\")
+          .Replace("\"","\\\"") 
+        + "\""
     type IDataMatrix = 
         abstract Transform : AST.Expression -> IDataMatrix
         abstract Combine : IDataMatrix -> IDataMatrix
@@ -845,7 +850,7 @@ module DataStructures =
         let serialiseValue (_,value : obj) = 
             match value with
             null -> "null"
-            | :? string as s -> sprintf """ "%s" """ s
+            | :? string as s -> jsonString s
             | :? bool as b -> 
                     if b then "true" else "false"
             | :? int as i -> i |> string
@@ -939,21 +944,43 @@ module DataStructures =
                             )) |> String.Join |> sprintf "[%s]"
 
                     sprintf """{"columnNames": %s, "values" : %s}""" columnNames values
-                | Row ->
-                    System.String.Join(",",
-                        frame
-                        |> Frame.rows
-                        |> Series.observations
-                        |> Seq.map(fun (_,row) ->
-                            System.String.Join(",",
-                                row
-                                |> Series.observations
-                                |> Seq.map(fun (columnName, value) ->
-                                   sprintf """ "%s":%A""" columnName value
-                                )
-                            ) |> sprintf "{%s}"
-                        )
-                     ) |> sprintf "[%s]"
+                | Rows ->
+                    let columnKeys = 
+                        frame.GetColumns()
+                        |> Series.keys
+
+                    let columnNames =
+                       (",",columnKeys
+                            |> Seq.map(jsonString))
+                        |> System.String.Join
+
+                    let columnMap = 
+                        columnKeys
+                        |> Seq.mapi(fun i c -> c,i)
+                        |> Map.ofSeq
+
+                    let rows =
+                        (",",frame
+                            |> Frame.rows
+                            |> Series.observations
+                            |> Seq.map(fun (_,row) ->
+                                (",",
+                                    row
+                                    |> Series.observations
+                                    |> Seq.sortBy(fun (columnName,_) -> columnMap.[columnName])
+                                    |> Seq.map serialiseValue)
+                                |> System.String.Join
+                                |> sprintf "[%s]"
+                            )
+                        ) |> System.String.Join
+                        |> sprintf "[%s]"
+
+                    sprintf """{
+                        "columnNames" : %s,
+                        "rows" : %s,
+                        "rowCount" : %d
+                    }""" columnNames rows (frame.RowCount)
+
                 | Csv ->
                     let rows = 
                         frame

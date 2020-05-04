@@ -26,9 +26,6 @@ let statusRouter =
 
 let dataRouter = 
     router {
-       //make a POST ops instead and let the arguments be in the body
-       //to make it more flexible and "same" signature for all collectors
-       withBody <@ sync @> 
        withBody <@ read @>
     }
     

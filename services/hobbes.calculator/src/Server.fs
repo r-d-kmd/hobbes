@@ -1,6 +1,6 @@
 open Saturn
 open Giraffe
-open Hobbes.UniformData.Services.Data
+open Hobbes.Calculator.Services.Data
 open Hobbes.Server.Routing
 open Hobbes.Helpers.Environment
 
@@ -10,7 +10,7 @@ let private databaseServerUrl = env "DB_SERVER_URL" null
 
 let dataRouter = 
     router {
-       withBody <@ read @>
+       withBody <@ calculate @>
     }
     
 let private appRouter = router {

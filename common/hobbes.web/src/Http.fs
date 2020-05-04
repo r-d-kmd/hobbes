@@ -25,3 +25,9 @@ module Http =
         Http.Request(sprintf "http://%s-svc:8085%s" serviceName path,
                      httpMethod = "GET"
         ) |> readResponse parser
+    
+    let put serviceName path body = 
+        Http.Request(sprintf "http://%s-svc:8085%s" serviceName path,
+                     httpMethod = "PUT",
+                     body = HttpRequestBody.TextRequest body
+        ) |> readResponse id

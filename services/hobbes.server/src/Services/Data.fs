@@ -8,11 +8,11 @@ open Hobbes.Helpers
 module Data = 
     let cacheRevision confDoc = 
         sprintf "%s:%d" confDoc (System.DateTime.Now.Ticks) |> hash
-
+    let private transformationCache = Hobbes.Web.Cache.Cache("calculator","calculate")
     [<Get ("/csv/%s")>]
     let csv configuration =  
         debugf "Getting csv for '%A'" configuration
-        match Hobbes.Web.Cache.Cache("calculator","calculate").Get configuration with
+        match transformationCache.Get configuration with
         Some data ->
             let csv = 
                 let rows = 

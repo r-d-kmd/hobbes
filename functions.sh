@@ -89,12 +89,16 @@ function listServices(){
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    build
     kubectl apply -f env.JSON;
 
     for i in "${APPS[@]}"; do kubectl apply -f $i-deployment.yaml,$i-svc.yaml; done
     for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
     cd $CURRENT_DIR
+}
+
+function startAndBuild() {
+    build
+    start
 }
 
 function startkube(){
@@ -103,7 +107,10 @@ function startkube(){
 }
 
 function update(){
+    local CURRENT_DIR=$(pwd)
+    cd $KUBERNETES_DIR
     for i in "${APPS[@]}"; do kubectl apply -f $i-deployment.yaml,$i-svc.yaml; done
     for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
     kubectl apply -f env.JSON
+    cd $CURRENT_DIR
 }

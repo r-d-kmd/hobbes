@@ -98,7 +98,7 @@ module Cache =
                                 } |> Async.Start
                             
                             member __.Get (confDoc : string) = 
-                                Log.logf "trying tp retrieve cached %s from database" confDoc
+                                Log.logf "trying to retrieve cached %s from database" confDoc
                                 confDoc
                                 |> hash
                                 |> db.TryGet }

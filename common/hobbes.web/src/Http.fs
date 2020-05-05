@@ -22,12 +22,16 @@ module Http =
            |> Success
     
     let get serviceName parser path = 
-        Http.Request(sprintf "http://%s-svc:8085%s" serviceName path,
+        let url = sprintf "http://%s-svc:8085%s" serviceName path
+        Log.logf "Getting %s" url
+        Http.Request(url,
                      httpMethod = "GET"
         ) |> readResponse parser
     
     let put serviceName path body = 
-        Http.Request(sprintf "http://%s-svc:8085%s" serviceName path,
+        let url = sprintf "http://%s-svc:8085%s" serviceName path
+        Log.logf "Putting to %s" url
+        Http.Request(url,
                      httpMethod = "PUT",
-                     body = HttpRequestBody.TextRequest body
+                     body = TextRequest body
         ) |> readResponse id

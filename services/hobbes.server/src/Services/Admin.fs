@@ -4,7 +4,6 @@ open Hobbes.Web.Database
 open Hobbes.Web.Log
 open Hobbes.Server.Db
 open Hobbes.Web.Routing
-open Hobbes.Server.Collectors
 open Hobbes.Helpers.Environment
 
 [<RouteArea "/admin">]
@@ -138,17 +137,7 @@ module Admin =
             return res
         }
         
-    [<Get "/init">]
-    let initDb () =
-        
-        
-        let dbs = 
-            [
-                "transformations"
-                "configurations"
-                "cache"
-                "log"
-            ] 
+    let initDatabase () =
         let systemDbs = 
             [
                 "_replicator"
@@ -156,7 +145,7 @@ module Admin =
                 "_users"
             ]
         let errorCode = 
-            dbs@systemDbs
+            systemDbs
             |> List.map (fun n -> couch.TryPut(n, "") |> fst)
             |> List.tryFind (fun sc -> ((sc >= 200 && sc < 300) || (sc = 412)) |> not)
         match errorCode with

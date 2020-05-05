@@ -1,12 +1,8 @@
 namespace Hobbes.Server.Services
 
 open Hobbes.Web.Log
-open Hobbes.Server.Db
 open Hobbes.Web.Routing
-open Hobbes.Web.Http
-open Hobbes.FSharp.DataStructures
 open Hobbes.Helpers
-open Hobbes.Server.Collectors
 
 [<RouteArea "/data">]
 module Data = 
@@ -16,13 +12,30 @@ module Data =
     [<Get ("/csv/%s")>]
     let csv configuration =  
         debugf "Getting csv for '%A'" configuration
-        match Hobbes.Web.Cache.Cache("calculator","data").Get configuration with
+        match Hobbes.Web.Cache.Cache("calculator","calculate").Get configuration with
         Some data ->
             let csv = 
-                data
-                |> Hobbes.Web.Cache.readData
-                |> DataMatrix.fromRows
-                |> DataMatrix.toJson Csv
+                let rows = 
+                    data
+                    |> Hobbes.Web.Cache.readData
+                let columnNames = 
+                    (":",rows
+                         |> Seq.collect(fun (_,row) -> row |> Seq.map fst)
+                         |> Seq.distinct
+                         |> Seq.map(fun v -> v.Replace(":",";"))
+                    ) |> System.String.Join
+                let values = 
+                    ("\n",rows
+                          |> Seq.map(fun (_,row) ->
+                              (":",row
+                                   |> Seq.map(fun (_,v) ->
+                                       let s = string v
+                                       s.Replace(":",";")
+                                   )
+                              ) |> System.String.Join
+                          )
+                    ) |> System.String.Join 
+                columnNames + "\n" + values
             debugf "CSV: %s" csv
             200, csv
         | None -> 404,sprintf "Data for configuration %s not found" configuration

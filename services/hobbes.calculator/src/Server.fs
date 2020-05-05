@@ -34,7 +34,7 @@ let rec private init() =
 
         try
            FSharp.Data.Http.Request(databaseServerUrl) |> ignore //make sure db is up and running
-           FSharp.Data.Http.Request(databaseServerUrl + "/uniform",
+           FSharp.Data.Http.Request(databaseServerUrl + "/TransformationCache",
                                     httpMethod = "PUT") 
                                    |> ignore
            printfn "DB initialized"

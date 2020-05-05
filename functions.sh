@@ -1,7 +1,8 @@
+APPS=(db hobbes azuredevops git qtest uniformdata calculator configurations)
+VOLUMES=(db)
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
-APPS=$(cd $SCRIPT_DIR && ls -R | grep svc.yaml | cut -d '-' -f 1)
-VOLUMES=$(cd $SCRIPT_DIR && ls -R  | grep volume.yaml | cut -d '-' -f 1)
 
 function getName(){
    local POD_NAME=$(kubectl get all \

@@ -8,16 +8,12 @@ let private port = env "PORT" "8085"
                    |> int
 let private databaseServerUrl = env "DB_SERVER_URL" null
 
-let dataRouter = 
-    router {
-       withBody <@ calculate @>
-    }
-    
 let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "The requested ressource does not exist")
     
     fetch <@ ping @>
-    forward "/data" dataRouter
+    withArg <@ configuration @>
+    withArg <@ transformation @>
 } 
 
 let private app = application {
@@ -34,9 +30,15 @@ let rec private init() =
 
         try
            FSharp.Data.Http.Request(databaseServerUrl) |> ignore //make sure db is up and running
-           FSharp.Data.Http.Request(databaseServerUrl + "/uniform",
-                                    httpMethod = "PUT") 
-                                   |> ignore
+           [
+               "configurations"
+               "transformations"
+               "sources"
+           ] |> List.iter(fun name ->
+               FSharp.Data.Http.Request(databaseServerUrl + "/" + name,
+                                        httpMethod = "PUT") 
+                                       |> ignore
+           )
            printfn "DB initialized"
         with _ ->
            do! Async.Sleep 2000

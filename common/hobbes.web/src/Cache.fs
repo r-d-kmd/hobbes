@@ -98,6 +98,7 @@ module Cache =
                                 } |> Async.Start
                             
                             member __.Get (confDoc : string) = 
+                                Log.logf "trying tp retrieve cached %s from database" confDoc
                                 confDoc
                                 |> hash
                                 |> db.TryGet }
@@ -110,10 +111,7 @@ module Cache =
                                     |> ignore
                                 } |> Async.Start
                             
-                            member __.Get (confDoc : string) = 
-                                let key = 
-                                    confDoc
-                                    |> hash
+                            member __.Get (key : string) = 
                                 match Http.get serviceName parser <| sprintf "/%s/%s" path key with
                                 Http.Success d -> Some d
                                 | Http.Error (code,msg) ->

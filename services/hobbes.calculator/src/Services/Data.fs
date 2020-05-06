@@ -12,7 +12,7 @@ module Data =
     let cache = Cache.Cache("TransformationCache")
    
     let private getConfiguration configurationName =
-            get "configurations" Config.Parse <| "/configuration/" + configurationName
+            get Configurations Config.Parse <| "/configuration/" + configurationName
 
     let readFromCache (key : string list) = 
         (":",key)
@@ -21,7 +21,7 @@ module Data =
         |> Option.bind (Cache.readData >> Some)
 
     let calc transformationName calculatedData =
-        match get "configurations" TransformationRecord.Parse <| "/transformation/" + transformationName with
+        match get Configurations TransformationRecord.Parse <| "/transformation/" + transformationName with
         Success transformation ->
             Hobbes.FSharp.Compile.expressions transformation.Lines calculatedData
             |> Some

@@ -33,7 +33,7 @@ module Data =
         async {
             let sourceName = (Hobbes.Shared.RawdataTypes.Config.Parse conf).Source.Name
             Log.logf "Reading new data for %s" conf
-            match Http.post sourceName Cache.CacheRecord.Parse "/read" conf with
+            match Http.post (Http.Generic sourceName) Cache.CacheRecord.Parse "/read" conf with
             Http.Success cacheRecord ->
                 Log.logf "updating cache for %s with _id: %s" sourceName cacheRecord.Id
                 try

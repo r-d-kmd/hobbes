@@ -6,6 +6,23 @@ module Http =
     type Response<'T> = 
         Success of 'T
         | Error of int * string
+        
+    type Service = 
+         Generic of string
+         | UniformData
+         | Calculator
+         | Configurations
+         with 
+             override x.ToString() = 
+               match x with
+               Generic name -> name.ToLower()
+               | UniformData -> "uniformdata"
+               | Calculator -> "calculator"
+               | Configurations -> "configurations"
+             member x.ServiceUrl
+                  with get() = 
+                      sprintf "http://%s-svc:8085" (x.ToString())
+
 
     let readBody = 
         function
@@ -21,15 +38,15 @@ module Http =
            |> parser
            |> Success
     
-    let get serviceName parser path = 
-        let url = sprintf "http://%s-svc:8085%s" serviceName path
+    let get (service : Service) parser path = 
+        let url = service.ServiceUrl + path
         Log.logf "Getting %s" url
         Http.Request(url,
                      httpMethod = "GET"
         ) |> readResponse parser
 
-    let private putOrPost parser httpMethod serviceName path body = 
-        let url = sprintf "http://%s-svc:8085%s" serviceName path
+    let private putOrPost parser httpMethod (service : Service) path body = 
+        let url = service.ServiceUrl + path
         Log.logf "%sting to %s" httpMethod url
         Http.Request(url,
                      httpMethod = httpMethod,
@@ -37,4 +54,4 @@ module Http =
         ) |> readResponse parser
 
     let put = putOrPost id "PUT"
-    let post serviceName parser path body = putOrPost parser "POST" serviceName path body
+    let post service parser path body = putOrPost parser "POST" service path body

@@ -27,6 +27,7 @@ let statusRouter =
 let dataRouter = 
     router {
        withBody <@ read @>
+       withBody <@ sync @>
     }
     
 let private appRouter = router {

@@ -27,11 +27,14 @@ module Http =
         Http.Request(url,
                      httpMethod = "GET"
         ) |> readResponse parser
-    
-    let put serviceName path body = 
+
+    let private putOrPost parser httpMethod serviceName path body = 
         let url = sprintf "http://%s-svc:8085%s" serviceName path
-        Log.logf "Putting to %s" url
+        Log.logf "%sting to %s" httpMethod url
         Http.Request(url,
-                     httpMethod = "PUT",
+                     httpMethod = httpMethod,
                      body = TextRequest body
-        ) |> readResponse id
+        ) |> readResponse parser
+
+    let put = putOrPost id "PUT"
+    let post serviceName parser path body = putOrPost parser "POST" serviceName path body

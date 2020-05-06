@@ -8,7 +8,7 @@ open Hobbes.Helpers
 module Data = 
     let private cacheRevision confDoc = 
         sprintf "%s:%d" confDoc (System.DateTime.Now.Ticks) |> hash
-        
+
     let private transformationCache = Hobbes.Web.Cache.Cache("calculator","calculate")
 
     [<Get ("/csv/%s")>]
@@ -22,7 +22,7 @@ module Data =
                     |> Hobbes.Web.Cache.readData
                 let columnNames = 
                     (":",rows
-                         |> Seq.collect(fun (_,row) -> row |> Seq.map fst)
+                         |> Seq.collect(snd >> (Seq.map fst))
                          |> Seq.distinct
                          |> Seq.map(fun v -> v.Replace(":",";"))
                     ) |> System.String.Join

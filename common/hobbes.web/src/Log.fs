@@ -88,7 +88,10 @@ module Log =
        
     let errorf stacktrace format = 
        ksprintf (writeLogMessage Error stacktrace) format
- 
+
+    let excf (e:System.Exception) format = 
+       ksprintf (fun msg -> msg + "Message: " + e.Message |> writeLogMessage Error e.StackTrace) format
+
     let debugf format =
        ksprintf ( writeLogMessage Debug null) format
 
@@ -115,6 +118,7 @@ module Log =
             member __.Debug msg = debug msg
             member __.Logf<'a> (format : LogFormatter<'a>)  = logf format  
             member __.Errorf<'a> stackTrace (format : LogFormatter<'a>) = errorf stackTrace format
+            member __.Excf<'a> e (format : LogFormatter<'a>) = excf e format
             member __.Debugf<'a>  (format : LogFormatter<'a>) = debugf format
         }
 
@@ -126,6 +130,7 @@ module Log =
             member __.Logf<'a> (format : LogFormatter<'a>)  = 
                 ksprintf ignore format
             member __.Errorf<'a> stackTrace (format : LogFormatter<'a>) = errorf stackTrace format
+            member __.Excf<'a> e (format : LogFormatter<'a>) = excf e format
             member __.Debugf<'a>  (format : LogFormatter<'a>)  = 
                 ksprintf ignore format
         }

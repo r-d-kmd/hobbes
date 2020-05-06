@@ -9,4 +9,4 @@ spec:
     targetPort: 8085
     nodePort: 30089
   selector:
-    app: uniformdata-svc
+    app: uniformdata

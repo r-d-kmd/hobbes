@@ -9,4 +9,4 @@ spec:
     targetPort: 8888
     nodePort: 30088
   selector:
-    app: qtest-svc
+    app: qtest

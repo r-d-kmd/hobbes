@@ -9,4 +9,4 @@ spec:
     targetPort: 8085
     nodePort: 30093
   selector:
-    app: configurations-svc
+    app: configurations

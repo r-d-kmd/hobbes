@@ -60,7 +60,7 @@ module Data =
                 )
                 
 
-    [<Post ("/calculate", true)>]
+    [<Get ("/calculate/%s")>]
     let calculate configurationName =
         match configurationName
               |> getConfiguration with

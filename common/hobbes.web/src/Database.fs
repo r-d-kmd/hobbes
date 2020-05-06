@@ -10,6 +10,7 @@ namespace Hobbes.Web
         abstract Debug : string -> unit 
         abstract Logf<'a> : LogFormatter<'a> -> 'a
         abstract Errorf<'a> : string -> LogFormatter<'a> -> 'a
+        abstract Excf<'a> : System.Exception -> LogFormatter<'a> -> 'a
         abstract Debugf<'a> : LogFormatter<'a> -> 'a
         
     module Database =
@@ -29,8 +30,10 @@ namespace Hobbes.Web
                     member __.Debug msg = sprintf "%s" msg |> printer
                     member __.Logf<'a> (format : LogFormatter<'a>) = 
                         ksprintf printer format 
-                    member __.Errorf<'a> _ (format : LogFormatter<'a>) = 
+                    member __.Errorf<'a> (_ : string) (format : LogFormatter<'a>) = 
                         ksprintf eprinter format
+                    member __.Excf<'a> (e : System.Exception) (format : LogFormatter<'a>) = 
+                        ksprintf (fun msg -> msg + "Message: " + e.Message |> eprinter) format
                     member __.Debugf<'a> (format : LogFormatter<'a>) = 
                         ksprintf printer format
                 }  

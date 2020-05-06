@@ -6,18 +6,14 @@ open Hobbes.Helpers.Environment
 
 let private port = env "PORT" "8085"
                    |> int
-let private databaseServerUrl = env "DB_SERVER_URL" null
 
-let dataRouter = 
-    router {
-       withBody <@ calculate @>
-    }
+let private databaseServerUrl = env "DB_SERVER_URL" null
     
 let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "The requested ressource does not exist")
     
     fetch <@ ping @>
-    forward "/data" dataRouter
+    withArg <@ calculate @>
 } 
 
 let private app = application {
@@ -39,6 +35,7 @@ let rec private init() =
         match env "COUCHDB_PASSWORD" null with
         null -> failwith "DB password not configured"
         | pwd -> pwd
+
     async {
             printfn "Testing of db server is reachable on %s" databaseServerUrl
             FSharp.Data.Http.Request(databaseServerUrl) |> ignore //make sure db is up and running

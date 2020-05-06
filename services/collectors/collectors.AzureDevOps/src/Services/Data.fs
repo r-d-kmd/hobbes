@@ -42,3 +42,13 @@ module Data =
             200, rawData
         | None -> 
             404,"No data found"
+
+    [<Post ("/sync", true)>]
+    let sync confDoc =
+        let conf = parseConfiguration confDoc
+        let token = 
+            if conf.Account.ToString() = "kmddk" then
+                env "AZURE_TOKEN_KMDDK" null
+            else
+                env "AZURE_TOKEN_TIME_PAYROLL_KMDDK" null
+        synchronize conf token

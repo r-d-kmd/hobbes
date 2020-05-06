@@ -36,7 +36,7 @@ module Data =
                  failwithf "No source provided. %s" conf
 
             Log.logf "Reading new data for %s" conf
-            match Http.post (Http.Collector sourceName) Cache.CacheRecord.Parse "/read" conf with
+            match Http.post (Http.Collector sourceName) Cache.CacheRecord.Parse "/data/read" conf with
             Http.Success cacheRecord ->
                 Log.logf "updating cache for %s with _id: %s" sourceName cacheRecord.Id
                 try

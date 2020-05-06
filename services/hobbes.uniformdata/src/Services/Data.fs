@@ -28,7 +28,7 @@ module Data =
         | None -> 
             404,"No data found"
 
-    [<Post ("/update/%s", true)>]
+    [<Post ("/update", true)>]
     let update conf =
         async {
             let sourceName = (Hobbes.Shared.RawdataTypes.Config.Parse conf).Source.Name

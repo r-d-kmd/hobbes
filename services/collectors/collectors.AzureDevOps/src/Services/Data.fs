@@ -51,4 +51,12 @@ module Data =
                 env "AZURE_TOKEN_KMDDK" null
             else
                 env "AZURE_TOKEN_TIME_PAYROLL_KMDDK" null
-        synchronize conf token
+                
+        match synchronize conf token with
+        200,_ ->
+            match Http.post "uniform" id "/update" confDoc with
+            Http.Success _ -> 200,"updated"
+            | Http.Error(status,msg) -> status,msg
+        | status,errorMessage -> 
+            Log.errorf null "Failed updating uniform. Status: %d Message %s" status errorMessage
+            status,errorMessage

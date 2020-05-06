@@ -8,16 +8,12 @@ let private port = env "PORT" "8085"
                    |> int
 let private databaseServerUrl = env "DB_SERVER_URL" null
 
-let dataRouter = 
-    router {
-       withBody <@ read @>
-    }
-    
 let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "The requested ressource does not exist")
     
     fetch <@ ping @>
-    forward "/data" dataRouter
+    withBody <@ read @>
+    withBody <@ update @>
 } 
 
 let private app = application {

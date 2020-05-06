@@ -32,6 +32,9 @@ module Data =
     let update conf =
         async {
             let sourceName = (Hobbes.Shared.RawdataTypes.Config.Parse conf).Source.Name
+            if System.String.IsNullOrWhiteSpace sourceName then
+                 failwithf "No source provided. %s" conf
+                 
             Log.logf "Reading new data for %s" conf
             match Http.post (Http.Generic sourceName) Cache.CacheRecord.Parse "/read" conf with
             Http.Success cacheRecord ->
@@ -45,7 +48,6 @@ module Data =
                 Log.errorf null "Failed to read data from %s. Status: %d - Message: %s" conf status m
         } |> Async.Start
         200, "updating"
-        
 
     [<Get "/ping">]
     let ping () =

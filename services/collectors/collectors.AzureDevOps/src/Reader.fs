@@ -265,16 +265,11 @@ module Reader =
                 |> request azureToken azureToken "GET" None                 
             if resp.StatusCode = 200 then
                 let body = 
-                    match resp.Body with
-                    Text body ->
-                        body
-                        |> Some
-                    | _ -> 
-                        None
+                    resp.Body |> Hobbes.Web.Http.readBody
                 let rawId =  (url |> hash)
                 let hashes = rawId::hashes
                 match body with
-                Some body when body |> isEmpty |> not ->
+                _ when body |> isEmpty |> not ->
 
                     let body' = 
                         body.Replace("\\\"","'")

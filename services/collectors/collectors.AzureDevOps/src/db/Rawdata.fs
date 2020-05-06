@@ -123,7 +123,6 @@ module Rawdata =
     type private RawList = JsonProvider<"""["id_a","id_b"]""">
     let private db = 
         Database.Database("rawdata", AzureDevOpsData.Parse, Log.loggerInstance)
-                .AddView "WorkItemRevisions"
 
     let insertOrUpdate doc = 
         async{

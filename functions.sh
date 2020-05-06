@@ -1,7 +1,23 @@
 APPS=(db hobbes azuredevops git qtest uniformdata calculator configurations)
 VOLUMES=(db)
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+function get_script_dir () {
+     SOURCE="${BASH_SOURCE[0]}"
+     # While $SOURCE is a symlink, resolve it
+     while [ -h "$SOURCE" ]; do
+          DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+          SOURCE="$( readlink "$SOURCE" )"
+          # If $SOURCE was a relative symlink (so no "/" as prefix, need to resolve it relative to the symlink base directory
+          [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+     done
+     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+     echo "$DIR"
+}
+
+SCRIPT_DIR=$(pwd | awk -F'hobbes' '{print $1}')
+
+#SCRIPT_DIR="$(echo "$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
+echo $SCRIPT_DIR
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 
 function getName(){

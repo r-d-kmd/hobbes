@@ -13,12 +13,11 @@ spec:
         app: calculator
     spec:
       containers:
-      - env:
+      - envFrom:
+        - secretRef:
+            name: env
         imagePullPolicy: Never
         image: hobbes.calculator
         name: hobbes-calculator
-        envFrom:
-        - secretRef:
-            name: env
       restartPolicy: Always
 status: {}

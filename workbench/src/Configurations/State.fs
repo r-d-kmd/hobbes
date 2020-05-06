@@ -6,11 +6,11 @@ module State =
 
   [<Literal>]
   let Projects = 
-      Project.Flowerpot 
+      Project.AzureDevOps
+      ||| Project.Flowerpot 
       ||| Project.Gandalf 
       ||| Project.Delta 
       ||| Project.Momentum
-      ||| Project.AzureDevOps
       ||| Project.Nexus
       ||| Project.UVskole
   

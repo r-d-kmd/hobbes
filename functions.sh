@@ -82,11 +82,16 @@ function build(){
     then
         fake build
     else
-        for var in "$@"
-        do
-            fake build --target "hobbes.$var"
-        done
-        restart $1
+        if ["$1" = "target"]
+        then
+            fake build --target $1
+        else
+            for var in "$@"
+            do
+                fake build --target "hobbes.$var"
+            done
+            restart $1
+        fi
     fi
     cd $CURRENT_DIR
     echo "Done building"

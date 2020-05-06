@@ -22,7 +22,7 @@ module Http =
                | Configurations -> "configurations"
                | Collector collectorName ->  
                    collectorName.ToLower().Replace(" ","") 
-                   |> sprintf "http://%scollector-svc:8085"
+                   |> sprintf "%scollector"
              member x.ServiceUrl
                   with get() = 
                       sprintf "http://%s-svc:8085" (x.ToString())

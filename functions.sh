@@ -14,10 +14,10 @@ function get_script_dir () {
      echo "$DIR"
 }
 
-SCRIPT_DIR=$(pwd | awk -F'hobbes' '{print $1}')
+SCRIPT_DIR=$(get_script_dir)
 
 #SCRIPT_DIR="$(echo "$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
-echo $SCRIPT_DIR
+echo "Project home folder is: $SCRIPT_DIR"
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 
 function getName(){

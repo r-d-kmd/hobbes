@@ -25,3 +25,14 @@ module RawdataTypes =
              "rowCount" : 2
         }"""
     type internal DataResult = JsonProvider<DataResultString>
+
+    let keyFromSource (source : Config.Source) = 
+        source.JsonValue.ToString()
+        |> Hobbes.Web.Cache.key
+
+    let keyFromConfig (config : Config.Root) = 
+        config.Source |> keyFromSource
+    
+    let keyFromConfigDoc = 
+        Config.Parse
+        >> keyFromConfig

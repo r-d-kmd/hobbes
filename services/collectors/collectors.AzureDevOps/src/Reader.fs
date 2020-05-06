@@ -5,6 +5,7 @@ open Collector.AzureDevOps.Db
 open Collector.AzureDevOps.Db.Rawdata
 open Hobbes.Server.Db
 open Hobbes.Helpers.Environment
+open Hobbes.Shared.RawdataTypes
 
 module Reader =
     
@@ -102,9 +103,10 @@ module Reader =
              //"WorkItemRevisionSK", fun row -> box row.WorkItemRevisionSk
         ]    
     //The first url to start with, if there's already some stored data
-    let private getInitialUrl (config : AzureDevOpsConfig.Root)=
+    let private getInitialUrl (config : Config.Root)=
+        let source = (config.Source |> source2AzureSource)
         let account = 
-            let acc = config.Account.Replace("_", "-")
+            let acc = source.Account.Replace("_", "-")
             if System.String.IsNullOrWhiteSpace(acc) then "kmddk"
             else acc
 
@@ -123,9 +125,9 @@ module Reader =
             let path = 
                 (sprintf "/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&$select=%s,Iteration&$filter=%s and WorkItemRevisionSK gt " selectedFields filters).Replace(" ", "%20")
 
-            sprintf "https://analytics.dev.azure.com/%s/%s%s%d" account config.Project path
+            sprintf "https://analytics.dev.azure.com/%s/%s%s%d" account source.Project path
         try
-            match (config |> searchKey) |> Rawdata.tryLatestId with
+            match (config |> keyFromConfig) |> Rawdata.tryLatestId with
             Some workItemRevisionId -> 
                 initialUrl workItemRevisionId
             | None -> 
@@ -233,13 +235,13 @@ module Reader =
         """ searchKey columnNames rows (rawdataCache |> Seq.length)
 
     //Reads data from the raw data store. This should be exposed as part of the API in some form 
-    let read (config : AzureDevOpsConfig.Root) =
-        let searchKey = (config |> searchKey)
+    let read (config : Config.Root) =
+        let searchKey = config |> keyFromConfig
 
         assert(System.String.IsNullOrWhiteSpace searchKey |> not)
 
         let timeStamp = 
-            (match config |> Rawdata.searchKey |> Rawdata.getState with
+            (match searchKey |> getState with
             Some s -> 
                 ((s |> Cache.CacheRecord.Parse).TimeStamp
                  |> System.DateTime.Parse)
@@ -256,7 +258,7 @@ module Reader =
     //TODO should be async and in parallel-ish
     //part of the API (see server to how it's exposed)
     //we might want to store azureToken as an env variable
-    let sync azureToken (config : AzureDevOpsConfig.Root) = 
+    let sync azureToken (config : Config.Root) = 
         
         let rec _read hashes url = 
             Hobbes.Web.Log.logf "syncing with %s@%s" azureToken url
@@ -276,7 +278,7 @@ module Reader =
                     let conf = 
                         config.JsonValue.ToString()
                         |> parseConfiguration
-                    let rawdataRecord = createDataRecord rawId (config |> searchKey) body' [
+                    let rawdataRecord = createDataRecord rawId body' [
                                                                                     "url", url
                                                                                     "recordCount", hashes 
                                                                                                    |> List.length 

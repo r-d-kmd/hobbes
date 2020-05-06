@@ -1,17 +1,16 @@
 namespace Collector.AzureDevOps.Services
 
 open Hobbes.Server.Routing
-open Collector.AzureDevOps.Db
-open Hobbes.Server.Db
 open Hobbes.Web
 open Hobbes.Helpers
 open Collector.AzureDevOps.Db.Rawdata
 open Collector.AzureDevOps
+open Hobbes.Shared.RawdataTypes
 
 [<RouteArea ("/data", false)>]
 module Data =
     
-    let synchronize (config : AzureDevOpsConfig.Root) token =
+    let synchronize (config : Config.Root) token =
         try
             let statusCode, body = Reader.sync token config
             Log.logf "Sync finised with statusCode %d and result %s" statusCode body
@@ -46,8 +45,9 @@ module Data =
     [<Post ("/sync", true)>]
     let sync confDoc =
         let conf = parseConfiguration confDoc
+        let source = conf.Source |> source2AzureSource
         let token = 
-            if conf.Account.ToString() = "kmddk" then
+            if source.Account.ToString() = "kmddk" then
                 env "AZURE_TOKEN_KMDDK" null
             else
                 env "AZURE_TOKEN_TIME_PAYROLL_KMDDK" null

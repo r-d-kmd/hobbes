@@ -35,7 +35,7 @@ module Admin =
     let clearRawdata() =
         Rawdata.clear()  
 
-    let createSyncDoc (config : AzureDevOpsConfig.Root) (revision : string) =
+    let createSyncDoc (config : Config.Root) (revision : string) =
         200, Rawdata.createSyncStateDocument revision config
 
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =  

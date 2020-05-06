@@ -2,7 +2,7 @@ namespace Hobbes.UniformData.Services
 
 open Hobbes.Server.Routing
 open Hobbes.Web
-open Hobbes.Helpers
+open Hobbes.Shared.RawdataTypes
 
 [<RouteArea ("/data", false)>]
 module Data =
@@ -11,7 +11,7 @@ module Data =
     let read confDoc =
         let uniformData =
            confDoc
-           |> hash
+           |> keyFromConfigDoc
            |> cache.Get 
             
         match uniformData with
@@ -31,12 +31,12 @@ module Data =
     [<Post ("/update", true)>]
     let update conf =
         async {
-            let sourceName = (Hobbes.Shared.RawdataTypes.Config.Parse conf).Source.Name
+            let sourceName = (Config.Parse conf).Source.Name
             if System.String.IsNullOrWhiteSpace sourceName then
                  failwithf "No source provided. %s" conf
-                 
+
             Log.logf "Reading new data for %s" conf
-            match Http.post (Http.Generic sourceName) Cache.CacheRecord.Parse "/read" conf with
+            match Http.post (Http.Collector sourceName) Cache.CacheRecord.Parse "/read" conf with
             Http.Success cacheRecord ->
                 Log.logf "updating cache for %s with _id: %s" sourceName cacheRecord.Id
                 try

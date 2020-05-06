@@ -1,6 +1,7 @@
 namespace Hobbes.Web
 
 open FSharp.Data
+open Hobbes.Helpers.Environment
 
 module Cache =
     [<Literal>]
@@ -25,20 +26,13 @@ module Cache =
     type DataResult = JsonProvider<DataResultString>
     type CacheRecord = JsonProvider<CacheRecordString>
 
-    let internal hash (input : string) =
-            use md5Hash = System.Security.Cryptography.MD5.Create()
-            let data = md5Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input))
-            let sBuilder = System.Text.StringBuilder()
-            (data
-            |> Seq.fold(fun (sBuilder : System.Text.StringBuilder) d ->
-                    sBuilder.Append(d.ToString("x2"))
-            ) sBuilder).ToString()
 
     let key (source : string) = 
-        source.Split([|' ';'\t';'\n';'\r'|],System.StringSplitOptions.RemoveEmptyEntries)
+        let whitespaceToRemove = [|' ';'\t';'\n';'\r'|]
+        source.Split(whitespaceToRemove,System.StringSplitOptions.RemoveEmptyEntries)
         |> System.String.Concat
         |> hash
-     
+        
     let createCacheRecord key data =
         //fail if the data is invalid in form
         data |> DataResult.Parse |> ignore
@@ -100,7 +94,7 @@ module Cache =
                             member __.Get (confDoc : string) = 
                                 Log.logf "trying to retrieve cached %s from database" confDoc
                                 confDoc
-                                |> hash
+                                |> key
                                 |> db.TryGet }
         new(serviceName, path) =
             let service = Http.Generic serviceName

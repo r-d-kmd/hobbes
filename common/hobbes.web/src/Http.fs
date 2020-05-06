@@ -6,19 +6,23 @@ module Http =
     type Response<'T> = 
         Success of 'T
         | Error of int * string
-        
+
     type Service = 
          Generic of string
          | UniformData
          | Calculator
          | Configurations
+         | Collector of string
          with 
              override x.ToString() = 
                match x with
-               Generic name -> name.ToLower()
+               Generic name -> name.ToLower().Replace(" ","")
                | UniformData -> "uniformdata"
                | Calculator -> "calculator"
                | Configurations -> "configurations"
+               | Collector collectorName ->  
+                   collectorName.ToLower().Replace(" ","") 
+                   |> sprintf "http://%scollector-svc:8085"
              member x.ServiceUrl
                   with get() = 
                       sprintf "http://%s-svc:8085" (x.ToString())

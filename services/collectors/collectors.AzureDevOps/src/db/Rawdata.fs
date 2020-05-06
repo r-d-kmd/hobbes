@@ -30,27 +30,36 @@ module Rawdata =
                     | _ -> 
                         Log.debug (sprintf "Unknown sync state: %s" s)
                         Failed
-                        
-    type internal AzureDevOpsConfig = FSharp.Data.JsonProvider<"""{
-            "_id" : "name",
-            "source" : "azuredevops",
+    [<Literal>]
+    let AzureDevOpsSourceString = """{
+            "name": "azuredevops",
             "account" : "kmddk",
             "project" : "gandalf",
-            "transformations" : ["jlk","lkjlk"],
-            "subconfigs" : ["jlk","lkjlk"]
-        }""">
+            "dataset" : "commits"
+        }"""
 
-    let searchKey (config : AzureDevOpsConfig.Root) = 
-        "azure devops" + config.Project
+    [<Literal>]
+    let AzureDevOpsDataString = """{
+                "_id" : "name",
+                "source" : """ + AzureDevOpsSourceString + """,
+                "data" : {
+                    "columnNames" : ["a","b"],
+                    "values" : [["zcv","lkj"],[1.2,3.45],["2019-01-01","2019-01-01"]]
+                }
+        }"""
+
+    type internal AzureDevOpsSource = FSharp.Data.JsonProvider<AzureDevOpsSourceString>
+    type internal AzureDevOpsData = FSharp.Data.JsonProvider<AzureDevOpsDataString>
+
+    let source2AzureSource (source : Config.Source) =
+        source.JsonValue.ToString() |> AzureDevOpsSource.Parse
 
     let parseConfiguration doc = 
-       let config = AzureDevOpsConfig.Parse doc
+       let config = Config.Parse doc
+       let source = config.Source |> source2AzureSource
        
-       if System.String.IsNullOrWhiteSpace config.Project then failwithf "Didn't supply a project %s" doc
-       if System.String.IsNullOrWhiteSpace config.Account then failwithf "Account can't be empty %s" doc
-
-       let searchKey = (config |> searchKey)
-       if System.String.IsNullOrWhiteSpace searchKey then failwithf "SeachKey can't be empty %s" doc
+       if System.String.IsNullOrWhiteSpace source.Project then failwithf "Didn't supply a project %s" doc
+       if System.String.IsNullOrWhiteSpace source.Account then failwithf "Account can't be empty %s" doc
        
        config
 
@@ -64,31 +73,18 @@ module Rawdata =
              "value": 90060205
     }""">
 
-    type internal AzureDevOpsData = FSharp.Data.JsonProvider<"""{
-            "_id" : "name",
-            "source" : "azuredevops",
-            "searchKey" : "khlkh",
-            "account" : "kmddk",
-            "project" : "gandalf",
-            "data" : {
-                "columnNames" : ["a","b"],
-                "values" : [["zcv","lkj"],[1.2,3.45],["2019-01-01","2019-01-01"]]
-            } 
+    
 
-    }""">
-
-    let createDataRecord key searchKey (data : string) keyValue =
+    let createDataRecord key (data : string) keyValue =
         
         let data = if isNull data then data else data.Replace("\\", "\\\\")
         let timeStamp = System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)
         let record = 
             (sprintf """{
                         "_id" : "%s",
-                        "searchKey" : "%s",
                         "timeStamp" : "%s"
                         %s%s
                     }""" key
-                         searchKey
                          timeStamp
                          (if data |> isNull then 
                               "" 
@@ -110,7 +106,7 @@ module Rawdata =
 
         record
 
-    let createCacheRecord key searchKey (data : string) (state : SyncStatus) message cacheRevision =
+    let createCacheRecord key (data : string) (state : SyncStatus) message cacheRevision =
         let values = 
             [
                if cacheRevision |> Option.isSome then yield "revision", string cacheRevision.Value
@@ -118,7 +114,7 @@ module Rawdata =
                if message |> Option.isSome then yield "message", message.Value
             ]
 
-        createDataRecord key searchKey data values
+        createDataRecord key data values
 
     type private RawList = JsonProvider<"""["id_a","id_b"]""">
     let private db = 
@@ -133,15 +129,14 @@ module Rawdata =
     let delete (id : string) = 
         200, (db.Delete id).ToString()                  
 
-    let private keys (config : AzureDevOpsConfig.Root) = 
-        config |> searchKey
+   
 
     let getState id = 
         db.TryGet id
         |> Option.bind(fun s -> s.ToString() |> Some)
 
-    let setSyncState state message revision (config : AzureDevOpsConfig.Root) = 
-        let doc = createCacheRecord config.Id (config |> searchKey) null state message revision
+    let setSyncState state message revision (config : Config.Root) = 
+        let doc = createCacheRecord config.Id null state message revision
         db.InsertOrUpdate(doc) |> ignore
         (doc |> Config.Parse).Id
 
@@ -177,29 +172,22 @@ module Rawdata =
         } |> Async.Start
         200,"deleting"
     
-    let projectsBySource (config : AzureDevOpsConfig.Root) = 
+    let projectsBySource (config : Config.Root) = 
         //this could be done with a view but the production environment often exceeds the time limit.
         //we haven't got enough documents for a missing index to be a problem and since it's causing problems 
         //reliance on an index has been removed
         let docs = db.List() 
-        let configSearchKey = (config |> searchKey)
-
-        Log.logf "projects by source (%s): %A" configSearchKey docs
+        let configSearchKey = config |> keyFromConfig
+        Log.logf "projects by source (%s): %A" (config.Source.JsonValue.ToString()) docs
         let res = 
             docs
             |> Seq.filter(fun doc -> 
-               let docSearchKey = 
-                   if System.String.IsNullOrWhiteSpace doc.SearchKey then
-                       doc.Source + doc.Project
-                   else
-                      doc.SearchKey
-               Log.logf "Using %s '%s' = '%s' -> %b" doc.Id docSearchKey configSearchKey (docSearchKey = configSearchKey)
-               docSearchKey = configSearchKey
+               (doc.JsonValue.ToString() |> keyFromConfigDoc) = configSearchKey
             ) 
         Log.logf "Project data found by source %A" res
         res
 
-    let bySource (source : AzureDevOpsConfig.Root) = 
+    let bySource (source : Config.Root) = 
         let data =
             source
             |> projectsBySource
@@ -219,7 +207,7 @@ module Rawdata =
         if result |> Seq.isEmpty then None
         else Some result
 
-    let clearProject (config : AzureDevOpsConfig.Root) =
+    let clearProject (config : Config.Root) =
         async {
             let! _ = 
                 config

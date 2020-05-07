@@ -1,4 +1,4 @@
-version 5.243.0
+version 5.245.1
 source https://www.nuget.org/api/v2
 framework: netcoreapp3.1
 storage: none
@@ -39,8 +39,3 @@ group test
     nuget Microsoft.NET.Test.SDK
     nuget microsoft.testplatform.testhost
     nuget xunit.runner.VisualStudio
-
-group documentation
-    source https://www.nuget.org/api/v2
-    framework: auto-detect
-    nuget FSharp.Formatting

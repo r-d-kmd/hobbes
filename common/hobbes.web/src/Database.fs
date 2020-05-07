@@ -129,7 +129,6 @@ namespace Hobbes.Web
             async {
                 let httpMethod = "PUT"
                 printfn "Testing of db server is reachable on %s" databaseServerUrl
-                Http.Request(databaseServerUrl) |> ignore //make sure db is up and running
                 let dbUser = 
                     match env "COUCHDB_USER" null with
                     null -> failwith "DB user not configured"
@@ -140,36 +139,50 @@ namespace Hobbes.Web
                     null -> failwith "DB password not configured"
                     | pwd -> pwd
                 
-                let failed = 
-                   databaseToBeInitialized
-                   |> List.filter(fun name ->
-                    
-                    let url = databaseServerUrl + "/" + name
-                    printfn "Creating database. %s on %s" httpMethod url
-                    let resp = 
-                       Http.Request(url,
-                                        httpMethod = httpMethod,
+                let resp = Http.Request(databaseServerUrl, 
                                         silentHttpErrors = true,
                                         headers = [HttpRequestHeaders.BasicAuth dbUser dbPwd]
-                                       ) 
+                                       ) //make sure db is up and running
+                let retry = 
                     match resp.StatusCode with
                     200 ->
-                       printfn "Database created"
+                       printfn "Database running"
                        false
-                    | 412 -> 
-                       printfn "Database already existed"
-                       false
-                    | 401 -> 
-                        failwith "DB user not configured correctly" 
-                    | _ ->
-                       eprintfn "Database creation failed with %d - %s. Will try again" resp.StatusCode (resp.Body |> readBody)
+                    | sc ->
+                       eprintfn "Database coul not be reached %d - %s. Will try again" resp.StatusCode (resp.Body |> readBody)
                        true
-                   )
-                if failed |> List.isEmpty |> not then
-                    do! Async.Sleep 2000
-                    initDatabases failed
+                if retry then initDatabases databaseToBeInitialized
                 else
-                    printfn "DB initialized"
+                    let failed = 
+                       databaseToBeInitialized
+                       |> List.filter(fun name ->
+                        
+                        let url = databaseServerUrl + "/" + name
+                        printfn "Creating database. %s on %s" httpMethod url
+                        let resp = 
+                           Http.Request(url,
+                                            httpMethod = httpMethod,
+                                            silentHttpErrors = true,
+                                            headers = [HttpRequestHeaders.BasicAuth dbUser dbPwd]
+                                           ) 
+                        match resp.StatusCode with
+                        200 ->
+                           printfn "Database created"
+                           false
+                        | 412 -> 
+                           printfn "Database already existed"
+                           false
+                        | 401 -> 
+                            failwith "DB user not configured correctly" 
+                        | _ ->
+                           eprintfn "Database creation failed with %d - %s. Will try again" resp.StatusCode (resp.Body |> readBody)
+                           true
+                       )
+                    if failed |> List.isEmpty |> not then
+                        do! Async.Sleep 2000
+                        initDatabases failed
+                    else
+                        printfn "DB initialized"
             } |> Async.Start
   
         let private getBody (resp : HttpResponse) = 
@@ -439,7 +452,7 @@ namespace Hobbes.Web
                 match [id] |> this.TryGetRev with
                 None ->
                     log.Debugf "Found no rev, so assuming it's a new doc. id: %s" id
-                    this.Post(doc)
+                    put doc [id] None
                 | Some rev -> 
                     log.Debugf "Found rev, going to update. id: %s. rev: %s" id rev 
                     this.Put(id, doc,  rev)

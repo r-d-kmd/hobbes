@@ -35,7 +35,7 @@ module Data =
             if System.String.IsNullOrWhiteSpace sourceName then
                  failwithf "No source provided. %s" conf
 
-            Log.logf "Reading new data for %s" conf
+            Log.logf "Reading new data for configuration: %s" conf
             match Http.post (Http.Collector sourceName) Cache.CacheRecord.Parse "/data/read" conf with
             Http.Success cacheRecord ->
                 Log.logf "updating cache for %s with _id: %s" sourceName cacheRecord.Id

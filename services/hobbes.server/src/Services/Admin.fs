@@ -2,6 +2,7 @@ namespace Hobbes.Server.Services
 
 open Hobbes.Web.Database
 open Hobbes.Web.Log
+open Hobbes.Web
 open Hobbes.Server.Db
 open Hobbes.Web.Routing
 open Hobbes.Helpers.Environment
@@ -57,12 +58,14 @@ module Admin =
         |> configure
 
     [<Put ("/transformation",true)>]
-    let storeTransformations doc = 
+    let storeTransformations doc =
         try
-            Transformations.store doc |> ignore
-            200,sprintf """{"transformation":%s, "status" : "ok" }""" doc
-        with _ -> 
-            500,"internal server error"
+            match Http.post Http.Configurations id "/transformation" doc with
+            Http.Success _ -> 200,sprintf """{"transformation":%s, "status" : "ok" }""" doc
+            | Http.Error(s,m) -> s,m
+        with e -> 
+            Log.excf e "Trying to store %s" doc
+            500,sprintf "internal server error"
 
     let formatDBList name list =
         let stringList = 
@@ -105,11 +108,12 @@ module Admin =
     [<Put ("/configuration",true)>]
     let storeConfigurations doc = 
         try
-            assert(System.String.IsNullOrWhiteSpace((doc |> DataConfiguration.ConfigurationRecord.Parse).SearchKey) |> not)
-            DataConfiguration.store doc |> ignore
-            200,sprintf """{"configuration":%s, "status" : "ok" }""" doc
-        with _ -> 
-            500,"internal server error"
+            match Http.post Http.Configurations id "/configuration" doc with
+            Http.Success _ -> 200,sprintf """{"configuration":%s, "status" : "ok" }""" doc
+            | Http.Error(s,m) -> s,m
+        with e -> 
+            Log.excf e "Trying to store %s" doc
+            500,sprintf "internal server error"
     
     let private uploadDesignDocument (db : Database<CouchDoc.Root>, file) =
         

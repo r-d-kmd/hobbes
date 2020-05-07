@@ -14,15 +14,23 @@ module Data =
    
     [<Get ("/configuration/%s")>]
     let configuration (configurationName : string) =
-            match configurations.TryGet configurationName with
-            None -> 404, "Configuration not found"
-            | Some c -> 200, c.JsonValue.ToString()
+        match configurations.TryGet configurationName with
+        None -> 404, "Configuration not found"
+        | Some c -> 200, c.JsonValue.ToString()
 
     [<Get ("/transformation/%s")>]
     let transformation (transformationName : string) =
-            match transformations.TryGet transformationName with
-            None -> 404, "Transformation not found"
-            | Some c -> 200, c.JsonValue.ToString()
+        match transformations.TryGet transformationName with
+        None -> 404, "Transformation not found"
+        | Some c -> 200, c.JsonValue.ToString()
+
+    [<Post ("/configuration", true)>]
+    let storeConfiguration (configuration : string) =
+        200,configurations.InsertOrUpdate configuration
+
+    [<Post ("/transformation", true)>]
+    let storeTransformation (transformation : string) =
+        200,transformations.InsertOrUpdate transformation
 
     [<Get "/ping">]
     let ping () =

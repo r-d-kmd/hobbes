@@ -15,13 +15,13 @@ module Data =
     [<Get ("/configuration/%s")>]
     let configuration (configurationName : string) =
         match configurations.TryGet configurationName with
-        None -> 404, "Configuration not found"
+        None -> 404, sprintf "Configuration (%s) not found" configurationName
         | Some c -> 200, c.JsonValue.ToString()
 
     [<Get ("/transformation/%s")>]
     let transformation (transformationName : string) =
         match transformations.TryGet transformationName with
-        None -> 404, "Transformation not found"
+        None -> 404, sprintf "Transformation (%s) not found" transformationName
         | Some c -> 200, c.JsonValue.ToString()
 
     [<Post ("/configuration", true)>]

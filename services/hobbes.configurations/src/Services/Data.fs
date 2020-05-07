@@ -26,10 +26,21 @@ module Data =
 
     [<Post ("/configuration", true)>]
     let storeConfiguration (configuration : string) =
+        let conf = Config.Parse configuration
+        
+        assert(System.String.IsNullOrWhiteSpace(conf.Id) |> not)
+        assert(System.String.IsNullOrWhiteSpace(conf.Source.Name) |> not)
+        assert(conf.Transformations |> Array.isEmpty |> not)
+
         200,configurations.InsertOrUpdate configuration
 
     [<Post ("/transformation", true)>]
     let storeTransformation (transformation : string) =
+        let trans = TransformationRecord.Parse transformation
+
+        assert(System.String.IsNullOrWhiteSpace(trans.Id) |> not)
+        assert(trans.Lines |> Array.isEmpty |> not)
+
         200,transformations.InsertOrUpdate transformation
 
     [<Get "/ping">]

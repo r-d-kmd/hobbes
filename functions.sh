@@ -73,8 +73,12 @@ function clean(){
     kubectl delete --all secrets
 }
 
-function build(){    
+function setenv(){
     eval $(minikube -p minikube docker-env)
+}
+
+function build(){    
+    setenv
     ECHO "Starting Build"
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR

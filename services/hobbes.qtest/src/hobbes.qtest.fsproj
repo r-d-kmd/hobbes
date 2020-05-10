@@ -16,5 +16,5 @@
   <ItemGroup>
     <Compile Include="Qtest.fs" />
   </ItemGroup>
-  <Import Project="..\..\..\.paket\Paket.Restore.targets" />
+  <Import Project="$(RelativePath).paket\Paket.Restore.targets" />
 </Project>

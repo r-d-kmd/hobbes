@@ -1,3 +1,4 @@
+ARG DLL_NAME=hobbes.server.dll
 FROM kmdrd/sdk:hobbes AS build
 
 # final stage/image
@@ -8,4 +9,5 @@ COPY --from=build /app .
 
 ENV DB_SERVER_URL http://db-svc:5984
 
-ENTRYPOINT [ "dotnet", "hobbes.server.dll"]
+RUN echo "DLL: ${DLL_NAME}"
+ENTRYPOINT [ "dotnet", "${DLL_NAME}"]

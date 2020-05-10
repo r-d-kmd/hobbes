@@ -5,7 +5,8 @@ FROM kmdrd/aspnet
 
 WORKDIR /app
 COPY --from=build /app .
+COPY --from=build /.paket/ /.paket
 
 ENV DB_SERVER_URL http://db-svc:5984
 
-ENTRYPOINT [ "dotnet", "hobbes.configurations.dll" ]
+ENTRYPOINT [ "dotnet", "hobbes.server.dll"]

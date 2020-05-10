@@ -2,12 +2,15 @@ ARG SDK_ENV=sdk:latest
 FROM kmdrd/${SDK_ENV}
 
 ENV BUILD_ENV docker
-ENV PAKET_SKIP_RESTORE_TARGETS true
 
 COPY .lib/ ../.lib/
 
 # copy and publish app and libraries
 COPY services/shared/ ../services/shared/
-ONBUILD COPY ./src/ .
 
+COPY paket.dependencies .
+RUN paket update
+
+ONBUILD COPY ./src/ .
+ONBUILD RUN echo "Starting build"
 ONBUILD RUN dotnet publish -c release -o /app

@@ -16,7 +16,6 @@ let adminRouter =
        fetch <@ listRawdata @>
        withArg <@ deleteRaw @>
        fetch <@ clearRawdata @>
-       fetch <@ initDb @>
     }
 
 let statusRouter = 
@@ -46,19 +45,5 @@ let private app = application {
     use_gzip
 }
 
-let rec private init() =
-    match env "DB_SERVER_URL" null with
-    null -> failwith "Databse server URL not configured"
-    | databaseServerUrl -> 
-    async {
-        try
-           FSharp.Data.Http.Request(databaseServerUrl) |> ignore //make sure db is up and running
-           initDb() |> ignore
-           printfn "DB initialized"
-        with _ ->
-           do! Async.Sleep 2000
-           init()
-    } |> Async.Start
-
-init()
+Hobbes.Web.Database.initDatabases ["rawdata"]
 run app

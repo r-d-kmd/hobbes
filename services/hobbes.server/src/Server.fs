@@ -50,7 +50,7 @@ let rec private init() =
     async {
         try
            FSharp.Data.Http.Request(env "DB_SERVER_URL" "http://db-svc:5984") |> ignore //make sure db is up and running
-           initDatabase() |> ignore
+           do! initDatabase()
            printfn "DB initialized"
         with _ ->
            do! Async.Sleep 2000

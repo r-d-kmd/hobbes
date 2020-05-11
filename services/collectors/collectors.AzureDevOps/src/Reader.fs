@@ -201,7 +201,7 @@ module Reader =
             |> bySource
             |> Option.bind((formatRawdataCache searchKey timeStamp) >> Some)
 
-        Hobbes.Web.Log.logf "\n\n azure devops:%s \n\n" (config.JsonValue.ToString())        
+        Log.logf "\n\n azure devops:%s \n\n" (config.JsonValue.ToString())        
         raw
 
     //TODO should be async and in parallel-ish

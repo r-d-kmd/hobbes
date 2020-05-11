@@ -11,3 +11,6 @@ COPY services/shared/ /services/shared/
 COPY paket.lock paket.dependencies ./
 COPY /.paket /.paket
 RUN mono /.paket/paket.exe restore
+
+ONBUILD COPY ./src/ .
+ONBUILD RUN dotnet publish -c release -o /app

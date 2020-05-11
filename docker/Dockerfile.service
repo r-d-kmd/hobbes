@@ -7,9 +7,6 @@ ARG SERVICE_NAME
 ENV DB_SERVER_URL http://db-svc:5984
 ENV SERVICE_NAME=${SERVICE_NAME}
 
-COPY ./src/ .
-RUN dotnet publish -c release -o /app
-
 WORKDIR /app
 
 ENTRYPOINT $(echo "dotnet $SERVICE_NAME.dll")

@@ -96,18 +96,17 @@ module Cache =
                                 confDoc
                                 |> key
                                 |> db.TryGet }
-        new(serviceName, path) =
-            let service = Http.Generic serviceName
+        new(service) =
             Cache {new ICacheProvider with 
                             member __.InsertOrUpdate doc = 
                                 async{
                                     doc.JsonValue.ToString() 
-                                    |> Http.put service path
+                                    |> Http.put service
                                     |> ignore
                                 } |> Async.Start
                             
                             member __.Get (key : string) = 
-                                match Http.get service parser <| sprintf "/%s/%s" path key with
+                                match Http.get service parser  with
                                 Http.Success d -> Some d
                                 | Http.Error (code,msg) ->
                                     Log.errorf null "Failed to load from cache. Status: %d. Message: %s" code msg

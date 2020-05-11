@@ -6,26 +6,63 @@ module Http =
     type Response<'T> = 
         Success of 'T
         | Error of int * string
-
-    type Service = 
-         Generic of string
-         | UniformData
-         | Calculator
-         | Configurations
-         | Collector of string
-         with 
-             override x.ToString() = 
+    
+    type CollectorService =
+        Read
+        | Sync
+        with member x.ToPath() =
+                "/data/" +
+                match x with
+                Read -> "read"
+                | Sync -> "sync"
+    type ConfigurationService =
+        Configuration of string option
+        | Transformation of string option
+        | Source
+        with member x.ToPath() =
+               "/data/" +
                match x with
-               Generic name -> name.ToLower().Replace(" ","")
-               | UniformData -> "uniformdata"
-               | Calculator -> "calculator"
-               | Configurations -> "configurations"
-               | Collector collectorName ->  
+               Configuration s -> 
+                   "configuration" + 
+                     match s with
+                     None -> ""
+                     | Some key -> "/" + key
+               | Transformation s -> 
+                   "transformation" + 
+                     match s with
+                     None -> ""
+                     | Some key -> "/" + key
+               | Source -> "source"
+    type CalculatorService =
+        Calculate
+        with member x.ToPath() = 
+                match x with
+                Calculate -> "/data/calculate"
+    type CacheService = 
+        Read
+        | Update
+        with member x.ToPath() =
+              match x with
+              Read -> "/read"
+              | Update -> "/update"
+    type Service = 
+         UniformData of CacheService
+         | Calculator of CalculatorService
+         | Configurations of ConfigurationService
+         | Collector of string * CollectorService
+         with 
+             member x.ToStrings() = 
+               match x with
+               UniformData serv -> "uniformdata", serv.ToPath()
+               | Calculator serv -> "calculator",serv.ToPath()
+               | Configurations serv -> "configurations", serv.ToPath()
+               | Collector (collectorName,service) ->  
                    collectorName.ToLower().Replace(" ","") 
-                   |> sprintf "%scollector"
-             member x.ServiceUrl
+                   |> sprintf "%scollector", service.ToPath()
+             member x.ServiceUrl 
                   with get() = 
-                      sprintf "http://%s-svc:8085" (x.ToString())
+                      x.ToStrings()
+                      ||> sprintf "http://%s-svc:8085/%s" 
 
 
     let readBody = 
@@ -42,15 +79,15 @@ module Http =
            |> parser
            |> Success
     
-    let get (service : Service) parser path = 
-        let url = service.ServiceUrl + path
+    let get (service : Service) parser  = 
+        let url = service.ServiceUrl
         Log.logf "Getting %s" url
         Http.Request(url,
                      httpMethod = "GET"
         ) |> readResponse parser
 
-    let private putOrPost parser httpMethod (service : Service) path body = 
-        let url = service.ServiceUrl + path
+    let private putOrPost parser httpMethod (service : Service) body = 
+        let url = service.ServiceUrl
         Log.logf "%sting to %s" httpMethod url
         Http.Request(url,
                      httpMethod = httpMethod,
@@ -58,4 +95,4 @@ module Http =
         ) |> readResponse parser
 
     let put = putOrPost id "PUT"
-    let post service parser path body = putOrPost parser "POST" service path body
+    let post service parser body = putOrPost parser "POST" service body

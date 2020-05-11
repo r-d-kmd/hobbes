@@ -55,7 +55,7 @@ module Data =
 
         match synchronize conf token with
         200,_ ->
-            match Http.post Http.UniformData id "/update" confDoc with
+            match Http.post (Http.UniformData Http.Update) id confDoc with
             Http.Success _ -> 200,"updated"
             | Http.Error(status,msg) -> status,msg
         | status,errorMessage -> 

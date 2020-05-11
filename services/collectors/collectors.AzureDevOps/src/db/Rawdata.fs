@@ -124,6 +124,12 @@ module Rawdata =
     }""">
 
     
+    type Value =
+       Object of string
+       | Int of int 
+       | Float of float
+       | String of string
+       | Array of seq<Value>
 
     let createDataRecord key (data : string) keyValue =
         
@@ -143,19 +149,29 @@ module Rawdata =
                           (match keyValue with
                           [] -> ""
                           | values ->
+                              let rec getValue  = 
+                                  function
+                                      Object s ->
+                                          s
+                                      | Int i -> 
+                                          string i
+                                      | Float f ->
+                                          string f
+                                      | String s ->
+                                          sprintf """ "%s" """ s
+                                      | Array a ->
+                                          System.String.Join(",",a |> Seq.map(getValue))
+                                          |> sprintf "[%s]"
                               System.String.Join(",",
                                   values
                                   |> Seq.map(fun (k,v) -> 
-                                     match v :> obj with
-                                     :? string as s when s.Trim().StartsWith "{" && s.Trim().EndsWith("}") ->
-                                         //it's an json object
-                                         sprintf """%A:%A""" k s
-                                     | v -> 
-                                         //primitive value
-                                         sprintf """%A:%A""" k v
+                                     v
+                                     |> getValue
+                                     |> sprintf """ %A : %s """ k
                                   )
                               ) |> sprintf """,%s"""
-                         ))
+                         )
+            )
 
         let cacheRecord = record |> Cache.CacheRecord.Parse
 
@@ -167,9 +183,9 @@ module Rawdata =
     let createCacheRecord key (data : string) (state : SyncStatus) message cacheRevision =
         let values = 
             [
-               if cacheRevision |> Option.isSome then yield "revision", string cacheRevision.Value
-               yield "state", string state
-               if message |> Option.isSome then yield "message", message.Value
+               if cacheRevision |> Option.isSome then yield "revision", cacheRevision.Value |> string |> String
+               yield "state", state |> string |> String
+               if message |> Option.isSome then yield "message", message.Value |> String
             ]
 
         createDataRecord key data values

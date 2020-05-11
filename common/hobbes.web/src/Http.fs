@@ -39,11 +39,11 @@ module Http =
                 match x with
                 Calculate -> "/data/calculate"
     type CacheService = 
-        Read
+        Read of string
         | Update
         with member x.ToPath() =
               match x with
-              Read -> "/read"
+              Read key -> "/read/" + key
               | Update -> "/update"
     type Service = 
          UniformData of CacheService

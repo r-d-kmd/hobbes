@@ -96,17 +96,17 @@ module Cache =
                                 confDoc
                                 |> key
                                 |> db.TryGet }
-        new(service) =
+        new(service : Http.CacheService -> Http.Service) =
             Cache {new ICacheProvider with 
                             member __.InsertOrUpdate doc = 
                                 async{
                                     doc.JsonValue.ToString() 
-                                    |> Http.put service
+                                    |> Http.put (Http.Update |> service) 
                                     |> ignore
                                 } |> Async.Start
                             
                             member __.Get (key : string) = 
-                                match Http.get service parser  with
+                                match Http.get (key |> Http.CacheService.Read |> service) parser with
                                 Http.Success d -> Some d
                                 | Http.Error (code,msg) ->
                                     Log.errorf null "Failed to load from cache. Status: %d. Message: %s" code msg

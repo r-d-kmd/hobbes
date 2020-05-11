@@ -247,17 +247,21 @@ module Rawdata =
         200,"deleting"
     
     let projectsBySource (config : Config.Root) = 
-        //this could be done with a view but the production environment often exceeds the time limit.
-        //we haven't got enough documents for a missing index to be a problem and since it's causing problems 
-        //reliance on an index has been removed
-        let docs = db.List() 
         let configSearchKey = config |> keyFromConfig
-        Log.logf "projects by source (%s): %A" (config.Source.JsonValue.ToString()) docs
         let res = 
-            docs
-            |> Seq.filter(fun doc -> 
-               (doc.JsonValue.ToString() |> keyFromConfigDoc) = configSearchKey
-            ) 
+            db.List() 
+            |> Seq.filter(fun doc ->
+                let hasData = 
+                    doc.JsonValue.Properties() 
+                    |> Seq.tryFind(fun (n,_) -> n = "data") 
+                    |> Option.isSome
+                let hasSource = 
+                    doc.JsonValue.Properties() 
+                    |> Seq.tryFind(fun (n,_) -> n = "data") 
+                    |> Option.isSome
+                hasData && hasSource
+                && (doc.JsonValue.ToString() |> keyFromConfigDoc) = configSearchKey
+            )
         Log.logf "Project data found by source %A" res
         res
 
@@ -269,14 +273,18 @@ module Rawdata =
         let result = 
             data
             |> Seq.collect(fun s -> 
-                s.JsonValue.Properties() |> Seq.tryFind(fun (n,_) -> n = "data")
-                |> Option.bind(fun _ -> 
+                let hasData = 
+                    s.JsonValue.Properties() 
+                    |> Seq.tryFind(fun (n,_) -> n = "data") 
+                    |> Option.isSome
+                if hasData then
                     try
                         let data = s.Data :> obj :?> AzureDevOpsAnalyticsRecord.Root
-                        data.Value |> Some
-                    with _ -> None
-                ) |> Option.orElse (Some Array.empty)
-                |> Option.get
+                        data.Value
+                    with _ -> 
+                        Array.empty
+                else
+                    Array.empty
             )
         if result |> Seq.isEmpty then None
         else Some result

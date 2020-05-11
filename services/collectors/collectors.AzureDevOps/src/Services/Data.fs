@@ -24,6 +24,7 @@ module Data =
         
     [<Post ("/read", true)>]
     let read confDoc =
+        Log.logf "Reading data for configuration: %s" confDoc
         let conf = parseConfiguration confDoc
         
         let raw = Reader.read conf

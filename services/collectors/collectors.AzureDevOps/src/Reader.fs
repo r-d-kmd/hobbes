@@ -228,13 +228,14 @@ module Reader =
                         config.JsonValue.ToString()
                         |> parseConfiguration
                     let rawdataRecord = createDataRecord rawId body' [
-                                                                                    "url", url
-                                                                                    "source", config.Source.JsonValue.ToString()
+                                                                                    "url", String url
+                                                                                    "source", config.Source.JsonValue.ToString() |> Object
                                                                                     "recordCount", hashes 
                                                                                                    |> List.length 
-                                                                                                   |> string
-                                                                                    "hashes", System.String.Join(",", hashes) 
-                                                                                              |> sprintf "[%s]"
+                                                                                                   |> Int
+                                                                                    "hashes", hashes
+                                                                                              |> Seq.map String
+                                                                                              |> Array
                                                                                  ] 
                     insertOrUpdate rawdataRecord
 

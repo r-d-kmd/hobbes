@@ -145,7 +145,15 @@ module Rawdata =
                           | values ->
                               System.String.Join(",",
                                   values
-                                  |> Seq.map(fun (k,v) -> sprintf """%A:%A""" k v)
+                                  |> Seq.map(fun (k,v) -> 
+                                     match v :> obj with
+                                     :? string as s when s.Trim().StartsWith "{" && s.Trim().EndsWith("}") ->
+                                         //it's an json object
+                                         sprintf """%A:%A""" k s
+                                     | v -> 
+                                         //primitive value
+                                         sprintf """%A:%A""" k v
+                                  )
                               ) |> sprintf """,%s"""
                          ))
 

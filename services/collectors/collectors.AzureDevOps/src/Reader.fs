@@ -229,6 +229,7 @@ module Reader =
                         |> parseConfiguration
                     let rawdataRecord = createDataRecord rawId body' [
                                                                                     "url", url
+                                                                                    "source", config.Source.JsonValue.ToString()
                                                                                     "recordCount", hashes 
                                                                                                    |> List.length 
                                                                                                    |> string

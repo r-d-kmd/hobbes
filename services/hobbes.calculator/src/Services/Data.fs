@@ -12,7 +12,7 @@ module Data =
     let cache = Cache.Cache("TransformationCache")
    
     let private getConfiguration configurationName =
-            get Configurations Config.Parse <| "/configuration/" + configurationName
+            get (configurationName |> Some |> Configuration |> Configurations) Config.Parse
 
     let readFromCache (key : string list) = 
         (":",key)
@@ -21,7 +21,7 @@ module Data =
         |> Option.bind (Cache.readData >> Some)
 
     let calc transformationName calculatedData =
-        match get Configurations TransformationRecord.Parse <| "/transformation/" + transformationName with
+        match get (transformationName |> Some |> Transformation |> Configurations) TransformationRecord.Parse with
         Success transformation ->
             Hobbes.FSharp.Compile.expressions transformation.Lines calculatedData
             |> Some
@@ -31,7 +31,7 @@ module Data =
         
     let rec readFromCacheOrCalculate (sourceKey : string) (keys : string list list) = 
         if keys |> List.isEmpty then 
-            Cache.Cache("uniformdata","/data/").Get sourceKey
+            Cache.Cache(Http.UniformData).Get sourceKey
             |> Option.bind(Cache.readData
                 >> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
                 >> Some

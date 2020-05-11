@@ -23,5 +23,5 @@ let private app = application {
 }
 
 
-Hobbes.Web.Database.initDatabases ["uniform"]
+Hobbes.Web.Database.initDatabases ["uniformcache"]
 run app

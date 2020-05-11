@@ -81,7 +81,7 @@ module Cache =
         static let parser = CacheRecord.Parse
         new(name) =  
             let db = 
-                Database.Database(name + "Cache", parser, Log.loggerInstance)
+                Database.Database(name + "cache", parser, Log.loggerInstance)
             
             Cache {new ICacheProvider with 
                             member __.InsertOrUpdate doc = 

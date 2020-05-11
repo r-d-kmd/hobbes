@@ -118,17 +118,11 @@ namespace Hobbes.Web
                 Offset : int
                 Rows : 'a []
             }
-        let rec initDatabases databaseToBeInitialized =
-            let readBody = 
-                function
-                    | Binary b -> System.Text.Encoding.ASCII.GetString b
-                    | Text t -> t
-            let databaseServerUrl = env "DB_SERVER_URL" null
-            if databaseServerUrl |> isNull then 
-                failwith "Database server URL not configured"
+        let awaitDbServer() =
             async {
-                let httpMethod = "PUT"
-                printfn "Testing of db server is reachable on %s" databaseServerUrl
+                let databaseServerUrl = env "DB_SERVER_URL" null
+                if databaseServerUrl |> isNull then 
+                    failwith "Database server URL not configured"
                 let dbUser = 
                     match env "COUCHDB_USER" null with
                     null -> failwith "DB user not configured"
@@ -138,51 +132,69 @@ namespace Hobbes.Web
                     match env "COUCHDB_PASSWORD" null with
                     null -> failwith "DB password not configured"
                     | pwd -> pwd
-                
-                let resp = Http.Request(databaseServerUrl, 
-                                        silentHttpErrors = true,
-                                        headers = [HttpRequestHeaders.BasicAuth dbUser dbPwd]
-                                       ) //make sure db is up and running
-                let retry = 
+                let rec inner() =
+                    async {
+
+                        printfn "Testing of db server is reachable on %s" databaseServerUrl
+                        
+                        try
+                            let resp = Http.Request(databaseServerUrl, 
+                                                    silentHttpErrors = true,
+                                                    headers = [HttpRequestHeaders.BasicAuth dbUser dbPwd]
+                                                   ) //make sure db is up and running
+                            if resp.StatusCode <= 299 then
+                               return ()
+                            else 
+                               do! Async.Sleep 2000
+                               return! inner()
+                        with e ->
+                            eprintfn "Filaed to connecto to DB. Message: %s. Trace: %s" e.Message e.StackTrace
+                            return! inner()
+                    }
+                do! inner()
+                return databaseServerUrl,dbUser,dbPwd
+            }
+
+        let rec initDatabases databaseToBeInitialized =
+            let readBody = 
+                function
+                    | Binary b -> System.Text.Encoding.ASCII.GetString b
+                    | Text t -> t
+            
+            async {
+                let httpMethod = "PUT"
+                let! databaseServerUrl,dbUser,dbPwd = awaitDbServer()
+                let request dataBaseName = 
+                    let url = databaseServerUrl + "/" + dataBaseName
+                    printfn "Creating database. %s on %s" httpMethod url
+                    Http.Request(url,
+                                 httpMethod = httpMethod,
+                                 silentHttpErrors = true,
+                                 headers = [HttpRequestHeaders.BasicAuth dbUser dbPwd]
+                                ) 
+                let failed = 
+                   databaseToBeInitialized
+                   |> List.filter(fun name ->
+                    let resp = request name
+                      
                     match resp.StatusCode with
                     200 ->
-                       printfn "Database running"
+                       printfn "Database created"
                        false
-                    | sc ->
-                       eprintfn "Database coul not be reached %d - %s. Will try again" resp.StatusCode (resp.Body |> readBody)
+                    | 412 -> 
+                       printfn "Database already existed"
+                       false
+                    | 401 -> 
+                        failwith "DB user not configured correctly" 
+                    | _ ->
+                       eprintfn "Database creation failed with %d - %s. Will try again" resp.StatusCode (resp.Body |> readBody)
                        true
-                if retry then initDatabases databaseToBeInitialized
+                   )
+                if failed |> List.isEmpty |> not then
+                    do! Async.Sleep 2000
+                    initDatabases failed
                 else
-                    let failed = 
-                       databaseToBeInitialized
-                       |> List.filter(fun name ->
-                        
-                        let url = databaseServerUrl + "/" + name
-                        printfn "Creating database. %s on %s" httpMethod url
-                        let resp = 
-                           Http.Request(url,
-                                            httpMethod = httpMethod,
-                                            silentHttpErrors = true,
-                                            headers = [HttpRequestHeaders.BasicAuth dbUser dbPwd]
-                                           ) 
-                        match resp.StatusCode with
-                        200 ->
-                           printfn "Database created"
-                           false
-                        | 412 -> 
-                           printfn "Database already existed"
-                           false
-                        | 401 -> 
-                            failwith "DB user not configured correctly" 
-                        | _ ->
-                           eprintfn "Database creation failed with %d - %s. Will try again" resp.StatusCode (resp.Body |> readBody)
-                           true
-                       )
-                    if failed |> List.isEmpty |> not then
-                        do! Async.Sleep 2000
-                        initDatabases failed
-                    else
-                        printfn "DB initialized"
+                    printfn "DB initialized"
             } |> Async.Start
   
         let private getBody (resp : HttpResponse) = 

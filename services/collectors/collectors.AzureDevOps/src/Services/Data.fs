@@ -30,7 +30,7 @@ module Data =
             
         match raw with
         Some rawData ->
-            let result = rawData |> Hobbes.Shared.RawdataTypes.DataResult.Parse
+            let result = rawData |> DataResult.Parse
             
             assert(result.ColumnNames.Length > 0)
             assert(result.RowCount = result.Rows.Length)

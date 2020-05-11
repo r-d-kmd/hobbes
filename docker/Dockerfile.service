@@ -1,11 +1,14 @@
 FROM kmdrd/sdk:hobbes AS build
 
 # final stage/image
-FROM kmdrd/aspnet
+FROM kmdrd/aspnet:latest
+
+ARG SERVICE_NAME
 
 WORKDIR /app
 COPY --from=build /app .
 
 ENV DB_SERVER_URL http://db-svc:5984
+ENV SERVICE_NAME=${SERVICE_NAME}
 
-ENTRYPOINT [ "dotnet", "hobbes.uniformdata.dll" ]
+ENTRYPOINT $(echo "dotnet $SERVICE_NAME.dll")

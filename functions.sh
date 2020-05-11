@@ -121,7 +121,7 @@ function start() {
     cd $CURRENT_DIR
 }
 
-function startAndBuild() {
+function buildAndStart() {
     build
     start
 }

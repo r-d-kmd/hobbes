@@ -1,8 +1,7 @@
 namespace Collector.AzureDevOps.Services
 
-open Hobbes.Server.Routing
+open Hobbes.Web.Routing
 open Collector.AzureDevOps.Db
-open Hobbes.Server.Db
 open Hobbes.Web.Database
 open Hobbes.Web
 open Hobbes.Helpers

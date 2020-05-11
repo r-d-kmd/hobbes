@@ -18,9 +18,6 @@
     <Reference Include="hobbes.web">
       <HintPath>$(RelativePath).lib/hobbes.web.dll</HintPath>
     </Reference>
-    <Reference Include="hobbes.server">
-      <HintPath>$(RelativePath).lib/hobbes.server.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="$(RelativePath)services/shared/Shared.fs" />

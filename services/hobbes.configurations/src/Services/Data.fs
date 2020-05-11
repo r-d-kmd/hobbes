@@ -1,6 +1,6 @@
 namespace Hobbes.Calculator.Services
 
-open Hobbes.Server.Routing
+open Hobbes.Web.Routing
 open Hobbes.Web
 open Hobbes.Web.Http
 open FSharp.Data

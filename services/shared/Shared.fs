@@ -34,7 +34,7 @@ module RawdataTypes =
         try 
             config.Source |> keyFromSource
         with e ->
-           failwithf "Failed to get key from (%s). Message: %s. Trace: " (config.JsonValue.ToString()) e.Message e.StackTrace
+           failwithf "Failed to get key from (%s). Message: %s. Trace: %s" (config.JsonValue.ToString()) e.Message e.StackTrace
     
     let keyFromConfigDoc = 
         Config.Parse

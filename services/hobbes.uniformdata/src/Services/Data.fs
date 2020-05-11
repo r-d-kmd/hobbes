@@ -1,6 +1,6 @@
 namespace Hobbes.UniformData.Services
 
-open Hobbes.Server.Routing
+open Hobbes.Web.Routing
 open Hobbes.Web
 open Hobbes.Shared.RawdataTypes
 

@@ -1,7 +1,7 @@
 open Saturn
 open Giraffe
 open Hobbes.Calculator.Services.Data
-open Hobbes.Server.Routing
+open Hobbes.Web.Routing
 open Hobbes.Helpers.Environment
 
 let private port = env "PORT" "8085"

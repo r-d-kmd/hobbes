@@ -9,17 +9,11 @@
     <RelativePath Condition="$(RelativePath) == ''">../../../</RelativePath>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="hobbes.core">
-      <HintPath>$(RelativePath).lib/hobbes.core.dll</HintPath>
-    </Reference>
     <Reference Include="hobbes.helpers">
       <HintPath>$(RelativePath).lib/hobbes.helpers.dll</HintPath>
     </Reference>
     <Reference Include="hobbes.web">
       <HintPath>$(RelativePath).lib/hobbes.web.dll</HintPath>
-    </Reference>
-    <Reference Include="hobbes.server">
-      <HintPath>$(RelativePath).lib/hobbes.server.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

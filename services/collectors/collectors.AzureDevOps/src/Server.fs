@@ -1,7 +1,7 @@
 open Saturn
 open Giraffe
 open Microsoft.AspNetCore.Http
-open Hobbes.Server.Routing
+open Hobbes.Web.Routing
 open Collector.AzureDevOps.Services.Root
 open Collector.AzureDevOps.Services.Data
 open Collector.AzureDevOps.Services.Status

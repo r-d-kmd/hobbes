@@ -6,11 +6,12 @@ ENV BUILD_ENV docker
 COPY .lib/ ../.lib/
 
 # copy and publish app and libraries
-COPY services/shared/ ../services/shared/
+COPY services/shared/ /services/shared/
 
-COPY paket.dependencies .
-RUN paket update
+COPY paket.lock paket.dependencies ./
+COPY /.paket /.paket
+RUN mono /.paket/paket.exe restore
 
 ONBUILD COPY ./src/ .
-ONBUILD RUN echo "Starting build"
+
 ONBUILD RUN dotnet publish -c release -o /app

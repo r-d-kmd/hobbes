@@ -1,6 +1,6 @@
 namespace Collector.Git.Services
 
-open Hobbes.Server.Routing
+open Hobbes.Web.Routing
 open Hobbes.Helpers.Environment
 
 [<RouteArea ("/data", false)>]

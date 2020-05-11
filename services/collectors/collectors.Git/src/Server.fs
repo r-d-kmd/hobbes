@@ -1,7 +1,7 @@
 open Saturn
 open Giraffe
 
-open Hobbes.Server.Routing
+open Hobbes.Web.Routing
 open Collector.Git.Services.Root
 open Collector.Git.Services.Data
 open Hobbes.Helpers.Environment

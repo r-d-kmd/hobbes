@@ -63,21 +63,18 @@ let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "
 let createDockerTag dockerOrg (tag : string) = sprintf "%s/hobbes-%s" dockerOrg (tag.ToLower())
 
 open Fake.Core.TargetOperators
+open System.IO
 
-System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllDirectories)
-|> Seq.filter(fun file ->
-    let dockerFolder = 
-        "./docker"
-        |> System.IO.Path.GetFullPath
-        |> System.IO.Path.GetDirectoryName
-    let fileFolder =
-        file
-        |> System.IO.Path.GetFullPath
-        |> System.IO.Path.GetDirectoryName
-    fileFolder <> dockerFolder
-) |> Seq.iter(fun path ->
-    let workingDir = System.IO.Path.GetDirectoryName path
+let projectFolder = DirectoryInfo(".")
+
+System.IO.Directory.EnumerateFiles("./services","*.fsproj",SearchOption.AllDirectories)
+|> Seq.iter(fun projectFilePath ->
+    let workingDir = 
+        let file = FileInfo(projectFilePath)
+        file.Directory.Parent.FullName
     
+    let serviceName = Path.GetFileNameWithoutExtension projectFilePath
+
     let build (tag : string) = 
         let tag = tag.ToLower()
         let tags =
@@ -87,7 +84,7 @@ System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllD
                t + ":" + "latest"
            ]
 
-        sprintf "build -t %s ." (tag.ToLower())
+        sprintf "build -f %s/docker/Dockerfile.service --build-arg SERVICE_NAME=%s -t %s ." projectFolder.FullName serviceName (tag.ToLower()) 
         |> run "docker" workingDir
         tags
         |> List.iter(fun t -> 
@@ -109,7 +106,7 @@ System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllD
             run "docker" workingDir args
         )
     
-    let tag = (workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last).ToLower()
+    let tag = serviceName.ToLower()
     
     let buildTargetName = "Build" + tag 
     let pushTargetName = "Push" + tag 

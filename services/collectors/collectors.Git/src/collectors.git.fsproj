@@ -17,6 +17,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="$(RelativePath)services/shared/Shared.fs" />
     <Compile Include="Reader.fs" />
     <Compile Include="Services/Root.fs" />
     <Compile Include="Services/Data.fs" />

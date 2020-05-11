@@ -37,6 +37,7 @@ module Data =
     let read confDoc =
         let conf = Config.Parse confDoc
         let dataset = conf.Dataset.ToLower()
+        let key = confDoc |> Hobbes.Shared.RawdataTypes.keyFromConfigDoc
         let columnNames,rows =
             match dataset with
             "commits" -> 
@@ -70,10 +71,10 @@ module Data =
 
         let res = 
             sprintf """{
-               "searchKey" : "%s",
+               "_id" : "%s",
                "columnNames" : [%s],
                "rows" : [%s],
                "rowCount" : %d
-               }""" ("git" + conf.Project + dataset) (toCsList columnNames) values (rows |> Seq.length)
+               }""" key (toCsList columnNames) values (rows |> Seq.length)
         Hobbes.Web.Log.logf "Result: %s" res
         200,res

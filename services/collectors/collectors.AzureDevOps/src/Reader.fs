@@ -108,8 +108,8 @@ module Reader =
                 headers = headers
             )
 
-    let formatRawdataCache searchKey (timeStamp : string ) rawdataCache =
-        assert((System.String.IsNullOrWhiteSpace searchKey) |> not)
+    let formatRawdataCache key (timeStamp : string ) rawdataCache =
+        assert((System.String.IsNullOrWhiteSpace key) |> not)
         let jsonString (s : string) = 
             "\"" +
              s.Replace("\\","\\\\")
@@ -176,21 +176,21 @@ module Reader =
                 )) |> System.String.Join
                 |> sprintf "[%s]"        
         sprintf """{
-           "searchKey" : "%s",
+           "_id" : "%s",
            "columnNames" : %s,
            "rows" : %s,
            "rowCount" : %d
            }
-        """ searchKey columnNames rows (rawdataCache |> Seq.length)
+        """ key columnNames rows (rawdataCache |> Seq.length)
 
     //Reads data from the raw data store. This should be exposed as part of the API in some form 
     let read (config : Config.Root) =
-        let searchKey = config |> keyFromConfig
+        let key = config |> keyFromConfig
 
-        assert(System.String.IsNullOrWhiteSpace searchKey |> not)
+        assert(System.String.IsNullOrWhiteSpace key |> not)
 
         let timeStamp = 
-            (match searchKey |> getState with
+            (match key |> getState with
             Some s -> 
                 ((s |> Cache.CacheRecord.Parse).TimeStamp
                  |> System.DateTime.Parse)
@@ -199,7 +199,7 @@ module Reader =
         let raw = 
             config
             |> bySource
-            |> Option.bind((formatRawdataCache searchKey timeStamp) >> Some)
+            |> Option.bind((formatRawdataCache key timeStamp) >> Some)
 
         Log.logf "\n\n azure devops:%s \n\n" (config.JsonValue.ToString())        
         raw
@@ -210,7 +210,7 @@ module Reader =
     let sync azureToken (config : Config.Root) = 
         
         let rec _read hashes url = 
-            Hobbes.Web.Log.logf "syncing with %s@%s" azureToken url
+            Log.logf "syncing with %s@%s" azureToken url
             let resp = 
                 url
                 |> request azureToken azureToken "GET" None                 

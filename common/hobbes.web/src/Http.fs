@@ -34,10 +34,10 @@ module Http =
                      | Some key -> "/" + key
                | Source -> "source"
     type CalculatorService =
-        Calculate
+        Calculate of string
         with member x.ToPath() = 
                 match x with
-                Calculate -> "/data/calculate"
+                Calculate key -> "/data/calculate/" + key
     type CacheService = 
         Read of string
         | Update

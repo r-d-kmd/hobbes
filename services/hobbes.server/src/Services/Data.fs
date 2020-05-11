@@ -3,23 +3,19 @@ namespace Hobbes.Server.Services
 open Hobbes.Web.Log
 open Hobbes.Web.Routing
 open Hobbes.Helpers
+open Hobbes.Web
 
 [<RouteArea "/data">]
 module Data = 
     let private cacheRevision confDoc = 
         sprintf "%s:%d" confDoc (System.DateTime.Now.Ticks) |> hash
 
-    let private transformationCache = Hobbes.Web.Cache.Cache("calculator","calculate")
-
     [<Get ("/csv/%s")>]
     let csv configuration =  
         debugf "Getting csv for '%A'" configuration
-        match transformationCache.Get configuration with
-        Some data ->
+        match Http.get (configuration |> Http.Calculate |> Http.Calculator) (Cache.CacheRecord.Parse >> Hobbes.Web.Cache.readData)  with
+        Http.Success rows ->
             let csv = 
-                let rows = 
-                    data
-                    |> Hobbes.Web.Cache.readData
                 let columnNames = 
                     (":",rows
                          |> Seq.collect(snd >> (Seq.map fst))
@@ -40,4 +36,4 @@ module Data =
                 columnNames + "\n" + values
             debugf "CSV: %s" csv
             200, csv
-        | None -> 404,sprintf "Data for configuration %s not found" configuration
+        | Http.Error(sc,m) -> sc,sprintf "Data for configuration %s not found. Message: %s" configuration m

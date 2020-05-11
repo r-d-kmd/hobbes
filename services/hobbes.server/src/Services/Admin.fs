@@ -60,7 +60,7 @@ module Admin =
     [<Put ("/transformation",true)>]
     let storeTransformations doc =
         try
-            match Http.post Http.Configurations id "/transformation" doc with
+            match Http.post (None |> Http.Transformation |> Http.Configurations) id doc with
             Http.Success _ -> 200,sprintf """{"transformation":%s, "status" : "ok" }""" doc
             | Http.Error(s,m) -> s,m
         with e -> 
@@ -108,7 +108,7 @@ module Admin =
     [<Put ("/configuration",true)>]
     let storeConfigurations doc = 
         try
-            match Http.post Http.Configurations id "/configuration" doc with
+            match Http.post (None |> Http.Configuration |> Http.Configurations) id doc with
             Http.Success _ -> 200,sprintf """{"configuration":%s, "status" : "ok" }""" doc
             | Http.Error(s,m) -> s,m
         with e -> 

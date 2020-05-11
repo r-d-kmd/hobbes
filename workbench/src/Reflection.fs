@@ -77,15 +77,13 @@ module Project =
             let detailedSourceConfig account = 
                 sprintf """ "source" : "azure devops",
                             "account" : "%s",
-                            "project" : "%s",
-                            "searchKey" : "%s" """ account projectName ("azure devops" + projectName)
+                            "project" : "%s" """ account projectName
             p |> getAzureDevopsAccount |> detailedSourceConfig
         | Project.Git ->
             let detailedSourceConfig account = 
                 sprintf """ "source" : "git",
                             "account" : "%s",
-                            "project" : "%s",
-                            "searchKey" : "%s" """ account projectName ("git" + projectName)
+                            "project" : "%s" """ account projectName 
             p |> getAzureDevopsAccount |> detailedSourceConfig
         | _ -> failwith "Project source not supported yet!"
         

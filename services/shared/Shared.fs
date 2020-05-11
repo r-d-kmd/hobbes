@@ -30,8 +30,11 @@ module RawdataTypes =
         source.JsonValue.ToString()
         |> Hobbes.Web.Cache.key
 
-    let keyFromConfig (config : Config.Root) = 
-        config.Source |> keyFromSource
+    let keyFromConfig (config : Config.Root) =
+        try 
+            config.Source |> keyFromSource
+        with e ->
+           failwithf "Failed to get key from (%s). Message: %s. Trace: " (config.JsonValue.ToString()) e.Message e.StackTrace
     
     let keyFromConfigDoc = 
         Config.Parse

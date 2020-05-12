@@ -3,7 +3,6 @@ namespace Hobbes.Calculator.Services
 open Hobbes.Web.Routing
 open Hobbes.Web
 open Hobbes.Web.Http
-open FSharp.Data
 open Hobbes.Shared.RawdataTypes
 
 [<RouteArea ("/data", false)>]
@@ -37,16 +36,17 @@ module Data =
                 >> Some
             )
         else
-            match keys.Head |> readFromCache with
+            let key = keys.Head
+            match key |> readFromCache with
             Some d -> 
                 d 
                 |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows 
                 |> Some
             | None -> 
                 let cacheKey = 
-                    System.String.Join(":",keys)
+                    System.String.Join(":",key)
                 let prevTransformation = keys.Tail
-                let currentTransformationName = keys.Head.Tail.Head
+                let currentTransformationName = key.Tail.Head
                 readFromCacheOrCalculate sourceKey prevTransformation
                 |> Option.bind(fun d ->
                     let result = calc currentTransformationName d

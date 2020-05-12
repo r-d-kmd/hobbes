@@ -20,7 +20,6 @@ module Http =
         | Transformation of string option
         | Source
         with member x.ToPath() =
-               "data" ::
                match x with
                Configuration s -> 
                    "configuration" ::

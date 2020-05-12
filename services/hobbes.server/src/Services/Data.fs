@@ -13,7 +13,7 @@ module Data =
     [<Get ("/csv/%s")>]
     let csv configuration =  
         debugf "Getting csv for '%A'" configuration
-        match Http.get (configuration |> Http.Calculate |> Http.Calculator) (Cache.CacheRecord.Parse >> Hobbes.Web.Cache.readData)  with
+        match Http.get (configuration |> Http.Calculate |> Http.Calculator) (Cache.CacheRecord.Parse >> Cache.readData)  with
         Http.Success rows ->
             let csv = 
                 let columnNames = 

@@ -91,10 +91,9 @@ module Cache =
                                     |> Log.logf "Inserted data: %s"
                                 } |> Async.Start
                             
-                            member __.Get (confDoc : string) = 
-                                Log.logf "trying to retrieve cached %s from database" confDoc
-                                confDoc
-                                |> key
+                            member __.Get (key : string) = 
+                                Log.logf "trying to retrieve cached %s from database" key
+                                key
                                 |> db.TryGet }
         new(service : Http.CacheService -> Http.Service) =
             Cache {new ICacheProvider with 

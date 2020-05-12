@@ -7,11 +7,10 @@ open Hobbes.Shared.RawdataTypes
 [<RouteArea ("/data", false)>]
 module Data =
     let private cache = Cache.Cache("uniform")
-    [<Post ("/read", true)>]
-    let read confDoc =
+    [<Get ("/read/%s")>]
+    let read key =
         let uniformData =
-           confDoc
-           |> keyFromConfigDoc
+           key
            |> cache.Get 
             
         match uniformData with

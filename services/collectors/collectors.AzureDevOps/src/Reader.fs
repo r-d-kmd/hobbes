@@ -130,7 +130,6 @@ module Reader =
                 ] @ (azureFields |> List.map fst)
                 |> List.map jsonString)
             |> System.String.Join
-            |> sprintf "[%s]"
         let rows = 
             (",",rawdataCache
                 |> Seq.map(fun (row : AzureDevOpsAnalyticsRecord.Value) ->
@@ -173,12 +172,11 @@ module Reader =
                         | v -> string v
                     )) |> System.String.Join
                     |> sprintf "[%s]"
-                )) |> System.String.Join
-                |> sprintf "[%s]"        
+                )) |> System.String.Join        
         sprintf """{
            "_id" : "%s",
-           "columnNames" : %s,
-           "rows" : %s,
+           "columnNames" : [%s],
+           "rows" : [%s],
            "rowCount" : %d
            }
         """ key columnNames rows (rawdataCache |> Seq.length)

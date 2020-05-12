@@ -34,17 +34,20 @@ let run command workingDir args =
     |> Proc.run
     |> ignore
 
-Target.create "PushDocker" ignore
-Target.create "PostBuildCommon" ignore
-Target.create "DebugCommon" ignore
 Target.create "PreBuildGenericImages" ignore
-Target.create "PostBuildGenericImages" ignore
 Target.create "BuildGenericImages" ignore
+Target.create "PostBuildGenericImages" ignore
+
 Target.create "PushGenericImages" ignore
+
 Target.create "PreBuildCommon" ignore
-Target.create "Build" ignore
+Target.create "PostBuildCommon" ignore
+
 Target.create "PreBuildServiceImages" ignore
 Target.create "PostBuildServiceImages" ignore
+
+Target.create "Build" ignore
+Target.create "PushDocker" ignore
 
 let commonLibDir = "./.lib/"
 
@@ -66,6 +69,64 @@ open Fake.Core.TargetOperators
 open System.IO
 
 let projectFolder = DirectoryInfo(".")
+
+let changedCommonFiles =
+    let serviceDir = 
+        DirectoryInfo("./services").FullName
+    let collectorDir = 
+        DirectoryInfo("./services/collectors").FullName 
+    Fake.Tools.Git.FileStatus.getChangedFilesInWorkingCopy "." "HEAD@{1}"
+    |> Seq.fold(fun l (_,(file : string)) ->
+        if file.Contains "paket.dependencies" then
+            (file,"paket.dependencies")::l
+        elif file.Contains "Shared.fs" then
+            (file,"Shared.fs")::l
+        elif file.Contains "docker/" then
+            (file,"docker/")::l
+        elif file.Contains "common" then
+            (file,"common")::l
+        elif file.Contains "services" then
+            let info = FileInfo file 
+            let projectName = 
+                if info.Directory.FullName.StartsWith serviceDir then
+                    info.DirectoryName
+                        .Substring(serviceDir.Length)
+                    |> Some
+                elif info.Directory.FullName.Contains collectorDir then
+                    info.DirectoryName
+                        .Substring(collectorDir.Length)
+                    |> Some
+                else
+                    None
+                |> Option.bind(fun p -> 
+                        p.Split([|'/';'\\'|], System.StringSplitOptions.RemoveEmptyEntries)
+                        |> Array.head
+                        |> Some
+                )
+            match projectName with
+            None -> l
+            | Some projectName ->
+                (file, projectName)::l
+        else
+            l
+    ) []
+
+let changeSet = 
+    changedCommonFiles 
+    |> Seq.map snd 
+    |> Set.ofSeq
+
+let hasChanged fileName = 
+    changeSet |> Set.contains fileName
+
+let hasDockerChanged = 
+    hasChanged "docker"
+
+let hasDependenciesChanged =
+    hasDockerChanged || hasChanged "paket.dependencies" || hasChanged "Shared.fs"
+
+let hasCommonChanged = 
+    hasChanged "common"
 
 System.IO.Directory.EnumerateFiles("./services","*.fsproj",SearchOption.AllDirectories)
 |> Seq.iter(fun projectFilePath ->
@@ -156,18 +217,24 @@ let pushImage path (tag : string) =
         |> ignore
 )
 
-Target.create "BuildSdk" (fun _ ->      
-    buildImage "." "./docker/Dockerfile.sdk-hobbes" "sdk:hobbes"
+Target.create "BuildSdk" (fun _ ->   
+    if hasDependenciesChanged then   
+        buildImage "." "./docker/Dockerfile.sdk-hobbes" "sdk:hobbes"
+    if hasDockerChanged || hasCommonChanged then
+        buildImage "." "./docker/Dockerfile.sdk-service" "sdk:service"
 )
 
-Target.create "PushSdk" (fun _ ->  pushImage "." "sdk:hobbes")
-
-
+Target.create "PushSdk" (fun _ ->  
+    if hasDependenciesChanged then   
+        pushImage "." "sdk:hobbes"
+    if hasDockerChanged || hasCommonChanged then
+        pushImage "." "sdk:service"
+)
 
 //Set to 'Normal' to have more information when trouble shooting 
 let verbosity = Quiet
     
-let package conf outputDir projectFile  _ =
+let package conf outputDir projectFile =
     DotNet.publish (fun opts -> 
                         { opts with 
                                OutputPath = Some outputDir
@@ -184,45 +251,18 @@ let commonProjectFiles =
     --("common/**/tests/*.fsproj")
 
 
-let changedCommonFiles = 
-    Fake.Tools.Git.FileStatus.getChangedFilesInWorkingCopy "." "HEAD@{1}"
-    |> Seq.fold(fun l (_,(file : string)) ->
-        if file.Contains "paket.dependencies" then
-            (file,"paket.dependencies")::l
-        elif file.Contains "Shared.fs" then
-            (file,"Shared.fs")::l
-        elif file.Contains "docker/" then
-            (file,"docker/")::l
-        elif file.Contains "common" then
-            (file,"common")::l
-        else
-            l
-    ) []
 
-let buildCommon conf =
-    let commonPack = package conf commonLibDir
+Target.create "BuildCommon" (fun _ ->
+    let commonPack = package DotNet.BuildConfiguration.Release commonLibDir
     commonProjectFiles
-    |> Seq.iter(fun projectFile ->  
-        let targetName =
-            (System.IO.Path.GetFileNameWithoutExtension projectFile) +
-                match conf with
-                DotNet.BuildConfiguration.Release -> ""
-                | DotNet.BuildConfiguration.Debug -> "Debug"
-                | DotNet.BuildConfiguration.Custom n -> n
-    
-        Target.create targetName (commonPack projectFile )
-        "PreBuildCommon"
-            ==> targetName
-            ==>
-            (if DotNet.BuildConfiguration.Release = conf then 
-                "PostBuildCommon"
-             else
-                "PostBuildCommon" ==> "DebugCommon"
-            ) |> ignore
-    ) 
+    |> Seq.iter commonPack
+)
 
-buildCommon DotNet.BuildConfiguration.Release
-buildCommon DotNet.BuildConfiguration.Debug
+Target.create "DebugCommon" (fun _ ->
+    let commonPack = package DotNet.BuildConfiguration.Release commonLibDir
+    commonProjectFiles
+    |> Seq.iter commonPack
+)
 
 let tools = 
     [
@@ -232,10 +272,10 @@ let tools =
 tools
 |> List.iter(fun (projectFile) ->     
     let targetName = 
-        System.IO.Path.GetFileNameWithoutExtension(projectFile)
+        Path.GetFileNameWithoutExtension(projectFile)
            .Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries)
         |> Array.last
-    Target.create targetName (package DotNet.BuildConfiguration.Release commonLibDir projectFile)
+    Target.create targetName (fun _ -> package DotNet.BuildConfiguration.Release commonLibDir projectFile)
     "PostBuildCommon"
        ==> targetName
        |> ignore
@@ -245,19 +285,14 @@ Target.create "Publish" (fun _ ->
     run "dotnet" "./workbench/src" "run -- --publish" 
 )
 
-Target.create "UpdateDependencies" (fun _ ->
-        run "paket" "." "update"
-)
 
+"BuildCommon"
+    ==> "PostBuildCommon"
+    ==> "Build"
 
-"UpdateDependencies"
-    ?=> "PreBuildCommon"
+"DebugCommon" ?=> "PostBuildCommon"
 
-"UpdateDependencies"
-    ?=> "BuildSdk"
-
-"PostBuildCommon"
-    ==> "PreBuildGenericImages"
+"PreBuildGenericImages"
     ==> "PostBuildGenericImages"
     ==> "BuildGenericImages" //pseudo target to make it possible to tie build sdk images to the build of generic images
     ==> "PushGenericImages"
@@ -283,14 +318,7 @@ Target.create "UpdateDependencies" (fun _ ->
     printfn "No common files changed"
     "PreBuildServiceImages"
  | _ ->
-    printfn "Common files have changed: %A" changedCommonFiles
-    if changedCommonFiles
-       |> List.tryFind (fun (_,fileName) -> fileName = "paket.dependencies" )
-       |> Option.isSome then
-       "updateDependencies"
-           ==> "PushGenericImages"
-    else    
-        "PushGenericImages"
+    "PushGenericImages"
 ) ==> "PostBuildServiceImages"
   ==> "Build"
 

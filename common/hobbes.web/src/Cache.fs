@@ -41,7 +41,7 @@ module Cache =
         let record = 
             sprintf """{
                         "_id" : "%s",
-                        "timeStamp" : "%s"
+                        "timeStamp" : "%s",
                         "data" : %s
                     }""" key
                          timeStamp

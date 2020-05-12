@@ -1,4 +1,4 @@
-FROM kmdrd/sdk:hobbes AS build
+FROM kmdrd/sdk:service AS build
 
 # final stage/image
 FROM kmdrd/aspnet:latest
@@ -10,4 +10,4 @@ ENV EP="dotnet ${SERVICE_NAME}.dll"
 WORKDIR /app
 COPY --from=build /app .
 
-ENTRYPOINT echo $EP && $(echo $EP)
+ENTRYPOINT $(echo $EP)

@@ -11,40 +11,48 @@ module Http =
         Read
         | Sync
         with member x.ToPath() =
-                "/data/" +
+                "data" ::
                 match x with
-                Read -> "read"
-                | Sync -> "sync"
+                Read -> ["read"]
+                | Sync -> ["sync"]
     type ConfigurationService =
         Configuration of string option
         | Transformation of string option
         | Source
         with member x.ToPath() =
-               "/data/" +
+               "data" ::
                match x with
                Configuration s -> 
-                   "configuration" + 
+                   "configuration" ::
                      match s with
-                     None -> ""
-                     | Some key -> "/" + key
+                     None -> []
+                     | Some key -> [key]
                | Transformation s -> 
-                   "transformation" + 
+                   "transformation" ::
                      match s with
-                     None -> ""
-                     | Some key -> "/" + key
-               | Source -> "source"
+                     None -> []
+                     | Some key -> [key]
+               | Source -> ["source"]
     type CalculatorService =
         Calculate of string
         with member x.ToPath() = 
                 match x with
-                Calculate key -> "/calculate/" + key
+                Calculate key -> 
+                    [
+                        "calculate"
+                        key
+                    ]
     type CacheService = 
         Read of string
         | Update
         with member x.ToPath() =
               match x with
-              Read key -> "/read/" + key
-              | Update -> "/update"
+              Read key -> 
+                  [
+                      "read"
+                      key
+                  ]
+              | Update -> ["update"]
     type Service = 
          UniformData of CacheService
          | Calculator of CalculatorService
@@ -61,8 +69,9 @@ module Http =
                    |> sprintf "%scollector", service.ToPath()
              member x.ServiceUrl 
                   with get() = 
-                      x.ToStrings()
-                      ||> sprintf "http://%s-svc:8085/%s" 
+                      let serviceName,path = x.ToStrings()
+                      let pathString = System.String.Join("/",path) 
+                      sprintf "http://%s-svc:8085/%s"  serviceName pathString
 
 
     let readBody = 

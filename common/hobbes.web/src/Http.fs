@@ -37,7 +37,7 @@ module Http =
         Calculate of string
         with member x.ToPath() = 
                 match x with
-                Calculate key -> "/data/calculate/" + key
+                Calculate key -> "/calculate/" + key
     type CacheService = 
         Read of string
         | Update

@@ -247,9 +247,13 @@ let package conf outputDir projectFile =
                    ) projectFile
 
 let commonProjectFiles =
-    !!("common/**/*.fsproj")
-    --("common/**/tests/*.fsproj")
-
+    [
+        "hobbes.core"
+        "hobbes.helpers"
+        "hobbes.web"
+    ] |> List.map(fun n ->
+        sprintf "./common/%s/src/%s.fsproj" n n
+    )
 
 
 Target.create "BuildCommon" (fun _ ->

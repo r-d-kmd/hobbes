@@ -26,7 +26,7 @@ module Data =
     let read confDoc =
         Log.logf "Reading data for configuration: %s" confDoc
         let conf = parseConfiguration confDoc
-        
+        let key = conf |> keyFromConfig
         let raw = Reader.read conf
             
         match raw with
@@ -39,7 +39,7 @@ module Data =
 
             Log.logf "Data returned: %s" rawData
 
-            200, rawData
+            200, (Cache.createCacheRecord key rawData).JsonValue.ToString()
         | None -> 
             404,"No data found"
 

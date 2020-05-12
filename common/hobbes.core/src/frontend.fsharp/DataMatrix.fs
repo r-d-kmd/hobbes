@@ -973,11 +973,10 @@ module DataStructures =
                                 |> sprintf "[%s]"
                             )
                         ) |> System.String.Join
-                        |> sprintf "[%s]"
 
                     sprintf """{
-                        "columnNames" : %s,
-                        "rows" : %s,
+                        "columnNames" : [%s],
+                        "rows" : [%s],
                         "rowCount" : %d
                     }""" columnNames rows (frame.RowCount)
 

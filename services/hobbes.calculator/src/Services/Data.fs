@@ -9,7 +9,7 @@ open Hobbes.Shared.RawdataTypes
 [<RouteArea ("/data", false)>]
 module Data =
     
-    let cache = Cache.Cache("TransformationCache")
+    let cache = Cache.Cache("transformation")
    
     let private getConfiguration configurationName =
             get (configurationName |> Some |> Configuration |> Configurations) Config.Parse
@@ -51,10 +51,16 @@ module Data =
                 |> Option.bind(fun d ->
                     let result = calc currentTransformationName d
                     result
-                    |> Option.iter(
-                        Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows 
-                        >> Cache.createCacheRecord cacheKey
-                        >> cache.InsertOrUpdate
+                    |> Option.iter(fun result ->
+                        let json = 
+                            result
+                            |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows 
+                        try
+                            json |> Cache.createCacheRecord cacheKey
+                        with e ->
+                            Log.excf e "Failed to create cache record"
+                            reraise()
+                        |> cache.InsertOrUpdate
                     )
                     result
                 )

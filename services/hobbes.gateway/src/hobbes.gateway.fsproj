@@ -32,5 +32,5 @@
     <Compile Include="Services/Root.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
-  <Import Project="$(RelativePath).paket\Paket.Restore.targets" />
+  <Import Project="..\..\..\.paket\Paket.Restore.targets" />
 </Project>

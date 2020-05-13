@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: azuredevopscollector-svc
+  name: collectors-git-svc
 spec:
   type: NodePort
   ports:
   - port: 8085
     targetPort: 8085
-    nodePort: 30090
+    nodePort: 30100
   selector:
-    app: azuredevopscollector
+    app: collectors-git

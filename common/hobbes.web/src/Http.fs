@@ -65,7 +65,7 @@ module Http =
                | Configurations serv -> "configurations", serv.ToPath()
                | Collector (collectorName,service) ->  
                    collectorName.ToLower().Replace(" ","") 
-                   |> sprintf "%scollector", service.ToPath()
+                   |> sprintf "collectors-%s", service.ToPath()
              member x.ServiceUrl 
                   with get() = 
                       let serviceName,path = x.ToStrings()

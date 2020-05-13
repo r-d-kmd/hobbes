@@ -143,12 +143,9 @@ module Admin =
         
     let initDatabase () =
         async {
-            let! _ = Hobbes.Web.Database.awaitDbServer()
+            let! _ = awaitDbServer()
             let systemDbs = 
                 [
-                    "_replicator"
-                    "_global_changes"
-                    "_users"
                     "log"
                 ]
             let errorCode = 
@@ -157,9 +154,10 @@ module Admin =
                 |> List.tryFind (fun sc -> ((sc >= 200 && sc < 300) || (sc = 412)) |> not)
             match errorCode with
              Some errorCode ->
-                let msg = "INIT: error in creating dbs"
+                let msg = sprintf "INIT: error in creating dbs. Status code: %d" errorCode
                 error null msg
              | None ->
+                //TODO this should be moved to the individual service
                 try
                     let documentDir = "db/documents"
                     if System.IO.Directory.Exists documentDir |> not then failwith "Document folder not found"

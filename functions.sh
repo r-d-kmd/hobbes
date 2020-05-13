@@ -1,4 +1,4 @@
-APPS=(db hobbes azuredevops git qtest uniformdata calculator configurations)
+APPS=(db hobbes-server azuredevopscollector gitcollector uniformdata calculator configurations)
 VOLUMES=(db)
 
 function get_script_dir () {
@@ -138,4 +138,27 @@ function update(){
     for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
     kubectl apply -f env.JSON
     cd $CURRENT_DIR
+}
+
+function isRunning(){
+    echo $(kubectl get pods -l app=$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
+}
+
+function pingService(){
+    curl -I -L -X GET "http://$(minikube ip):$1/ping"
+}
+
+function testServiceIsFunctioning(){
+    pingService $1 2>/dev/null | grep HTTP | tail -1 | cut -d$' ' -f2
+}
+
+function awaitRunningState(){
+    for NAME in ${APPS[@]}
+    do 
+        while [[ $(isRunning $NAME)  != "True" ]]
+        do 
+            echo "waiting for $NAME" && sleep 1
+        done
+        echo "$NAME is ready"
+    done
 }

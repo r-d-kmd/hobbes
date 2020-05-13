@@ -57,7 +57,7 @@ before_build:
 build_script:
   - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
   - paket update
-  - fake build
+  - fake build --target ForceBuildServices
   
 test_script:
   - source functions.sh

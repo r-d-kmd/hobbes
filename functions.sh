@@ -161,4 +161,5 @@ function awaitRunningState(){
         done
         echo "$NAME is ready"
     done
+    all
 }

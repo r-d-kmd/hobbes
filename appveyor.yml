@@ -56,14 +56,12 @@ before_build:
 
 build_script:
   - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-  - paket update
   - fake build --target ForceBuildServices
   
 test_script:
   - source functions.sh
   - start
   - awaitRunningState
-  - all
   - front_url=$(minikube ip)":30080"
   - db_url=$(minikube ip)":30084"
   - curl http://${front_url}/ping

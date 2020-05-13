@@ -3,9 +3,6 @@ FROM kmdrd/${SDK_ENV}
 
 ENV BUILD_ENV docker
 
-# copy and publish app and libraries
-COPY services/shared/ /services/shared/
-
 COPY paket.lock paket.dependencies ./
 COPY /.paket /.paket
 RUN mono /.paket/paket.exe restore 

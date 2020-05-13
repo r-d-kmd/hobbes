@@ -45,5 +45,5 @@ let private app = application {
     use_gzip
 }
 
-Hobbes.Web.Database.initDatabases ["rawdata"]
+Hobbes.Web.Database.initDatabases ["azure_devops_rawdata"]
 run app

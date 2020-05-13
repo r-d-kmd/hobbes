@@ -192,7 +192,7 @@ module Rawdata =
 
     type private RawList = JsonProvider<"""["id_a","id_b"]""">
     let private db = 
-        Database.Database("rawdata", AzureDevOpsData.Parse, Log.loggerInstance)
+        Database.Database("azure_devops_rawdata", AzureDevOpsData.Parse, Log.loggerInstance)
 
     let insertOrUpdate doc = 
         async{

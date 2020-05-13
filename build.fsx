@@ -195,6 +195,20 @@ let genricImages =
         "sdk"
     ]
 
+let setupServiceTarget serviceName = 
+    let serviceTargets = 
+        services
+        |> Seq.map(fun (serviceName,_) ->
+            serviceName,"Build" + (serviceName.ToLower())
+        ) |> Map.ofSeq
+
+    "PreBuildServices" 
+        ==> serviceTargets.[serviceName]
+        ==> "BuildServices" 
+        |> ignore
+
+
+
 Target.create "Build" ignore
 Target.create "BuildCommon" ignore
 Target.create "BuildGenericImages" ignore
@@ -302,27 +316,29 @@ commonTargetName Helpers ?=> commonTargetName Web
 services
 |> Seq.iter(fun (serviceName,_) ->
     if shouldRebuildService serviceName then
-        let targetName = "Build" + (serviceName.ToLower())
-        "BuildServiceSdk" ?=> targetName |> ignore
-        "PreBuildServices" 
-            ==> targetName
-            ==> "BuildServices" 
-            |> ignore
+        setupServiceTarget serviceName
 )
+
+Target.create "ForceBuildServices" ignore
 
 if shouldRebuildServiceSdk then
     "BuildCommon" ?=> "BuildServiceSdk" |> ignore
-    "PushHobbesSdk" ?=> "BuildServiceSdk" |> ignore
-    "BuildServiceSdk" ==> "PushServiceSdk" ==> "PreBuildServices" ==> "Build" |> ignore
+    "BuildHobbesSdk" ?=> "BuildServiceSdk" |> ignore
+    "BuildServiceSdk" ==> "PushServiceSdk" ==> "Build" |> ignore
 
-if shouldRebuildHobbesSdk then    
+if shouldRebuildHobbesSdk then   
+    "BuildGenericImages" ?=> "BuildHobbesSdk" |> ignore
     "BuildHobbesSdk" ==> "PushHobbesSdk" ==> "Build" |> ignore
 
 if shouldRebuildGenericDockerImages then
-    "BuildGenericImages" ==> "PushGenericImages" ==> "BuildHobbesSdk" |> ignore
-    "PushGenericImages"  ==> "PreBuildServices" |> ignore
-    "PushGenericImages" ==> "Build" |> ignore
+    "BuildGenericImages" ==> "PushGenericImages" ==> "Build" |> ignore
 
+services
+|> Seq.iter(fun (serviceName, _) ->
+     setupServiceTarget serviceName
+)
+
+"BuildServiceSdk" ?=> "PreBuildServices" |> ignore
 "BuildServices" ==> "Build"
 "BuildCommon" ?=> "BuildWorkbench"
 "BuildWorkbench" ==> "Publish"

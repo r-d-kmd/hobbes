@@ -82,7 +82,7 @@ let changes =
     |> Seq.map(fun (_,(file : string)) ->
         let info = FileInfo file
         match info.Name with
-        "paket.dependencies" -> PaketDependencies
+        "paket.dependencies" | "paket.references" -> PaketDependencies
         | "Shared.fs" -> Shared
         | _ ->
             let dir = info.Directory

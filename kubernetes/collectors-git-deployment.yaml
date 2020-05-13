@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gitcollector
+  name: collectors-git
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gitcollector
+      app: collectors-git
   template:
     metadata:
       labels:
-        app: gitcollector
+        app: collectors-git
     spec:
       containers:
       - envFrom:

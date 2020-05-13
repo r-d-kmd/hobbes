@@ -1,5 +1,9 @@
-APPS=(db hobbes-server azuredevopscollector gitcollector uniformdata calculator configurations)
+APPS=(db hobbes-server collectors-azuredevops collectors-git uniformdata calculator configurations)
 VOLUMES=(db)
+
+function services(){
+    find ./services -name *.fsproj | rev | cut -d'/' -f1 | rev
+}
 
 function get_script_dir () {
      SOURCE="${BASH_SOURCE[0]}"

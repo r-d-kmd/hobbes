@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: azuredevopscollector
+  name: collectors-azuredevops
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: azuredevopscollector
+      app: collectors-azuredevops
   template:
     metadata:
       labels:
-        app: azuredevopscollector
+        app: collectors-azuredevops
     spec:
       containers:
       - env:

@@ -15,10 +15,6 @@ module Root =
     
     [<Get "/ping" >] 
     let ping() = 
-        //ensure the data is up and running and that all sys dbs are created
-        async {
-            do! Admin.initDatabase()
-        } |> Async.RunSynchronously
         let app = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application
         200,sprintf """{"Appversion": "%s", "runtimeFramework" : "%s", "appName" : "%s"}""" app.ApplicationVersion app.RuntimeFramework.FullName app.ApplicationName
     

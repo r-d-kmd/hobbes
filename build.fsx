@@ -194,14 +194,13 @@ let genricImages =
         "aspnet"
         "sdk"
     ]
+let serviceTargets = 
+    services
+    |> Seq.map(fun (serviceName,_) ->
+        serviceName,"Build" + (serviceName.ToLower())
+    ) |> Map.ofSeq
 
 let setupServiceTarget serviceName = 
-    let serviceTargets = 
-        services
-        |> Seq.map(fun (serviceName,_) ->
-            serviceName,"Build" + (serviceName.ToLower())
-        ) |> Map.ofSeq
-
     "PreBuildServices" 
         ==> serviceTargets.[serviceName]
         ==> "BuildServices" 
@@ -335,7 +334,8 @@ if shouldRebuildGenericDockerImages then
 
 services
 |> Seq.iter(fun (serviceName, _) ->
-     setupServiceTarget serviceName
+     serviceTargets.[serviceName]
+         ==> "ForceBuildServices" |> ignore
 )
 
 "BuildServiceSdk" ?=> "PreBuildServices" |> ignore

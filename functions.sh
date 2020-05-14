@@ -35,11 +35,9 @@ SCRIPT_DIR=$(get_script_dir)
 echo "Project home folder is: $SCRIPT_DIR"
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 
+
 function getName(){
-   local POD_NAME=$(kubectl get all \
-                        | grep -e pod/$1 -e pod/collectors-$1 \
-                        | cut -d ' ' -f 1 \
-                        | cut -d '/' -f 2)
+   local POD_NAME=$(kubectl get all | grep -e pod/$1 -e pod/collectors-$1 | cut -d ' ' -f 1 | cut -d '/' -f 2)
    echo $POD_NAME
 }
 
@@ -54,7 +52,6 @@ function getAppName(){
 
 function logs(){
     local POD_NAME=$(getName $1)
-    echo $POD_NAME
     kubectl logs $2 $POD_NAME
 }
 

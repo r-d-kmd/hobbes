@@ -275,7 +275,11 @@ namespace Hobbes.Web
                         Some t, Some o when t <= o + rowCount -> values
                         | _ -> fetch (i + rowCount) values
 
-                fetch 0 [] |> List.map parser
+                fetch 0 [] 
+                |> List.filter(fun d -> 
+                    (CouchDoc.Parse d).Id <> "default_hash"
+                ) |> List.map parser
+                
             member __.List<'a>(parser : string -> 'a, ?startKey : string, ?endKey : string, ?descending) =
                 list parser startKey endKey descending
             member __.List<'a>(parser : string -> 'a, limit, ?startKey : string, ?endKey : string, ?descending) =

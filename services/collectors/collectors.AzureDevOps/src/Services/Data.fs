@@ -42,7 +42,7 @@ module Data =
             200, (Cache.createCacheRecord key rawData).JsonValue.ToString()
         | None -> 
             404,"No data found"
-
+    
     [<Post ("/sync", true)>]
     let sync confDoc =
         let conf = parseConfiguration confDoc

@@ -14,6 +14,7 @@ let private appRouter = router {
     withArg <@ configuration @>
     withArg <@ transformation @>
     withArg <@ sources @>
+    fetch <@ collectors @>
     withBody <@ storeConfiguration @>
     withBody <@ storeTransformation @>
 } 

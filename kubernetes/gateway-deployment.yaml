@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hobbes-server
+  name: gateway
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: hobbes-server
+      app: gateway
   template:
     metadata:
       labels:
-        app: hobbes-server
+        app: gateway
     spec:
       containers:
       - envFrom:
@@ -18,7 +18,7 @@ spec:
             name: env
         imagePullPolicy: Never
         image: hobbes.server
-        name: hobbes-server
+        name: gateway
         resources: {}
       restartPolicy: Always
 status: {}

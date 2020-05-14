@@ -1,9 +1,20 @@
-APPS=(db hobbes-server collectors-azuredevops collectors-git uniformdata calculator configurations)
 VOLUMES=(db)
 
 function services(){
-    find ./services -name *.fsproj | rev | cut -d'/' -f1 | rev
+    for APP in $(find ./services -name *.fsproj | rev | cut -d'/' -f1 | rev)
+    do
+        if [[ "$APP" = hobbes.* ]] 
+        then
+            echo $APP | cut -d'.' -f 2
+        else
+           echo $APP | rev | cut -d'.' -f2- | rev | tr . -
+        fi
+    done 
+    echo "db"
 }
+
+TEMP=$(services)
+read -a APPS <<< $TEMP
 
 function get_script_dir () {
      SOURCE="${BASH_SOURCE[0]}"
@@ -26,7 +37,7 @@ KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 
 function getName(){
    local POD_NAME=$(kubectl get all \
-                        | grep pod/$1\
+                        | grep -e pod/$1 -e pod/collectors-$1 \
                         | cut -d ' ' -f 1 \
                         | cut -d '/' -f 2)
    echo $POD_NAME

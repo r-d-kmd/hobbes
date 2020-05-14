@@ -12,6 +12,17 @@ module Data =
     let configurations = Database.Database("configurations", Config.Parse, Log.loggerInstance)
     let transformations = Database.Database("transformations", TransformationRecord.Parse, Log.loggerInstance)
    
+
+    [<Get ("/sources/%s")>]
+    let sources (systemName:string) =
+        200,("\n",configurations.List()
+                 |> Seq.filter(fun config ->
+                     config.Source.Name = systemName
+                 ) |> Seq.map(fun config ->
+                    config.Source.Name
+                 ) |> Seq.distinct
+            ) |> System.String.Join
+
     [<Get ("/configuration/%s")>]
     let configuration (configurationName : string) =
         match configurations.TryGet configurationName with

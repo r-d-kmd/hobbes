@@ -17,7 +17,10 @@ module Data =
     let sources (systemName:string) =
         200,("\n",configurations.List()
                  |> Seq.filter(fun config ->
-                     config.Source.Name = systemName
+                     config.JsonValue.Properties() 
+                     |> Array.tryFind(fun (name,_) -> name = "source") 
+                     |> Option.isSome &&
+                       config.Source.Name = systemName
                  ) |> Seq.map(fun config ->
                     config.Source.Name
                  ) |> Seq.distinct

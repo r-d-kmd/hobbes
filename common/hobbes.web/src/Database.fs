@@ -133,20 +133,26 @@ namespace Hobbes.Web
                     null -> failwith "DB password not configured"
                     | pwd -> pwd
                 let rec inner() =
-                    async {
-
-                        printfn "Testing of db server is reachable on %s" databaseServerUrl
-                        
-                        try
-                            let resp = Http.Request(databaseServerUrl, 
+                    let check url =
+                        async {
+                            let resp = Http.Request(url,
+                                                    httpMethod = "HEAD", 
                                                     silentHttpErrors = true,
                                                     headers = [HttpRequestHeaders.BasicAuth dbUser dbPwd]
-                                                   ) //make sure db is up and running
+                                                   ) 
                             if resp.StatusCode <= 299 then
                                return ()
                             else 
                                do! Async.Sleep 2000
                                return! inner()
+                        }
+                    async {
+
+                        printfn "Testing of db server is reachable on %s" databaseServerUrl
+                        
+                        try
+                            do! check databaseServerUrl
+                            do! check (databaseServerUrl + "_users")
                         with e ->
                             eprintfn "Filaed to connecto to DB. Message: %s. Trace: %s" e.Message e.StackTrace
                             return! inner()

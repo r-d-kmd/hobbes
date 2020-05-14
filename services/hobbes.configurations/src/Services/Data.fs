@@ -12,19 +12,33 @@ module Data =
     let configurations = Database.Database("configurations", Config.Parse, Log.loggerInstance)
     let transformations = Database.Database("transformations", TransformationRecord.Parse, Log.loggerInstance)
    
+    let inline private listConfigurations () = 
+        configurations.List()
+        |> Seq.filter(fun config ->
+            config.JsonValue.Properties() 
+            |> Array.tryFind(fun (name,_) -> name = "source") 
+            |> Option.isSome
+        )
+
+    [<Get ("/collectors/%s")>]
+    let collectors () =
+        200,("\n",listConfigurations() 
+                  |> Seq.map(fun config ->
+                    config.Source.Name 
+                  ) |> Seq.distinct
+            ) |> System.String.Join
 
     [<Get ("/sources/%s")>]
     let sources (systemName:string) =
-        200,("\n",configurations.List()
-                 |> Seq.filter(fun config ->
-                     config.JsonValue.Properties() 
-                     |> Array.tryFind(fun (name,_) -> name = "source") 
-                     |> Option.isSome &&
-                       config.Source.Name = systemName
-                 ) |> Seq.map(fun config ->
-                    config.Source.Name
-                 ) |> Seq.distinct
+        200,("\n",listConfigurations()
+                  |> Seq.filter(fun config ->
+                        config.Source.Name = systemName
+                  ) |> Seq.map(fun config ->
+                     config.Source.JsonValue.ToString()
+                  ) |> Seq.distinct
             ) |> System.String.Join
+            |> sprintf "[%s]"
+
 
     [<Get ("/configuration/%s")>]
     let configuration (configurationName : string) =

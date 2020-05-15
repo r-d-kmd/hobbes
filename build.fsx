@@ -61,8 +61,19 @@ type CommonLib =
           | Helpers -> "helpers"
           | Web -> "web"
           | Any -> "core|helpers|web"
+type App = 
+    Worker of name:string 
+    | Service of name:string
+    with member app.NameAndType 
+           with get() = 
+                match app with
+                Worker name ->
+                    name, "worker"
+                | Service name ->
+                    name, "service"
+
 type Change =
-   Service of string
+   App of App
    | Collector of string
    | PaketDependencies
    | Shared
@@ -72,6 +83,7 @@ type Change =
 
 let dockerDir = DirectoryInfo "./docker"
 let serviceDir = DirectoryInfo("./services")
+let workerDir = DirectoryInfo("./workers")
 
 let changes =
     let coreDir = DirectoryInfo "./common/hobbes.core"
@@ -108,6 +120,13 @@ let changes =
                     .Substring(serviceDir.FullName.Length)
                 |> getName
                 |> Service
+                |> App
+            elif isBelow workerDir then
+                info.DirectoryName
+                    .Substring(serviceDir.FullName.Length)
+                |> getName
+                |> Worker
+                |> App
             else
                 File file
     ) |> Seq.distinct
@@ -124,13 +143,22 @@ let hasChanged change =
 
 let shouldRebuildGenericDockerImages = 
     hasChanged Docker
+
 let shouldRebuildHobbesSdk =
     shouldRebuildGenericDockerImages || hasChanged PaketDependencies
+
 let shouldRebuildServiceSdk =
     shouldRebuildHobbesSdk || hasChanged Shared || hasChanged (Common Any)
 
+let shouldRebuildWorkerSdk =
+    shouldRebuildHobbesSdk || hasChanged Shared || hasChanged (Common Any)
+
 let shouldRebuildService name = 
-    shouldRebuildServiceSdk || hasChanged (Service name)
+    shouldRebuildServiceSdk || hasChanged (name |> Service |> App)
+
+let shouldRebuildWorker name = 
+    shouldRebuildWorkerSdk || hasChanged (name |> Worker |> App)
+
 let rec shouldRebuildCommon = 
     function
        Web ->
@@ -175,6 +203,15 @@ let services =
         Path.GetFileNameWithoutExtension file.Name, workingDir
     )
 
+let workers = 
+    workerDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
+    |> Seq.map(fun file ->
+        let workingDir = 
+            file.Directory.Parent.FullName
+        
+        Path.GetFileNameWithoutExtension (file.Name.Split('.') |> Array.head), workingDir
+    )
+
 let buildImage context path (tag : string) =
     if File.exists path then
         let tag = dockerOrg + "/" + tag.ToLower()
@@ -194,11 +231,24 @@ let genricImages =
         "aspnet"
         "sdk"
     ]
+
+let appTargets : seq<_> -> _ = 
+    Seq.map(fun (app : App) ->
+        let name,appType = app.NameAndType         
+        name,"Build" + appType + (name.ToLower())
+    ) >> Map.ofSeq
+
 let serviceTargets = 
     services
     |> Seq.map(fun (serviceName,_) ->
-        serviceName,"Build" + (serviceName.ToLower())
-    ) |> Map.ofSeq
+        Service serviceName
+    ) |> appTargets
+
+let workerTargets = 
+    workers
+    |> Seq.map(fun (workerName,_) ->
+        Worker workerName
+    ) |> appTargets
 
 let setupServiceTarget serviceName = 
     "PreBuildServices" 
@@ -206,20 +256,19 @@ let setupServiceTarget serviceName =
         ==> "BuildServices" 
         |> ignore
 
+let setupWorkerTarget workerName = 
+    "PreBuildworkers" 
+        ==> workerTargets.[workerName]
+        ==> "Buildworkers" 
+        |> ignore
 
-
-Target.create "Build" ignore
-Target.create "BuildCommon" ignore
-Target.create "BuildGenericImages" ignore
-Target.create "PushGenericImages" ignore
-Target.create "BuildServices" ignore
-Target.create "PreBuildServices" ignore
-
-services
-|> Seq.iter(fun (serviceName,workingDir) ->
+let buildApp (app : App) workingDir =
+    let name,appType = app.NameAndType
+    let tag = name.ToLower()
     
-    let build (tag : string) = 
-        let tag = tag.ToLower()
+
+    let build _ = 
+        let buildArg = sprintf "%s=%s" (appType.ToUpper()) name
         let tags =
            let t = createDockerTag dockerOrg tag
            [
@@ -227,7 +276,7 @@ services
                t + ":" + "latest"
            ]
 
-        sprintf "build -f %s/Dockerfile.service --build-arg SERVICE_NAME=%s -t %s ." dockerDir.FullName serviceName (tag.ToLower()) 
+        sprintf "build -f %s/Dockerfile.%s --build-arg %s -t %s ." dockerDir.FullName appType buildArg (tag.ToLower()) 
         |> run "docker" workingDir
         tags
         |> List.iter(fun t -> 
@@ -235,7 +284,7 @@ services
             |> run "docker" workingDir
         )
 
-    let push (tag : string) = 
+    let push _ = 
         let tags =
            let t = createDockerTag dockerOrg (tag.ToLower())
            [
@@ -248,15 +297,35 @@ services
             printfn "Executing: $ docker %s" args
             run "docker" workingDir args
         )
-
-    let tag = serviceName.ToLower()
     
-    let buildTargetName = "Build" + tag 
-    let pushTargetName = "Push" + tag 
-    Target.create buildTargetName (fun _ -> build tag) 
-    Target.create pushTargetName (fun _ -> push tag) 
-    "PreBuildServices" ?=> buildTargetName |> ignore
+    let buildTargetName = "Build" + appType + tag 
+    let pushTargetName = "Push" + appType + tag 
+    Target.create buildTargetName build
+    Target.create pushTargetName push
+    "PreBuild" + appType + "s" ?=> buildTargetName |> ignore
     buildTargetName ==> pushTargetName |> ignore
+
+Target.create "ForceBuildServices" ignore
+Target.create "ForceBuildWorkers" ignore
+Target.create "Rebuild" ignore
+Target.create "Build" ignore
+Target.create "BuildCommon" ignore
+Target.create "BuildGenericImages" ignore
+Target.create "PushGenericImages" ignore
+Target.create "BuildServices" ignore
+Target.create "PreBuildServices" ignore
+Target.create "BuildWorkers" ignore
+Target.create "PreBuildWorkers" ignore
+
+
+
+services
+|> Seq.iter(fun (name,dir) ->
+    buildApp (Service name) dir
+) 
+workers
+|> Seq.iter(fun (name,dir) ->
+    buildApp (Worker name) dir
 ) 
 
 //Generic images
@@ -318,7 +387,11 @@ services
         setupServiceTarget serviceName
 )
 
-Target.create "ForceBuildServices" ignore
+workers
+|> Seq.iter(fun (workerName,_) ->
+    if shouldRebuildWorker workerName then
+        setupWorkerTarget workerName
+)
 
 if shouldRebuildServiceSdk then
     "BuildCommon" ?=> "BuildServiceSdk" |> ignore
@@ -338,9 +411,19 @@ services
          ==> "ForceBuildServices" |> ignore
 )
 
-"BuildServiceSdk" ?=> "PreBuildServices" |> ignore
+workers
+|> Seq.iter(fun (workerName, _) ->
+     workerTargets.[workerName]
+         ==> "ForceBuildWorkers" |> ignore
+)
+
+"BuildServiceSdk" ?=> "PreBuildServices" 
+"BuildServiceSdk" ?=> "PreBuildWorkers" 
 "BuildServices" ==> "Build"
+"BuildWorkers" ==> "Build"
 "BuildCommon" ?=> "BuildWorkbench"
 "BuildWorkbench" ==> "Publish"
+"ForceBuildServices" ==> "Rebuild"
+"ForceBuildWorkers" ==> "Rebuild"
 
 Target.runOrDefaultWithArguments "Build"

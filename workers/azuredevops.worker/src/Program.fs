@@ -11,7 +11,10 @@ open Hobbes.Web
 let factory = ConnectionFactory()
 let connection = factory.CreateConnection()
 let channel = connection.CreateModel()
-                     
+[<Literal>]
+let secondsAnHour = 3600
+[<Literal>]
+let millisecondsASecond = 1000
 let result = ref 0
 let synchronize (config : Config.Root) token =
         try
@@ -91,7 +94,8 @@ let main _ =
     let consumer = EventingBasicConsumer(channel)
     consumer.Received.AddHandler(EventHandler<BasicDeliverEventArgs>(handleMessage))
     
-    channel.BasicConsume(queueName, 
-                         autoAck = false,
-                         consumer=  consumer) |> ignore
+    while true do
+        channel.BasicConsume(queueName,false,consumer) |> ignore
+        System.Threading.Thread.Sleep(1 * (*secondsAnHour *) millisecondsASecond)
+    
     !result

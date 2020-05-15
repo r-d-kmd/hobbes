@@ -26,7 +26,7 @@ group collectors
     framework: auto-detect
     storage: none
 
-    nuget RabbitMQ.Client 
+    nuget RabbitMQ.Client
 
 group web
     source https://www.nuget.org/api/v2 

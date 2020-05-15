@@ -1,0 +1,18 @@
+FROM kmdrd/sdk:service AS build
+
+# final stage/image
+FROM kmdrd/aspnet:latest
+
+ARG WORKER_NAME
+ENV DB_SERVER_URL http://db-svc:5984
+ENV EP="dotnet ${WORKER_NAME}.worker.dll"
+ENV USER null
+ENV PASSWORD null
+ENV HOST null
+ENV PORT null
+ENV DB_SERVER_URL http://db-svc:5984
+
+WORKDIR /app
+COPY --from=build /app .
+
+ENTRYPOINT $(echo $EP)

@@ -74,7 +74,7 @@ module Reader =
 
             sprintf "https://analytics.dev.azure.com/%s/%s%s%d" account source.Project path
         try
-            match (config |> keyFromConfig) |> Rawdata.tryLatestId with
+            match (config |> keyFromConfig) |> Data.tryLatestId with
             Some workItemRevisionId -> 
                 initialUrl workItemRevisionId
             | None -> 

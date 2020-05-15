@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RelativePath Condition="$(BUILD_ENV) == 'docker'">/</RelativePath>
+    <RelativePath Condition="$(RelativePath) == ''">../../../</RelativePath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="hobbes.helpers">
+      <HintPath>$(RelativePath).lib/hobbes.helpers.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(RelativePath)/services/shared/Shared.fs" />
+    <Compile Include="Data.fs" />
+    <Compile Include="Reader.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <Import Project="$(RelativePath).paket\Paket.Restore.targets" />
+</Project>

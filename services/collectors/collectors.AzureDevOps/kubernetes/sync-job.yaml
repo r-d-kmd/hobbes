@@ -14,5 +14,5 @@ spec:
             args:
             - /bin/sh
             - -c
-            - curl -X GET http://configurations-svc:8085/sources; echo Hello from the Kubernetes cluster
+            - curl -s -X GET "http://192.168.99.100:30093/sources/azure%20devops" | rev | cut -d'[' -f1 | rev | cut -d']' -f1; echo Hello from the Kubernetes cluster
           restartPolicy: OnFailure

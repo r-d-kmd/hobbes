@@ -23,3 +23,5 @@ kubernetes/env.JSON
 .env
 kubernetes/env.yaml
 repositories/
+temp.*
+*.ignore

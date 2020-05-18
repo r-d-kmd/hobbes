@@ -4,7 +4,7 @@ open FSharp.Data
 
 module RawdataTypes =
    
-    type internal TransformationRecord = JsonProvider<"""{"_id" : "jlk", "lines" : ["","jghkhj"]}""">
+    type TransformationRecord = JsonProvider<"""{"_id" : "jlk", "lines" : ["","jghkhj"]}""">
 
     type Config = JsonProvider<"""{
             "_id" : "name",

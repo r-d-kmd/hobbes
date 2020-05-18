@@ -5,7 +5,7 @@ open Hobbes.Web
 open Hobbes.Helpers
 open Collector.AzureDevOps.Db.Rawdata
 open Collector.AzureDevOps
-open Hobbes.Shared.RawdataTypes
+open Hobbes.Web.RawdataTypes
 
 [<RouteArea ("/data", false)>]
 module Data =

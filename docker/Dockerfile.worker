@@ -1,4 +1,4 @@
-FROM kmdrd/sdk:service AS build
+FROM kmdrd/sdk:app AS build
 
 # final stage/image
 FROM kmdrd/aspnet:latest
@@ -15,4 +15,4 @@ ENV DB_SERVER_URL http://db-svc:5984
 WORKDIR /app
 COPY --from=build /app .
 
-ENTRYPOINT $(echo $EP)
+ENTRYPOINT echo $EP && $(echo $EP)

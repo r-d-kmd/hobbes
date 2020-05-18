@@ -20,7 +20,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="$(RelativePath)services/shared/Shared.fs" />
     <Compile Include="db/Transformations.fs" />
     <Compile Include="db/DataConfiguration.fs " />
     <None Include="db/documents/**/*.json">

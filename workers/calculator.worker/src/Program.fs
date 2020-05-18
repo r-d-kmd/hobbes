@@ -29,7 +29,7 @@ let handleMessage confDoc =
 
     match synchronize conf token with
     Some _ ->
-        match Http.post (Http.UniformData Http.Update) id confDoc with
+        match Http.post (Http.Configurations Http.Update) id confDoc with
         Http.Success _ -> 
             result := (0 + !result)
             if !result = 0 then

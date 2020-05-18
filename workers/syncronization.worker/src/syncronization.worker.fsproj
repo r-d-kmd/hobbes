@@ -23,7 +23,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="$(RelativePath)services/shared/Shared.fs" />
+    <Compile Include="$(RelativePath)/workers/shared/Shared.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
-  <Import Project="$(RelativePath).paket\Paket.Restore.targets" />
+  <Import Project="..\..\..\.paket\Paket.Restore.targets" />
 </Project>

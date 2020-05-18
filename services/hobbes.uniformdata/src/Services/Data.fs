@@ -2,7 +2,7 @@ namespace Hobbes.UniformData.Services
 
 open Hobbes.Web.Routing
 open Hobbes.Web
-open Hobbes.Shared.RawdataTypes
+open Hobbes.Web.RawdataTypes
 
 [<RouteArea ("/data", false)>]
 module Data =

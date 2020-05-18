@@ -54,12 +54,14 @@ type CommonLib =
     Core
     | Helpers
     | Web
+    | Workers
     | Any
     with override x.ToString() = 
           match x with
           Core -> "core"
           | Helpers -> "helpers"
           | Web -> "web"
+          | Workers -> "workers.shared"
           | Any -> "core|helpers|web"
 type App = 
     Worker of name:string 
@@ -76,7 +78,6 @@ type Change =
    App of App
    | Collector of string
    | PaketDependencies
-   | Shared
    | Docker
    | Common of CommonLib
    | File of string
@@ -89,13 +90,13 @@ let changes =
     let coreDir = DirectoryInfo "./common/hobbes.core"
     let helpersDir = DirectoryInfo "./common/hobbes.helpers"
     let webDir = DirectoryInfo "./common/hobbes.web"
+    let workersDir = DirectoryInfo "./common/hobbes.workers.shared"
     let collectorDir = DirectoryInfo("./services/collectors") 
     Fake.Tools.Git.FileStatus.getChangedFilesInWorkingCopy "." "HEAD@{1}"
     |> Seq.map(fun (_,(file : string)) ->
         let info = FileInfo file
         match info.Name with
         "paket.dependencies" | "paket.references" -> PaketDependencies
-        | "Shared.fs" -> Shared
         | _ ->
             let dir = info.Directory
             let isBelow = isBelow dir
@@ -110,6 +111,8 @@ let changes =
                 Common Helpers
             elif isBelow webDir then
                 Common Web
+            elif isBelow workersDir then
+                Common Workers
             elif isBelow collectorDir then
                 info.DirectoryName
                     .Substring(collectorDir.FullName.Length)
@@ -148,10 +151,10 @@ let shouldRebuildHobbesSdk =
     shouldRebuildGenericDockerImages || hasChanged PaketDependencies
 
 let shouldRebuildServiceSdk =
-    shouldRebuildHobbesSdk || hasChanged Shared || hasChanged (Common Any)
+    shouldRebuildHobbesSdk || hasChanged (Common Any)
 
 let shouldRebuildWorkerSdk =
-    shouldRebuildHobbesSdk || hasChanged Shared || hasChanged (Common Any)
+    shouldRebuildHobbesSdk || hasChanged (Common Any)
 
 let shouldRebuildService name = 
     shouldRebuildServiceSdk || hasChanged (name |> Service |> App)
@@ -192,6 +195,7 @@ let commons =
         Web
         Helpers
         Core
+        Workers
     ]
 
 let services = 
@@ -268,7 +272,7 @@ let buildApp (app : App) workingDir =
     
 
     let build _ = 
-        let buildArg = sprintf "%s=%s" (appType.ToUpper()) name
+        let buildArg = sprintf "%s_NAME=%s" (appType.ToUpper()) name
         let tags =
            let t = createDockerTag dockerOrg tag
            [
@@ -356,16 +360,17 @@ Target.create "PushHobbesSdk" (fun _ ->
 )
 
 Target.create "PushServiceSdk" (fun _ ->  
-    pushImage "." "sdk:service"
+    pushImage "." "sdk:app"
 )
 
 Target.create "BuildServiceSdk" (fun _ ->   
-    buildImage "." "./docker/Dockerfile.sdk-service" "sdk:service"
+    buildImage "." "./docker/Dockerfile.sdk-app" "sdk:app"
 )
 
 Target.create "BuildHobbesSdk" (fun _ ->   
         buildImage "." "./docker/Dockerfile.sdk-hobbes" "sdk:hobbes"
 )
+
 Target.create "BuildWorkbench" (fun _ -> 
         package DotNet.BuildConfiguration.Release commonLibDir  """workbench/src/hobbes.workbench.fsproj"""
 )
@@ -403,6 +408,10 @@ if shouldRebuildHobbesSdk then
     "BuildHobbesSdk" ==> "PushHobbesSdk" ==> "Build" |> ignore
 
 if shouldRebuildGenericDockerImages then
+    genricImages
+    |> List.iter(fun name ->
+        "BuildGeneric" + name ==> "BuildGenericImages" |> ignore
+    )
     "BuildGenericImages" ==> "PushGenericImages" ==> "Build" |> ignore
 
 services

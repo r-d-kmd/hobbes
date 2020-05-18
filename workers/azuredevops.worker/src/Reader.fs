@@ -3,7 +3,7 @@ namespace Readers.AzureDevOps
 open FSharp.Data
 open Readers.AzureDevOps.Data
 open Hobbes.Helpers.Environment
-open Hobbes.Shared.RawdataTypes
+open Hobbes.Web.RawdataTypes
 open Hobbes.Web
 
 module Reader =

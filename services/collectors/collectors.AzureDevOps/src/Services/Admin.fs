@@ -5,7 +5,7 @@ open Collector.AzureDevOps.Db
 open Hobbes.Web.Database
 open Hobbes.Web
 open Hobbes.Helpers
-open Hobbes.Shared.RawdataTypes
+open Hobbes.Web.RawdataTypes
 open Collector.AzureDevOps.Db.Rawdata
 
 [<RouteArea ("/admin", false)>]

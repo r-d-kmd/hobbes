@@ -1,4 +1,4 @@
-FROM kmdrd/sdk:service AS build
+FROM kmdrd/sdk:app AS build
 
 # final stage/image
 FROM kmdrd/aspnet:latest

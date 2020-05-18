@@ -3,7 +3,7 @@ namespace Readers.AzureDevOps
 
 open FSharp.Data
 open Hobbes.Web
-open Hobbes.Shared.RawdataTypes
+open Hobbes.Web.RawdataTypes
 
 module Data =
     type internal AzureDevOpsAnalyticsRecord = JsonProvider<"""{

@@ -4,7 +4,7 @@ open Hobbes.Web.Routing
 open Hobbes.Web
 open Hobbes.Web.Http
 open FSharp.Data
-open Hobbes.Shared.RawdataTypes
+open Hobbes.Web.RawdataTypes
 
 [<RouteArea ("/data", false)>]
 module Data =
@@ -22,11 +22,12 @@ module Data =
 
     [<Get ("/collectors/%s")>]
     let collectors () =
-        200,("\n",listConfigurations() 
+        200,(",",listConfigurations() 
                   |> Seq.map(fun config ->
                     config.Source.Name 
                   ) |> Seq.distinct
             ) |> System.String.Join
+            |> sprintf "[%s]"
 
     [<Get ("/sources/%s")>]
     let sources (systemName:string) =

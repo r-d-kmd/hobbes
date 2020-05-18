@@ -6,10 +6,10 @@ FROM kmdrd/aspnet:latest
 ARG WORKER_NAME
 ENV DB_SERVER_URL http://db-svc:5984
 ENV EP="dotnet ${WORKER_NAME}.worker.dll"
-ENV USER null
-ENV PASSWORD null
-ENV HOST null
-ENV PORT null
+ENV USER guest
+ENV PASSWORD guest
+ENV HOST "rabbitmq-service"
+ENV PORT 5672
 ENV DB_SERVER_URL http://db-svc:5984
 
 WORKDIR /app

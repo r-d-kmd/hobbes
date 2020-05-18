@@ -21,15 +21,9 @@ let main _ =
             | Http.Error (sc,m) -> 
                 failwithf "Failed retrievining sources. %d - %s" sc m
         ) |> Array.iter(fun source ->
-            let queueName = source.Name
+            let queue = source.Name |> Queue.Generic
             let message = source.JsonValue.ToString()
-            channel.QueueDeclare(queueName, true, false, false, null) |> ignore
-
-            let body = System.ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(message))
-            let properties = channel.CreateBasicProperties()
-            properties.Persistent <- true
-
-            channel.BasicPublish("",queueName, false,properties,body)
+            publish queue message
         )
         0
     | Http.Error(sc,m) -> 

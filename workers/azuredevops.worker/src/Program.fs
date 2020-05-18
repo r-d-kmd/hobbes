@@ -39,7 +39,7 @@ let handleMessage confDoc =
 
 [<EntryPoint>]
 let main _ =
-    watch handleMessage
+    watch Queue.AzureDevOps handleMessage
     printfn "Press enter to exit"
     let a = Console.ReadLine() 
     printfn "%s" a

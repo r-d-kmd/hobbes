@@ -10,43 +10,43 @@ open Hobbes.Web.RawdataTypes
 module Queue = 
     let private factory = ConnectionFactory()
     let private connection = factory.CreateConnection()
-    let channel = connection.CreateModel()
-    type MessageType = 
-        Syncronization of Config.Source
-        | CacheUpdated
-    let formatMessage messageType body = 
-        ""
-    let watch handler =
-        let user = 
-            match env "USER" null with
-            null -> failwith "'USER' not configured"
-            | u -> u
-        let password =
-            match env "PASSWORD" null with
-            null -> failwith "'PASSWORD' not configured"
-            | p -> p
-        let host = 
-            match env "HOST" null with
-            null -> failwith "Queue 'HOST' not configured"
-            | h -> h
-        let port = 
-            match env "PORT" null with
-            null -> failwith "Post not specified"
-            | p -> int p
+    let private channel = connection.CreateModel()
+    let private user = 
+        match env "USER" null with
+        null -> failwith "'USER' not configured"
+        | u -> u
+    let private password =
+        match env "PASSWORD" null with
+        null -> failwith "'PASSWORD' not configured"
+        | p -> p
+    let private host = 
+        match env "HOST" null with
+        null -> failwith "Queue 'HOST' not configured"
+        | h -> h
+    let private port = 
+        match env "PORT" null with
+        null -> failwith "Post not specified"
+        | p -> int p
+    
+    factory.HostName <- host
+    factory.Port <- port
+    factory.UserName <- user
+    factory.Password <- password
+    type Queue =
+        Cache
+        | AzureDevOps
+        | Git
+        | Generic of string
+        with member queue.Name 
+              with get() =
+                  match queue with
+                  Cache -> "cache"
+                  | AzureDevOps -> "azuredevops"
+                  | Git -> "git"
+                  | Generic s -> s
 
-        let workerName = 
-            match env "WORKER_NAME" null with
-            null -> "'WORKER_NAME' not set"
-            | w -> w
-        
-        
-        factory.HostName <- host
-        factory.Port <- port
-        factory.UserName <- user
-        factory.Password <- password
-        let queueName = workerName
-
-        channel.QueueDeclare(queueName,
+    let watch (queue:Queue) handler =
+        channel.QueueDeclare(queue.Name,
                              true,
                              false,
                              false,
@@ -59,4 +59,13 @@ module Queue =
                 channel.BasicAck(ea.DeliveryTag,false)
         ))
         
-        channel.BasicConsume(queueName,false,consumer) |> ignore
+        channel.BasicConsume(queue.Name,false,consumer) |> ignore
+
+    let publish (queue:Queue) (message : string) = 
+        channel.QueueDeclare(queue.Name, true, false, false, null) |> ignore
+        
+        let body = ReadOnlyMemory<byte>(Text.Encoding.UTF8.GetBytes(message))
+        let properties = channel.CreateBasicProperties()
+        properties.Persistent <- true
+
+        channel.BasicPublish("",queue.Name, false,properties,body)

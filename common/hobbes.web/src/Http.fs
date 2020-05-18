@@ -18,6 +18,7 @@ module Http =
     type ConfigurationService =
         Configuration of string option
         | Transformation of string option
+        | DependingTransformations of string
         | Collectors
         | Sources of string
         | Source
@@ -37,6 +38,8 @@ module Http =
                | Collectors -> ["collectors"]
                | Sources collector ->
                    ["sources";collector]
+               | DependingTransformations cacheKey ->
+                   ["dependingtransformations"; cacheKey]
     type CalculatorService =
         Calculate of string
         with member x.ToPath() = 

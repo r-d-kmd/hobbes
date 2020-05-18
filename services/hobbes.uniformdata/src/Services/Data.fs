@@ -3,6 +3,7 @@ namespace Hobbes.UniformData.Services
 open Hobbes.Web.Routing
 open Hobbes.Web
 open Hobbes.Web.RawdataTypes
+open Hobbes.Workers.Shared.Queue
 
 [<RouteArea ("/data", false)>]
 module Data =
@@ -41,6 +42,7 @@ module Data =
                 try
                     cacheRecord
                     |> cache.InsertOrUpdate
+                    publish Queue.Cache (cacheRecord.JsonValue.ToString())
                 with e ->
                     Log.excf e "Failed to insert %s" cacheRecord.Id
             | Http.Error(status,m) ->

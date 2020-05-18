@@ -26,6 +26,8 @@ module Data =
                   |> Seq.map(fun config ->
                     config.Source.Name 
                   ) |> Seq.distinct
+                  |> Seq.filter(fun s -> System.String.IsNullOrWhiteSpace s |> not)
+                  |> Seq.map (sprintf "%A")
             ) |> System.String.Join
             |> sprintf "[%s]"
 

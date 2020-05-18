@@ -8,9 +8,7 @@ open Hobbes.Web
 open Hobbes.Web.RawdataTypes
 
 module Queue = 
-    let private factory = ConnectionFactory()
-    let private connection = factory.CreateConnection()
-    let private channel = connection.CreateModel()
+    
     let private user = 
         match env "USER" null with
         null -> failwith "'USER' not configured"
@@ -27,11 +25,18 @@ module Queue =
         match env "PORT" null with
         null -> failwith "Post not specified"
         | p -> int p
-    
-    factory.HostName <- host
-    factory.Port <- port
-    factory.UserName <- user
-    factory.Password <- password
+
+    let private factory = ConnectionFactory()
+    let init() =
+        let connection = factory.CreateConnection()
+        let channel = connection.CreateModel()
+        
+        factory.HostName <- host
+        factory.Port <- port
+        factory.UserName <- user
+        factory.Password <- password
+        channel
+
     type Queue =
         Cache
         | AzureDevOps
@@ -46,26 +51,34 @@ module Queue =
                   | Generic s -> s
 
     let watch (queue:Queue) handler =
-        channel.QueueDeclare(queue.Name,
-                             true,
-                             false,
-                             false,
-                             null) |> ignore
+        try
+            let channel = init()
+            channel.QueueDeclare(queue.Name,
+                                 true,
+                                 false,
+                                 false,
+                                 null) |> ignore
 
-        let consumer = EventingBasicConsumer(channel)
-        consumer.Received.AddHandler(EventHandler<BasicDeliverEventArgs>(fun _ (ea : BasicDeliverEventArgs) ->
-            let msg = Encoding.UTF8.GetString(ea.Body.ToArray())
-            if handler msg then
-                channel.BasicAck(ea.DeliveryTag,false)
-        ))
-        
-        channel.BasicConsume(queue.Name,false,consumer) |> ignore
+            let consumer = EventingBasicConsumer(channel)
+            consumer.Received.AddHandler(EventHandler<BasicDeliverEventArgs>(fun _ (ea : BasicDeliverEventArgs) ->
+                let msg = Encoding.UTF8.GetString(ea.Body.ToArray())
+                if handler msg then
+                    channel.BasicAck(ea.DeliveryTag,false)
+            ))
+            
+            channel.BasicConsume(queue.Name,false,consumer) |> ignore
+         with e ->
+           eprintfn "Failed to subscribe on the queue. %s:%s@%s:%d" user password host port
 
     let publish (queue:Queue) (message : string) = 
-        channel.QueueDeclare(queue.Name, true, false, false, null) |> ignore
-        
-        let body = ReadOnlyMemory<byte>(Text.Encoding.UTF8.GetBytes(message))
-        let properties = channel.CreateBasicProperties()
-        properties.Persistent <- true
+        try
+            let channel = init()
+            channel.QueueDeclare(queue.Name, true, false, false, null) |> ignore
+            
+            let body = ReadOnlyMemory<byte>(Text.Encoding.UTF8.GetBytes(message))
+            let properties = channel.CreateBasicProperties()
+            properties.Persistent <- true
 
-        channel.BasicPublish("",queue.Name, false,properties,body)
+            channel.BasicPublish("",queue.Name, false,properties,body)
+        with e ->
+           eprintfn "Failed to publish to thethe queue. %s:%s@%s:%d" user password host port

@@ -23,8 +23,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Services/Data.fs" />
-    <Compile Include="Server.fs" />
+    <Compile Include="Data.fs" />
+    <Compile Include="Program.fs" />
   </ItemGroup>
   <Import Project="..\..\..\.paket\Paket.Restore.targets" />
 </Project>

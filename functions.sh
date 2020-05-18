@@ -1,21 +1,4 @@
 VOLUMES=(db)
-
-function services(){
-    for APP in $(find ./services -name *.fsproj | rev | cut -d'/' -f1 | rev)
-    do
-        if [[ "$APP" = hobbes.* ]] 
-        then
-            echo $APP | cut -d'.' -f 2
-        else
-           echo $APP | rev | cut -d'.' -f2- | rev | tr . -
-        fi
-    done 
-    echo "db"
-}
-
-TEMP=$(services)
-read -a APPS <<< $TEMP
-
 function get_script_dir () {
      SOURCE="${BASH_SOURCE[0]}"
      # While $SOURCE is a symlink, resolve it
@@ -30,6 +13,32 @@ function get_script_dir () {
 }
 
 SCRIPT_DIR=$(get_script_dir)
+function services(){
+    for APP in $(find ${SCRIPT_DIR}/services -name *.fsproj | rev | cut -d'/' -f1 | rev)
+    do
+        if [[ "$APP" = hobbes.* ]] 
+        then
+            echo $APP | cut -d'.' -f 2
+        else
+           echo $APP | rev | cut -d'.' -f2- | rev | tr . -
+        fi
+    done 
+    for APP in $(find ${SCRIPT_DIR}/workers -name *.fsproj | rev | cut -d'/' -f1 | rev)
+    do
+        if [[ "$APP" = *.worker.* ]] 
+        then
+            echo $APP | cut -d'.' -f 1
+        else
+           echo $APP | rev | cut -d'.' -f2- | rev | tr . -
+        fi
+    done 
+    echo "db"
+}
+
+TEMP=$(services)
+read -a APPS <<< $TEMP
+
+
 
 #SCRIPT_DIR="$(echo "$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
 echo "Project home folder is: $SCRIPT_DIR"

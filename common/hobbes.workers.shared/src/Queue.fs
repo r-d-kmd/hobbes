@@ -28,14 +28,18 @@ module Queue =
 
     let private factory = ConnectionFactory()
     let init() =
-        let connection = factory.CreateConnection()
-        let channel = connection.CreateModel()
-        
-        factory.HostName <- host
-        factory.Port <- port
-        factory.UserName <- user
-        factory.Password <- password
-        channel
+        try
+            let connection = factory.CreateConnection()
+            let channel = connection.CreateModel()
+            
+            factory.HostName <- host
+            factory.Port <- port
+            factory.UserName <- user
+            factory.Password <- password
+            channel
+        with _ ->
+            eprintf "Failed to initialize queue. %s:%s@%s:%d" user password host port
+            reraise()
 
     type Queue =
         Cache

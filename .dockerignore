@@ -1,4 +1,3 @@
-build.fsx.lock
 .config/
 .fake/
 .ionide/
@@ -16,8 +15,10 @@ workers/
 .gitignore
 appveyor.yml
 build.fsx
+build.fsx.lock
 buildfsx.lock
 functions.sh
 hobbes.sln
 installatin.md
+paket.exe
 README.md

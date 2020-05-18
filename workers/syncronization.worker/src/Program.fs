@@ -3,7 +3,7 @@ open System.Text
 open Hobbes.Helpers.Environment
 open Hobbes.Web.RawdataTypes
 open Hobbes.Web
-open Hobbes.Workers.Shared
+open Hobbes.Workers.Shared.Queue
 
 type CollectorList = FSharp.Data.JsonProvider<"""["azure devops","git"]""">
 type SourceList = FSharp.Data.JsonProvider<"""[{
@@ -19,7 +19,7 @@ let main _ =
             Http.Success sources ->
                 sources
             | Http.Error (sc,m) -> 
-                failwith "Failed retrievining sources. %d - %s" sc m
+                failwithf "Failed retrievining sources. %d - %s" sc m
         ) |> Array.iter(fun source ->
             let queueName = source.Name
             let message = source.JsonValue.ToString()
@@ -29,8 +29,8 @@ let main _ =
             let properties = channel.CreateBasicProperties()
             properties.Persistent <- true
 
-            channel.BasicPublish("",queueName, properties,body)
+            channel.BasicPublish("",queueName, false,properties,body)
         )
+        0
     | Http.Error(sc,m) -> 
-        failwith "Failed retrievining collectors. %d - %s" sc m
-    0
+        failwithf "Failed retrievining collectors. %d - %s" sc m

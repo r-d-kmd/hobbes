@@ -16,9 +16,10 @@ let handleMessage message =
     let data = cache.Get calculationMessage.CalculationSource
     match Http.get (calculationMessage.TransformationName |> Some |> Http.Transformation |> Http.Configurations) id  with
     Http.Success transformation ->
-        ()
+        failwith "Not implemented yet"
     | Http.Error(sc,m) ->
-        failwithf "Calculation failed. Couldn't get transformation. %d - %s" sc m
+        eprintfn "Calculation failed. Couldn't get transformation. %d - %s" sc m
+        false
 [<EntryPoint>]
 let main _ =
     Hobbes.Workers.Shared.Queue.watch handleMessage

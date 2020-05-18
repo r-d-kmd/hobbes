@@ -5,8 +5,8 @@ open Readers.AzureDevOps.Data
 open Hobbes.Web.RawdataTypes
 open Readers.AzureDevOps
 open Hobbes.Web
+open Hobbes.Workers.Shared.Queue
 
-let result = ref 0
 let synchronize (config : Config.Root) token =
         try
             let statusCode, body = Reader.sync token config
@@ -27,26 +27,20 @@ let handleMessage confDoc =
         else
             env "AZURE_TOKEN_TIME_PAYROLL_KMDDK" null
 
-    match synchronize conf token with
-    Some _ ->
+    synchronize conf token
+    |> Option.bind(fun _ ->
         match Http.post (Http.UniformData Http.Update) id confDoc with
         Http.Success _ -> 
-            result := (0 + !result)
-            if !result = 0 then
-                channel.BasicAck(
-                       deliveryTag = ea.DeliveryTag,
-                       multiple = false
-                )
+           Some true
         | Http.Error(status,msg) -> 
             eprintfn "Upload to uniform data failed. %s" msg
-            result := status
-    | None -> 
-        result := 1
+            None
+    ) |> Option.isSome
 
 [<EntryPoint>]
 let main _ =
-    Hobbes.Workers.Shared.watch handleMessage
+    watch handleMessage
     printfn "Press enter to exit"
     let a = Console.ReadLine() 
     printfn "%s" a
-    !result
+    0

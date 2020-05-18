@@ -1,11 +1,9 @@
 namespace Hobbes.Calculator.Services
 
-open Hobbes.Web.Routing
 open Hobbes.Web
 open Hobbes.Web.Http
 open Hobbes.Web.RawdataTypes
 
-[<RouteArea ("/data", false)>]
 module Data =
     
     let cache = Cache.Cache("transformation")
@@ -66,7 +64,7 @@ module Data =
                 )
                 
 
-    [<Get ("/calculate/%s")>]
+    
     let calculate configurationName =
         match configurationName
               |> getConfiguration with
@@ -94,6 +92,6 @@ module Data =
         | Error(e,m) -> 
             e,m
 
-    [<Get "/ping">]
+    
     let ping () =
         200, "ping - UniformData"

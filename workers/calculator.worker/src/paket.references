@@ -1,5 +1,7 @@
 FSharp.Core
-
+group core
+    Deedle
+    
 group web
     FSharp.Data
 

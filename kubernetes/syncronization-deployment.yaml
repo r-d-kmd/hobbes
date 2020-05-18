@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: syncronization
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: syncronization
+  template:
+    metadata:
+      labels:
+        app: syncronization
+    spec:
+      containers:
+      - env:
+        imagePullPolicy: Never
+        image: syncronization
+        name: hobbes-syncronization
+        envFrom:
+        - secretRef:
+            name: env
+      restartPolicy: Always
+status: {}

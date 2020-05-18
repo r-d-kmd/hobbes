@@ -175,3 +175,8 @@ function awaitRunningState(){
     done
     all
 }
+
+function run(){
+    setenv
+    kubectl run -i --tty temp-$1 --image kmdrd/$1 
+}

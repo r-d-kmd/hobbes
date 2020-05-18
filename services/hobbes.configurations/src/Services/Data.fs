@@ -20,7 +20,7 @@ module Data =
             |> Option.isSome
         )
 
-    [<Get ("/collectors/%s")>]
+    [<Get ("/collectors")>]
     let collectors () =
         200,(",",listConfigurations() 
                   |> Seq.map(fun config ->

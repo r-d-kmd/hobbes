@@ -20,6 +20,10 @@ open Fake.Core
 open Fake.DotNet
 open Fake.IO
 
+
+let force = 
+    (Environment.environVarOrDefault "force-all" null) |> isNull |> not
+
 let dockerOrg = "kmdrd"
 let run command workingDir args = 
     let arguments = 
@@ -136,7 +140,8 @@ let changes =
 
 
 let hasChanged change = 
-    changes |> Seq.tryFind (function
+    force
+    || changes |> Seq.tryFind (function
                               Common c ->
                                   match change with
                                   Common Any -> true
@@ -369,7 +374,7 @@ Target.create "PushServiceSdk" (fun _ ->
     pushImage "." "sdk:app"
 )
 
-Target.create "BuildServiceSdk" (fun _ ->   
+Target.create "BuildAppSdk" (fun _ ->   
     buildImage "." "./docker/Dockerfile.sdk-app" "sdk:app"
 )
 
@@ -406,9 +411,9 @@ workers
 )
 
 if shouldRebuildAppSdk then
-    "BuildCommon" ?=> "BuildServiceSdk" |> ignore
-    "BuildHobbesSdk" ?=> "BuildServiceSdk" |> ignore
-    "BuildServiceSdk" ==> "PushServiceSdk" ==> "Build" |> ignore
+    "BuildCommon" ?=> "BuildAppSdk" |> ignore
+    "BuildHobbesSdk" ?=> "BuildAppSdk" |> ignore
+    "BuildAppSdk" ==> "PushServiceSdk" ==> "Build" |> ignore
 
 if shouldRebuildHobbesSdk then   
     "BuildGenericImages" ?=> "BuildHobbesSdk" |> ignore
@@ -433,11 +438,12 @@ workers
          ==> "ForceBuildWorkers" |> ignore
 )
 
-"BuildServiceSdk" ?=> "PreBuildServices" 
-"BuildServiceSdk" ?=> "PreBuildWorkers" 
+"BuildAppSdk" ?=> "PreBuildServices" 
+"BuildAppSdk" ?=> "PreBuildWorkers" 
 "BuildServices" ==> "Build"
 "BuildWorkers" ==> "Build"
 "BuildCommon" ?=> "BuildWorkbench"
+"BuildCommon" ?=> "BuildAppSdk"
 "BuildWorkbench" ==> "Publish"
 "ForceBuildServices" ==> "Rebuild"
 "ForceBuildWorkers" ==> "Rebuild"

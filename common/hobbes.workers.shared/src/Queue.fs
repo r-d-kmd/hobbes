@@ -80,5 +80,5 @@ module Queue =
             properties.Persistent <- true
 
             channel.BasicPublish("",queue.Name, false,properties,body)
-        with e ->
+        with e -> 
            eprintfn "Failed to publish to thethe queue. %s:%s@%s:%d" user password host port

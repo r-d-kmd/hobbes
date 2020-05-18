@@ -148,14 +148,17 @@ namespace Hobbes.Web
                         }
                     async {
 
-                        printfn "Testing of db server is reachable on %s" databaseServerUrl
+                        printfn "Testing of db server is reachable on [%s]" databaseServerUrl
                         
                         try
                             do! check databaseServerUrl
                             do! check (databaseServerUrl + "_users")
-                        with e ->
-                            eprintfn "Filaed to connecto to DB. Message: %s. Trace: %s" e.Message e.StackTrace
-                            return! inner()
+                        with
+                            :? System.UriFormatException as e ->
+                                failwithf "Uri (%s) format exception Message: %s. Trace: %s" databaseServerUrl e.Message e.StackTrace
+                            | e ->
+                                eprintfn "Failed to connecto to DB. Message: %s. Trace: %s" e.Message e.StackTrace
+                                return! inner()
                     }
                 do! inner()
                 return databaseServerUrl,dbUser,dbPwd

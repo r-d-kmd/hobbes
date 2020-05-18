@@ -9,14 +9,11 @@ kubernetes/
 packages/
 packaging/
 paket-files/
-services/collectors/
-services/hobbes.calculator/
-services/hobbes.configurations/
-services/hobbes.qtest/
-services/hobbes.server/
-services/hobbes.uniformdata/
+services/
 workbench/
+workers/
 .dockerignore
+.gitignore
 appveyor.yml
 build.fsx
 buildfsx.lock

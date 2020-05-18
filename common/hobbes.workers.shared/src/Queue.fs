@@ -55,7 +55,8 @@ module Queue =
         let consumer = EventingBasicConsumer(channel)
         consumer.Received.AddHandler(EventHandler<BasicDeliverEventArgs>(fun _ (ea : BasicDeliverEventArgs) ->
             let msg = Encoding.UTF8.GetString(ea.Body.ToArray())
-            handler msg)
-        )
+            if handler msg then
+                channel.BasicAck(ea.DeliveryTag,false)
+        ))
         
         channel.BasicConsume(queueName,false,consumer) |> ignore

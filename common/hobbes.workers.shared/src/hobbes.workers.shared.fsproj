@@ -5,6 +5,14 @@
     <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
+   <ItemGroup>
+    <Reference Include="hobbes.helpers">
+      <HintPath>../../../.lib/hobbes.helpers.dll</HintPath>
+    </Reference>
+    <Reference Include="hobbes.web">
+      <HintPath>../../../.lib/hobbes.web.dll</HintPath>
+    </Reference>
+  </ItemGroup>
   <ItemGroup>
     <Compile Include="Queue.fs" />
   </ItemGroup>

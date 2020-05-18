@@ -15,15 +15,14 @@
     <Reference Include="hobbes.web">
       <HintPath>$(RelativePath).lib/hobbes.web.dll</HintPath>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="hobbes.helpers">
       <HintPath>$(RelativePath).lib/hobbes.helpers.dll</HintPath>
     </Reference>
+    <Reference Include="hobbes.workers.shared">
+      <HintPath>$(RelativePath).lib/hobbes.workers.shared.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="$(RelativePath)services/shared/Shared.fs" />
-    <Compile Include="$(RelativePath)/workers/shared/Shared.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <Import Project="..\..\..\.paket\Paket.Restore.targets" />

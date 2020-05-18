@@ -4,9 +4,6 @@ open RabbitMQ.Client.Events
 open System
 open System.Text
 open Hobbes.Helpers.Environment
-open Readers.AzureDevOps.Data
-open Hobbes.Web.RawdataTypes
-open Readers.AzureDevOps
 open Hobbes.Web
 open Hobbes.Web.RawdataTypes
 
@@ -18,6 +15,7 @@ module Queue =
         Syncronization of Config.Source
         | CacheUpdated
     let formatMessage messageType body = 
+        ""
     let watch handler =
         let user = 
             match env "USER" null with

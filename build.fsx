@@ -143,34 +143,40 @@ let hasChanged change =
                                   | Common c' when c' = c -> true
                                   | _ -> false
                               | c -> c = change) |> Option.isSome
-
+let rec shouldRebuildCommon = 
+    function
+       Web ->
+           //Web depends Helpers
+           shouldRebuildCommon Helpers || (Web |> Common |> hasChanged)
+       | Workers -> shouldRebuildCommon Web || (Workers |> Common |> hasChanged)
+       | common ->
+            common
+            |> Common
+            |> hasChanged
 let shouldRebuildGenericDockerImages = 
     hasChanged Docker
 
 let shouldRebuildHobbesSdk =
     shouldRebuildGenericDockerImages || hasChanged PaketDependencies
 
-let shouldRebuildServiceSdk =
-    shouldRebuildHobbesSdk || hasChanged (Common Any)
-
-let shouldRebuildWorkerSdk =
+let shouldRebuildAppSdk =
     shouldRebuildHobbesSdk || hasChanged (Common Any)
 
 let shouldRebuildService name = 
-    shouldRebuildServiceSdk || hasChanged (name |> Service |> App)
+    [
+        Helpers
+        Web
+        Core
+    ] |> List.map shouldRebuildCommon
+    |> List.reduce (||)
+    || shouldRebuildAppSdk 
+    || hasChanged (name |> Service |> App)
 
 let shouldRebuildWorker name = 
-    shouldRebuildWorkerSdk || hasChanged (name |> Worker |> App)
+    shouldRebuildCommon Workers
+    || shouldRebuildAppSdk 
+    || hasChanged (name |> Worker |> App)
 
-let rec shouldRebuildCommon = 
-    function
-       Web ->
-           //Web depends Helpers
-           shouldRebuildCommon Helpers || (Web |> Common |> hasChanged)
-       | common ->
-            common
-            |> Common
-            |> hasChanged
 //Set to 'Normal' to have more information when trouble shooting 
 let verbosity = Quiet
     
@@ -383,6 +389,7 @@ commons |> List.iter(fun common ->
     if shouldRebuildCommon common then 
         let targetName = commonTargetName common
         targetName ==> "BuildCommon" |> ignore
+        targetName ==> "Build" |> ignore
 )
 commonTargetName Helpers ?=> commonTargetName Web 
 
@@ -398,7 +405,7 @@ workers
         setupWorkerTarget workerName
 )
 
-if shouldRebuildServiceSdk then
+if shouldRebuildAppSdk then
     "BuildCommon" ?=> "BuildServiceSdk" |> ignore
     "BuildHobbesSdk" ?=> "BuildServiceSdk" |> ignore
     "BuildServiceSdk" ==> "PushServiceSdk" ==> "Build" |> ignore
@@ -434,5 +441,8 @@ workers
 "BuildWorkbench" ==> "Publish"
 "ForceBuildServices" ==> "Rebuild"
 "ForceBuildWorkers" ==> "Rebuild"
+"BuildCommonHelpers" 
+    ?=> "buildcommonweb" 
+    ?=> "buildcommonworkers.shared"
 
 Target.runOrDefaultWithArguments "Build"

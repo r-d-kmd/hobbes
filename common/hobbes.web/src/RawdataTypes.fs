@@ -6,7 +6,7 @@ module RawdataTypes =
    
     type internal TransformationRecord = JsonProvider<"""{"_id" : "jlk", "lines" : ["","jghkhj"]}""">
 
-    type internal Config = JsonProvider<"""{
+    type Config = JsonProvider<"""{
             "_id" : "name",
             "source" : {
                 "name" : "azuredevops",
@@ -24,7 +24,7 @@ module RawdataTypes =
              "rows" : [["dsfsd","kjlk"],[2.0,1.3]],
              "rowCount" : 2
         }"""
-    type internal DataResult = JsonProvider<DataResultString>
+    type DataResult = JsonProvider<DataResultString>
 
     let keyFromSource (source : Config.Source) = 
         source.JsonValue.ToString()

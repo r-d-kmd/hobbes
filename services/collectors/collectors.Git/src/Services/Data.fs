@@ -37,7 +37,7 @@ module Data =
     let read confDoc =
         let conf = Config.Parse confDoc
         let dataset = conf.Dataset.ToLower()
-        let key = confDoc |> Hobbes.Shared.RawdataTypes.keyFromConfigDoc
+        let key = confDoc |> Hobbes.Web.RawdataTypes.keyFromConfigDoc
         let columnNames,rows =
             match dataset with
             "commits" -> 

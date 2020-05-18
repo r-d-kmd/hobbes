@@ -18,6 +18,8 @@ module Http =
     type ConfigurationService =
         Configuration of string option
         | Transformation of string option
+        | Collectors
+        | Sources of string
         | Source
         with member x.ToPath() =
                match x with
@@ -32,6 +34,9 @@ module Http =
                      None -> []
                      | Some key -> [key]
                | Source -> ["source"]
+               | Collectors -> ["collectors"]
+               | Sources collector ->
+                   ["sources";collector]
     type CalculatorService =
         Calculate of string
         with member x.ToPath() = 

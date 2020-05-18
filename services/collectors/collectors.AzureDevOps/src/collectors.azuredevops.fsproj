@@ -17,7 +17,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="$(RelativePath)services/shared/Shared.fs" />
     <Compile Include="db/Rawdata.fs" />
     <Compile Include="Reader.fs" />
     <None Include="db/documents/*.json">

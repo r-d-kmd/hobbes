@@ -20,7 +20,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="$(RelativePath)services/shared/Shared.fs" />
     <None Include="db/documents/*.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

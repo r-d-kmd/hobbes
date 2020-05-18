@@ -1,4 +1,4 @@
-namespace Hobbes.Shared
+namespace Hobbes.Web
 
 open FSharp.Data
 

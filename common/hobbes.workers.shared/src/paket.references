@@ -1,0 +1,7 @@
+FSharp.Core
+
+group web
+    FSharp.Data
+
+group collectors
+    RabbitMQ.Client

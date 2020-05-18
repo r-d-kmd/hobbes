@@ -1,62 +1,36 @@
-open RabbitMQ.Client
-open RabbitMQ.Client.Events
+
 open System.Text
 open Hobbes.Helpers.Environment
-open Hobbes.Shared.RawdataTypes
+open Hobbes.Web.RawdataTypes
 open Hobbes.Web
+open Hobbes.Workers.Shared
 
-let factory = ConnectionFactory()
-let connection = factory.CreateConnection()
-let channel = connection.CreateModel()
-
-[<Literal>]
-let SecondsAnHour = 3600
-[<Literal>]
-let MillisecondsASecond = 1000
-
-let user = 
-    match env "USER" null with
-    null -> failwith "'USER' not configured"
-    | u -> u
-let password =
-    match env "PASSWORD" null with
-    null -> failwith "'PASSWORD' not configured"
-    | p -> p
-let host = 
-    match env "HOST" null with
-    null -> failwith "Queue 'HOST' not configured"
-    | h -> h
-let port = 
-    match env "PORT" null with
-    null -> failwith "Post not specified"
-    | p -> int p
-
-let workerName = 
-    match env "WORKER_NAME" null with
-    null -> "'WORKER_NAME' not set"
-    | w -> w
-
-
-factory.HostName <- host
-factory.Port <- port
-factory.UserName <- user
-factory.Password <- password
-
+type CollectorList = FSharp.Data.JsonProvider<"""["azure devops","git"]""">
+type SourceList = FSharp.Data.JsonProvider<"""[{
+                      "name": "azure devops"
+                    },{"name" : "git"}]""">
 [<EntryPoint>]
 let main _ =
-    let queueName = ""
-    let message = """{
-          "name": "azure devops",
-          "account": "kmddk",
-          "project": "flowerpot"
-        }"""
+    match Http.get (Http.Configurations Http.Collectors) CollectorList.Parse  with
+    Http.Success collectors ->
+        collectors
+        |> Array.collect(fun collector ->
+            match Http.get (Http.Configurations (Http.Sources collector)) SourceList.Parse  with
+            Http.Success sources ->
+                sources
+            | Http.Error (sc,m) -> 
+                failwith "Failed retrievining sources. %d - %s" sc m
+        ) |> Array.iter(fun source ->
+            let queueName = source.Name
+            let message = source.JsonValue.ToString()
+            channel.QueueDeclare(queueName, true, false, false, null) |> ignore
 
+            let body = System.ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(message))
+            let properties = channel.CreateBasicProperties()
+            properties.Persistent <- true
 
-    channel.QueueDeclare(queueName, true, false, false, null) |> ignore
-    
-    let body = System.ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(message))
-    let properties = channel.CreateBasicProperties()
-    properties.Persistent <- true
-
-    channel.BasicPublish("",queueName, properties,body)
+            channel.BasicPublish("",queueName, properties,body)
+        )
+    | Http.Error(sc,m) -> 
+        failwith "Failed retrievining collectors. %d - %s" sc m
     0

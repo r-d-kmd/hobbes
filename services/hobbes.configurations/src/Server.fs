@@ -13,6 +13,7 @@ let private appRouter = router {
     fetch <@ ping @>
     withArg <@ configuration @>
     withArg <@ transformation @>
+    withArg <@ dependingTransformations @>
     withArg <@ sources @>
     fetch <@ collectors @>
     withBody <@ storeConfiguration @>

@@ -120,7 +120,7 @@ function describe(){
 }
 
 function listServices(){
-    minikube service list
+    minikube service list 
 }
 
 function start() {

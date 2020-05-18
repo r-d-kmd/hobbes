@@ -1,8 +1,0 @@
-group core
-    Deedle
-
-group web
-    Saturn
-    Giraffe
-    FSharp.Data
-    Microsoft.Extensions.PlatformAbstractions

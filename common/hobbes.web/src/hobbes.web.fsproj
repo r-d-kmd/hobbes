@@ -5,9 +5,15 @@
     <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
-   <ItemGroup>
-     <Reference Include="hobbes.helpers">
-      <HintPath>../../../.lib/hobbes.helpers.dll</HintPath>
+   <PropertyGroup>
+    <RelativePath Condition="$(BUILD_ENV) == 'docker'">/</RelativePath>
+    <RelativePath Condition="$(RelativePath) == ''">../../../docker/</RelativePath>
+    <CommonLibPath Condition="$(BUILD_ENV) == 'docker'">$(RelativePath).lib/</CommonLibPath>
+    <CommonLibPath Condition="$(CommonLibPath) == ''">$(RelativePath).lib/</CommonLibPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="hobbes.helpers">
+      <HintPath>$(CommonLibPath)hobbes.helpers.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

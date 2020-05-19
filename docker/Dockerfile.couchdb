@@ -1,2 +1,2 @@
 FROM couchdb
-COPY ./docker/default.ini /opt/couchdb/etc/default.ini
+COPY ./default.ini /opt/couchdb/etc/default.ini

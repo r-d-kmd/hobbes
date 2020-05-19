@@ -2,16 +2,20 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RelativePath Condition="$(BUILD_ENV) == 'docker'">/</RelativePath>
+    <RelativePath Condition="$(RelativePath) == ''">../../../docker/</RelativePath>
+    <CommonLibPath Condition="$(BUILD_ENV) == 'docker'">$(RelativePath).lib/</CommonLibPath>
+    <CommonLibPath Condition="$(CommonLibPath) == ''">$(RelativePath).lib/</CommonLibPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="hobbes.core">
-      <HintPath>../../.lib/hobbes.core.dll</HintPath>
+      <HintPath>$(CommonLibPath)hobbes.helpers.dll</HintPath>
     </Reference>
     <Reference Include="hobbes.helpers">
-      <HintPath>../../.lib/hobbes.helpers.dll</HintPath>
+      <HintPath>$(CommonLibPath)hobbes.helpers.dll</HintPath>
     </Reference>
     <Reference Include="hobbes.web">
-      <HintPath>../../.lib/hobbes.web.dll</HintPath>
+      <HintPath>$(CommonLibPath)hobbes.web.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

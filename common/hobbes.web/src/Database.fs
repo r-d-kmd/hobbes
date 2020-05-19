@@ -289,9 +289,9 @@ namespace Hobbes.Web
                 (listResult startKey endKey (Some limit) descending None).Rows
                 |> Array.map(fun entry -> entry.Value.ToString() |> parser)
 
-        and Database<'a> private (databaseName, parser : string -> 'a, log : ILog, dbServerUrl : string) =
+        and Database<'a> (databaseName, parser : string -> 'a, log : ILog) =
             let mutable _views : Map<string,View> = Map.empty
-
+            let dbServerUrl = "http://db-svc:5985"
             let request httpMethod isTrial body path rev queryString =
                 let enc (s : string) = System.Web.HttpUtility.UrlEncode s           
 
@@ -508,10 +508,6 @@ namespace Hobbes.Web
             member __.Exists with get() =
                 let status = tryGet [] None |> fst
                 status > 199 && status < 300
-
-            
-            new(databaseName, parser, log) = Database(databaseName, parser, log, env "DB_SERVER_URL" null)
-
 
           
         let users = Database ("_users", UserRecord.Parse, consoleLogger)

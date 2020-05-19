@@ -25,3 +25,4 @@ kubernetes/env.yaml
 repositories/
 temp.*
 *.ignore
+docker/tmp

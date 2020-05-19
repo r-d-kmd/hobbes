@@ -3,6 +3,6 @@ FROM kmdrd/${SDK_ENV}
 
 ENV BUILD_ENV docker
 
-COPY paket.lock paket.dependencies ./
-COPY /.paket /.paket
+COPY tmp/paket.lock tmp/paket.dependencies ./
+COPY tmp/.paket /.paket
 RUN mono /.paket/paket.exe restore 

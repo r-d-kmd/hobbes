@@ -8,7 +8,7 @@ ARG WORKER_NAME
 ENV EP="dotnet ${WORKER_NAME}.worker.dll"
 ENV USER guest
 ENV PASSWORD guest
-ENV HOST "rabbitmq-service.default.svc.cluster.local"
+ENV HOST "rabbitmq-service"
 ENV PORT 5672
 
 

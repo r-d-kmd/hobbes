@@ -14,7 +14,7 @@ namespace Hobbes.Web
         abstract Debugf<'a> : LogFormatter<'a> -> 'a
         
     module Database =
-        let ServerUrl = "http://db-svc:5984"
+        let ServerUrl = "http://db-svc:5984/"
         open FSharp.Core.Printf
         let now() =  System.DateTime.Now.ToString()
         let printer = fun s -> printfn "%s - %s" (now()) s
@@ -119,6 +119,12 @@ namespace Hobbes.Web
                 Offset : int
                 Rows : 'a []
             }
+
+        let readBody = 
+                function
+                    | Binary b -> System.Text.Encoding.ASCII.GetString b
+                    | Text t -> t
+            
         let awaitDbServer() =
             async {
                 let dbUser = 
@@ -133,41 +139,39 @@ namespace Hobbes.Web
                 let rec inner() =
                     let check url =
                         async {
-                            let resp = Http.Request(url,
-                                                    httpMethod = "HEAD", 
-                                                    silentHttpErrors = true,
-                                                    headers = [HttpRequestHeaders.BasicAuth dbUser dbPwd]
-                                                   ) 
-                            if resp.StatusCode <= 299 then
-                               return ()
-                            else 
-                               do! Async.Sleep 2000
-                               return! inner()
+                            try
+                                let! resp = Http.AsyncRequest(
+                                                        url,
+                                                        httpMethod = "HEAD", 
+                                                        silentHttpErrors = true,
+                                                        headers = [HttpRequestHeaders.BasicAuth dbUser dbPwd]
+                                                       ) 
+                                
+                                if resp.StatusCode > 299 then
+                                   eprintfn "Error checking [%s]. %d - %s" url resp.StatusCode (resp.Body |> readBody)
+                                   do! Async.Sleep 2000
+                                   return! inner()
+                             with
+                            :? System.UriFormatException as e ->
+                                failwithf "Uri (%s) format exception Message: %s. Trace: %s" url e.Message e.StackTrace
+                            | e ->
+                                eprintfn "Failed to connecto to DB. Message: %s. Trace: %s" e.Message e.StackTrace
+                                return! inner()
                         }
                     async {
 
                         printfn "Testing of db server is reachable on [%s]" ServerUrl
                         
-                        try
-                            do! check ServerUrl
-                            do! check (ServerUrl + "_users")
-                        with
-                            :? System.UriFormatException as e ->
-                                failwithf "Uri (%s) format exception Message: %s. Trace: %s" ServerUrl e.Message e.StackTrace
-                            | e ->
-                                eprintfn "Failed to connecto to DB. Message: %s. Trace: %s" e.Message e.StackTrace
-                                return! inner()
+                        do! check ServerUrl
+                        do! check (ServerUrl + "_users")
+                        
                     }
                 do! inner()
                 return ServerUrl,dbUser,dbPwd
             }
 
         let rec initDatabases databaseToBeInitialized =
-            let readBody = 
-                function
-                    | Binary b -> System.Text.Encoding.ASCII.GetString b
-                    | Text t -> t
-            
+           
             async {
                 let httpMethod = "PUT"
                 let! databaseServerUrl,dbUser,dbPwd = awaitDbServer()

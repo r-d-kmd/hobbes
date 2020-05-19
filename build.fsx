@@ -53,6 +53,8 @@ let isBelow info (dir: DirectoryInfo) =
         else
            inner info.Parent
     inner info
+
+[<RequireQualifiedAccess>]
 type CommonLib = 
     Core
     | Helpers
@@ -66,6 +68,7 @@ type CommonLib =
           | Web -> "web"
           | Workers -> "workers.shared"
           | Any -> "core|helpers|web"
+
 type App = 
     Worker of name:string 
     | Service of name:string
@@ -76,11 +79,13 @@ type App =
                     name, "worker"
                 | Service name ->
                     name, "service"
+[<RequireQualifiedAccess>]
 type DockerStage =
      Generic
      | BaseSdk
      | AppSdk
      | Other
+
 type Change =
    App of App
    | PaketDependencies
@@ -121,13 +126,13 @@ let changes =
             elif isBelow commonDir then
                 let cm = 
                     if isBelow coreDir then
-                        Core
+                        CommonLib.Core
                     elif isBelow helpersDir then
-                        Helpers
+                        CommonLib.Helpers
                     elif isBelow webDir then
-                        Web
+                        CommonLib.Web
                     elif isBelow workersSharedDir then
-                        Workers
+                        CommonLib.Workers
                     else
                         failwithf "Common not known %s" file
                 Common cm
@@ -152,17 +157,17 @@ let hasChanged change =
     force || changes |> Seq.tryFind (function
                               Common c ->
                                   match change with
-                                  Common Any -> true
+                                  Common CommonLib.Any -> true
                                   | Common c' when c' = c -> true
                                   | _ -> false
                               | c -> c = change) |> Option.isSome
      
 let rec shouldRebuildCommon = 
     function
-       Web ->
+       CommonLib.Web ->
            //Web depends on Helpers
-           shouldRebuildCommon Helpers || (Web |> Common |> hasChanged)
-       | Workers -> shouldRebuildCommon Web || (Workers |> Common |> hasChanged)
+           shouldRebuildCommon CommonLib.Helpers || (CommonLib.Web |> Common |> hasChanged)
+       | CommonLib.Workers -> shouldRebuildCommon CommonLib.Web || (CommonLib.Workers |> Common |> hasChanged)
        | common ->
             common
             |> Common
@@ -171,33 +176,33 @@ let rec shouldRebuildCommon =
 let hasDockerStageChanged ds = 
     Docker ds |> hasChanged
 let shouldRebuildGenericDockerImages = 
-    hasDockerStageChanged Generic
+    hasDockerStageChanged DockerStage.Generic
 
 let shouldRebuildDependencies = 
     hasChanged PaketDependencies
 
 let shouldRebuildHobbesSdk =
     shouldRebuildGenericDockerImages 
-    || hasDockerStageChanged BaseSdk
+    || hasDockerStageChanged DockerStage.BaseSdk
     || shouldRebuildDependencies 
 
 let shouldRebuildAppSdk =
     shouldRebuildHobbesSdk 
-    || hasDockerStageChanged AppSdk
-    || hasChanged (Common Any) 
+    || hasDockerStageChanged DockerStage.AppSdk
+    || hasChanged (Common CommonLib.Any) 
 
 let shouldRebuildService name = 
     [
-        Helpers
-        Web
-        Core
+        CommonLib.Helpers
+        CommonLib.Web
+        CommonLib.Core
     ] |> List.map shouldRebuildCommon
     |> List.reduce (||)
     || shouldRebuildAppSdk 
     || hasChanged (name |> Service |> App)
 
 let shouldRebuildWorker name = 
-    shouldRebuildCommon Workers
+    shouldRebuildCommon CommonLib.Workers
     || shouldRebuildAppSdk 
     || hasChanged (name |> Worker |> App)
 
@@ -222,10 +227,10 @@ let commonPath name =
     sprintf "./common/hobbes.%s/src/hobbes.%s.fsproj" name name
 let commons = 
     [
-        Web
-        Helpers
-        Core
-        Workers
+        CommonLib.Web
+        CommonLib.Helpers
+        CommonLib.Core
+        CommonLib.Workers
     ]
 
 let services = 
@@ -474,20 +479,20 @@ workers
 "Dependencies" =?> ("BuildHobbesSdk", shouldRebuildDependencies)
 
 "BuildHobbesSdk" =?> ("BuildCommonHelpers", shouldRebuildHobbesSdk)
-"BuildCommonHelpers" =?> ("BuildCommonWeb", shouldRebuildCommon Helpers)
-"BuildCommonHelpers" =?> ("BuildCommonWorkers.shared", shouldRebuildCommon Helpers)
-"BuildCommonWeb" =?> ("BuildCommonWorkers.shared", shouldRebuildCommon Web)
+"BuildCommonHelpers" =?> ("BuildCommonWeb", shouldRebuildCommon CommonLib.Helpers)
+"BuildCommonHelpers" =?> ("BuildCommonWorkers.shared", shouldRebuildCommon CommonLib.Helpers)
+"BuildCommonWeb" =?> ("BuildCommonWorkers.shared", shouldRebuildCommon CommonLib.Web)
 
-"BuildCommonHelpers" =?> ("BuildCommon", shouldRebuildCommon Helpers)
-"BuildCommonWorkers.shared" =?> ("BuildCommon", shouldRebuildCommon Workers)
-"BuildCommonWeb" =?> ("BuildCommon", shouldRebuildCommon Web)    
+"BuildCommonHelpers" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Helpers)
+"BuildCommonWorkers.shared" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Workers)
+"BuildCommonWeb" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Web)    
 
-"BuildCommon" =?> ("BuildAppSdk", shouldRebuildCommon Any)
+"BuildCommon" =?> ("BuildAppSdk", shouldRebuildCommon CommonLib.Any)
 "BuildAppSdk" =?> ("PreBuildServices", shouldRebuildAppSdk)
 
-"buildcommonworkers.shared" =?> ("PreBuildWorkers",shouldRebuildCommon Workers)
+"buildcommonworkers.shared" =?> ("PreBuildWorkers",shouldRebuildCommon CommonLib.Workers)
 "BuildAppSdk" =?> ("PreBuildWorkers", shouldRebuildAppSdk)
-"BuildCommon" =?> ("BuildWorkbench", shouldRebuildCommon Web) 
+"BuildCommon" =?> ("BuildWorkbench", shouldRebuildCommon CommonLib.Web) 
 
 
 "BuildServices" ==> "Build"

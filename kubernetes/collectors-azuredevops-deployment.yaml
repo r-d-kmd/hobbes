@@ -14,8 +14,6 @@ spec:
     spec:
       containers:
       - env:
-        - name: DB_SERVER_URL
-          value: http://db-svc:5984/
         imagePullPolicy: Never
         image: collectors.azuredevops
         name: collectors-azuredevops

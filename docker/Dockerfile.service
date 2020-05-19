@@ -4,7 +4,7 @@ FROM kmdrd/sdk:app AS build
 FROM kmdrd/aspnet:latest
 
 ARG SERVICE_NAME
-ENV DB_SERVER_URL http://db-svc:5984
+
 ENV EP="dotnet ${SERVICE_NAME}.dll"
 
 WORKDIR /app

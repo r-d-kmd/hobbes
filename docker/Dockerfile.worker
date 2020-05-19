@@ -4,13 +4,13 @@ FROM kmdrd/sdk:app AS build
 FROM kmdrd/aspnet:latest
 
 ARG WORKER_NAME
-ENV DB_SERVER_URL http://db-svc:5984
+
 ENV EP="dotnet ${WORKER_NAME}.worker.dll"
 ENV USER guest
 ENV PASSWORD guest
 ENV HOST "rabbitmq-service.default.svc.cluster.local"
 ENV PORT 5672
-ENV DB_SERVER_URL http://db-svc:5984
+
 
 WORKDIR /app
 COPY --from=build /app .

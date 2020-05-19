@@ -38,7 +38,7 @@ let run command workingDir args =
     |> ignore
 
 
-let commonLibDir = "./.lib/"
+let commonLibDir = "./docker/.lib/"
 
 let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "2.0.default"
 
@@ -87,8 +87,8 @@ type Change =
    | File of string
 
 let dockerDir = DirectoryInfo "./docker"
-let serviceDir = DirectoryInfo("./services")
-let workerDir = DirectoryInfo("./workers")
+let serviceDir = DirectoryInfo "./services"
+let workerDir = DirectoryInfo "./workers"
 
 let changes =
     let coreDir = DirectoryInfo "./common/hobbes.core"
@@ -161,8 +161,11 @@ let rec shouldRebuildCommon =
 let shouldRebuildGenericDockerImages = 
     hasChanged Docker
 
+let shouldRebuildDependencies = 
+    hasChanged PaketDependencies
+
 let shouldRebuildHobbesSdk =
-    shouldRebuildGenericDockerImages || hasChanged PaketDependencies
+    shouldRebuildGenericDockerImages || shouldRebuildDependencies
 
 let shouldRebuildAppSdk =
     shouldRebuildHobbesSdk || hasChanged (Common Any)
@@ -227,18 +230,16 @@ let workers =
         Path.GetFileNameWithoutExtension (file.Name.Split('.') |> Array.head), workingDir
     )
 
-let buildImage context path (tag : string) =
-    if File.exists path then
-        let tag = dockerOrg + "/" + tag.ToLower()
-        
-        sprintf "build -f %s -t %s ." path tag
-        |> run "docker" context
+let buildImage path (tag : string) =
+    let tag = dockerOrg + "/" + tag.ToLower()
+    
+    sprintf "build -f %s -t %s ." path tag
+    |> run "docker" dockerDir.Name
 
-let pushImage path (tag : string) =
-    if File.exists path then
-        let tag = dockerOrg + "/" + tag.ToLower()
-        sprintf "push %s" tag
-        |> run "docker" "."
+let pushImage (tag : string) =
+    let tag = dockerOrg + "/" + tag.ToLower()
+    sprintf "push %s" tag
+    |> run "docker" dockerDir.Name
 
 let genricImages = 
     [
@@ -333,6 +334,22 @@ Target.create "BuildWorkers" ignore
 Target.create "PreBuildWorkers" ignore
 
 
+Target.create "Dependencies" (fun _ ->
+  let outputDir = "./docker/tmp"
+  let paketDir = outputDir + "/.paket"
+  Shell.cleanDirs 
+      [
+          outputDir
+          paketDir
+      ]
+  run "paket" "." "update"
+  [
+      "paket.dependencies"
+      "paket.lock"
+  ] |> Shell.copy outputDir
+  System.IO.Directory.EnumerateFiles ".paket"
+  |> Shell.copy paketDir
+)
 
 services
 |> Seq.iter(fun (name,dir) ->
@@ -349,14 +366,15 @@ genricImages
     let buildTargetName = "BuildGeneric" + name
     let pushTargetName = "PushGeneric" + name
     
-    Target.create buildTargetName (fun _ ->  buildImage "." (sprintf "./docker/Dockerfile.%s" name) name)
-    Target.create pushTargetName (fun _ ->  pushImage "." name)
+    Target.create buildTargetName (fun _ ->  buildImage (sprintf "Dockerfile.%s" name) name)
+    Target.create pushTargetName (fun _ ->  pushImage name)
     buildTargetName  ==> pushTargetName |> ignore
 )
 
 let commonTargetName common =
     common.ToString() 
     |> sprintf "BuildCommon%s"
+
 commons |> List.iter(fun common ->
     let commonName = common.ToString()
     let targetName = commonTargetName common
@@ -367,19 +385,19 @@ commons |> List.iter(fun common ->
 ) 
 
 Target.create "PushHobbesSdk" (fun _ ->  
-    pushImage "." "sdk:hobbes"
+    pushImage "sdk:hobbes"
 )
 
 Target.create "PushServiceSdk" (fun _ ->  
-    pushImage "." "sdk:app"
+    pushImage "sdk:app"
 )
 
 Target.create "BuildAppSdk" (fun _ ->   
-    buildImage "." "./docker/Dockerfile.sdk-app" "sdk:app"
+    buildImage "Dockerfile.sdk-app" "sdk:app"
 )
 
 Target.create "BuildHobbesSdk" (fun _ ->   
-        buildImage "." "./docker/Dockerfile.sdk-hobbes" "sdk:hobbes"
+        buildImage "Dockerfile.sdk-hobbes" "sdk:hobbes"
 )
 
 Target.create "BuildWorkbench" (fun _ -> 
@@ -415,6 +433,9 @@ if shouldRebuildAppSdk then
     "BuildHobbesSdk" ?=> "BuildAppSdk" |> ignore
     "BuildAppSdk" ==> "PushServiceSdk" ==> "Build" |> ignore
 
+if shouldRebuildDependencies then
+   "Dependencies" ==> "Build" |> ignore
+
 if shouldRebuildHobbesSdk then   
     "BuildGenericImages" ?=> "BuildHobbesSdk" |> ignore
     "BuildHobbesSdk" ==> "PushHobbesSdk" ==> "Build" |> ignore
@@ -438,17 +459,21 @@ workers
          ==> "ForceBuildWorkers" |> ignore
 )
 
+"Dependencies" ?=> "BuildHobbesSdk"
 "BuildAppSdk" ?=> "PreBuildServices" 
 "BuildAppSdk" ?=> "PreBuildWorkers" 
-"BuildServices" ==> "Build"
-"BuildWorkers" ==> "Build"
 "BuildCommon" ?=> "BuildWorkbench"
 "BuildCommon" ?=> "BuildAppSdk"
-"BuildWorkbench" ==> "Publish"
-"ForceBuildServices" ==> "Rebuild"
-"ForceBuildWorkers" ==> "Rebuild"
 "BuildCommonHelpers" 
     ?=> "buildcommonweb" 
     ?=> "buildcommonworkers.shared"
+
+"BuildServices" ==> "Build"
+"BuildWorkers" ==> "Build"
+
+"ForceBuildServices" ==> "Rebuild"
+"ForceBuildWorkers" ==> "Rebuild"
+
+"BuildWorkbench" ==> "Publish"
 
 Target.runOrDefaultWithArguments "Build"

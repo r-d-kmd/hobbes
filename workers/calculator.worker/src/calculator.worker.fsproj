@@ -5,21 +5,23 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <PropertyGroup>
-    <RelativePath Condition="$(BUILD_ENV) == 'docker'">/</RelativePath>
-    <RelativePath Condition="$(RelativePath) == ''">../../../</RelativePath>
+     <RelativePath Condition="$(BUILD_ENV) == 'docker'">/</RelativePath>
+    <RelativePath Condition="$(RelativePath) == ''">../../../docker/</RelativePath>
+    <CommonLibPath Condition="$(BUILD_ENV) == 'docker'">$(RelativePath).lib/</CommonLibPath>
+    <CommonLibPath Condition="$(CommonLibPath) == ''">$(RelativePath).lib/</CommonLibPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="hobbes.core">
-      <HintPath>$(RelativePath).lib/hobbes.core.dll</HintPath>
+      <HintPath>$(CommonLibPath)hobbes.core.dll</HintPath>
     </Reference>
     <Reference Include="hobbes.helpers">
-      <HintPath>$(RelativePath).lib/hobbes.helpers.dll</HintPath>
+      <HintPath>$(CommonLibPath)hobbes.helpers.dll</HintPath>
     </Reference>
     <Reference Include="hobbes.web">
-      <HintPath>$(RelativePath).lib/hobbes.web.dll</HintPath>
+      <HintPath>$(CommonLibPath)hobbes.web.dll</HintPath>
     </Reference>
     <Reference Include="hobbes.workers.shared">
-      <HintPath>$(RelativePath).lib/hobbes.workers.shared.dll</HintPath>
+      <HintPath>$(CommonLibPath)hobbes.workers.shared.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

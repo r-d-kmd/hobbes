@@ -4,5 +4,6 @@ FROM kmdrd/sdk:hobbes
 ENV BUILD_ENV docker
 
 COPY .lib/ ../.lib/
+COPY hobbes.properties.targets ./
 ONBUILD COPY ./src/ .
 ONBUILD RUN dotnet publish -c release -o /app

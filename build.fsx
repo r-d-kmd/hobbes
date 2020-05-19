@@ -149,21 +149,13 @@ let changes =
 
 
 let hasChanged change = 
-    if force then
-        printfn "Building %A because force-all is set" change
-        true
-    elif changes |> Seq.tryFind (function
+    force || changes |> Seq.tryFind (function
                               Common c ->
                                   match change with
                                   Common Any -> true
                                   | Common c' when c' = c -> true
                                   | _ -> false
-                              | c -> c = change) |> Option.isSome then
-        printfn "%A has changed. Building" change
-        true
-    else
-        printfn "%A hasn't changed" change
-        false
+                              | c -> c = change) |> Option.isSome
      
 let rec shouldRebuildCommon = 
     function

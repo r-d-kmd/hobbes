@@ -14,7 +14,7 @@ namespace Hobbes.Web
         abstract Debugf<'a> : LogFormatter<'a> -> 'a
         
     module Database =
-        let ServerUrl = "http://db-svc:5985"
+        let ServerUrl = "http://db-svc:5984"
         open FSharp.Core.Printf
         let now() =  System.DateTime.Now.ToString()
         let printer = fun s -> printfn "%s - %s" (now()) s

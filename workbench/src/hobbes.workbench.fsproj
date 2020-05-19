@@ -5,11 +5,10 @@
     <RelativePath Condition="$(BUILD_ENV) == 'docker'">/</RelativePath>
     <RelativePath Condition="$(RelativePath) == ''">../../../docker/</RelativePath>
     <CommonLibPath Condition="$(BUILD_ENV) == 'docker'">$(RelativePath).lib/</CommonLibPath>
-    <CommonLibPath Condition="$(CommonLibPath) == ''">$(RelativePath).lib/</CommonLibPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="hobbes.core">
-      <HintPath>$(CommonLibPath)hobbes.helpers.dll</HintPath>
+      <HintPath>$(CommonLibPath)hobbes.core.dll</HintPath>
     </Reference>
     <Reference Include="hobbes.helpers">
       <HintPath>$(CommonLibPath)hobbes.helpers.dll</HintPath>

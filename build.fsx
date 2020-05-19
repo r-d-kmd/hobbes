@@ -21,8 +21,7 @@ open Fake.DotNet
 open Fake.IO
 
 
-let force = 
-    (Environment.environVarOrDefault "force-all" null) |> isNull |> not
+let force = (Environment.environVarOrDefault "force-all" "false").ToLower() = "true"
 
 let dockerOrg = "kmdrd"
 let run command workingDir args = 
@@ -77,12 +76,15 @@ type App =
                     name, "worker"
                 | Service name ->
                     name, "service"
-
+type DockerStage =
+     Generic
+     | BaseSdk
+     | AppSdk
+     | Other
 type Change =
    App of App
-   | Collector of string
    | PaketDependencies
-   | Docker
+   | Docker of DockerStage
    | Common of CommonLib
    | File of string
 
@@ -91,11 +93,12 @@ let serviceDir = DirectoryInfo "./services"
 let workerDir = DirectoryInfo "./workers"
 
 let changes =
+    let commonDir = DirectoryInfo "./common"
     let coreDir = DirectoryInfo "./common/hobbes.core"
     let helpersDir = DirectoryInfo "./common/hobbes.helpers"
     let webDir = DirectoryInfo "./common/hobbes.web"
-    let workersDir = DirectoryInfo "./common/hobbes.workers.shared"
-    let collectorDir = DirectoryInfo("./services/collectors") 
+    let workersSharedDir = DirectoryInfo "./common/hobbes.workers.shared"
+    
     Fake.Tools.Git.FileStatus.getChangedFilesInWorkingCopy "." "HEAD@{1}"
     |> Seq.map(fun (_,(file : string)) ->
         let info = FileInfo file
@@ -108,20 +111,26 @@ let changes =
                 p.Split([|'/';'\\'|], System.StringSplitOptions.RemoveEmptyEntries)
                 |> Array.head 
             if isBelow dockerDir then
-                Docker
-            elif isBelow coreDir then
-                Common Core
-            elif isBelow helpersDir then
-                Common Helpers
-            elif isBelow webDir then
-                Common Web
-            elif isBelow workersDir then
-                Common Workers
-            elif isBelow collectorDir then
-                info.DirectoryName
-                    .Substring(collectorDir.FullName.Length)
-                |> getName
-                |> Collector
+                let dockerStage = 
+                    match file.Replace("Dockerfile.","") with
+                    "aspnet" | "couchdb" | "sdk" -> DockerStage.Generic
+                    | "sdk-hobbes" -> DockerStage.BaseSdk
+                    | "sdk-app" | "hobbes.properties.targets" -> DockerStage.AppSdk
+                    | _ -> DockerStage.Other
+                Docker dockerStage
+            elif isBelow commonDir then
+                let cm = 
+                    if isBelow coreDir then
+                        Core
+                    elif isBelow helpersDir then
+                        Helpers
+                    elif isBelow webDir then
+                        Web
+                    elif isBelow workersSharedDir then
+                        Workers
+                    else
+                        failwithf "Common not known %s" file
+                Common cm
             elif isBelow serviceDir then
                 info.DirectoryName
                     .Substring(serviceDir.FullName.Length)
@@ -130,7 +139,7 @@ let changes =
                 |> App
             elif isBelow workerDir then
                 info.DirectoryName
-                    .Substring(serviceDir.FullName.Length)
+                    .Substring(workerDir.FullName.Length)
                 |> getName
                 |> Worker
                 |> App
@@ -140,35 +149,50 @@ let changes =
 
 
 let hasChanged change = 
-    force
-    || changes |> Seq.tryFind (function
+    if force then
+        printfn "Building %A because force-all is set" change
+        true
+    elif changes |> Seq.tryFind (function
                               Common c ->
                                   match change with
                                   Common Any -> true
                                   | Common c' when c' = c -> true
                                   | _ -> false
-                              | c -> c = change) |> Option.isSome
+                              | c -> c = change) |> Option.isSome then
+        printfn "%A has changed. Building" change
+        true
+    else
+        printfn "%A hasn't changed" change
+        false
+     
 let rec shouldRebuildCommon = 
     function
        Web ->
-           //Web depends Helpers
+           //Web depends on Helpers
            shouldRebuildCommon Helpers || (Web |> Common |> hasChanged)
        | Workers -> shouldRebuildCommon Web || (Workers |> Common |> hasChanged)
        | common ->
             common
             |> Common
             |> hasChanged
+
+let hasDockerStageChanged ds = 
+    Docker ds |> hasChanged
 let shouldRebuildGenericDockerImages = 
-    hasChanged Docker
+    hasDockerStageChanged Generic
 
 let shouldRebuildDependencies = 
     hasChanged PaketDependencies
 
 let shouldRebuildHobbesSdk =
-    shouldRebuildGenericDockerImages || shouldRebuildDependencies
+    shouldRebuildGenericDockerImages 
+    || hasDockerStageChanged BaseSdk
+    || shouldRebuildDependencies 
 
 let shouldRebuildAppSdk =
-    shouldRebuildHobbesSdk || hasChanged (Common Any)
+    shouldRebuildHobbesSdk 
+    || hasDockerStageChanged AppSdk
+    || hasChanged (Common Any) 
 
 let shouldRebuildService name = 
     [
@@ -267,16 +291,16 @@ let workerTargets =
     ) |> appTargets
 
 let setupServiceTarget serviceName = 
-    "PreBuildServices" 
-        ==> serviceTargets.[serviceName]
-        ==> "BuildServices" 
-        |> ignore
+    let shouldRebuild = shouldRebuildService serviceName
+    let target = serviceTargets.[serviceName]
+    "PreBuildServices" =?> (target, shouldRebuild) |> ignore
+    target =?> ("BuildServices" , shouldRebuild) |> ignore
 
 let setupWorkerTarget workerName = 
-    "PreBuildworkers" 
-        ==> workerTargets.[workerName]
-        ==> "Buildworkers" 
-        |> ignore
+    let shouldRebuild = shouldRebuildWorker workerName
+    let target = workerTargets.[workerName]
+    "PreBuildWorkers" =?> (target, shouldRebuild) |> ignore
+    target =?> ("BuildWorkers" , shouldRebuild) |> ignore
 
 let buildApp (app : App) workingDir =
     let name,appType = app.NameAndType
@@ -318,7 +342,7 @@ let buildApp (app : App) workingDir =
     let pushTargetName = "Push" + appType + tag 
     Target.create buildTargetName build
     Target.create pushTargetName push
-    "PreBuild" + appType + "s" ?=> buildTargetName |> ignore
+    "PreBuild" + appType + "s" ==> buildTargetName |> ignore
     buildTargetName ==> pushTargetName |> ignore
 
 Target.create "ForceBuildServices" ignore
@@ -333,6 +357,22 @@ Target.create "PreBuildServices" ignore
 Target.create "BuildWorkers" ignore
 Target.create "PreBuildWorkers" ignore
 
+Target.create "CleanCommon" (fun _ ->
+    let deleteFiles lib =
+        [
+            sprintf "docker/.lib/hobbes.%s.dll"
+            sprintf "docker/.lib/hobbes.%s.deps.json"
+            sprintf "docker/.lib/hobbes.%s.pdb"
+        ] |> List.iter(fun f -> 
+            let file = f lib
+            if File.exists file then
+                File.delete file
+        )
+        
+    commons
+    |> List.filter shouldRebuildCommon
+    |> List.iter (string >> deleteFiles)
+)
 
 Target.create "Dependencies" (fun _ ->
   let outputDir = "./docker/tmp"
@@ -382,6 +422,7 @@ commons |> List.iter(fun common ->
         let projectFile = commonPath commonName
         package DotNet.BuildConfiguration.Release commonLibDir projectFile
     )
+    targetName ==> "Build" |> ignore
 ) 
 
 Target.create "PushHobbesSdk" (fun _ ->  
@@ -409,43 +450,20 @@ Target.create "Publish" (fun _ ->
 )
 
 commons |> List.iter(fun common ->
-    if shouldRebuildCommon common then 
         let targetName = commonTargetName common
-        targetName ==> "BuildCommon" |> ignore
-        targetName ==> "Build" |> ignore
+        "CleanCommon" =?> (targetName, shouldRebuildCommon common) |> ignore
+        targetName =?> ("BuildCommon" , shouldRebuildCommon common) |> ignore
 )
-commonTargetName Helpers ?=> commonTargetName Web 
 
 services
 |> Seq.iter(fun (serviceName,_) ->
-    if shouldRebuildService serviceName then
         setupServiceTarget serviceName
 )
 
 workers
 |> Seq.iter(fun (workerName,_) ->
-    if shouldRebuildWorker workerName then
         setupWorkerTarget workerName
 )
-
-if shouldRebuildAppSdk then
-    "BuildCommon" ?=> "BuildAppSdk" |> ignore
-    "BuildHobbesSdk" ?=> "BuildAppSdk" |> ignore
-    "BuildAppSdk" ==> "PushServiceSdk" ==> "Build" |> ignore
-
-if shouldRebuildDependencies then
-   "Dependencies" ==> "Build" |> ignore
-
-if shouldRebuildHobbesSdk then   
-    "BuildGenericImages" ?=> "BuildHobbesSdk" |> ignore
-    "BuildHobbesSdk" ==> "PushHobbesSdk" ==> "Build" |> ignore
-
-if shouldRebuildGenericDockerImages then
-    genricImages
-    |> List.iter(fun name ->
-        "BuildGeneric" + name ==> "BuildGenericImages" |> ignore
-    )
-    "BuildGenericImages" ==> "PushGenericImages" ==> "Build" |> ignore
 
 services
 |> Seq.iter(fun (serviceName, _) ->
@@ -459,14 +477,26 @@ workers
          ==> "ForceBuildWorkers" |> ignore
 )
 
-"Dependencies" ?=> "BuildHobbesSdk"
-"BuildAppSdk" ?=> "PreBuildServices" 
-"BuildAppSdk" ?=> "PreBuildWorkers" 
-"BuildCommon" ?=> "BuildWorkbench"
-"BuildCommon" ?=> "BuildAppSdk"
-"BuildCommonHelpers" 
-    ?=> "buildcommonweb" 
-    ?=> "buildcommonworkers.shared"
+
+"BuildGenericImages" =?> ("Dependencies",shouldRebuildGenericDockerImages)
+"Dependencies" =?> ("BuildHobbesSdk", shouldRebuildDependencies)
+
+"BuildHobbesSdk" =?> ("BuildCommonHelpers", shouldRebuildHobbesSdk)
+"BuildCommonHelpers" =?> ("BuildCommonWeb", shouldRebuildCommon Helpers)
+"BuildCommonHelpers" =?> ("BuildCommonWorkers.shared", shouldRebuildCommon Helpers)
+"BuildCommonWeb" =?> ("BuildCommonWorkers.shared", shouldRebuildCommon Web)
+
+"BuildCommonHelpers" =?> ("BuildCommon", shouldRebuildCommon Helpers)
+"BuildCommonWorkers.shared" =?> ("BuildCommon", shouldRebuildCommon Workers)
+"BuildCommonWeb" =?> ("BuildCommon", shouldRebuildCommon Web)    
+
+"BuildCommon" =?> ("BuildAppSdk", shouldRebuildCommon Any)
+"BuildAppSdk" =?> ("PreBuildServices", shouldRebuildAppSdk)
+
+"buildcommonworkers.shared" =?> ("PreBuildWorkers",shouldRebuildCommon Workers)
+"BuildAppSdk" =?> ("PreBuildWorkers", shouldRebuildAppSdk)
+"BuildCommon" =?> ("BuildWorkbench", shouldRebuildCommon Web) 
+
 
 "BuildServices" ==> "Build"
 "BuildWorkers" ==> "Build"

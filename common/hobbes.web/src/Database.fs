@@ -14,6 +14,7 @@ namespace Hobbes.Web
         abstract Debugf<'a> : LogFormatter<'a> -> 'a
         
     module Database =
+        let ServerUrl = "http://db-svc:5985"
         open FSharp.Core.Printf
         let now() =  System.DateTime.Now.ToString()
         let printer = fun s -> printfn "%s - %s" (now()) s
@@ -120,9 +121,6 @@ namespace Hobbes.Web
             }
         let awaitDbServer() =
             async {
-                let databaseServerUrl = env "DB_SERVER_URL" null
-                if databaseServerUrl |> isNull then 
-                    failwith "Database server URL not configured"
                 let dbUser = 
                     match env "COUCHDB_USER" null with
                     null -> failwith "DB user not configured"
@@ -148,20 +146,20 @@ namespace Hobbes.Web
                         }
                     async {
 
-                        printfn "Testing of db server is reachable on [%s]" databaseServerUrl
+                        printfn "Testing of db server is reachable on [%s]" ServerUrl
                         
                         try
-                            do! check databaseServerUrl
-                            do! check (databaseServerUrl + "_users")
+                            do! check ServerUrl
+                            do! check (ServerUrl + "_users")
                         with
                             :? System.UriFormatException as e ->
-                                failwithf "Uri (%s) format exception Message: %s. Trace: %s" databaseServerUrl e.Message e.StackTrace
+                                failwithf "Uri (%s) format exception Message: %s. Trace: %s" ServerUrl e.Message e.StackTrace
                             | e ->
                                 eprintfn "Failed to connecto to DB. Message: %s. Trace: %s" e.Message e.StackTrace
                                 return! inner()
                     }
                 do! inner()
-                return databaseServerUrl,dbUser,dbPwd
+                return ServerUrl,dbUser,dbPwd
             }
 
         let rec initDatabases databaseToBeInitialized =
@@ -291,13 +289,13 @@ namespace Hobbes.Web
 
         and Database<'a> (databaseName, parser : string -> 'a, log : ILog) =
             let mutable _views : Map<string,View> = Map.empty
-            let dbServerUrl = "http://db-svc:5985"
+            
             let request httpMethod isTrial body path rev queryString =
                 let enc (s : string) = System.Web.HttpUtility.UrlEncode s           
 
                 let url = 
                     System.String.Join("/", [
-                                                dbServerUrl
+                                                ServerUrl
                                                 databaseName
                                             ]@(path
                                                |> List.map enc))+
@@ -380,9 +378,6 @@ namespace Hobbes.Web
                     failwithf "Bad format. Doc: %s" (body.Substring(0, min body.Length 500))
                 else
                     failwith body
-            
-            do 
-                if dbServerUrl |> isNull then failwith "Database server url not configured"
                 
             member this.AddView name =
                 _views <- _views.Add(name, View(tryGet,name,log))

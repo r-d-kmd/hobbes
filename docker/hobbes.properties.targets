@@ -1,0 +1,21 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <CommonLibPath>/.lib/</CommonLibPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="hobbes.core">
+      <HintPath>$(CommonLibPath)hobbes.core.dll</HintPath>
+    </Reference>
+    <Reference Include="hobbes.helpers">
+      <HintPath>$(CommonLibPath)hobbes.helpers.dll</HintPath>
+    </Reference>
+    <Reference Include="hobbes.web">
+      <HintPath>$(CommonLibPath)hobbes.web.dll</HintPath>
+    </Reference>
+    <Reference Include="hobbes.workers.shared">
+      <HintPath>$(CommonLibPath)hobbes.web.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

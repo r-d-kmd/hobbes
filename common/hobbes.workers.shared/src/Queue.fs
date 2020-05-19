@@ -38,7 +38,7 @@ module Queue =
             factory.Password <- password
             channel
         with _ ->
-            eprintf "Failed to initialize queue. %s:%s@%s:%d" user password host port
+            eprintfn "Failed to initialize queue. %s:%s@%s:%d" user password host port
             reraise()
 
     type Queue =

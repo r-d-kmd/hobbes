@@ -13,14 +13,18 @@ type SourceList = FSharp.Data.JsonProvider<"""[{
 let main _ =
     match Http.get (Http.Configurations Http.Collectors) CollectorList.Parse  with
     Http.Success collectors ->
-        collectors
-        |> Array.collect(fun collector ->
-            match Http.get (Http.Configurations (Http.Sources collector)) SourceList.Parse  with
-            Http.Success sources ->
-                sources
-            | Http.Error (sc,m) -> 
-                failwithf "Failed retrievining sources. %d - %s" sc m
-        ) |> Array.iter(fun source ->
+        let sources =  
+            collectors
+            |> Array.collect(fun collector ->
+                match Http.get (Http.Configurations (Http.Sources collector)) SourceList.Parse  with
+                Http.Success sources ->
+                    sources
+                | Http.Error (sc,m) -> 
+                    failwithf "Failed retrievining sources. %d - %s" sc m
+            ) 
+        printfn "Syncronizing %d sources" (sources |> Seq.length)
+        sources
+        |> Array.iter(fun source ->
             let queue = source.Name |> Queue.Generic
             let message = source.JsonValue.ToString()
             publish queue message

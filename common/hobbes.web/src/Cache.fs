@@ -6,6 +6,7 @@ open Hobbes.Helpers.Environment
 module Cache =
     [<Literal>]
     let internal DataResultString = """ {
+            "_id": "khkj",
             "columnNames" : ["a","b"], 
             "rows" : [[0,"hk",null,2.,3,4,"2019-01-01"],
                       [0.4,1.2,2.4,3.5,4.1],
@@ -54,9 +55,7 @@ module Cache =
 
         cacheRecord
 
-    let readData (record : CacheRecord.Root) = 
-        let data = 
-            record.Data
+    let readData (data : DataResult.Root) = 
         let columnNames = data.ColumnNames
         
         data.Rows

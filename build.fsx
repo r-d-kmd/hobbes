@@ -192,12 +192,7 @@ let shouldRebuildAppSdk =
     || hasChanged (Common CommonLib.Any) 
 
 let shouldRebuildService name = 
-    [
-        CommonLib.Helpers
-        CommonLib.Web
-        CommonLib.Core
-    ] |> List.map shouldRebuildCommon
-    |> List.reduce (||)
+    shouldRebuildCommon CommonLib.Any
     || shouldRebuildAppSdk 
     || hasChanged (name |> Service |> App)
 

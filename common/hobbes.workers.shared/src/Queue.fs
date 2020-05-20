@@ -49,10 +49,9 @@ module Queue =
                   Cache -> "cache"
                   | AzureDevOps -> "azuredevops"
                   | Git -> "git"
-                  | Generic s -> s.ToLower()
+                  | Generic s -> s.ToLower().Replace(" ","")
 
     let watch (queue:Queue) handler =
-        
         try
             let channel = init()
             channel.QueueDeclare(queue.Name,

@@ -16,7 +16,7 @@ type DependingTransformationList = FSharp.Data.JsonProvider<"""[
 let cache = Cache.Cache(Http.UniformData)
 let handleMessage cachedData = 
     try
-        let cacheRecord = Hobbes.Web.Cache.DataResult.Parse cachedData
+        let cacheRecord = CacheRecord.Parse cachedData
         let cacheKey = cacheRecord.Id
         let service = cacheKey |> Http.DependingTransformations |> Http.Configurations
         match Http.get service DependingTransformationList.Parse  with
@@ -26,8 +26,7 @@ let handleMessage cachedData =
                 let key = cacheKey + ":" + transformation.Id
                 try
                     let data = 
-                        cachedData
-                        |> Cache.DataResult.Parse
+                        cacheRecord
                         |> Cache.readData
 
                     data

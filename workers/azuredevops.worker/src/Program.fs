@@ -41,7 +41,9 @@ let handleMessage confDoc =
 [<EntryPoint>]
 let main _ =
     watch Queue.AzureDevOps handleMessage
-    printfn "Press enter to exit"
-    let a = Console.ReadLine() 
-    printfn "%s" a
+    
+    while true do
+        printfn "Waiting..."
+        System.Threading.Thread.Sleep(5000)
+    
     0

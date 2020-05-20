@@ -36,6 +36,7 @@ let handleMessage sourceDoc =
             printfn "Conldn't syncronize. %s %s" sourceDoc token
             false
         | Some data -> 
+           Cache.createCacheRecord
             match Http.post (Http.UniformData Http.Update) id data with
             Http.Success _ -> 
                printfn "Data uploaded to cache"

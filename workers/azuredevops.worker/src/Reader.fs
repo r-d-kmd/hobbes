@@ -170,13 +170,14 @@ module Reader =
                     )) |> System.String.Join
                     |> sprintf "[%s]"
                 )) |> System.String.Join        
-        sprintf """{
-           "_id" : "%s",
-           "columnNames" : [%s],
-           "rows" : [%s],
-           "rowCount" : %d
-           }
-        """ key columnNames rows (rawdataCache |> Seq.length)
+        let data = 
+            sprintf """{
+               "columnNames" : [%s],
+               "rows" : [%s],
+               "rowCount" : %d
+               }
+            """ columnNames rows (rawdataCache |> Seq.length)
+        Cache.createCacheRecord key data
 
     //Reads data from the raw data store. This should be exposed as part of the API in some form 
     let read (source : AzureDevOpsSource.Root) =

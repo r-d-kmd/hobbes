@@ -6,11 +6,6 @@ FROM kmdrd/aspnet:latest
 ARG WORKER_NAME
 
 ENV EP="dotnet ${WORKER_NAME}.worker.dll"
-ENV USER guest
-ENV PASSWORD guest
-ENV HOST "rabbitmq-service"
-ENV PORT 5672
-
 
 WORKDIR /app
 COPY --from=build /app .

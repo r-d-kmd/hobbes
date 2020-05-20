@@ -8,19 +8,19 @@ open Hobbes.Helpers.Environment
 module Queue = 
     
     let private user = 
-        match env "USER" null with
+        match env "RABBIT_USER" null with
         null -> failwith "'USER' not configured"
         | u -> u
     let private password =
-        match env "PASSWORD" null with
+        match env "RABBIT_PASSWORD" null with
         null -> failwith "'PASSWORD' not configured"
         | p -> p
     let private host = 
-        match env "HOST" null with
+        match env "RABBIT_HOST" null with
         null -> failwith "Queue 'HOST' not configured"
         | h -> h
     let private port = 
-        match env "PORT" null with
+        match env "RABBIT_PORT" null with
         null -> failwith "Post not specified"
         | p -> int p
 
@@ -90,5 +90,5 @@ module Queue =
             channel.BasicPublish("",queue.Name, false,properties,body)
             printfn "Message published to %s" queue.Name
         with e -> 
-           eprintfn "Failed to publish to thethe queue. %s:%d. Message: %s" host port e.Message
+           eprintfn "Failed to publish to the queue. Message: %s" e.Message
            reraise()

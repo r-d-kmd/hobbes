@@ -29,22 +29,15 @@ module Data =
             404,"No data found"
 
     [<Post ("/update", true)>]
-    let update conf =
+    let update cacheRecord =
         async {
-            let sourceName = (Config.Parse conf).Source.Name
-            if System.String.IsNullOrWhiteSpace sourceName then
-                 failwithf "No source provided. %s" conf
-
-            Log.logf "Reading new data for configuration: %s" conf
-            match Http.post (Http.Collector(sourceName,Http.Read)) Cache.CacheRecord.Parse conf with
-            Http.Success cacheRecord ->
-                Log.logf "updating cache for %s with _id: %s" sourceName cacheRecord.Id
-                try
-                    cacheRecord
-                    |> cache.InsertOrUpdate
-                    publish Queue.Cache (cacheRecord.JsonValue.ToString())
-                with e ->
-                    Log.excf e "Failed to insert %s" cacheRecord.Id
+            Log.logf "updating cache with _id: %s" cacheRecord.Id
+            try
+                cacheRecord
+                |> cache.InsertOrUpdate
+                publish Queue.Cache cacheRecord
+            with e ->
+                Log.excf e "Failed to insert %s" cacheRecord.Id
             | Http.Error(status,m) ->
                 Log.errorf null "Failed to read data from %s. Status: %d - Message: %s" conf status m
         } |> Async.Start

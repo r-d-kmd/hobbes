@@ -25,9 +25,12 @@ let handleMessage cachedData =
             |> Seq.fold(fun r transformation ->
                 let key = cacheKey + ":" + transformation.Id
                 try
-                    cachedData
-                    |> Cache.DataResult.Parse
-                    |> Cache.readData
+                    let data = 
+                        cachedData
+                        |> Cache.DataResult.Parse
+                        |> Cache.readData
+
+                    data
                     |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
                     |> Hobbes.FSharp.Compile.expressions transformation.Lines 
                     |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows 
@@ -42,7 +45,7 @@ let handleMessage cachedData =
         | Http.Error(404,m) ->
             printfn "No depending transformations found. Message: %s" m
             true
-        | Http.Error(sc,m)
+        | Http.Error(sc,m) ->
             printfn "Failed to transform data (%s) %d %s" cacheKey sc m
             false
     with e ->

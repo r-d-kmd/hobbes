@@ -55,7 +55,8 @@ module Cache =
 
         cacheRecord
 
-    let readData (data : DataResult.Root) = 
+    let readData (cacheRecord : CacheRecord.Root) = 
+        let data = cacheRecord.Data
         let columnNames = data.ColumnNames
         
         data.Rows

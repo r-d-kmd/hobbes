@@ -628,17 +628,21 @@ module DataStructures =
                     if columnName = orgColumnName then newColumnName else columnName
                 )
             | AST.CreateColumn (exp, nameOfNewColumn) -> 
-                let compiledExpression = compileExpression frame exp
-                let resultingSeries = compiledExpression (keySeries)
-                let newframe = Frame([nameOfNewColumn],[resultingSeries])
-                let result = 
-                    newframe
-                    |> Frame.join JoinKind.Outer frame
-                let col =
-                    result.GetColumn nameOfNewColumn
-                    |> Series.observationsAll
-                    |> List.ofSeq
-                result
+                try
+                    let compiledExpression = compileExpression frame exp
+                    let resultingSeries = compiledExpression (keySeries)
+                    let newframe = Frame([nameOfNewColumn],[resultingSeries])
+                    let result = 
+                        newframe
+                        |> Frame.join JoinKind.Outer frame
+                    let col =
+                        result.GetColumn nameOfNewColumn
+                        |> Series.observationsAll
+                        |> List.ofSeq
+                    result
+                with e ->
+                    let cols = frame.ColumnKeys
+                    failwithf "%s. Columns: %A" e.Message cols
             | AST.Pivot(rowKeyExpression,columnKeyExpression,valueExpression, reduction) ->
                 let rowkey,compiledExpressionFunc = compileTempColumn "__rowkey__" rowKeyExpression (fun r ->
                                                                                                        r  |> AST.KeyType.OfOption

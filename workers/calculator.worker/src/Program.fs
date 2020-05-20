@@ -45,9 +45,5 @@ let handleMessage message =
         false
 [<EntryPoint>]
 let main _ =
-    watch Queue.Cache handleMessage
-    printfn "Waiting for calculation messages"
-    printfn "Press enter to exit"
-    let a = Console.ReadLine() 
-    printfn "%s" a
+    watch Queue.Cache handleMessage 5000
     0

@@ -11,10 +11,12 @@ let synchronize (config : Config.Root) token =
             let statusCode, body = Reader.sync token config
             printfn "Sync finised with statusCode %d and result %s" statusCode body
             if statusCode < 200 || statusCode >= 300 then 
-                eprintfn "Syncronization failed. Message: %s" body
-            Some body                 
+                printfn "Syncronization failed. Message: %s" body
+                Some body
+            else
+                None                 
         with e ->
-            eprintfn "Sync failed due to exception: %s %s" e.Message e.StackTrace
+            printfn "Sync failed due to exception: %s %s" e.Message e.StackTrace
             None
 
 let handleMessage confDoc =
@@ -27,23 +29,21 @@ let handleMessage confDoc =
         else
             env "AZURE_TOKEN_TIME_PAYROLL_KMDDK" null
 
-    synchronize conf token
-    |> Option.bind(fun _ ->
+    match synchronize conf token with
+    None -> 
+        printfn "Conldn't syncronize. %s %s %s" confDoc source token
+    | Some _ -> 
         match Http.post (Http.UniformData Http.Update) id confDoc with
         Http.Success _ -> 
            printfn "Data uploaded to cache"
            Some true
         | Http.Error(status,msg) -> 
-            eprintfn "Upload to uniform data failed. %s" msg
+            printfn "Upload to uniform data failed. %s" msg
             None
     ) |> Option.isSome
 
 [<EntryPoint>]
 let main _ =
-    watch Queue.AzureDevOps handleMessage
-    
-    while true do
-        printfn "Waiting..."
-        System.Threading.Thread.Sleep(5000)
+    watch Queue.AzureDevOps handleMessage 5000
     
     0

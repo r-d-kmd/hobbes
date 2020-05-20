@@ -51,7 +51,7 @@ module Queue =
                   | Git -> "git"
                   | Generic s -> s.ToLower().Replace(" ","")
 
-    let watch (queue:Queue) handler =
+    let watch (queue:Queue) handler (pause : int) =
         try
             let channel = init()
             channel.QueueDeclare(queue.Name,
@@ -69,8 +69,10 @@ module Queue =
             
             channel.BasicConsume(queue.Name,false,consumer) |> ignore
             printfn "Watching queue: %s" queue.Name
+            while true do
+                System.Threading.Thread.Sleep(pause)
          with e ->
-           eprintfn "Failed to subscribe on the queue. %s:%d. Message: %s" host port e.Message
+           eprintfn "Failed to subscribe to the queue. %s:%d. Message: %s" host port e.Message
            reraise()
 
     let publish (queue:Queue) (message : string) = 
@@ -83,7 +85,7 @@ module Queue =
             properties.Persistent <- true
 
             channel.BasicPublish("",queue.Name, false,properties,body)
-            printfn "Message published"
+            printfn "Message published to %s" queue.Name
         with e -> 
            eprintfn "Failed to publish to thethe queue. %s:%d. Message: %s" host port e.Message
            reraise()

@@ -149,7 +149,6 @@ let main args =
                     printfn "Using host: %s" settings.Host
                     let urlTransformations = settings.Host + "/admin/transformation"
                     let urlConfigurations = settings.Host + "/admin/configuration"
-                    let urlClearCache = settings.Host + "/admin/clear/cache"
 
                     let pat = settings.Hobbes
                     let transformations = 
@@ -214,16 +213,6 @@ let main args =
                                         ]
                                     ) |> ignore
                     )
-
-                    //clear the cache so that it'll be rebuild based on the new transformations
-                    //TODO: only clear if transformation related to cache has changed
-                    Http.Request(urlClearCache, 
-                                     httpMethod = "GET",
-                                     headers = 
-                                        [
-                                           HttpRequestHeaders.BasicAuth pat ""
-                                        ]
-                                    ) |> ignore
                 0
              | Some configurationName ->
                 let pat = settings.Hobbes

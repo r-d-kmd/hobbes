@@ -50,7 +50,7 @@ let rec private init() =
     async {
         try
            FSharp.Data.Http.Request(Hobbes.Web.Database.ServerUrl) |> ignore //make sure db is up and running
-           do! initDatabase()
+           initDatabase()
            printfn "DB initialized"
         with _ ->
            do! Async.Sleep 2000

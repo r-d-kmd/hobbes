@@ -17,7 +17,7 @@ spec:
         - secretRef:
             name: env
         imagePullPolicy: Never
-        image: hobbes.calculator
+        image: calculator
         name: hobbes-calculator
       restartPolicy: Always
 status: {}

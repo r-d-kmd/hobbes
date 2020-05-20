@@ -64,7 +64,10 @@ module Queue =
             consumer.Received.AddHandler(EventHandler<BasicDeliverEventArgs>(fun _ (ea : BasicDeliverEventArgs) ->
                 let msg = Encoding.UTF8.GetString(ea.Body.ToArray())
                 if handler msg then
+                    printfn "Message ack'ed"
                     channel.BasicAck(ea.DeliveryTag,false)
+                else
+                    printfn "Message could not be processed. %s" msg
             ))
             
             channel.BasicConsume(queue.Name,false,consumer) |> ignore

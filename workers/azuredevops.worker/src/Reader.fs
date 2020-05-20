@@ -50,8 +50,7 @@ module Reader =
              //"WorkItemRevisionSK", fun row -> box row.WorkItemRevisionSk
         ]    
     //The first url to start with, if there's already some stored data
-    let private getInitialUrl (config : Config.Root)=
-        let source = (config.Source |> source2AzureSource)
+    let private getInitialUrl (source : AzureDevOpsSource.Root)=
         let account = 
             let acc = source.Account.Replace("_", "-")
             if System.String.IsNullOrWhiteSpace(acc) then "kmddk"
@@ -74,7 +73,7 @@ module Reader =
 
             sprintf "https://analytics.dev.azure.com/%s/%s%s%d" account source.Project path
         try
-            match (config |> keyFromConfig) |> Data.tryLatestId with
+            match source.JsonValue.ToString() |> keyFromSourceDoc |> Data.tryLatestId with
             Some workItemRevisionId -> 
                 initialUrl workItemRevisionId
             | None -> 
@@ -180,8 +179,8 @@ module Reader =
         """ key columnNames rows (rawdataCache |> Seq.length)
 
     //Reads data from the raw data store. This should be exposed as part of the API in some form 
-    let read (config : Config.Root) =
-        let key = config |> keyFromConfig
+    let read (source : AzureDevOpsSource.Root) =
+        let key = source.JsonValue.ToString() |> keyFromSourceDoc
 
         assert(System.String.IsNullOrWhiteSpace key |> not)
 
@@ -193,17 +192,17 @@ module Reader =
             | None -> System.DateTime.Now).ToString("dd/MM/yyyy H:mm").Replace(":", ";")
 
         let raw = 
-            config
+            source
             |> bySource
             |> Option.bind((formatRawdataCache key timeStamp) >> Some)
 
-        Log.logf "\n\n azure devops:%s \n\n" (config.JsonValue.ToString())        
+        Log.logf "\n\n azure devops:%s \n\n" (source.JsonValue.ToString())        
         raw
 
     //TODO should be async and in parallel-ish
     //part of the API (see server to how it's exposed)
     //we might want to store azureToken as an env variable
-    let sync azureToken (config : Config.Root) = 
+    let sync azureToken (source : AzureDevOpsSource.Root) = 
         
         let rec _read hashes url = 
             Log.logf "syncing with %s@%s" azureToken url
@@ -220,12 +219,10 @@ module Reader =
 
                     let body' = 
                         body.Replace("\\\"","'")
-                    let conf = 
-                        config.JsonValue.ToString()
-                        |> parseConfiguration
+                    
                     let rawdataRecord = createDataRecord rawId body' [
                                                                                     "url", String url
-                                                                                    "source", config.Source.JsonValue.ToString() |> Object
+                                                                                    "source", source.JsonValue.ToString() |> Object
                                                                                     "recordCount", hashes 
                                                                                                    |> List.length 
                                                                                                    |> Int
@@ -252,7 +249,7 @@ module Reader =
                 failwith <| sprintf "StatusCode: %d. Message: %s" resp.StatusCode message
         
         let url = 
-            config
+            source
             |> getInitialUrl                                   
         try
             url

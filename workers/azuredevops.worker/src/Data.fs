@@ -246,8 +246,8 @@ module Data =
         } |> Async.Start
         200,"deleting"
     
-    let projectsBySource (config : Config.Root) = 
-        let configSearchKey = config |> keyFromConfig
+    let projectsBySource (source : AzureDevOpsSource.Root) = 
+        let configSearchKey = source.JsonValue.ToString() |> keyFromSourceDoc
         let res = 
             db.List() 
             |> Seq.filter(fun doc ->
@@ -265,7 +265,7 @@ module Data =
         Log.logf "Project data found by source %A" res
         res
 
-    let bySource (source : Config.Root) = 
+    let bySource (source : AzureDevOpsSource.Root) = 
         let data =
             source
             |> projectsBySource
@@ -288,20 +288,3 @@ module Data =
             )
         if result |> Seq.isEmpty then None
         else Some result
-
-    let clearProject (config : Config.Root) =
-        async {
-            let! _ = 
-                config
-                |> projectsBySource
-                |> Seq.map(fun p -> 
-                    async {
-                        try
-                            p.Id 
-                            |> delete
-                            |> ignore
-                        with _ -> ()
-                    }
-                ) |> Async.Parallel
-            return ()
-        } |> Async.RunSynchronously

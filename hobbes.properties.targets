@@ -15,7 +15,7 @@
       <HintPath>$(CommonLibPath)hobbes.web.dll</HintPath>
     </Reference>
     <Reference Include="hobbes.workers.shared">
-      <HintPath>$(CommonLibPath)hobbes.web.dll</HintPath>
+      <HintPath>$(CommonLibPath)hobbes.workers.shared.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

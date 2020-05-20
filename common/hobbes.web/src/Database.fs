@@ -124,8 +124,8 @@ namespace Hobbes.Web
                 function
                     | Binary b -> System.Text.Encoding.ASCII.GetString b
                     | Text t -> t
-            
-        let awaitDbServer() =
+
+        let private _awaitDbServer() =    
             async {
                 let dbUser = 
                     match env "COUCHDB_USER" null with
@@ -169,12 +169,18 @@ namespace Hobbes.Web
                 do! inner()
                 return ServerUrl,dbUser,dbPwd
             }
+            
+        let awaitDbServer() =
+            async {
+                let! _ = _awaitDbServer()
+                return ()
+            } |> Async.RunSynchronously
 
         let rec initDatabases databaseToBeInitialized =
            
             async {
                 let httpMethod = "PUT"
-                let! databaseServerUrl,dbUser,dbPwd = awaitDbServer()
+                let! databaseServerUrl,dbUser,dbPwd = _awaitDbServer()
                 let request dataBaseName = 
                     let url = databaseServerUrl + "/" + dataBaseName
                     printfn "Creating database. %s on %s" httpMethod url

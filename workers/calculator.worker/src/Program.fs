@@ -35,7 +35,7 @@ let handleMessage message =
                 |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows 
                 |> createCacheRecord key
                 |> cache.InsertOrUpdate
-                r && true
+                r && true 
             with e ->
                eprintfn "Couldn't insert data (key: %s). %s %s" key e.Message e.StackTrace
                false

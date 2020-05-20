@@ -202,7 +202,7 @@ let shouldRebuildService name =
     || hasChanged (name |> Service |> App)
 
 let shouldRebuildWorker name = 
-    shouldRebuildCommon CommonLib.Workers
+    shouldRebuildCommon CommonLib.Any
     || shouldRebuildAppSdk 
     || hasChanged (name |> Worker |> App)
 

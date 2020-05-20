@@ -29,17 +29,16 @@ module Data =
             404,"No data found"
 
     [<Post ("/update", true)>]
-    let update cacheRecord =
+    let update cacheRecordDoc =
         async {
+            let cacheRecord = cacheRecordDoc |> Hobbes.Web.Cache.CacheRecord.Parse
             Log.logf "updating cache with _id: %s" cacheRecord.Id
             try
                 cacheRecord
                 |> cache.InsertOrUpdate
-                publish Queue.Cache cacheRecord
+                publish Queue.Cache cacheRecordDoc
             with e ->
                 Log.excf e "Failed to insert %s" cacheRecord.Id
-            | Http.Error(status,m) ->
-                Log.errorf null "Failed to read data from %s. Status: %d - Message: %s" conf status m
         } |> Async.Start
         200, "updating"
 

@@ -10,12 +10,12 @@ let synchronize (source : AzureDevOpsSource.Root) token =
         try
             let statusCode, body = Reader.sync token source
             printfn "Sync finised with statusCode %d and result %s" statusCode body
-            if statusCode < 200 || statusCode >= 300 then 
-                printfn "Syncronization failed. Message: %s" body
+            if statusCode > 200 || statusCode < 300 then 
                 match Reader.read source with
                 None -> failwith "Could not read data from raw"
                 | d -> d
             else
+                printfn "Syncronization failed. %d Message: %s" statusCode body
                 None                 
         with e ->
             printfn "Sync failed due to exception: %s %s" e.Message e.StackTrace

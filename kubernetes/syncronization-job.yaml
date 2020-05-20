@@ -3,13 +3,16 @@ kind: CronJob
 metadata:
   name: syncronization-scheduler
 spec:
-  schedule: "*/4 * * * *"
+  schedule: "*/1 * * * *"
   jobTemplate:
     spec:
       template:
         spec:
           containers:
-          - name: sync
+          - envFrom:
+            - secretRef:
+                name: env
+            name: sync
             imagePullPolicy: Never
             image: syncronization
           restartPolicy: OnFailure

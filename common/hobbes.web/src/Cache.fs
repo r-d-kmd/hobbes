@@ -99,7 +99,7 @@ module Cache =
                             member __.InsertOrUpdate doc = 
                                 async{
                                     doc.JsonValue.ToString() 
-                                    |> Http.put (Http.Update |> service) 
+                                    |> Http.post (Http.Update |> service) id 
                                     |> ignore
                                 } |> Async.Start
                             

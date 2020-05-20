@@ -28,17 +28,17 @@ module Queue =
 
     let private factory = ConnectionFactory()
     let init() =
+        let url = sprintf "amqp://%s:%s@%s:%d" user password host port
         try
-            let connection = factory.CreateConnection()
-            let channel = connection.CreateModel()
-            
             factory.HostName <- host
             factory.Port <- port
             factory.UserName <- user
             factory.Password <- password
+            let connection = factory.CreateConnection()
+            let channel = connection.CreateModel()
             channel
-        with _ ->
-            eprintfn "Failed to initialize queue. %s:%s@%s:%d" user password host port
+        with e ->
+            eprintfn "Failed to initialize queue. %s. Message: %s" url e.Message
             reraise()
 
     type Queue =
@@ -72,7 +72,7 @@ module Queue =
             
             channel.BasicConsume(queue.Name,false,consumer) |> ignore
          with e ->
-           eprintfn "Failed to subscribe on the queue. %s:%s@%s:%d" user password host port
+           eprintfn "Failed to subscribe on the queue. %s:%s@%s:%d. Message: %s" user password host port e.Message
 
     let publish (queue:Queue) (message : string) = 
         try
@@ -84,5 +84,6 @@ module Queue =
             properties.Persistent <- true
 
             channel.BasicPublish("",queue.Name, false,properties,body)
+            printfn "Message published"
         with e -> 
-           eprintfn "Failed to publish to thethe queue. %s:%s@%s:%d" user password host port
+           eprintfn "Failed to publish to thethe queue. %s:%s@%s:%d. Message: %s" user password host port e.Message

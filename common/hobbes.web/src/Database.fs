@@ -169,7 +169,7 @@ namespace Hobbes.Web
                 do! inner()
                 return ServerUrl,dbUser,dbPwd
             }
-            
+
         let awaitDbServer() =
             async {
                 let! _ = _awaitDbServer()
@@ -477,11 +477,16 @@ namespace Hobbes.Web
             member __.Views with get() = _views
             member this.InsertOrUpdate doc = 
                 let id = (CouchDoc.Parse doc).Id
+                
                 if System.String.IsNullOrWhiteSpace id then
                     failwith "Document must have a valid id"
                 match [id] |> this.TryGetRev with
                 None ->
                     log.Debugf "Found no rev, so assuming it's a new doc. id: %s" id
+                    let rev = (CouchDoc.Parse doc).Rev
+                    if System.String.IsNullOrWhiteSpace(rev) |> not then
+                        failwith "New documents shouldn't have a _rev"
+                        
                     put doc [id] None
                 | Some rev -> 
                     log.Debugf "Found rev, going to update. id: %s. rev: %s" id rev 

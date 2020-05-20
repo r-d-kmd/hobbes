@@ -51,38 +51,40 @@ module Data =
 
     [<Get ("/dependingtransformations/%s")>]
     let dependingTransformations (cacheKey : string) =
-        let dependencies = 
-            configurations.List()
-            |> Seq.collect(fun configuration ->
-                let transformations = 
-                    configuration.Transformations
-                    |> Array.map(fun transformationName ->
-                        match transformations.TryGet transformationName with
-                        None -> 
-                            Log.errorf null "Transformation (%s) not found" transformationName
-                            None
-                        | t -> t
-                    ) |> Array.filter Option.isSome
-                    |> Array.map Option.get
-                    |> Array.toList
+        if cacheKey.EndsWith(":") then 404, "Invalid cache key"
+        else
+            let dependencies = 
+                configurations.List()
+                |> Seq.collect(fun configuration ->
+                    let transformations = 
+                        configuration.Transformations
+                        |> Array.map(fun transformationName ->
+                            match transformations.TryGet transformationName with
+                            None -> 
+                                Log.errorf null "Transformation (%s) not found" transformationName
+                                None
+                            | t -> t
+                        ) |> Array.filter Option.isSome
+                        |> Array.map Option.get
+                        |> Array.toList
 
-                match transformations with
-                [] -> []
-                | h::tail ->
-                    tail
-                    |> List.fold(fun (lst : (string * TransformationRecord.Root) list) t ->
-                        let prevKey, prevT = lst |> List.head
-                        (prevKey + ":" + prevT.Id,t) :: lst
-                    ) [keyFromConfig configuration,h]
-            ) |> Seq.groupBy fst
-            |> Seq.map(fun (key,deps) ->
-                key,deps |> Seq.map snd 
-            ) |> Map.ofSeq
-        match dependencies |> Map.tryFind cacheKey with
-        None -> 404,"No dependencies found"
-        | Some dependencies ->
-               200,System.String.Join(",",dependencies)
-                   |> sprintf "[%s]"
+                    match transformations with
+                    [] -> []
+                    | h::tail ->
+                        tail
+                        |> List.fold(fun (lst : (string * TransformationRecord.Root) list) t ->
+                            let prevKey, prevT = lst |> List.head
+                            (prevKey + ":" + prevT.Id,t) :: lst
+                        ) [keyFromConfig configuration,h]
+                ) |> Seq.groupBy fst
+                |> Seq.map(fun (key,deps) ->
+                    key,deps |> Seq.map snd 
+                ) |> Map.ofSeq
+            match dependencies |> Map.tryFind cacheKey with
+            None -> 404,sprintf "No dependencies found for key (%s) %A" cacheKey dependencies
+            | Some dependencies ->
+                   200,System.String.Join(",",dependencies)
+                       |> sprintf "[%s]"
             
     [<Get ("/transformation/%s")>]
     let transformation (transformationName : string) =

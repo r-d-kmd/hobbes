@@ -33,9 +33,10 @@ module Project =
                ||| (p &&& Project.Jira) with
         Project.AzureDevOps 
         | Project.Git 
-        | Project.Jira  as p -> p
+        | Project.Jira as p -> p
+        | p when p = (Project.AzureDevOps ||| Project.Git) -> Project.Git
         | _ -> 
-            eprintfn "No source specified %A" p
+            eprintfn "No source specified (%A)" p
             Project.General
 
     let toList (p: Project) =

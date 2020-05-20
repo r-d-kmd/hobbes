@@ -1,24 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: qtest
+  name: git
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: qtest
+      app: git
   template:
     metadata:
       labels:
-        app: qtest
+        app: git
     spec:
       containers:
-      - env:
-        imagePullPolicy: Never
-        image: hobbes.qtest
-        name: hobbes-qtest
-        envFrom:
+      - envFrom:
         - secretRef:
             name: env
+        imagePullPolicy: Never
+        image: git
+        name: hobbes-git
       restartPolicy: Always
 status: {}

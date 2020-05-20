@@ -8,7 +8,7 @@ open Hobbes.Workers.Shared.Queue
 
 type DependingTransformationList = FSharp.Data.JsonProvider<"""[
     {
-        "name" : "lkjlkj",
+        "_id" : "lkjlkj",
         "lines" : ["lkjlkj", "lkjlkj","o9uulkj"]
     }
 ]""">
@@ -23,7 +23,7 @@ let handleMessage cachedData =
         Http.Success transformations ->
             transformations
             |> Seq.fold(fun r transformation ->
-                let key = cacheKey + ":" + transformation.Name
+                let key = cacheKey + ":" + transformation.Id
                 try
                     cachedData
                     |> Cache.DataResult.Parse
@@ -39,8 +39,11 @@ let handleMessage cachedData =
                    eprintfn "Couldn't insert data (key: %s). %s %s" key e.Message e.StackTrace
                    false
             ) true
-        | Http.Error(sc,m) ->
-            printfn "Failed to transform data %d %s" sc m
+        | Http.Error(404,m) ->
+            printfn "No depending transformations found. Message: %s" m
+            true
+        | Http.Error(sc,m)
+            printfn "Failed to transform data (%s) %d %s" cacheKey sc m
             false
     with e ->
         printfn "Failed to perform calculation. %s %s" e.Message e.StackTrace

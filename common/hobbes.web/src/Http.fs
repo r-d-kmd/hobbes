@@ -60,25 +60,36 @@ module Http =
                       key
                   ]
               | Update -> ["update"]
+
+    type DbService =
+       Root
+       | Database of string
+       with member x.ToPath() = 
+              match x with
+              Root -> []
+              | Database s -> [s]
+           
     type Service = 
          UniformData of CacheService
+         | Db of DbService
          | Calculator of CalculatorService
          | Configurations of ConfigurationService
          | Collector of string * CollectorService
          with 
-             member x.ToStrings() = 
+             member x.ToParts() = 
                match x with
-               UniformData serv -> "uniformdata", serv.ToPath()
-               | Calculator serv -> "calculator",serv.ToPath()
-               | Configurations serv -> "configurations", serv.ToPath()
+               UniformData serv -> "uniformdata", serv.ToPath(),8085
+               | Calculator serv -> "calculator",serv.ToPath(),8085
+               | Configurations serv -> "configurations", serv.ToPath(),8085
+               | Db serv -> "db",serv.ToPath(),5984
                | Collector (collectorName,service) ->  
                    collectorName.ToLower().Replace(" ","") 
-                   |> sprintf "collectors-%s", service.ToPath()
+                   |> sprintf "collectors-%s", service.ToPath(),8085
              member x.ServiceUrl 
                   with get() = 
-                      let serviceName,path = x.ToStrings()
+                      let serviceName,path,port = x.ToParts()
                       let pathString = System.String.Join("/",path) 
-                      sprintf "http://%s-svc:8085/%s"  serviceName pathString
+                      sprintf "http://%s-svc:%d/%s"  serviceName port pathString
 
 
     let readBody = 

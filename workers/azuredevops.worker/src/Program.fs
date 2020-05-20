@@ -6,44 +6,52 @@ open Readers.AzureDevOps
 open Hobbes.Web
 open Hobbes.Workers.Shared.Queue
 
-let synchronize (config : Config.Root) token =
+let synchronize (source : AzureDevOpsSource.Root) token =
         try
-            let statusCode, body = Reader.sync token config
+            let statusCode, body = Reader.sync token source
             printfn "Sync finised with statusCode %d and result %s" statusCode body
             if statusCode < 200 || statusCode >= 300 then 
                 printfn "Syncronization failed. Message: %s" body
-                Some body
+                match Reader.read source with
+                None -> failwith "Could not read data from raw"
+                | d -> d
             else
                 None                 
         with e ->
             printfn "Sync failed due to exception: %s %s" e.Message e.StackTrace
             None
 
-let handleMessage confDoc =
-    printfn "Received message. %s" confDoc
-    let conf = parseConfiguration confDoc
-    let source = conf.Source |> source2AzureSource
-    let token = 
-        if source.Account.ToString() = "kmddk" then
-            env "AZURE_TOKEN_KMDDK" null
-        else
-            env "AZURE_TOKEN_TIME_PAYROLL_KMDDK" null
+let handleMessage sourceDoc =
+    printfn "Received message. %s" sourceDoc
+    try
+        let source = sourceDoc |> AzureDevOpsSource.Parse
+        let token = 
+            if source.Account.ToString() = "kmddk" then
+                env "AZURE_TOKEN_KMDDK" null
+            else
+                env "AZURE_TOKEN_TIME_PAYROLL_KMDDK" null
 
-    match synchronize conf token with
-    None -> 
-        printfn "Conldn't syncronize. %s %s %s" confDoc source token
-    | Some _ -> 
-        match Http.post (Http.UniformData Http.Update) id confDoc with
-        Http.Success _ -> 
-           printfn "Data uploaded to cache"
-           Some true
-        | Http.Error(status,msg) -> 
-            printfn "Upload to uniform data failed. %s" msg
-            None
-    ) |> Option.isSome
+        match synchronize source token with
+        None -> 
+            printfn "Conldn't syncronize. %s %s" sourceDoc token
+            false
+        | Some data -> 
+            match Http.post (Http.UniformData Http.Update) id data with
+            Http.Success _ -> 
+               printfn "Data uploaded to cache"
+               true
+            | Http.Error(status,msg) -> 
+                printfn "Upload to uniform data failed. %s" msg
+                false
+    with e ->
+        printfn "Failed to process message. %s %s" e.Message e.StackTrace
+        false
+    
 
 [<EntryPoint>]
 let main _ =
+    Database.awaitDbServer()
+    Database.initDatabases ["azure_devops_rawdata"]
     watch Queue.AzureDevOps handleMessage 5000
     
     0

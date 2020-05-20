@@ -26,10 +26,14 @@ module RawdataTypes =
         }"""
     type DataResult = JsonProvider<DataResultString>
 
+    let keyFromSourceDoc (source : string) = 
+        source
+        |> Hobbes.Web.Cache.key
+        
     let keyFromSource (source : Config.Source) = 
         source.JsonValue.ToString()
-        |> Hobbes.Web.Cache.key
-
+        |> keyFromSourceDoc
+    
     let keyFromConfig (config : Config.Root) =
         try 
             config.Source |> keyFromSource

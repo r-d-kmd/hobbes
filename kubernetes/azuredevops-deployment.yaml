@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azuredevops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: azuredevops
+  template:
+    metadata:
+      labels:
+        app: azuredevops
+    spec:
+      containers:
+      - envFrom:
+        - secretRef:
+            name: env
+        imagePullPolicy: Never
+        image: azuredevops
+        name: hobbes-azuredevops
+      restartPolicy: Always
+status: {}

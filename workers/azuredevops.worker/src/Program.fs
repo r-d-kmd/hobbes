@@ -1,5 +1,4 @@
 open System
-open System.Text
 open Hobbes.Helpers.Environment
 open Readers.AzureDevOps.Data
 open Hobbes.Web.RawdataTypes
@@ -19,6 +18,7 @@ let synchronize (config : Config.Root) token =
             None
 
 let handleMessage confDoc =
+    printfn "Received message. %s" confDoc
     let conf = parseConfiguration confDoc
     let source = conf.Source |> source2AzureSource
     let token = 
@@ -31,6 +31,7 @@ let handleMessage confDoc =
     |> Option.bind(fun _ ->
         match Http.post (Http.UniformData Http.Update) id confDoc with
         Http.Success _ -> 
+           printfn "Data uploaded to cache"
            Some true
         | Http.Error(status,msg) -> 
             eprintfn "Upload to uniform data failed. %s" msg

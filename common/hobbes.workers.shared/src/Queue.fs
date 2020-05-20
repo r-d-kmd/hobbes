@@ -4,8 +4,6 @@ open RabbitMQ.Client.Events
 open System
 open System.Text
 open Hobbes.Helpers.Environment
-open Hobbes.Web
-open Hobbes.Web.RawdataTypes
 
 module Queue = 
     
@@ -28,7 +26,6 @@ module Queue =
 
     let private factory = ConnectionFactory()
     let init() =
-        let url = sprintf "amqp://%s:%s@%s:%d" user password host port
         try
             factory.HostName <- host
             factory.Port <- port
@@ -38,7 +35,7 @@ module Queue =
             let channel = connection.CreateModel()
             channel
         with e ->
-            eprintfn "Failed to initialize queue. %s. Message: %s" url e.Message
+            eprintfn "Failed to initialize queue. %s:%d. Message: %s" host port e.Message
             reraise()
 
     type Queue =
@@ -52,9 +49,10 @@ module Queue =
                   Cache -> "cache"
                   | AzureDevOps -> "azuredevops"
                   | Git -> "git"
-                  | Generic s -> s
+                  | Generic s -> s.ToLower()
 
     let watch (queue:Queue) handler =
+        
         try
             let channel = init()
             channel.QueueDeclare(queue.Name,
@@ -71,8 +69,10 @@ module Queue =
             ))
             
             channel.BasicConsume(queue.Name,false,consumer) |> ignore
+            printfn "Watching queue: %s" queue.Name
          with e ->
-           eprintfn "Failed to subscribe on the queue. %s:%s@%s:%d. Message: %s" user password host port e.Message
+           eprintfn "Failed to subscribe on the queue. %s:%d. Message: %s" host port e.Message
+           reraise()
 
     let publish (queue:Queue) (message : string) = 
         try
@@ -86,4 +86,5 @@ module Queue =
             channel.BasicPublish("",queue.Name, false,properties,body)
             printfn "Message published"
         with e -> 
-           eprintfn "Failed to publish to thethe queue. %s:%s@%s:%d. Message: %s" user password host port e.Message
+           eprintfn "Failed to publish to thethe queue. %s:%d. Message: %s" host port e.Message
+           reraise()

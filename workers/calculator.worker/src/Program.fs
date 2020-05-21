@@ -33,8 +33,8 @@ let handleMessage cachedData =
                     |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
                     |> Hobbes.FSharp.Compile.expressions transformation.Lines 
                     |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows 
-                    |> createCacheRecord key
-                    |> cache.InsertOrUpdate
+                    |> Cache.DataResult.Parse
+                    |> cache.InsertOrUpdate key
                     printfn "Transformation (%s) completed" key
                     r && true 
                 with e ->

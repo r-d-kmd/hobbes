@@ -38,9 +38,6 @@ module DataConfiguration =
         Database.Database("configurations", ConfigurationRecord.Parse, Log.loggerInstance) 
                  .AddView(sourceView)
 
-    let store doc = 
-       db.InsertOrUpdate doc
-
     let list() = 
         db.List()
 

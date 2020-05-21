@@ -25,6 +25,7 @@ let handleMessage sourceDoc =
     printfn "Received message. %s" sourceDoc
     try
         let source = sourceDoc |> AzureDevOpsSource.Parse
+        let key = sourceDoc |> keyFromSourceDoc
         let token = 
             if source.Account.ToString() = "kmddk" then
                 env "AZURE_TOKEN_KMDDK" null
@@ -35,14 +36,13 @@ let handleMessage sourceDoc =
         None -> 
             printfn "Conldn't syncronize. %s %s" sourceDoc token
             false
-        | Some data -> 
-           Cache.createCacheRecord
-            match Http.post (Http.UniformData Http.Update) id data with
+        | Some (key,data) -> 
+            match Http.post (Http.UniformData Http.Update) id (sprintf """["%s",%s]""" key data) with
             Http.Success _ -> 
                printfn "Data uploaded to cache"
                true
             | Http.Error(status,msg) -> 
-                printfn "Upload to uniform data failed. %s" msg
+                printfn "Upload to uniform data failed. %d %s" status msg
                 false
     with e ->
         printfn "Failed to process message. %s %s" e.Message e.StackTrace

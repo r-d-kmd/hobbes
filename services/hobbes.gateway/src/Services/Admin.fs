@@ -156,27 +156,5 @@ module Admin =
             let msg = sprintf "INIT: error in creating dbs. Status code: %d" errorCode
             error null msg
          | None ->
-            //TODO this should be moved to the individual service
-            try
-                let documentDir = "db/documents"
-                if System.IO.Directory.Exists documentDir |> not then failwith "Document folder not found"
-                (System.IO.Directory.EnumerateDirectories(documentDir)
-                |> Seq.collect(fun dir -> 
-                    System.IO.Directory.EnumerateFiles(dir,"*.json")
-                    |> Seq.map(fun f -> 
-                        let dbName = System.IO.Path.GetFileName dir
-                        let db = Database(dbName, CouchDoc.Parse, ignoreLogging)
-                        let insertOrUpdate =
-                            db.InsertOrUpdate
-                        let tryGetHash = db.TryGetHash
-                        db, f
-                    ) 
-                ) |> Seq.map uploadDesignDocument
-                |> Async.Parallel
-                |> Async.RunSynchronously) |> ignore
-
-                let msg = "Init completed"
-                log msg
-            with e ->
-                errorf e.StackTrace "Error in init: %s" e.Message
-        
+            let msg = "Init completed"
+            log msg

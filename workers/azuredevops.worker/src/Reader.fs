@@ -177,7 +177,7 @@ module Reader =
                "rowCount" : %d
                }
             """ columnNames rows (rawdataCache |> Seq.length)
-        Cache.createCacheRecord key data
+        key, data
 
     //Reads data from the raw data store. This should be exposed as part of the API in some form 
     let read (source : AzureDevOpsSource.Root) =
@@ -185,12 +185,7 @@ module Reader =
 
         assert(System.String.IsNullOrWhiteSpace key |> not)
 
-        let timeStamp = 
-            (match key |> getState with
-            Some s -> 
-                ((s |> Cache.CacheRecord.Parse).TimeStamp
-                 |> System.DateTime.Parse)
-            | None -> System.DateTime.Now).ToString("dd/MM/yyyy H:mm").Replace(":", ";")
+        let timeStamp = System.DateTime.Now.ToString("dd/MM/yyyy H:mm").Replace(":", ";")
 
         let raw = 
             source

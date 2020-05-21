@@ -17,6 +17,9 @@ module Cache =
         } """
 
     [<Literal>]
+    let private UpdateArgumentsString = """["cache key",""" + DataResultString + "]"
+
+    [<Literal>]
     let internal CacheRecordString = 
         """{
             "_id" : "name",
@@ -24,19 +27,22 @@ module Cache =
             "data" : """ + DataResultString + """
         }"""
 
+    
     type DataResult = JsonProvider<DataResultString>
     type CacheRecord = JsonProvider<CacheRecordString>
-
+    type UpdateArguments = JsonProvider<UpdateArgumentsString>
 
     let key (source : string) = 
         let whitespaceToRemove = [|' ';'\t';'\n';'\r'|]
         source.Split(whitespaceToRemove,System.StringSplitOptions.RemoveEmptyEntries)
         |> System.String.Concat
         |> hash
-        
-    let createCacheRecord key data =
+
+    let private createCacheRecord key data =
         //fail if the data is invalid in form
-        data |> DataResult.Parse |> ignore
+        let dataRecord = data |> DataResult.Parse
+        assert(dataRecord.ColumnNames |> isNull |> not)
+        assert(dataRecord.RowCount = dataRecord.Rows.Length)
         
         let timeStamp = System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)
         let record = 
@@ -52,7 +58,6 @@ module Cache =
 
         assert(cacheRecord.Id = key)
         assert(cacheRecord.TimeStamp = timeStamp)
-
         cacheRecord
 
     let readData (cacheRecord : CacheRecord.Root) = 
@@ -74,7 +79,7 @@ module Cache =
         )
 
     type ICacheProvider = 
-         abstract member InsertOrUpdate : CacheRecord.Root -> unit
+         abstract member InsertOrUpdate : string -> DataResult.Root -> unit
          abstract member Get : string -> CacheRecord.Root option
 
     type Cache private(provider : ICacheProvider) =
@@ -84,9 +89,10 @@ module Cache =
                 Database.Database(name + "cache", parser, Log.loggerInstance)
             
             Cache {new ICacheProvider with 
-                            member __.InsertOrUpdate doc = 
+                            member __.InsertOrUpdate key doc = 
                                 async{
                                     doc.JsonValue.ToString()
+                                    |> createCacheRecord key 
                                     |> db.InsertOrUpdate 
                                     |> Log.logf "Inserted data: %s"
                                 } |> Async.Start
@@ -97,9 +103,10 @@ module Cache =
                                 |> db.TryGet }
         new(service : Http.CacheService -> Http.Service) =
             Cache {new ICacheProvider with 
-                            member __.InsertOrUpdate doc = 
+                            member __.InsertOrUpdate key doc = 
                                 async{
                                     doc.JsonValue.ToString() 
+                                    |> sprintf """["%s",%s]""" key
                                     |> Http.post (Http.Update |> service) id 
                                     |> ignore
                                 } |> Async.Start

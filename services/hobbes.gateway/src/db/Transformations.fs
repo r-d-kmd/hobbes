@@ -13,8 +13,6 @@ module Transformations =
           return db.FilterByKeys transformationIds
       }
    
-   let store doc = db.InsertOrUpdate doc
-
    let tryGetRev id = db.TryGetRev id
 
    let tryGetHash id = db.TryGetHash id

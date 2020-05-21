@@ -475,6 +475,11 @@ namespace Hobbes.Web
                     log.Errorf e.StackTrace "Failed getting documents by key.Message: %s POST Body: %s" e.Message (body.Substring(0,min body.Length 500))
                     reraise()
             member __.Views with get() = _views
+            member this.InsertOrUpdate (record : 'a) =
+                match record :> obj with
+                  :? Runtime.BaseTypes.IJsonDocument as j -> j.JsonValue.ToString()
+                  | o -> o.ToString()
+                |> this.InsertOrUpdate
             member this.InsertOrUpdate doc = 
                 let id = (CouchDoc.Parse doc).Id
                 

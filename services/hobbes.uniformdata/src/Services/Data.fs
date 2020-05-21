@@ -4,6 +4,7 @@ open Hobbes.Web.Routing
 open Hobbes.Web
 open Hobbes.Web.RawdataTypes
 open Hobbes.Workers.Shared.Queue
+open FSharp.Data
 
 [<RouteArea ("/data", false)>]
 module Data =
@@ -28,17 +29,19 @@ module Data =
         | None -> 
             404,"No data found"
 
-    [<Post ("/update", true)>]
-    let update cacheRecordDoc =
+    [<Post ("/update/%s", true)>]
+    let update dataAndKey=
         async {
-            let cacheRecord = cacheRecordDoc |> Hobbes.Web.Cache.CacheRecord.Parse
-            Log.logf "updating cache with _id: %s" cacheRecord.Id
-            try
-                cacheRecord
-                |> cache.InsertOrUpdate
-                publish Queue.Cache cacheRecordDoc
-            with e ->
-                Log.excf e "Failed to insert %s" cacheRecord.Id
+            match dataAndKey |> Cache.UpdateArguments.Parse with
+            [|key;data|] ->
+                Log.logf "updating cache with _id: %s" key
+                try
+                    let dataRecord = data |> Cache.DataResult.Parse
+                    dataRecord
+                    |> cache.InsertOrUpdate key
+                    publish Queue.Cache key
+                with e ->
+                    Log.excf e "Failed to insert %s" key
         } |> Async.Start
         200, "updating"
 

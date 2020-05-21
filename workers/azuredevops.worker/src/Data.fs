@@ -180,71 +180,24 @@ module Data =
 
         record
 
-    let createCacheRecord key (data : string) (state : SyncStatus) message cacheRevision =
-        let values = 
-            [
-               if cacheRevision |> Option.isSome then yield "revision", cacheRevision.Value |> string |> String
-               yield "state", state |> string |> String
-               if message |> Option.isSome then yield "message", message.Value |> String
-            ]
-
-        createDataRecord key data values
-
     type private RawList = JsonProvider<"""["id_a","id_b"]""">
     let private db = 
         Database.Database("azure_devops_rawdata", AzureDevOpsData.Parse, Log.loggerInstance)
 
-    let insertOrUpdate doc = 
+    let insertOrUpdate (doc : string) = 
         async{
             db.InsertOrUpdate doc
             |> Log.logf "Inserted data: %s"
         } |> Async.Start
-
-    let delete (id : string) = 
-        200, (db.Delete id).ToString()                  
-
-   
-
-    let getState id = 
-        db.TryGet id
-        |> Option.bind(fun s -> s.ToString() |> Some)
-
-    let setSyncState state message revision (config : Config.Root) = 
-        let doc = createCacheRecord config.Id null state message revision
-        db.InsertOrUpdate(doc) |> ignore
-        (doc |> Config.Parse).Id
-
-    let setSyncFailed message revision = setSyncState Failed (Some message) (Some revision) >> ignore
-    let setSyncCompleted revision = setSyncState Synced None (Some revision) >> ignore
-    let updateSync event revision = setSyncState Updated (Some event) (Some revision) >> ignore
-    let createSyncStateDocument revision = setSyncState Started None (Some revision)
+        
+    let get key = 
+        db.TryGet key
 
     let tryLatestId searchKey =
         None //should ideal return the latest workitem id but views in production are unstable
 
     let list = 
         db.ListIds
-
-    let clear()=
-        //todo: make a bulk update instead setting the prop _deleted to true
-        async {
-            let!_ =
-                db.ListIds()
-                |> Seq.filter(fun id ->
-                   (id.StartsWith "_design" || id = "default_hash") |> not
-                )
-                |> Seq.map(fun id -> 
-                    async { 
-                        let status,body = delete id
-                        if status > 299 then
-                            Log.errorf "" "Couldn't delete Rawdata %s. Message: %s" id body
-                        else
-                            Log.debugf "Deleted Rawdata %s" id
-                    }
-                ) |> Async.Parallel
-            return ()
-        } |> Async.Start
-        200,"deleting"
     
     let projectsBySource (source : AzureDevOpsSource.Root) = 
         let configSearchKey = source.JsonValue.ToString() |> keyFromSourceDoc

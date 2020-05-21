@@ -29,19 +29,24 @@ module Data =
         | None -> 
             404,"No data found"
 
-    [<Post ("/update/%s", true)>]
-    let update dataAndKey=
+    [<Post ("/update", true)>]
+    let update dataAndKey =
         async {
-            match dataAndKey |> Cache.UpdateArguments.Parse with
-            [|key;data|] ->
-                Log.logf "updating cache with _id: %s" key
-                try
-                    let dataRecord = data |> Cache.DataResult.Parse
-                    dataRecord
-                    |> cache.InsertOrUpdate key
-                    publish Queue.Cache key
-                with e ->
-                    Log.excf e "Failed to insert %s" key
+            let args = 
+                dataAndKey 
+                |> Cache.UpdateArguments.Parse
+            let key = args.String
+            let data = args.Record
+            Log.logf "updating cache with _id: %s" key
+            try
+                let dataRecord = 
+                    data.JsonValue.ToString() 
+                    |> Cache.DataResult.Parse
+                dataRecord
+                |> cache.InsertOrUpdate key
+                publish Queue.Cache key
+            with e ->
+                Log.excf e "Failed to insert %s" key
         } |> Async.Start
         200, "updating"
 

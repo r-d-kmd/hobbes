@@ -14,39 +14,42 @@ type DependingTransformationList = FSharp.Data.JsonProvider<"""[
 ]""">
 
 let cache = Cache.Cache(Http.UniformData)
-let handleMessage cachedData = 
+let handleMessage cacheKey = 
     try
-        let cacheRecord = CacheRecord.Parse cachedData
-        let cacheKey = cacheRecord.Id
-        let service = cacheKey |> Http.DependingTransformations |> Http.Configurations
-        match Http.get service DependingTransformationList.Parse  with
-        Http.Success transformations ->
-            transformations
-            |> Seq.fold(fun r transformation ->
-                let key = cacheKey + ":" + transformation.Id
-                try
-                    let data = 
-                        cacheRecord
-                        |> Cache.readData
-
-                    data
-                    |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
-                    |> Hobbes.FSharp.Compile.expressions transformation.Lines 
-                    |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows 
-                    |> Cache.DataResult.Parse
-                    |> cache.InsertOrUpdate key
-                    printfn "Transformation (%s) completed" key
-                    r && true 
-                with e ->
-                   eprintfn "Couldn't insert data (key: %s). %s %s" key e.Message e.StackTrace
-                   false
-            ) true
-        | Http.Error(404,m) ->
-            printfn "No depending transformations found. Message: %s" m
-            true
-        | Http.Error(sc,m) ->
-            printfn "Failed to transform data (%s) %d %s" cacheKey sc m
+        match cache.Get cacheKey with
+        None -> 
+            printfn "No data for that key (%s)" cacheKey
             false
+        | Some cacheRecord -> 
+            let service = cacheKey |> Http.DependingTransformations |> Http.Configurations
+            match Http.get service DependingTransformationList.Parse  with
+            Http.Success transformations ->
+                transformations
+                |> Seq.fold(fun r transformation ->
+                    let key = cacheKey + ":" + transformation.Id
+                    try
+                        let data = 
+                            cacheRecord
+                            |> Cache.readData
+
+                        data
+                        |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
+                        |> Hobbes.FSharp.Compile.expressions transformation.Lines 
+                        |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows 
+                        |> Cache.DataResult.Parse
+                        |> cache.InsertOrUpdate key
+                        printfn "Transformation (%s) completed" key
+                        r && true 
+                    with e ->
+                       eprintfn "Couldn't insert data (key: %s). %s %s" key e.Message e.StackTrace
+                       false
+                ) true
+            | Http.Error(404,m) ->
+                printfn "No depending transformations found. Message: %s" m
+                true
+            | Http.Error(sc,m) ->
+                printfn "Failed to transform data (%s) %d %s" cacheKey sc m
+                false
     with e ->
         printfn "Failed to perform calculation. %s %s" e.Message e.StackTrace
         reraise()

@@ -2,20 +2,12 @@
 <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <CommonLibPath>../../../docker/.lib/</CommonLibPath>
+    <CommonLibPath>$(TargetsPath)docker/.lib/</CommonLibPath>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="hobbes.core">
-      <HintPath>$(CommonLibPath)hobbes.core.dll</HintPath>
-    </Reference>
-    <Reference Include="hobbes.helpers">
-      <HintPath>$(CommonLibPath)hobbes.helpers.dll</HintPath>
-    </Reference>
-    <Reference Include="hobbes.web">
-      <HintPath>$(CommonLibPath)hobbes.web.dll</HintPath>
-    </Reference>
-    <Reference Include="hobbes.workers.shared">
-      <HintPath>$(CommonLibPath)hobbes.workers.shared.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="$(TargetsPath)common\hobbes.core\src\hobbes.core.fsproj" />
+    <ProjectReference Include="$(TargetsPath)common\hobbes.helpers\src\hobbes.helpers.fsproj" />
+    <ProjectReference Include="$(TargetsPath)common\hobbes.web\src\hobbes.web.fsproj" />
+    <ProjectReference Include="$(TargetsPath)common\hobbes.workers.shared\src\hobbes.workers.shared.fsproj" />
   </ItemGroup>
 </Project>

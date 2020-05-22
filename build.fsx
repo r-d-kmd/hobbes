@@ -472,7 +472,7 @@ workers
 )
 
 
-"BuildGenericImages" =?> ("Dependencies",shouldRebuildGenericDockerImages)
+"PushGenericImages" =?> ("Dependencies",shouldRebuildGenericDockerImages)
 "Dependencies" =?> ("BuildHobbesSdk", shouldRebuildDependencies)
 
 "BuildHobbesSdk" =?> ("BuildCommonHelpers", shouldRebuildHobbesSdk)
@@ -485,16 +485,16 @@ workers
 "BuildCommonWeb" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Web)    
 
 "BuildCommon" =?> ("BuildAppSdk", shouldRebuildCommon CommonLib.Any)
-"BuildAppSdk" =?> ("PreBuildServices", shouldRebuildAppSdk)
+"PushAppSdk" =?> ("PreBuildServices", shouldRebuildAppSdk)
 
 "buildcommonworkers.shared" =?> ("PreBuildWorkers",shouldRebuildCommon CommonLib.Workers)
-"BuildAppSdk" =?> ("PreBuildWorkers", shouldRebuildAppSdk)
+"PushAppSdk" =?> ("PreBuildWorkers", shouldRebuildAppSdk)
 "BuildCommon" =?> ("BuildWorkbench", shouldRebuildCommon CommonLib.Web) 
 
-
+"BuildGenericImages" ==> "PushGenericImages"
 "BuildServices" ==> "Build"
 "BuildWorkers" ==> "Build"
-
+"BuildAppSdk" ==> "PushAppSdk"
 "ForceBuildServices" ==> "Rebuild"
 "ForceBuildWorkers" ==> "Rebuild"
 

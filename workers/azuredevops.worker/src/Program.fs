@@ -9,20 +9,20 @@ open Hobbes.Workers.Shared.Queue
 let synchronize (source : AzureDevOpsSource.Root) token =
         try
             let statusCode, body = Reader.sync token source
-            printfn "Sync finised with statusCode %d and result %s" statusCode body
+            Log.logf "Sync finised with statusCode %d and result %s" statusCode body
             if statusCode > 200 || statusCode < 300 then 
                 match Reader.read source with
                 None -> failwith "Could not read data from raw"
                 | d -> d
             else
-                printfn "Syncronization failed. %d Message: %s" statusCode body
+                Log.errorf null "Syncronization failed. %d Message: %s" statusCode body
                 None                 
         with e ->
-            printfn "Sync failed due to exception: %s %s" e.Message e.StackTrace
+            Log.excf e "Sync failed due to exception"
             None
 
 let handleMessage sourceDoc =
-    printfn "Received message. %s" sourceDoc
+    Log.logf "Received message. %s" sourceDoc
     try
         let source = sourceDoc |> AzureDevOpsSource.Parse
         let key = sourceDoc |> keyFromSourceDoc
@@ -34,18 +34,18 @@ let handleMessage sourceDoc =
 
         match synchronize source token with
         None -> 
-            printfn "Conldn't syncronize. %s %s" sourceDoc token
+            Log.logf "Conldn't syncronize. %s %s" sourceDoc token
             false
         | Some (key,data) -> 
             match Http.post (Http.UniformData Http.Update) id (sprintf """["%s",%s]""" key data) with
             Http.Success _ -> 
-               printfn "Data uploaded to cache"
+               Log.logf "Data uploaded to cache"
                true
             | Http.Error(status,msg) -> 
-                printfn "Upload to uniform data failed. %d %s" status msg
+                Log.logf "Upload to uniform data failed. %d %s" status msg
                 false
     with e ->
-        printfn "Failed to process message. %s %s" e.Message e.StackTrace
+        Log.excf e "Failed to process message"
         false
     
 

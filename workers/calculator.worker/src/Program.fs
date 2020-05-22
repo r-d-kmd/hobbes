@@ -18,7 +18,7 @@ let handleMessage cacheKey =
     try
         match cache.Get cacheKey with
         None -> 
-            printfn "No data for that key (%s)" cacheKey
+            Log.logf "No data for that key (%s)" cacheKey
             false
         | Some cacheRecord -> 
             let service = cacheKey |> Http.DependingTransformations |> Http.Configurations
@@ -38,21 +38,21 @@ let handleMessage cacheKey =
                         |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows 
                         |> Cache.DataResult.Parse
                         |> cache.InsertOrUpdate key
-                        printfn "Transformation (%s) completed" key
+                        Log.logf "Transformation (%s) completed" key
                         r && true 
                     with e ->
-                       eprintfn "Couldn't insert data (key: %s). %s %s" key e.Message e.StackTrace
+                       Log.excf e "Couldn't insert data (key: %s)." key
                        false
                 ) true
-            | Http.Error(404,m) ->
-                printfn "No depending transformations found. Message: %s" m
+            | Http.Error(404,_) ->
+                Log.debug "No depending transformations found."
                 true
             | Http.Error(sc,m) ->
-                printfn "Failed to transform data (%s) %d %s" cacheKey sc m
+                Log.errorf null "Failed to transform data (%s) %d %s" cacheKey sc m
                 false
     with e ->
-        printfn "Failed to perform calculation. %s %s" e.Message e.StackTrace
-        reraise()
+        Log.excf e "Failed to perform calculation."
+        false
 [<EntryPoint>]
 let main _ =
     watch Queue.Cache handleMessage 5000

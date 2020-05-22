@@ -503,8 +503,6 @@ module DataStructures =
                             regression.Transform(predictedXValues)
                             |> Array.zip predictedXValues
                             |> Array.map(fun (x,y) -> createKey x => (y :> Comp))
-                            
-                        printfn "Extrapolated values: %A" result
                         result |> series
 
             | AST.Regression(regressionType,inputTreeNodes,outputTreeNodes) ->

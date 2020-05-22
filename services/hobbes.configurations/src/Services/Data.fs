@@ -81,7 +81,7 @@ module Data =
                     key,deps |> Seq.map snd 
                 ) |> Map.ofSeq
             match dependencies |> Map.tryFind cacheKey with
-            None -> 404,sprintf "No dependencies found for key (%s) %A" cacheKey dependencies
+            None -> 404,sprintf "No dependencies found for key (%s)" cacheKey
             | Some dependencies ->
                    200,System.String.Join(",",dependencies)
                        |> sprintf "[%s]"

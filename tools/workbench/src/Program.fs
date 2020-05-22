@@ -104,7 +104,7 @@ let main args =
             let results = parser.Parse args
             Some results
         with e -> 
-            printfn "%s" e.Message
+            Log.logf "%s" e.Message
             None
 
     match results with
@@ -140,13 +140,13 @@ let main args =
         let sync = results.TryGetResult Sync
         if  test.IsSome || (sync.IsNone && publish.IsNone) then
             settings.Azure.TimePayrollKmddk |> Workbench.Tests.test|> ignore
-            printfn "Press enter to exit..."
+            Log.logf "Press enter to exit..."
             System.Console.ReadLine().Length
         else            
             match sync with
             None -> 
                 if publish |> Option.isSome then 
-                    printfn "Using host: %s" settings.Host
+                    Log.logf "Using host: %s" settings.Host
                     let urlTransformations = settings.Host + "/admin/transformation"
                     let urlConfigurations = settings.Host + "/admin/configuration"
 
@@ -184,7 +184,7 @@ let main args =
                     
                     transformations 
                     |> Seq.iter(fun doc ->
-                        printfn "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
+                        Log.logf "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
                         try
                             Http.Request(urlTransformations, 
                                          httpMethod = "PUT",
@@ -196,13 +196,13 @@ let main args =
                                             ]
                                         ) |> ignore
                         with e ->
-                           printfn "Failed to publish transformations. URL: %s Msg: %s" urlTransformations e.Message
+                           Log.logf "Failed to publish transformations. URL: %s Msg: %s" urlTransformations e.Message
                            reraise()
                     )
 
                     configurations
                     |> Seq.iter(fun doc ->
-                        printfn "Creating configurations: %s" (Database.CouchDoc.Parse doc).Id
+                        Log.logf "Creating configurations: %s" (Database.CouchDoc.Parse doc).Id
                         Http.Request(urlConfigurations, 
                                      httpMethod = "PUT",
                                      body = TextRequest doc,

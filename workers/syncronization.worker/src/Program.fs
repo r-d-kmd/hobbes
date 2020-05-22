@@ -22,7 +22,7 @@ let main _ =
                 | Http.Error (sc,m) -> 
                     failwithf "Failed retrievining sources. %d - %s" sc m
             ) 
-        printfn "Syncronizing %d sources" (sources |> Seq.length)
+        Log.debugf "Syncronizing %d sources" (sources |> Seq.length)
         sources
         |> Array.iter(fun source ->
             let queue = source.Name |> Queue.Generic

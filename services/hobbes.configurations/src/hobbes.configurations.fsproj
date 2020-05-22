@@ -12,5 +12,10 @@
     <Compile Include="Services/Data.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\common\hobbes.core\src\hobbes.core.fsproj" />
+    <ProjectReference Include="..\..\..\common\hobbes.helpers\src\hobbes.helpers.fsproj" />
+    <ProjectReference Include="..\..\..\common\hobbes.web\src\hobbes.web.fsproj" />
+  </ItemGroup>
   <Import Project="..\..\..\.paket\Paket.Restore.targets" />
 </Project>

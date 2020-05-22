@@ -32,6 +32,5 @@ let private app = application {
 [
    "configurations"
    "transformations"
-   "sources"
 ] |> Hobbes.Web.Database.initDatabases
 run app

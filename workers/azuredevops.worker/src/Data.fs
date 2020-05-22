@@ -215,7 +215,7 @@ module Data =
                 hasData && hasSource
                 && (doc.JsonValue.ToString() |> keyFromConfigDoc) = configSearchKey
             )
-        Log.debugf  "Project data found by source %A" res
+        Log.debugf "Project data found by source %A" res
         res
 
     let bySource (source : AzureDevOpsSource.Root) = 

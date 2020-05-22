@@ -51,6 +51,21 @@ module Queue =
                   | Git -> "git"
                   | Generic s -> s.ToLower().Replace(" ","")
 
+    let rec awaitQueue() = 
+        async{
+            try
+                let channel = init()
+                channel.QueueDeclare("logging",
+                                     true,
+                                     false,
+                                     false,
+                                     null) |> ignore
+            with e -> 
+               printfn "Queue not yet ready. Message: %s" e.Message
+               do! Async.Sleep 1000
+               do! awaitQueue()
+        } 
+        
     let watch (queue:Queue) handler (pause : int) =
         try
             let channel = init()

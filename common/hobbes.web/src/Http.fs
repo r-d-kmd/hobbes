@@ -110,7 +110,8 @@ module Http =
         let url = service.ServiceUrl
         Log.logf "Getting %s" url
         Http.Request(url,
-                     httpMethod = "GET"
+                     httpMethod = "GET",
+                     silentHttpErrors = true
         ) |> readResponse parser
 
     let private putOrPost parser httpMethod (service : Service) body = 
@@ -118,7 +119,8 @@ module Http =
         Log.logf "%sting to %s" httpMethod url
         Http.Request(url,
                      httpMethod = httpMethod,
-                     body = TextRequest body
+                     body = TextRequest body,
+                     silentHttpErrors = true
         ) |> readResponse parser
 
     let put = putOrPost id "PUT"

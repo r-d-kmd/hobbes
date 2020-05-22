@@ -22,7 +22,9 @@ open Fake.IO
 
 
 let force = (Environment.environVarOrDefault "force-all" "false").ToLower() = "true"
-
+if force then
+    printfn "Running all full dependency chain since force-all was specified"
+    
 let dockerOrg = "kmdrd"
 let run command workingDir args = 
     let arguments = 

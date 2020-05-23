@@ -337,7 +337,7 @@ let buildApp (app : App) workingDir =
     Target.create buildTargetName build
     Target.create pushTargetName push
     "PreBuild" + appType + "s" ==> buildTargetName |> ignore
-    buildTargetName ==> pushTargetName |> ignore
+    buildTargetName ==> pushTargetName ==> "PushAppSdk" |> ignore
 
 Target.create "ForceBuildServices" ignore
 Target.create "ForceBuildWorkers" ignore
@@ -350,6 +350,7 @@ Target.create "BuildServices" ignore
 Target.create "PreBuildServices" ignore
 Target.create "BuildWorkers" ignore
 Target.create "PreBuildWorkers" ignore
+Target.create "PushAppSdk" ignore
 
 Target.create "CleanCommon" (fun _ ->
     let deleteFiles lib =

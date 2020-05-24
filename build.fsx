@@ -61,14 +61,14 @@ type CommonLib =
     Core
     | Helpers
     | Web
-    | Workers
+    | Messaging
     | Any
     with override x.ToString() = 
           match x with
           Core -> "core"
           | Helpers -> "helpers"
           | Web -> "web"
-          | Workers -> "workers.shared"
+          | Messaging -> "Messaging"
           | Any -> "core|helpers|web"
 
 type App = 
@@ -104,7 +104,7 @@ let changes =
     let coreDir = DirectoryInfo "./common/hobbes.core"
     let helpersDir = DirectoryInfo "./common/hobbes.helpers"
     let webDir = DirectoryInfo "./common/hobbes.web"
-    let workersSharedDir = DirectoryInfo "./common/hobbes.workers.shared"
+    let messagingDir = DirectoryInfo "./common/hobbes.messaging"
     
     Fake.Tools.Git.FileStatus.getChangedFilesInWorkingCopy "." "HEAD@{1}"
     |> Seq.map(fun (_,(file : string)) ->
@@ -133,10 +133,10 @@ let changes =
                         CommonLib.Helpers
                     elif isBelow webDir then
                         CommonLib.Web
-                    elif isBelow workersSharedDir then
-                        CommonLib.Workers
+                    elif isBelow messagingDir then
+                        CommonLib.Messaging
                     else
-                        failwithf "Common not known %s" file
+                        CommonLib.Any //failwithf "Common not known %s" file
                 Common cm
             elif isBelow serviceDir then
                 info.DirectoryName
@@ -169,7 +169,7 @@ let rec shouldRebuildCommon =
        CommonLib.Web ->
            //Web depends on Helpers
            shouldRebuildCommon CommonLib.Helpers || (CommonLib.Web |> Common |> hasChanged)
-       | CommonLib.Workers -> shouldRebuildCommon CommonLib.Web || (CommonLib.Workers |> Common |> hasChanged)
+       | CommonLib.Messaging -> shouldRebuildCommon CommonLib.Web || (CommonLib.Messaging |> Common |> hasChanged)
        | common ->
             common
             |> Common
@@ -227,7 +227,7 @@ let commons =
         CommonLib.Web
         CommonLib.Helpers
         CommonLib.Core
-        CommonLib.Workers
+        CommonLib.Messaging
     ]
 
 let services = 
@@ -478,17 +478,17 @@ workers
 
 "BuildHobbesSdk" =?> ("BuildCommonHelpers", shouldRebuildHobbesSdk)
 "BuildCommonHelpers" =?> ("BuildCommonWeb", shouldRebuildCommon CommonLib.Helpers)
-"BuildCommonHelpers" =?> ("BuildCommonWorkers.shared", shouldRebuildCommon CommonLib.Helpers)
-"BuildCommonWeb" =?> ("BuildCommonWorkers.shared", shouldRebuildCommon CommonLib.Web)
+"BuildCommonHelpers" =?> ("BuildCommonMessaging", shouldRebuildCommon CommonLib.Helpers)
+"BuildCommonWeb" =?> ("BuildCommonMessaging", shouldRebuildCommon CommonLib.Web)
 
 "BuildCommonHelpers" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Helpers)
-"BuildCommonWorkers.shared" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Workers)
+"BuildCommonMessaging" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Messaging)
 "BuildCommonWeb" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Web)    
 
 "BuildCommon" =?> ("BuildAppSdk", shouldRebuildCommon CommonLib.Any)
 "PushAppSdk" =?> ("PreBuildServices", shouldRebuildAppSdk)
 
-"buildcommonworkers.shared" =?> ("PreBuildWorkers",shouldRebuildCommon CommonLib.Workers)
+"buildcommonMessaging" =?> ("PreBuildWorkers",shouldRebuildCommon CommonLib.Messaging)
 "PushAppSdk" =?> ("PreBuildWorkers", shouldRebuildAppSdk)
 "BuildCommon" =?> ("BuildWorkbench", shouldRebuildCommon CommonLib.Web) 
 

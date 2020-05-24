@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <IncludeCore>False</IncludeCore>
-    <IncludeHelpers>True</IncludeHelpers>
-    <IncludeWeb>False</IncludeWeb>
     <IncludeMessaging>False</IncludeMessaging>
   </PropertyGroup>
   <PropertyGroup>
@@ -17,14 +14,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Database.fs" />
-    <Compile Include="Log.fs" />
-    <Compile Include="Http.fs" />
-    <Compile Include="Cache.fs" />
-    <Compile Include="Reflection.fs" />
-    <Compile Include="Security.fs" />
-    <Compile Include="Routing.fs" />
-    <Compile Include="RawdataTypes.fs" />
+    <Compile Include="Queue.fs" />
   </ItemGroup>
   <Import Project="..\..\..\.paket\Paket.Restore.targets" />
 </Project>

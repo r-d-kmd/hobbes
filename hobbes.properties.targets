@@ -1,13 +1,17 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-<PropertyGroup>
+  <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <CommonLibPath>$(TargetsPath)docker/.lib/</CommonLibPath>
+    <IncludeCore Condition="$(IncludeCore) == ''">True</IncludeCore>
+    <IncludeHelpers Condition="$(IncludeHelpers) == ''">True</IncludeHelpers>
+    <IncludeWeb Condition="$(IncludeWeb) == ''">True</IncludeWeb>
+    <IncludeMessaging Condition="$(IncludeMessaging) == ''">True</IncludeMessaging>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="$(TargetsPath)common\hobbes.core\src\hobbes.core.fsproj" />
-    <ProjectReference Include="$(TargetsPath)common\hobbes.helpers\src\hobbes.helpers.fsproj" />
-    <ProjectReference Include="$(TargetsPath)common\hobbes.web\src\hobbes.web.fsproj" />
-    <ProjectReference Include="$(TargetsPath)common\hobbes.workers.shared\src\hobbes.workers.shared.fsproj" />
+    <ProjectReference Condition="$(IncludeCore) == 'True'"       Include="$(TargetsPath)common\hobbes.core\src\hobbes.core.fsproj" />
+    <ProjectReference Condition="$(IncludeHelpers) == 'True'"    Include="$(TargetsPath)common\hobbes.helpers\src\hobbes.helpers.fsproj" />
+    <ProjectReference Condition="$(IncludeWeb) == 'True'"        Include="$(TargetsPath)common\hobbes.web\src\hobbes.web.fsproj" />
+    <ProjectReference Condition="$(IncludeMessaging) == 'True'"  Include="$(TargetsPath)common\hobbes.messaging\src\hobbes.messaging.fsproj" />
   </ItemGroup>
 </Project>

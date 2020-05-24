@@ -1,4 +1,3 @@
-open System
 open Hobbes.Helpers.Environment
 open Hobbes.Web.RawdataTypes
 open Collector.Git.Reader

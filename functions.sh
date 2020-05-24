@@ -1,3 +1,4 @@
+declare -a APPS=(db)
 VOLUMES=(db)
 function get_script_dir () {
      SOURCE="${BASH_SOURCE[0]}"
@@ -14,31 +15,34 @@ function get_script_dir () {
 
 SCRIPT_DIR=$(get_script_dir)
 function services(){
+    local APP_NAME=""
     for APP in $(find ${SCRIPT_DIR}/services -name *.fsproj | rev | cut -d'/' -f1 | rev)
     do
         if [[ "$APP" = hobbes.* ]] 
         then
-            echo $APP | cut -d'.' -f 2
+            APP_NAME=$(echo $APP | cut -d'.' -f 2)
         else
-           echo $APP | rev | cut -d'.' -f2- | rev | tr . -
+            APP_NAME=$(echo $APP | rev | cut -d'.' -f2- | rev | tr . -)
         fi
+        APPS+=($APP_NAME)
     done 
+    APP_NAME=""
     for APP in $(find ${SCRIPT_DIR}/workers -name *.fsproj | rev | cut -d'/' -f1 | rev)
     do
         if [[ "$APP" = *.worker.* ]] 
         then
-            echo $APP | cut -d'.' -f 1
+           APP_NAME=$(echo $APP | cut -d'.' -f 1)
         else
-           echo $APP | rev | cut -d'.' -f2- | rev | tr . -
+           APP_NAME=$(echo $APP | rev | cut -d'.' -f2- | rev | tr . -)
         fi
+        APPS+=($APP_NAME)
     done 
-    echo "db"
 }
 
-TEMP=$(services)
-read -a APPS <<< $TEMP
+services
+#TEMP=$(services)
+#read -a APPS <<< $TEMP
 
-#SCRIPT_DIR="$(echo "$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
 echo "Project home folder is: $SCRIPT_DIR"
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 

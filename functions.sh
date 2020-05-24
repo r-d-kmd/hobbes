@@ -21,10 +21,9 @@ function services(){
         if [[ "$APP" = hobbes.* ]] 
         then
             APP_NAME=$(echo $APP | cut -d'.' -f 2)
-        else
-            APP_NAME=$(echo $APP | rev | cut -d'.' -f2- | rev | tr . -)
+            APPS+=($APP_NAME)
         fi
-        APPS+=($APP_NAME)
+        
     done 
     APP_NAME=""
     for APP in $(find ${SCRIPT_DIR}/workers -name *.fsproj | rev | cut -d'/' -f1 | rev)

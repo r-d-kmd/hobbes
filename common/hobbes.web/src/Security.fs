@@ -89,8 +89,7 @@ module Security =
         |> encrypt
 
     let private verifyKey (key : string) = 
-        if (env "MASTER_USER" null) = key then true
-        else
+        
             match key.Split('.') with
             [|header;payload;signature|] ->
                 
@@ -160,19 +159,23 @@ module Security =
 
     let verifyAuthToken (authToken : string) = 
         try
-            let key = 
-                printfn "Auth token: (%s)" authToken
-                if authToken.ToLower().StartsWith(Basic) then
-                        authToken.Substring(Basic.Length)
-                        |> fromB64
-                        |> (fun s -> 
-                            s.Substring(0,s.Length - 1) //skip the last character ':'
-                        ) 
-                else
-                    authToken 
-            key 
-            |> decrypt
-            |> verifyKey
+            if (env "MASTER_USER" null) = authToken then 
+                printfn "Authenticating using master key"
+                true
+            else
+                let key = 
+                    printfn "Auth token: (%s)" authToken
+                    if authToken.ToLower().StartsWith(Basic) then
+                            authToken.Substring(Basic.Length)
+                            |> fromB64
+                            |> (fun s -> 
+                                s.Substring(0,s.Length - 1) //skip the last character ':'
+                            ) 
+                    else
+                        authToken 
+                key 
+                |> decrypt
+                |> verifyKey
         with e ->
             eprintfn "verification error. %s" e.Message
             false

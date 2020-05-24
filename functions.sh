@@ -40,8 +40,6 @@ function services(){
 }
 
 services
-#TEMP=$(services)
-#read -a APPS <<< $TEMP
 
 echo "Project home folder is: $SCRIPT_DIR"
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"

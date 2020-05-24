@@ -64,6 +64,7 @@ test_script:
   - export APP=(configurations gateway uniformdata azuredevops calculator syncronization db)
   - start
   # - awaitRunningState
+  - sleep 5
   - logs gateway -f
   - front_url=$(minikube ip)":30080"
   - db_url=$(minikube ip)":30084"

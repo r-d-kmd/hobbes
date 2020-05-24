@@ -60,7 +60,7 @@ build_script:
   
 test_script:
   - source functions.sh
-  - APP=(configurations gateway uniformdata azuredevops calculator syncronization db)
+  - export APP=(configurations gateway uniformdata azuredevops calculator syncronization db)
   - start
   - awaitRunningState
   - front_url=$(minikube ip)":30080"

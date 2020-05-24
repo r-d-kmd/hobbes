@@ -62,7 +62,10 @@ function getAppName(){
 
 function logs(){
     local POD_NAME=$(getName $1)
-    kubectl logs $2 $POD_NAME
+    if [[ "$POD_NAME" = pod/* ]]
+    then
+        kubectl logs $2 $POD_NAME
+    fi
 }
 
 function delete(){
@@ -179,7 +182,12 @@ function update(){
 }
 
 function isRunning(){
-    echo $(kubectl get pods -l app=$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
+    if [ "$1" == "syncronization" ]
+    then 
+        echo "True"
+    else
+        echo $(kubectl get pods -l app=$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
+    fi
 }
 
 function pingService(){
@@ -194,7 +202,7 @@ function awaitRunningState(){
     declare -a APPS_COPY=()
     for NAME in ${APPS[@]}
     do
-        APPS_COPY+=NAME
+        APPS_COPY+=($NAME)
     done
     while (( ${#APPS_COPY[@]} ))
     do
@@ -202,15 +210,23 @@ function awaitRunningState(){
         do 
             if [[ $(isRunning $NAME)  != "True" ]]
             then
-                APPS_COPY=( "${APPS_COPY[@]/$NAME}" ) 
-                echo "$NAME is running"
-            else
                 echo "waiting for $NAME"
                 logs $name
                 sleep 1
+            else
+                for i in "${!APPS_COPY[@]}"
+                do
+                    if [[ ${APPS_COPY[i]} = $NAME ]]
+                    then
+                        unset 'APPS_COPY[i]'
+                    fi
+                done
+                echo "$NAME is running"
             fi
-            echo "$NAME is ready"
         done
+        echo ""
+        echo "Still waiting for:"
+        printf '%s\n' "${APPS_COPY[@]}"
     done
     all
 }

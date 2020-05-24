@@ -42,6 +42,9 @@ function services(){
 services
 
 echo "Project home folder is: $SCRIPT_DIR"
+echo "Apps found:"
+printf '%s\n' "${APPS[@]}"
+
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 
 

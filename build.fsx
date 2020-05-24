@@ -337,7 +337,7 @@ let buildApp (app : App) workingDir =
     Target.create buildTargetName build
     Target.create pushTargetName push
     "PreBuild" + appType + "s" ==> buildTargetName |> ignore
-    buildTargetName ==> pushTargetName ==> "PushAppSdk" |> ignore
+    buildTargetName ==> pushTargetName |> ignore
 
 Target.create "ForceBuildServices" ignore
 Target.create "ForceBuildWorkers" ignore

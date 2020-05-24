@@ -23,7 +23,6 @@ function services(){
             APP_NAME=$(echo $APP | cut -d'.' -f 2)
             APPS+=($APP_NAME)
         fi
-        
     done 
     APP_NAME=""
     for APP in $(find ${SCRIPT_DIR}/workers -name *.fsproj | rev | cut -d'/' -f1 | rev)

@@ -191,13 +191,24 @@ function testServiceIsFunctioning(){
 }
 
 function awaitRunningState(){
+    declare -a APPS_COPY=()
     for NAME in ${APPS[@]}
-    do 
-        while [[ $(isRunning $NAME)  != "True" ]]
+    do
+        APPS_COPY+=NAME
+    done
+    while (( ${#APPS_COPY[@]} ))
+    do
+        for NAME in ${APPS_COPY[@]}
         do 
-            echo "waiting for $NAME" && sleep 1
+            if [[ $(isRunning $NAME)  != "True" ]]
+            then
+                APPS_COPY=( "${APPS_COPY[@]/$NAME}" ) 
+                echo "$NAME is running"
+            else
+                echo "waiting for $NAME" && sleep 1
+            fi
+            echo "$NAME is ready"
         done
-        echo "$NAME is ready"
     done
     all
 }

@@ -211,7 +211,7 @@ function awaitRunningState(){
             if [[ $(isRunning $NAME)  != "True" ]]
             then
                 echo "waiting for $NAME"
-                logs $name
+                logs $NAME
                 sleep 1
             else
                 for i in "${!APPS_COPY[@]}"

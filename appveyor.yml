@@ -63,9 +63,9 @@ test_script:
   - source functions.sh
   - export APP=(configurations gateway uniformdata azuredevops calculator syncronization db)
   - start
-  - awaitRunningState
-  #- sleep 5
-  #- logs gateway -f
+  #- awaitRunningState
+  - sleep 5
+  - logs calc -f
   - front_url=$(minikube ip)":30080"
   - db_url=$(minikube ip)":30084"
   - curl http://${front_url}/ping

@@ -8,6 +8,12 @@ module Reader =
     let user = env "GIT_AZURE_USER" null
     let pwd = env "GIT_AZURE_PASSWORD" null
 
+    type GitSource = JsonProvider<"""{
+                            "name"    : "git",
+                            "account" : "kmddk",
+                            "project" : "klkjlkj",
+                            "dataset" : "commits" }""">
+
     type private CommitBatch = JsonProvider<"""{
         "count": 100,
         "value": [
@@ -105,7 +111,7 @@ module Reader =
         }], 
         "count" : 13
     }""">
-    type private Repository ={
+    type private Repository = {
         Id : string
         Name : string
         DefaultBranch : string
@@ -198,7 +204,8 @@ module Reader =
            
     type BranchData = {
         Name : string
-        LifeTimeInHours : int
+        CreationDate : System.DateTime
+        LastCommit : System.DateTime
     }
 
     let branches account project =
@@ -224,7 +231,7 @@ module Reader =
                         let statusCode,commits = 
                             repo.Id |> sprintf "/%s/commitsbatch" |> request account project body
                         
-                        let branchLifeTimeInHours = 
+                        let creationDateLastCommit = 
                             if statusCode = 200 then
                                 let parsedCommits = 
                                    commits |> CommitBatch.Parse
@@ -237,22 +244,26 @@ module Reader =
                                             Author = commit.Author.Email
                                         }
                                     ) |> Seq.sortBy (fun c -> c.Time)
-
                                 assert(commits |> Seq.length = parsedCommits.Count)
-                                ((commits |> Seq.maxBy(fun c -> c.Time)).Time
-                                 - (commits |> Seq.head).Time).TotalMinutes / 60.
-                                 |> int
-                                 |> Some
+                                let lastCommit = 
+                                    commits 
+                                    |> Seq.last
+                                let firstCommit = 
+                                    commits
+                                    |> Seq.head
+                                Some(firstCommit.Time,lastCommit.Time)
                             else
                                 errorf null "Error when reading commit batch of %s. Staus: %d. Message: %s" branch.Name statusCode commits
                                 None
                         
-                        branch.Name.Substring("ref/heads/".Length),branchLifeTimeInHours
+                        branch.Name.Substring("ref/heads/".Length), creationDateLastCommit
                     ) |> Seq.filter(snd >> Option.isSome)
-                    |> Seq.map(fun (name,lifetime) ->
+                    |> Seq.map(fun (name,creationDateLastCommit) ->
+                        let creationDate,lastCommit = creationDateLastCommit.Value
                         {
                             Name = name
-                            LifeTimeInHours = lifetime.Value
+                            CreationDate = creationDate
+                            LastCommit = lastCommit
                         }
                     )
 

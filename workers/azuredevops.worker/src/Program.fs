@@ -25,7 +25,6 @@ let handleMessage sourceDoc =
     Log.logf "Received message. %s" sourceDoc
     try
         let source = sourceDoc |> AzureDevOpsSource.Parse
-        let key = sourceDoc |> keyFromSourceDoc
         let token = 
             if source.Account.ToString() = "kmddk" then
                 env "AZURE_TOKEN_KMDDK" null

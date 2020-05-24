@@ -205,7 +205,9 @@ function awaitRunningState(){
                 APPS_COPY=( "${APPS_COPY[@]/$NAME}" ) 
                 echo "$NAME is running"
             else
-                echo "waiting for $NAME" && sleep 1
+                echo "waiting for $NAME"
+                logs $name
+                sleep 1
             fi
             echo "$NAME is ready"
         done

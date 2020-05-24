@@ -57,16 +57,15 @@ before_build:
 
 build_script:
   - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-  - fake build --target ForceBuildServices
+  - fake build --target Rebuild
   
 test_script:
   - source functions.sh
   - export APP=(configurations gateway uniformdata azuredevops calculator syncronization db)
   - start
-  #- awaitRunningState
-  - sleep 5
-  - logs calc -f
-  - front_url=$(minikube ip)":30080"
+  - awaitRunningState
+  #- logs calc -f
+  #- front_url=$(minikube ip)":30080"
   - db_url=$(minikube ip)":30084"
   - curl http://${front_url}/ping
   - NAME=$(kubectl get pods -l app=gateway -o name) 

@@ -20,7 +20,7 @@ function services(){
     do
         if [[ "$APP" = hobbes.* ]] 
         then
-            APP_NAME=$(echo $APP | cut -d'.' -f 2)
+            APP_NAME=$(echo $APP | cut -d'.' -f 2 | tr '[:upper:]' '[:lower:]')
             APPS+=($APP_NAME)
         fi
     done 
@@ -29,9 +29,7 @@ function services(){
     do
         if [[ "$APP" = *.worker.* ]] 
         then
-           APP_NAME=$(echo $APP | cut -d'.' -f 1)
-        else
-           APP_NAME=$(echo $APP | rev | cut -d'.' -f2- | rev | tr . -)
+           APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
         fi
         APPS+=($APP_NAME)
     done 

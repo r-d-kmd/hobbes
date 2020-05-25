@@ -59,7 +59,7 @@ module Compile =
             | AST.Int(AST.String s) ->
                 s |> int |> string
             | AST.MissingValue -> "null"
-            | AST.String s -> s
+            | AST.String s -> sprintf "'%s'" s
             | AST.DateTime dt -> dt.ToString()
             | AST.ColumnName cn -> cn
             | AST.Int _

@@ -21,7 +21,7 @@ open Fake.DotNet
 open Fake.IO
 
 
-let force = (Environment.environVarOrDefault "force" "false").ToLower() = "true"
+let force = true //(Environment.environVarOrDefault "force" "false").ToLower() = "true"
 if force then
     printfn "Running all full dependency chain since force-all was specified"
 
@@ -68,7 +68,7 @@ type CommonLib =
           Core -> "core"
           | Helpers -> "helpers"
           | Web -> "web"
-          | Messaging -> "Messaging"
+          | Messaging -> "messaging"
           | Any -> "core|helpers|web"
 
 type App = 

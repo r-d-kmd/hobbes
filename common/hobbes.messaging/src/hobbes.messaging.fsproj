@@ -9,7 +9,7 @@
   </PropertyGroup>
   <Import Project="$(TargetsPath)hobbes.properties.targets" />
   <PropertyGroup>
-    <RootNamespace>Hobbes</RootNamespace>
+    <RootNamespace>Hobbes.Messaging</RootNamespace>
     <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>

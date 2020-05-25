@@ -21,7 +21,7 @@ open Fake.DotNet
 open Fake.IO
 
 
-let force = true //(Environment.environVarOrDefault "force" "false").ToLower() = "true"
+let force = (Environment.environVarOrDefault "force" "false").ToLower() = "true"
 if force then
     printfn "Running all full dependency chain since force-all was specified"
 

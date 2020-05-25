@@ -33,7 +33,7 @@ module Data =
 
     [<Get ("/sources/%s")>]
     let sources (systemName:string) =
-        200,("\n",listConfigurations()
+        200,(",\n",listConfigurations()
                   |> Seq.filter(fun config ->
                         config.Source.Name = systemName
                   ) |> Seq.map(fun config ->
@@ -113,4 +113,4 @@ module Data =
 
     [<Get "/ping">]
     let ping () =
-        200, "ping - Configurations"
+        200, "pong - Configurations"

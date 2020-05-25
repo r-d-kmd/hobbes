@@ -483,25 +483,25 @@ namespace Hobbes.Web
             member this.InsertOrUpdate doc =
                  
                 let id = (CouchDoc.Parse doc).Id
-                
-                if System.String.IsNullOrWhiteSpace id then
-                    failwith "Document must have a valid id"
-                match [id] |> this.TryGetRev with
-                None ->
-                    log.Debugf "Found no rev, so assuming it's a new doc. id: %s" id
-                    let rev = (CouchDoc.Parse doc).Rev
-                    if System.String.IsNullOrWhiteSpace(rev) |> not then
-                        failwith "New documents shouldn't have a _rev"
-                    try    
-                        put doc [id] None
-                    with _ ->
-                        match [id] |> this.TryGetRev with
-                        Some rev ->  
-                            this.Put(id, doc,  rev)
-                        | None -> reraise()
-                | Some rev -> 
-                    log.Debugf "Found rev, going to update. id: %s. rev: %s" id rev 
-                    this.Put(id, doc,  rev)
+
+                assert(System.String.IsNullOrWhiteSpace((CouchDoc.Parse doc).Rev))
+                assert(id |> System.String.IsNullOrWhiteSpace |> not)
+
+                let request() = 
+                    let rev = [id] |> this.TryGetRev
+                    request Put true (Some doc) [id] rev None
+                    
+                let status,body = 
+                    let st,b = request()  
+                    if st = 409 then //this can happen in the case of a race
+                       request() //force the update
+                    else
+                        st,b  
+                if (status >= 200 && status < 399) then
+                    body
+                else
+                    log.Errorf null "Failed to update document. %d - %s" status body
+                    sprintf """{"status": %d,"message":"%s"}""" status body
 
             member __.Compact() = 
                 databaseOperation "_compact"  None

@@ -27,6 +27,7 @@ module AST =
         | Subtraction    
         | Multiplication 
         | Division
+        | Modulo
         
     type ComparisonOperator = 
           GreaterThan        

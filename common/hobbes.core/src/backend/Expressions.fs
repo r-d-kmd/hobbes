@@ -118,6 +118,7 @@ module Expressions =
                 InfixOperator("-", spaces, 3, Associativity.Left, exp AST.Subtraction)
                 InfixOperator("*", spaces, 4, Associativity.Left, exp AST.Multiplication)
                 InfixOperator("/", spaces, 4, Associativity.Left, exp AST.Division)
+                InfixOperator("%", spaces, 4, Associativity.Left, exp AST.Modulo)
 
                 InfixOperator("&&", spaces, 1, Associativity.Left, (andOr AST.And))
                 InfixOperator("||", spaces, 1, Associativity.Left, (andOr AST.Or))

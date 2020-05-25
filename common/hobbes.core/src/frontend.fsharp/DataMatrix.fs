@@ -335,6 +335,16 @@ module DataStructures =
                     | AST.Subtraction -> (-)
                     | AST.Multiplication -> (*)
                     | AST.Division -> (/)
+                    | AST.Modulo -> 
+                        fun lhs rhs ->
+                            lhs
+                            |> Series.filter(fun k _ ->
+                                match rhs.TryGet k with
+                                OptionalValue.Missing -> false 
+                                | _ -> true
+                            ) |> Series.map(fun k v ->
+                                    (int v) % (k |> rhs.Get |> int) |> float
+                            )
                 fun series ->
                     f <| lhsExp series <| (rhsExp series)
                     |> Series.mapValues(fun v -> v :> Comp)

@@ -16,30 +16,39 @@ module Compile =
         let compiledLhs = compileExpression lhs
         let compiledRhs = compileExpression rhs
 
-        let binary op =
-            sprintf "%s %s %s" compiledLhs op compiledRhs
+        let binary op lhs rhs =
+            sprintf "%s %s %s" lhs op rhs
 
-        match op with
-        AST.GreaterThan -> binary "gt"        
-        | AST.GreaterThanOrEqual -> binary "ge" 
-        | AST.LessThan -> binary "lt"           
-        | AST.LessThanOrEqual -> binary "le"  
-        | AST.EqualTo -> binary "eq"
-        | AST.Contains ->
-            failwith "Not implemented"
+        let ops = 
+            match op with
+            AST.GreaterThan -> binary "gt"        
+            | AST.GreaterThanOrEqual -> binary "ge" 
+            | AST.LessThan -> binary "lt"           
+            | AST.LessThanOrEqual -> binary "le"  
+            | AST.EqualTo -> binary "eq"
+            | AST.Contains ->
+                sprintf "contains(%s,%s)"
+        ops compiledLhs compiledRhs
 
     and compileExpression exp =
         let binary lhs rhs op = 
             let compiledLhs = compileExpression lhs
             let compiledRhs = compileExpression rhs
+            let simpleBinary op lhs rhs =
+                sprintf "%s %s %s" lhs op rhs
 
             let ops =
                 match op with
-                AST.Addition -> "+"         
-                | AST.Subtraction -> "-"   
-                | AST.Multiplication -> "*"
-                | AST.Division -> "/"
-            sprintf "%s %s %s" compiledLhs ops compiledRhs
+                AST.Addition -> 
+                    match lhs with 
+                    AST.String _ -> 
+                        sprintf "concat(%s,%s)"
+                    | _ -> simpleBinary "add"         
+                | AST.Subtraction -> simpleBinary "sub"   
+                | AST.Multiplication -> simpleBinary "mul"
+                | AST.Division -> simpleBinary "div"
+                | AST.Modulo -> simpleBinary "mod"
+            ops compiledLhs compiledRhs
         
         let exp = 
             match exp with
@@ -62,13 +71,24 @@ module Compile =
             | AST.String s -> sprintf "'%s'" s
             | AST.DateTime dt -> dt.ToString()
             | AST.ColumnName cn -> cn
+            | AST.FormatDate (cn,format) ->
+                let formatDate op column =
+                    sprintf "%s(%s)" op column
+                let func = 
+                    match format with
+                    AST.Year -> "year"
+                    | AST.Month -> "month"
+                    | AST.Day -> "day"
+                    | AST.Date -> "date"
+                    | AST.Week 
+                    | AST.Weekday -> failwith "not supported"
+                formatDate func cn
             | AST.Int _
             | AST.Keys 
             | AST.ColumnExpression _ 
             | AST.Regression _ 
             | AST.Extrapolate _
             | AST.IfThisThenElse _
-            | AST.FormatDate _
             | AST.Ordinals -> failwith "Not supported for OData"
             | AST.RegularExpression _ -> failwith "Not implemented"
         sprintf "(%s)" exp

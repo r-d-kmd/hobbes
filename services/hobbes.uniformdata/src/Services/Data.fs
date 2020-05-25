@@ -23,7 +23,7 @@ module Data =
             assert(data.RowCount = data.Rows.Length)
             assert(data.RowCount = 0 || data.ColumnNames.Length = data.Rows.[0].Numbers.Length + data.Rows.[0].Strings.Length)
 
-            Log.logf "Data returned: %s" (uniformData.JsonValue.ToString())
+            Log.debugf "Data returned: %s" (uniformData.JsonValue.ToString())
 
             200, (uniformData.JsonValue.ToString())
         | None -> 

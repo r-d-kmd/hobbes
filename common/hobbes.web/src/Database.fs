@@ -480,7 +480,8 @@ namespace Hobbes.Web
                   :? Runtime.BaseTypes.IJsonDocument as j -> j.JsonValue.ToString()
                   | o -> o.ToString()
                 |> this.InsertOrUpdate
-            member this.InsertOrUpdate doc = 
+            member this.InsertOrUpdate doc =
+                 
                 let id = (CouchDoc.Parse doc).Id
                 
                 if System.String.IsNullOrWhiteSpace id then
@@ -491,8 +492,13 @@ namespace Hobbes.Web
                     let rev = (CouchDoc.Parse doc).Rev
                     if System.String.IsNullOrWhiteSpace(rev) |> not then
                         failwith "New documents shouldn't have a _rev"
-                        
-                    put doc [id] None
+                    try    
+                        put doc [id] None
+                    with _ ->
+                        match [id] |> this.TryGetRev with
+                        Some rev ->  
+                            this.Put(id, doc,  rev)
+                        | None -> reraise()
                 | Some rev -> 
                     log.Debugf "Found rev, going to update. id: %s. rev: %s" id rev 
                     this.Put(id, doc,  rev)

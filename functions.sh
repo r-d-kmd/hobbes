@@ -44,9 +44,29 @@ printf '%s\n' "${APPS[@]}"
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 
 
+function getPodName(){
+    local POD_NAME=$(kubectl get all | grep -e pod/$1 -e pod/collectors-$1 | cut -d ' ' -f 1 )
+    if [[ "$POD_NAME" = pod/* ]]
+    then
+       echo $POD_NAME
+    fi
+}
+
+function getJobWorker(){
+    local JOB_NAME=$(kubectl get all | grep job.batch/syncronization-scheduler-.*$1 | cut -d ' ' -f 1)
+    if [[ "$JOB_NAME" = job.batch/* ]]
+    then
+        echo $JOB_NAME
+    fi
+}
+
 function getName(){
-   local POD_NAME=$(kubectl get all | grep -e pod/$1 -e pod/collectors-$1 | cut -d ' ' -f 1 | cut -d '/' -f 2)
-   echo $POD_NAME
+    local NAME=$(kubectl get all | grep -e pod/$1 -e pod/collectors-$1 | cut -d ' ' -f 1 )
+    if [ -z "$NAME" ]
+    then
+       NAME=$(getJobWorker $1)
+    fi
+    echo $NAME
 }
 
 function getAppName(){
@@ -59,17 +79,13 @@ function getAppName(){
 }
 
 function logs(){
-    local POD_NAME=$(getName $1)
-    if [[ "$POD_NAME" = pod/* ]]
-    then
-        kubectl logs $2 $POD_NAME
-    fi
+    local NAME=$(getName $1)
+    kubectl logs $2 $NAME
 }
 
 function delete(){
     local POD_NAME=$(getName $1)
-    echo $POD_NAME
-    kubectl delete "pod/$POD_NAME"
+    kubectl delete "$POD_NAME"
 }
 
 function restart(){

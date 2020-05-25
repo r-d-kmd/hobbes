@@ -175,18 +175,18 @@ let rec shouldRebuildCommon =
             |> Common
             |> hasChanged
 
-let isBuildServer =
-    Environment.environVarOrDefault "BUILD_ENV" "local" = "AppVeyor"
+let skipSdkBuilds =
+    (not force) && (Environment.environVarOrDefault "BUILD_ENV" "local") = "AppVeyor"
 
 let hasDockerStageChanged ds = 
-    (not isBuildServer) &&  
+    (not skipSdkBuilds) &&  
     (Docker ds |> hasChanged)
 
 let shouldRebuildGenericDockerImages =
     hasDockerStageChanged DockerStage.Generic
 
 let shouldRebuildDependencies = 
-    (not isBuildServer) &&  
+    (not skipSdkBuilds) &&  
     hasChanged PaketDependencies
 
 let shouldRebuildHobbesSdk =
@@ -197,7 +197,7 @@ let shouldRebuildHobbesSdk =
 let shouldRebuildAppSdk =
     shouldRebuildHobbesSdk 
     || hasDockerStageChanged DockerStage.AppSdk
-    || ((not isBuildServer) && (hasChanged (Common CommonLib.Any)))
+    || ((not skipSdkBuilds) && (hasChanged (Common CommonLib.Any)))
 
 let shouldRebuildService name = 
     shouldRebuildCommon CommonLib.Any

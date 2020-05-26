@@ -37,10 +37,6 @@ function services(){
 
 services
 
-echo "Project home folder is: $SCRIPT_DIR"
-echo "Apps found:"
-printf '%s\n' "${APPS[@]}"
-
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 
 
@@ -249,3 +245,9 @@ function run(){
     setenv
     kubectl run -i --tty temp-$1 --image kmdrd/$1 
 }
+
+
+echo "Project home folder is: $SCRIPT_DIR"
+echo "Apps found:"
+printf '%s\n' "${APPS[@]}"
+setenv

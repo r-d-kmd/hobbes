@@ -34,7 +34,7 @@ let synchronize (source : GitSource.Root) token =
             
             sprintf """{
                     "columnNames" : %s,
-                    "values" : %s
+                    "values" : %s,
                     "rowCount" : %d
                 }""" columnNames values rowCount
             |> Some
@@ -60,12 +60,16 @@ let handleMessage sourceDoc =
             Log.logf "Conldn't syncronize. %s %s" sourceDoc token
             false
         | Some data -> 
-            match Http.post (Http.UniformData Http.Update) id (sprintf """["%s",%s]""" key data) with
-            Http.Success _ -> 
-               Log.logf "Data uploaded to cache"
-               true
-            | Http.Error(status,msg) -> 
-                Log.logf "Upload to uniform data failed. %d %s" status msg
+            try
+                match Http.post (Http.UniformData Http.Update) id (sprintf """["%s",%s]""" key data) with
+                Http.Success _ -> 
+                   Log.logf "Data uploaded to cache"
+                   true
+                | Http.Error(status,msg) -> 
+                    Log.logf "Upload to uniform data failed. %d %s" status msg
+                    false
+            with e ->
+                Log.excf e "Failed to cache data"
                 false
     with e ->
         Log.excf e "Failed to process message"

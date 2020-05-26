@@ -39,7 +39,7 @@ let handleMessage cacheKey =
                             |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows 
                             |> Some
                         with e ->
-                            Log.excf e "Failed to transform data"
+                            Log.excf e "Failed to transform data using [%s] on [%s]" transformation.Id cacheKey
                             None    
                     try
                         transformedData

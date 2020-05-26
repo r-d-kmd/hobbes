@@ -154,7 +154,7 @@ module Admin =
         match errorCode with
          Some errorCode ->
             let msg = sprintf "INIT: error in creating dbs. Status code: %d" errorCode
-            error null msg
+            error msg
          | None ->
             let msg = "Init completed"
             log msg

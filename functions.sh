@@ -244,7 +244,7 @@ function run(){
 function sync(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    kubectl delete -f sync-job.yaml
+    echo $(kubectl delete -f sync-job.yaml)
     kubectl apply -f sync-job.yaml
     cd $CURRENT_DIR
 }

@@ -67,6 +67,7 @@ module Queue =
         } 
         
     let watch (queue:Queue) handler (pause : int) =
+        let mutable keepAlive = true
         try
             let channel = init()
             channel.QueueDeclare(queue.Name,
@@ -77,21 +78,24 @@ module Queue =
 
             let consumer = EventingBasicConsumer(channel)
             consumer.Received.AddHandler(EventHandler<BasicDeliverEventArgs>(fun _ (ea : BasicDeliverEventArgs) ->
-                let msg = Encoding.UTF8.GetString(ea.Body.ToArray())
-                if handler msg then
-                    printfn "Message ack'ed"
-                    channel.BasicAck(ea.DeliveryTag,false)
-                else
-                    printfn "Message could not be processed. %s" msg
+                try
+                    let msg = Encoding.UTF8.GetString(ea.Body.ToArray())
+                    if handler msg then
+                        printfn "Message ack'ed"
+                        channel.BasicAck(ea.DeliveryTag,false)
+                    else
+                        printfn "Message could not be processed. %s" msg
+                with e ->
+                   Log.exc e "Failed while processing message"
             ))
             
             channel.BasicConsume(queue.Name,false,consumer) |> ignore
             printfn "Watching queue: %s" queue.Name
-            while true do
+            while keepAlive do
                 System.Threading.Thread.Sleep(pause)
          with e ->
            eprintfn "Failed to subscribe to the queue. %s:%d. Message: %s" host port e.Message
-           reraise()
+           keepAlive <- false
 
     let publish (queue:Queue) (message : string) = 
         try
@@ -106,4 +110,3 @@ module Queue =
             printfn "Message published to %s" queue.Name
         with e -> 
            eprintfn "Failed to publish to the queue. Message: %s" e.Message
-           reraise()

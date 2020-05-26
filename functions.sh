@@ -1,3 +1,4 @@
+eval $(minikube -p minikube docker-env)
 declare -a APPS=(db)
 VOLUMES=(db)
 function get_script_dir () {
@@ -108,12 +109,7 @@ function clean(){
     kubectl delete --all secrets
 }
 
-function setenv(){
-    eval $(minikube -p minikube docker-env)
-}
-
 function build(){    
-    setenv
     ECHO "Starting Build"
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
@@ -242,12 +238,16 @@ function awaitRunningState(){
 }
 
 function run(){
-    setenv
     kubectl run -i --tty temp-$1 --image kmdrd/$1 
 }
 
+function sync(){
+    local CURRENT_DIR=$(pwd)
+    cd $KUBERNETES_DIR
+    kubectl apply -f kubernetes/sync-job.yaml
+    cd$CURRENT_DIR
+}
 
 echo "Project home folder is: $SCRIPT_DIR"
 echo "Apps found:"
 printf '%s\n' "${APPS[@]}"
-setenv

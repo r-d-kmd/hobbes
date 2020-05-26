@@ -62,7 +62,7 @@ module Root =
 
         match verifiedUser with
         None ->
-            errorf "" "No user token. Tried with %s" user.Token 
+            errorf "No user token. Tried with %s" user.Token 
             403,"Unauthorized"
         | Some (user) ->
             printfn "Creating api key for %s " user.Name

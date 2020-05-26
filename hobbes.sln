@@ -15,7 +15,7 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.core", "common\hobbe
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.helpers", "common\hobbes.helpers\src\hobbes.helpers.fsproj", "{AC506FDC-3198-411C-8C36-4E0C142681CC}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.workers.shared", "common\hobbes.workers.shared\src\hobbes.workers.shared.fsproj", "{CCB5A2AB-E707-498F-B6B2-CF529105451F}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.messaging", "common\hobbes.messaging\src\hobbes.messaging.fsproj", "{CCB5A2AB-E707-498F-B6B2-CF529105451F}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.configurations", "services\hobbes.configurations\src\hobbes.configurations.fsproj", "{77A8AE02-8252-43BF-ABF0-CD73073910A5}"
 EndProject

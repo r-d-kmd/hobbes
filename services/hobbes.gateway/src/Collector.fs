@@ -85,5 +85,5 @@ module Collector =
                       ) |> Seq.zip columnNames
             )    
         else 
-            Hobbes.Web.Log.errorf null "Got an unexpected response: %d - %s. Configuration: %s" status response conf
+            Hobbes.Web.Log.errorf  "Got an unexpected response: %d - %s. Configuration: %s" status response conf
             Seq.empty

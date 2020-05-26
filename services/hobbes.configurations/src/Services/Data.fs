@@ -61,7 +61,7 @@ module Data =
                         |> Array.map(fun transformationName ->
                             match transformations.TryGet transformationName with
                             None -> 
-                                Log.errorf null "Transformation (%s) not found" transformationName
+                                Log.errorf  "Transformation (%s) not found" transformationName
                                 None
                             | t -> t
                         ) |> Array.filter Option.isSome

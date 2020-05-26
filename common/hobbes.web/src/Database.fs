@@ -6,11 +6,12 @@ namespace Hobbes.Web
     type LogFormatter<'a> = Printf.StringFormat<'a,unit>
     type ILog =
         abstract Log : string -> unit
-        abstract Error : string -> string -> unit
+        abstract Error : string -> unit
         abstract Debug : string -> unit 
         abstract Logf<'a> : LogFormatter<'a> -> 'a
-        abstract Errorf<'a> : string -> LogFormatter<'a> -> 'a
+        abstract Errorf<'a> : LogFormatter<'a> -> 'a
         abstract Excf<'a> : System.Exception -> LogFormatter<'a> -> 'a
+        abstract Exc : System.Exception -> string -> unit
         abstract Debugf<'a> : LogFormatter<'a> -> 'a
         
     module Database =
@@ -22,19 +23,18 @@ namespace Hobbes.Web
         let consoleLogger =
                 { new ILog with
                     member __.Log msg   = sprintf "%s" msg |> printer
-                    member __.Error stackTrace msg = 
-                           (if System.String.IsNullOrWhiteSpace(stackTrace) then
-                             sprintf "%s" msg
-                            else
-                             sprintf "%s StackTrace: \n %s" msg stackTrace)
-                           |> eprinter
+                    member __.Error msg = 
+                        sprintf "%s" msg
+                        |> eprinter
                     member __.Debug msg = sprintf "%s" msg |> printer
                     member __.Logf<'a> (format : LogFormatter<'a>) = 
                         ksprintf printer format 
-                    member __.Errorf<'a> (_ : string) (format : LogFormatter<'a>) = 
+                    member __.Errorf<'a> (format : LogFormatter<'a>) = 
                         ksprintf eprinter format
                     member __.Excf<'a> (e : System.Exception) (format : LogFormatter<'a>) = 
                         ksprintf (fun msg -> msg + "Message: " + e.Message |> eprinter) format
+                    member this.Exc (e : System.Exception) msg  = 
+                        this.Excf e "%s" msg
                     member __.Debugf<'a> (format : LogFormatter<'a>) = 
                         ksprintf printer format
                 }  
@@ -253,7 +253,7 @@ namespace Hobbes.Web
                     log.Debug "Parsing list result"
                     body |> List.Parse
                 else
-                    log.Errorf null "Error when fetching list: %s" body
+                    log.Errorf  "Error when fetching list: %s" body
                     failwithf "Error: %s" body
             
             let listResult  (startKey : string option) (endKey : string option) limit (descending : bool option) skip =
@@ -472,7 +472,7 @@ namespace Hobbes.Web
                             failwithf "Failed loading. Row: %A. Msg: %s" (entry.ToString()) e.Message
                     ) |> Seq.ofArray
                 with e ->
-                    log.Errorf e.StackTrace "Failed getting documents by key.Message: %s POST Body: %s" e.Message (body.Substring(0,min body.Length 500))
+                    log.Excf e "Failed getting documents by key. POST Body: %s" (body.Substring(0,min body.Length 500))
                     reraise()
             member __.Views with get() = _views
             member this.InsertOrUpdate (record : 'a) =
@@ -500,7 +500,7 @@ namespace Hobbes.Web
                 if (status >= 200 && status < 399) then
                     body
                 else
-                    log.Errorf null "Failed to update document. %d - %s" status body
+                    log.Errorf "Failed to update document. %d - %s" status body
                     sprintf """{"status": %d,"message":"%s"}""" status body
 
             member __.Compact() = 

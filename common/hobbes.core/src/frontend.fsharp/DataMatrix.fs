@@ -564,25 +564,27 @@ module DataStructures =
         and compileBooleanExpression exp : Series<AST.KeyType,Comp> -> Series<AST.KeyType,Comp> = 
             let binaryOp op lhs rhs =
                  fun series -> 
-                   
-                     let lhsSerie = lhs series
-                     let rhsSerie = rhs series
-                     let frame = 
-                        Frame(["lhs";"rhs"],
-                                [
-                                    lhsSerie 
-                                    rhsSerie
-                                ])
-                     frame
-                     |> Frame.mapRowValues(fun row ->
-                         let lhs = row.TryGetAs<Comp> "lhs"
-                         let rhs = row.TryGetAs<Comp> "rhs"
-                         let res = 
-                             match lhs, rhs with
-                             OptionalValue.Missing, _ | _, OptionalValue.Missing -> false
-                             | lhs, rhs -> op lhs.Value rhs.Value
-                         res :> Comp
-                     )
+                     try
+                         let lhsSerie = lhs series
+                         let rhsSerie = rhs series
+                         let frame = 
+                            Frame(["lhs";"rhs"],
+                                    [
+                                        lhsSerie 
+                                        rhsSerie
+                                    ])
+                         frame
+                         |> Frame.mapRowValues(fun row ->
+                             let lhs = row.TryGetAs<Comp> "lhs"
+                             let rhs = row.TryGetAs<Comp> "rhs"
+                             let res = 
+                                 match lhs, rhs with
+                                 OptionalValue.Missing, _ | _, OptionalValue.Missing -> false
+                                 | lhs, rhs -> op lhs.Value rhs.Value
+                             res :> Comp
+                         )
+                     with e ->
+                          failwithf "Column not found. %s. Available Columns %A" e.Message frame.ColumnKeys
             match exp with
             AST.Not e -> 
                 let exp = compileBooleanExpression e

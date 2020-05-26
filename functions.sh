@@ -244,8 +244,9 @@ function run(){
 function sync(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    kubectl apply -f kubernetes/sync-job.yaml
-    cd$CURRENT_DIR
+    kubectl delete -f sync-job.yaml
+    kubectl apply -f sync-job.yaml
+    cd $CURRENT_DIR
 }
 
 echo "Project home folder is: $SCRIPT_DIR"

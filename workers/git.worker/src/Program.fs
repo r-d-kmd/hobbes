@@ -76,6 +76,6 @@ let handleMessage sourceDoc =
 let main _ =
     Database.awaitDbServer()
     Database.initDatabases ["azure_devops_rawdata"]
-    watch Queue.AzureDevOps handleMessage 5000
+    watch Queue.Git handleMessage 5000
     
     0

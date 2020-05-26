@@ -11,16 +11,17 @@ type Source =
 
 [<System.FlagsAttribute>]
 type Project =
-    UVskole = 1024
+    Flowerpot = 2048
+    | UVskole = 1024
     | Nexus = 512
     | Delta = 256
     | EzEnergy = 128
     | Gandalf = 64
     | Momentum = 32
-    | Flowerpot = 16
+    | Branches = 16
     | Jira = 8
     | AzureDevOps = 4
-    | Git = 2
+    | Commits = 2
     | General = 1
 
 
@@ -29,12 +30,15 @@ type Project =
 module Project =
     let source (p : Project)=
         match (p &&& Project.AzureDevOps)
-               ||| (p &&& Project.Git)
+               ||| (p &&& Project.Branches)
+               ||| (p &&& Project.Commits)
                ||| (p &&& Project.Jira) with
         Project.AzureDevOps 
-        | Project.Git 
+        | Project.Branches
+        | Project.Commits 
         | Project.Jira as p -> p
-        | p when p = (Project.AzureDevOps ||| Project.Git) -> Project.Git
+        | p when p = (Project.AzureDevOps ||| Project.Branches) -> Project.Branches
+        | p when p = (Project.AzureDevOps ||| Project.Commits) -> Project.Commits
         | _ -> 
             eprintfn "No source specified (%A)" p
             Project.General
@@ -81,12 +85,21 @@ module Project =
                             "account" : "%s",
                             "project" : "%s"} """ account projectName
             p |> getAzureDevopsAccount |> detailedSourceConfig
-        | Project.Git ->
+        | Project.Branches ->
             let detailedSourceConfig account = 
                 sprintf """ "source" : {
                             "name"    : "git",
                             "account" : "%s",
-                            "project" : "%s" }""" account projectName 
+                            "project" : "%s",
+                            "dataset": "branches" }""" account projectName 
+            p |> getAzureDevopsAccount |> detailedSourceConfig
+        | Project.Commits ->
+            let detailedSourceConfig account = 
+                sprintf """ "source" : {
+                            "name"    : "git",
+                            "account" : "%s",
+                            "project" : "%s",
+                            "dataset": "commits" }""" account projectName 
             p |> getAzureDevopsAccount |> detailedSourceConfig
         | _ -> failwith "Project source not supported yet!"
         
@@ -95,8 +108,8 @@ module Source =
     let project (s: Source) =
         match s with
         Source.AzureDevOps -> Project.AzureDevOps
-        | Source.GitBranches -> Project.Git
-        | Source.GitCommits -> Project.Git
+        | Source.GitBranches -> Project.Branches
+        | Source.GitCommits -> Project.Commits
         | Source.Jira -> Project.Jira
         | _ -> failwith "Can't happen"
 

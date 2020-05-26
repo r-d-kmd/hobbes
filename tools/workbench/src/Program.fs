@@ -104,7 +104,7 @@ let main args =
             let results = parser.Parse args
             Some results
         with e -> 
-            Log.logf "%s" e.Message
+            Log.excf e "Failed"
             None
 
     match results with
@@ -140,7 +140,7 @@ let main args =
         let sync = results.TryGetResult Sync
         if  test.IsSome || (sync.IsNone && publish.IsNone) then
             settings.Azure.TimePayrollKmddk |> Workbench.Tests.test|> ignore
-            Log.logf "Press enter to exit..."
+            printfn "Press enter to exit..."
             System.Console.ReadLine().Length
         else            
             match sync with

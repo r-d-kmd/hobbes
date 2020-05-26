@@ -187,7 +187,7 @@ module Data =
     let insertOrUpdate (doc : string) = 
         async{
             db.InsertOrUpdate doc
-            |> Log.logf "Inserted data: %s"
+            |> Log.debugf "Inserted data: %s"
         } |> Async.Start
         
     let get key = 
@@ -222,7 +222,7 @@ module Data =
         let data =
             source
             |> projectsBySource
-        Log.logf "Rawdata by source: %A" (data |> List.ofSeq)
+        Log.debugf "Rawdata by source: %A" (data |> List.ofSeq)
         let result = 
             data
             |> Seq.collect(fun s -> 

@@ -122,7 +122,6 @@ module Metrics =
     [<Workbench.Transformation 8>]
     let martin =
         [
-            only (!> "IsCurrent")
             slice columns [
                 WorkItemId.Name
                 "Area.AreaPath"

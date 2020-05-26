@@ -9,20 +9,20 @@ open Hobbes.Workers.Shared.Queue
 let synchronize (source : AzureDevOpsSource.Root) token =
         try
             let statusCode, body = Reader.sync token source
-            Log.logf "Sync finised with statusCode %d and result %s" statusCode body
+            Log.debugf "Sync finised with statusCode %d and result %s" statusCode body
             if statusCode > 200 || statusCode < 300 then 
                 match Reader.read source with
                 None -> failwith "Could not read data from raw"
                 | d -> d
             else
-                Log.errorf null "Syncronization failed. %d Message: %s" statusCode body
+                Log.errorf  "Syncronization failed. %d Message: %s" statusCode body
                 None                 
         with e ->
             Log.excf e "Sync failed due to exception"
             None
 
 let handleMessage sourceDoc =
-    Log.logf "Received message. %s" sourceDoc
+    Log.debugf "Received message. %s" sourceDoc
     try
         let source = sourceDoc |> AzureDevOpsSource.Parse
         let token = 
@@ -33,7 +33,7 @@ let handleMessage sourceDoc =
 
         match synchronize source token with
         None -> 
-            Log.logf "Conldn't syncronize. %s %s" sourceDoc token
+            Log.errorf  "Conldn't syncronize. %s %s" sourceDoc token
             false
         | Some (key,data) -> 
             match Http.post (Http.UniformData Http.Update) id (sprintf """["%s",%s]""" key data) with

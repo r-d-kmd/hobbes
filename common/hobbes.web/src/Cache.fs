@@ -90,12 +90,10 @@ module Cache =
             
             Cache {new ICacheProvider with 
                             member __.InsertOrUpdate key doc = 
-                                async{
                                     doc.JsonValue.ToString()
                                     |> createCacheRecord key 
                                     |> db.InsertOrUpdate 
                                     |> Log.debugf "Inserted data: %s"
-                                } |> Async.Start
                             
                             member __.Get (key : string) = 
                                 Log.logf "trying to retrieve cached %s from database" key
@@ -104,12 +102,11 @@ module Cache =
         new(service : Http.CacheService -> Http.Service) =
             Cache {new ICacheProvider with 
                             member __.InsertOrUpdate key doc = 
-                                async{
-                                    doc.JsonValue.ToString() 
-                                    |> sprintf """["%s",%s]""" key
-                                    |> Http.post (Http.Update |> service) id 
-                                    |> ignore
-                                } |> Async.Start
+                                doc.JsonValue.ToString() 
+                                |> sprintf """["%s",%s]""" key
+                                |> Http.post (Http.Update |> service) id 
+                                |> ignore
+                                
                             
                             member __.Get (key : string) = 
                                 match Http.get (key |> Http.CacheService.Read |> service) parser with

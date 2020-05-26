@@ -165,7 +165,7 @@ module Reader =
             assert(repos |> Seq.length = parsedList.Count)
             repos
         else
-            errorf null "Error when reading repositories. Staus: %d. Message: %s" statusCode list
+            errorf  "Error when reading repositories. Staus: %d. Message: %s" statusCode list
             Seq.empty
             
     type Commit = {
@@ -197,7 +197,7 @@ module Reader =
                     assert(commits |> Seq.length = parsedCommits.Count)
                     commits
                 else
-                    errorf null "Error when reading commits of %s. Staus: %d. Message: %s" repo.Name statusCode commits
+                    errorf  "Error when reading commits of %s. Staus: %d. Message: %s" repo.Name statusCode commits
                     Seq.empty
             )
         commits
@@ -253,7 +253,7 @@ module Reader =
                                     |> Seq.head
                                 Some(firstCommit.Time,lastCommit.Time)
                             else
-                                errorf null "Error when reading commit batch of %s. Staus: %d. Message: %s" branch.Name statusCode commits
+                                errorf  "Error when reading commit batch of %s. Staus: %d. Message: %s" branch.Name statusCode commits
                                 None
                         
                         branch.Name.Substring("ref/heads/".Length), creationDateLastCommit
@@ -269,6 +269,6 @@ module Reader =
 
                 branches
             else
-                errorf null "Error when reading commits of %s. Staus: %d. Message: %s" repo.Name statusCode branches
+                errorf  "Error when reading commits of %s. Staus: %d. Message: %s" repo.Name statusCode branches
                 Seq.empty
         )

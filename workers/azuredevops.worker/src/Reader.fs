@@ -72,15 +72,16 @@ module Reader =
                 (sprintf "/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&$select=%s,Iteration&$filter=%s and WorkItemRevisionSK gt " selectedFields filters).Replace(" ", "%20")
 
             sprintf "https://analytics.dev.azure.com/%s/%s%s%d" account source.Project path
+        let key = source.JsonValue.ToString() |> keyFromSourceDoc 
         try
-            match source.JsonValue.ToString() |> keyFromSourceDoc |> Data.tryLatestId with
+            match key |> Data.tryLatestId with
             Some workItemRevisionId -> 
                 initialUrl workItemRevisionId
             | None -> 
-                Hobbes.Web.Log.log "Didn't get a work item revision id"
+                Log.debugf "Didn't get a work item revision id for %s" key
                 initialUrl 0L
         with e -> 
-            Hobbes.Web.Log.errorf e.StackTrace "Failed to get latest. Message: %s" e.Message
+            Log.excf e "Failed to get latest for (%s)" key 
             initialUrl 0L
 
     //sends a http request   
@@ -253,5 +254,5 @@ module Reader =
             200,"ok"
         with e ->
             let msg = sprintf "failed to sync Message: %s Url: %s" e.Message url
-            Hobbes.Web.Log.errorf e.StackTrace "%s" msg
+            Log.exc e msg
             500, msg

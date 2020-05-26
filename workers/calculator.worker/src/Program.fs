@@ -48,7 +48,7 @@ let handleMessage cacheKey =
                 Log.debug "No depending transformations found."
                 true
             | Http.Error(sc,m) ->
-                Log.errorf null "Failed to transform data (%s) %d %s" cacheKey sc m
+                Log.errorf  "Failed to transform data (%s) %d %s" cacheKey sc m
                 false
     with e ->
         Log.excf e "Failed to perform calculation."

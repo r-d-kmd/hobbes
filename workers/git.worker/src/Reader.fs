@@ -187,10 +187,12 @@ module Reader =
                     let commits = 
                         parsedCommits.Value
                         |> Seq.map(fun commit ->
+                            
                             {
                                 Time = commit.Author.Date.Date
                                 Message = commit.Comment
                                 Author = commit.Author.Email
+                                
                             }
                         )
 
@@ -204,8 +206,9 @@ module Reader =
            
     type BranchData = {
         Name : string
-        CreationDate : System.DateTime
-        LastCommit : System.DateTime
+        IsFirstCommit : bool
+        Commit : Commit
+        IsLastCommit : bool
     }
 
     let branches account project =
@@ -217,57 +220,52 @@ module Reader =
             if statusCode = 200 then 
                 let parsedBranches = 
                    branches |> BranchList.Parse
-                let branches = 
-                    parsedBranches.Value
-                    |> Seq.filter(fun branch -> branch.Name.StartsWith "refs/heads/")
-                    |> Seq.map(fun branch ->
-                        let body = 
-                            """{
-                              "itemVersion": {
-                                "versionType": "branch",
-                                "version": "develop"
-                              }
-                            }""" |> Some
-                        let statusCode,commits = 
-                            repo.Id |> sprintf "/%s/commitsbatch" |> request account project body
-                        
-                        let creationDateLastCommit = 
-                            if statusCode = 200 then
-                                let parsedCommits = 
-                                   commits |> CommitBatch.Parse
-                                let commits = 
-                                    parsedCommits.Value
-                                    |> Seq.map(fun commit ->
-                                        {
-                                            Time = commit.Author.Date.Date
-                                            Message = commit.Comment
-                                            Author = commit.Author.Email
-                                        }
-                                    ) |> Seq.sortBy (fun c -> c.Time)
-                                assert(commits |> Seq.length = parsedCommits.Count)
-                                let lastCommit = 
-                                    commits 
-                                    |> Seq.last
-                                let firstCommit = 
-                                    commits
-                                    |> Seq.head
-                                Some(firstCommit.Time,lastCommit.Time)
-                            else
-                                errorf  "Error when reading commit batch of %s. Staus: %d. Message: %s" branch.Name statusCode commits
-                                None
-                        
-                        branch.Name.Substring("ref/heads/".Length), creationDateLastCommit
-                    ) |> Seq.filter(snd >> Option.isSome)
-                    |> Seq.map(fun (name,creationDateLastCommit) ->
-                        let creationDate,lastCommit = creationDateLastCommit.Value
-                        {
-                            Name = name
-                            CreationDate = creationDate
-                            LastCommit = lastCommit
-                        }
-                    )
-
-                branches
+                
+                parsedBranches.Value
+                |> Seq.filter(fun branch -> branch.Name.StartsWith "refs/heads/")
+                |> Seq.collect(fun branch ->
+                    let body = 
+                        """{
+                          "itemVersion": {
+                            "versionType": "branch",
+                            "version": "develop"
+                          }
+                        }""" |> Some
+                    let statusCode,commits = 
+                        repo.Id |> sprintf "/%s/commitsbatch" |> request account project body
+                    let name = branch.Name.Substring("ref/heads/".Length)
+                    if statusCode = 200 then
+                        let parsedCommits = 
+                           commits |> CommitBatch.Parse
+                        let commits = 
+                            parsedCommits.Value
+                            |> Seq.map(fun commit ->
+                                {
+                                    Time = commit.Author.Date.Date
+                                    Message = commit.Comment
+                                    Author = commit.Author.Email
+                                }
+                            ) |> Seq.sortBy (fun c -> c.Time)
+                        assert(commits |> Seq.length = parsedCommits.Count)
+                        let lastCommit = 
+                            commits 
+                            |> Seq.last
+                        let firstCommit = 
+                            commits
+                            |> Seq.head
+                        commits
+                        |> Seq.map(fun commit ->
+                            {
+                                Name = name
+                                IsFirstCommit = (commit = firstCommit)
+                                IsLastCommit = (commit = lastCommit)
+                                Commit = commit
+                            }
+                        )
+                    else
+                        errorf  "Error when reading commit batch of %s. Staus: %d. Message: %s" branch.Name statusCode commits
+                        Seq.empty
+                )
             else
                 errorf  "Error when reading commits of %s. Staus: %d. Message: %s" repo.Name statusCode branches
                 Seq.empty

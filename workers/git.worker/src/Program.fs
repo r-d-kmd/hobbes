@@ -21,12 +21,13 @@ let synchronize (source : GitSource.Root) token =
                     columnNames, values, (commits |> Seq.length)
                 | "branches" ->
                     let branches = branches source.Account source.Project
-                    let columnNames = """["name","CreateionDate","LastCommit"]"""
+                    let columnNames = """["name","CreateionDate","LastCommit","CommitTime","CommitMessage","CommitAuthor"]"""
                     let values =
                         System.String.Join(",",
                             branches
-                            |> Seq.map(fun c ->
-                                 sprintf """["%s","%s","%s"]""" c.Name (c.CreationDate.ToString()) (c.LastCommit.ToString())
+                            |> Seq.map(fun branch ->
+                                let c = branch.Commit
+                                sprintf """["%s","%b","%b", "%s","%s","%s"]""" branch.Name branch.IsFirstCommit branch.IsLastCommit (c.Time.ToString()) c.Message c.Author
                             )
                         ) |> sprintf "[%s]"
                     columnNames, values, (branches |> Seq.length)

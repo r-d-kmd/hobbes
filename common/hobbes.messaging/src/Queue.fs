@@ -86,7 +86,7 @@ module Queue =
                     else
                         printfn "Message could not be processed. %s" msg
                 with e ->
-                   Log.exc e "Failed while processing message"
+                   eprintfn  "Failed while processing message. %s %s" e.Message e.StackTrace
             ))
             
             channel.BasicConsume(queue.Name,false,consumer) |> ignore

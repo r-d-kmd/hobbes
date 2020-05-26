@@ -45,7 +45,7 @@ let handleMessage cacheKey =
                         transformedData
                         |> Option.bind(Cache.DataResult.Parse >> cache.InsertOrUpdate key >> Some)
                         |> Option.iter(fun _ -> 
-                            Log.logf "Transformation (%s) completed" key
+                            Log.logf "Transformation of [%s] using [%s] resulting in [%s] completed" cacheKey transformation.Id key
                         )
                         r && true 
                     with e ->

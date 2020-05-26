@@ -94,7 +94,7 @@ module Cache =
                                     doc.JsonValue.ToString()
                                     |> createCacheRecord key 
                                     |> db.InsertOrUpdate 
-                                    |> Log.logf "Inserted data: %s"
+                                    |> Log.debugf "Inserted data: %s"
                                 } |> Async.Start
                             
                             member __.Get (key : string) = 
@@ -115,7 +115,7 @@ module Cache =
                                 match Http.get (key |> Http.CacheService.Read |> service) parser with
                                 Http.Success d -> Some d
                                 | Http.Error (code,msg) ->
-                                    Log.errorf null "Failed to load from cache. Status: %d. Message: %s" code msg
+                                    Log.errorf  "Failed to load from cache. Status: %d. Message: %s" code msg
                                     None}
                                     
         member __.InsertOrUpdate = provider.InsertOrUpdate

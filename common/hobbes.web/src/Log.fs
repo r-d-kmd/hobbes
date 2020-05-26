@@ -21,8 +21,8 @@ module Log =
         | Unknown
         with override x.ToString() = 
                 match x with
-                Info      -> "info"
                 | Debug   -> "debug"
+                | Info    -> "info"
                 | Error   -> "error"
                 | Unknown -> "unknown"
              static member Parse (s:string) =
@@ -60,7 +60,14 @@ module Log =
         if env "LOG_LOCATION" "console" = "console" then
             //let's print log messages to console when running locally
             let now() =  System.DateTime.Now.ToString()
-            let printer = fun s -> printfn "%s - %s" (now()) s
+            let printer = 
+                if logType < logLevel then
+                    ignore
+                else
+                    if logType = Error then
+                        eprintfn "%s - %s" (now())
+                    else
+                        printfn "%s - %s" (now())
             (if System.String.IsNullOrWhiteSpace(stacktrace) then
               sprintf "%s" msg
              else
@@ -77,20 +84,22 @@ module Log =
     let log msg =
         writeLogMessage Info null msg
  
-    let error stacktrace msg = 
-        writeLogMessage  Error stacktrace msg
+    let error msg = 
+        writeLogMessage Error null msg
  
     let debug msg  =
         writeLogMessage Debug null msg
  
-    let logf  format =
+    let logf format =
        ksprintf ( writeLogMessage Info null) format
        
-    let errorf stacktrace format = 
-       ksprintf (writeLogMessage Error stacktrace) format
-
+    let errorf format = 
+       ksprintf (writeLogMessage Error null) format
+    
     let excf (e:System.Exception) format = 
        ksprintf (fun msg -> msg + "Message: " + e.Message |> writeLogMessage Error e.StackTrace) format
+
+    let exc (e:System.Exception) message = excf e "%s" message
 
     let debugf format =
        ksprintf ( writeLogMessage Debug null) format
@@ -114,23 +123,25 @@ module Log =
     let loggerInstance = 
         { new ILog with
             member __.Log msg   = log msg
-            member __.Error stackTrace msg = error stackTrace msg
+            member __.Error msg = error msg
             member __.Debug msg = debug msg
             member __.Logf<'a> (format : LogFormatter<'a>)  = logf format  
-            member __.Errorf<'a> stackTrace (format : LogFormatter<'a>) = errorf stackTrace format
+            member __.Errorf<'a> (format : LogFormatter<'a>) = errorf format
             member __.Excf<'a> e (format : LogFormatter<'a>) = excf e format
+            member __.Exc e msg = exc e msg
             member __.Debugf<'a>  (format : LogFormatter<'a>) = debugf format
         }
 
     let ignoreLogging =
         { new ILog with
             member __.Log _   = ()
-            member __.Error stackTrace msg = error stackTrace msg
+            member __.Error msg = error msg
             member __.Debug _ = ()
             member __.Logf<'a> (format : LogFormatter<'a>)  = 
                 ksprintf ignore format
-            member __.Errorf<'a> stackTrace (format : LogFormatter<'a>) = errorf stackTrace format
-            member __.Excf<'a> e (format : LogFormatter<'a>) = excf e format
+            member __.Errorf<'a> (format : LogFormatter<'a>) = errorf format
+            member __.Excf<'a> (e : System.Exception) (format : LogFormatter<'a>) = excf e format
+            member __.Exc e msg = excf e "%s" msg
             member __.Debugf<'a>  (format : LogFormatter<'a>)  = 
                 ksprintf ignore format
         }

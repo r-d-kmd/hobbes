@@ -78,7 +78,10 @@ module Data =
                         ) [keyFromConfig configuration,h]
                 ) |> Seq.groupBy fst
                 |> Seq.map(fun (key,deps) ->
-                    key,deps |> Seq.map snd 
+                    key,
+                        deps 
+                        |> Seq.map snd 
+                        |> Seq.distinctBy(fun t -> t.Id)
                 ) |> Map.ofSeq
             match dependencies |> Map.tryFind cacheKey with
             None -> 404,sprintf "No dependencies found for key (%s)" cacheKey

@@ -27,18 +27,26 @@ let handleMessage cacheKey =
                 transformations
                 |> Seq.fold(fun r transformation ->
                     let key = cacheKey + ":" + transformation.Id
+                    let transformedData = 
+                        try
+                            let data = 
+                                cacheRecord
+                                |> Cache.readData
+                             
+                            data
+                            |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
+                            |> Hobbes.FSharp.Compile.expressions transformation.Lines 
+                            |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows 
+                            |> Some
+                        with e ->
+                            Log.excf e "Failed to transform data"
+                            None    
                     try
-                        let data = 
-                            cacheRecord
-                            |> Cache.readData
-
-                        data
-                        |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
-                        |> Hobbes.FSharp.Compile.expressions transformation.Lines 
-                        |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows 
-                        |> Cache.DataResult.Parse
-                        |> cache.InsertOrUpdate key
-                        Log.logf "Transformation (%s) completed" key
+                        transformedData
+                        |> Option.bind(Cache.DataResult.Parse >> cache.InsertOrUpdate key >> Some)
+                        |> Option.iter(fun _ -> 
+                            Log.logf "Transformation (%s) completed" key
+                        )
                         r && true 
                     with e ->
                        Log.excf e "Couldn't insert data (key: %s)." key

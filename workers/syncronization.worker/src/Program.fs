@@ -3,7 +3,7 @@ open System.Text
 open Hobbes.Helpers.Environment
 open Hobbes.Web.RawdataTypes
 open Hobbes.Web
-open Hobbes.Workers.Shared.Queue
+open Hobbes.Messaging.Queue
 
 type CollectorList = FSharp.Data.JsonProvider<"""["azure devops","git"]""">
 type SourceList = FSharp.Data.JsonProvider<"""[{

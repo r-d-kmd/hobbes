@@ -24,7 +24,7 @@
     <Compile Include="backend/Parser.fs" />
     <Compile Include="frontend.fsharp/DataMatrix.fs" />
     <Compile Include="frontend.fsharp/Compile.fs" />
-    <Compile Include="frontend.azuredevops/Compile.fs" />
+    <Compile Include="frontend.odata/Compile.fs" />
     <Compile Include="DSL.fs" />
   </ItemGroup>
   <Import Project="..\..\..\.paket\Paket.Restore.targets" />

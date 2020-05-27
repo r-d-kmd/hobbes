@@ -1,6 +1,6 @@
 namespace Workbench.Transformations
 
-[<Workbench.Transformations(Workbench.Project.Git)>]
+[<Workbench.Transformations(Workbench.Project.Flowerpot ||| Workbench.Project.Branches)>]
 module Git =
 
     open Hobbes.Parsing.AST

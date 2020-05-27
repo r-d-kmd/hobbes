@@ -2,7 +2,7 @@ open Hobbes.Helpers.Environment
 open Hobbes.Web.RawdataTypes
 open Collector.Git.Reader
 open Hobbes.Web
-open Hobbes.Workers.Shared.Queue
+open Hobbes.Messaging.Queue
 
 let synchronize (source : GitSource.Root) token =
         try

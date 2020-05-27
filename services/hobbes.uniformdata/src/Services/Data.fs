@@ -3,7 +3,7 @@ namespace Hobbes.UniformData.Services
 open Hobbes.Web.Routing
 open Hobbes.Web
 open Hobbes.Web.RawdataTypes
-open Hobbes.Workers.Shared.Queue
+open Hobbes.Messaging.Queue
 open FSharp.Data
 
 [<RouteArea ("/data", false)>]

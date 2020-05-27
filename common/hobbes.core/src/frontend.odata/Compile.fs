@@ -1,4 +1,4 @@
-namespace Hobbes.AzureDevOps
+namespace Hobbes.OData
 
 open Hobbes.Parsing
 

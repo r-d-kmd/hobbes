@@ -7,13 +7,7 @@ module DevOps =
 
   [<Literal>]
   let Projects = 
-      Project.Flowerpot 
-      ||| Project.Gandalf 
-      ||| Project.Delta 
-      ||| Project.Momentum
-      ||| Project.Nexus
-      ||| Project.UVskole
-      ||| Project.Branches
+      Project.Flowerpot
 
 [<Configurations(Source.Branches)>]
 module VCS =

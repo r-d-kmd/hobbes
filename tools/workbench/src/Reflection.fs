@@ -222,6 +222,6 @@ module Reflection =
                 |> List.ofSeq
             )
             |> Map.ofSeq
-        modules
+        modules filter here on source and project
         |> Seq.map(createConfiguration projectTransformations)|> Seq.collect id 
         

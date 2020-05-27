@@ -455,8 +455,13 @@ module DataStructures =
                     let transformExpressionsToVariants expr = 
                         trainingData
                         |> expr
-                        |> Series.mapValues(fun c -> c :> obj :?> float)
-                        |> Series.values
+                        |> Series.mapValues(fun c -> 
+                            match c :> obj with
+                            :? decimal as d -> d |> float
+                            | :? float as f -> f
+                            | :? int as i -> i |> float
+                            | s -> failwithf "Can't convert %A to float" s
+                        ) |> Series.values
                         |> Array.ofSeq
 
                     let keys = 
@@ -584,7 +589,7 @@ module DataStructures =
                              res :> Comp
                          )
                      with e ->
-                          failwithf "Column not found. %s. Available Columns %A" e.Message frame.ColumnKeys
+                          failwithf "Column not found. %s. \nAvailable Columns %s" e.Message (System.String.Join(",",frame.ColumnKeys |> Seq.map (sprintf "%A")))
             match exp with
             AST.Not e -> 
                 let exp = compileBooleanExpression e
@@ -652,7 +657,8 @@ module DataStructures =
                     result
                 with e ->
                     let cols = frame.ColumnKeys
-                    failwithf "%s. Columns: %A" e.Message cols
+                    eprintfn "%s. Columns: %A" e.Message cols
+                    reraise()
             | AST.Pivot(rowKeyExpression,columnKeyExpression,valueExpression, reduction) ->
                 let rowkey,compiledExpressionFunc = compileTempColumn "__rowkey__" rowKeyExpression (fun r ->
                                                                                                        r  |> AST.KeyType.OfOption
@@ -861,7 +867,7 @@ module DataStructures =
 
             ) |> Seq.filter(fun (_,values) -> values |> Seq.isEmpty |> not)
 
-        let serialiseValue (_,value : obj) = 
+        let serialiseValue (value : obj) = 
             match value with
             null -> "null"
             | :? string as s -> jsonString s
@@ -980,9 +986,11 @@ module DataStructures =
                             |> Seq.map(fun (_,row) ->
                                 (",",
                                     row
-                                    |> Series.observations
+                                    |> Series.observationsAll
                                     |> Seq.sortBy(fun (columnName,_) -> columnMap.[columnName])
-                                    |> Seq.map serialiseValue)
+                                    |> Seq.map (function
+                                                _,None -> "null"
+                                                | _,Some v -> serialiseValue v))
                                 |> System.String.Join
                                 |> sprintf "[%s]"
                             )

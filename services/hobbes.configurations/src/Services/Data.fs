@@ -48,41 +48,43 @@ module Data =
         match configurations.TryGet configurationName with
         None -> 404, sprintf "Configuration (%s) not found" configurationName
         | Some c -> 200, c.JsonValue.ToString()
-
+    let mutable (time,dependencies : Map<string,seq<TransformationRecord.Root>>) = (System.DateTime.MinValue,Map.empty)
     [<Get ("/dependingtransformations/%s")>]
     let dependingTransformations (cacheKey : string) =
         if cacheKey.EndsWith(":") then 404, "Invalid cache key"
         else
-            let dependencies = 
-                configurations.List()
-                |> Seq.collect(fun configuration ->
-                    let transformations = 
-                        configuration.Transformations
-                        |> Array.map(fun transformationName ->
-                            match transformations.TryGet transformationName with
-                            None -> 
-                                Log.errorf  "Transformation (%s) not found" transformationName
-                                None
-                            | t -> t
-                        ) |> Array.filter Option.isSome
-                        |> Array.map Option.get
-                        |> Array.toList
+            if time < System.DateTime.Now.AddHours -1. then
+                time <- System.DateTime.Now
+                dependencies <-
+                    configurations.List()
+                    |> Seq.collect(fun configuration ->
+                        let transformations = 
+                            configuration.Transformations
+                            |> Array.map(fun transformationName ->
+                                match transformations.TryGet transformationName with
+                                None -> 
+                                    Log.errorf  "Transformation (%s) not found" transformationName
+                                    None
+                                | t -> t
+                            ) |> Array.filter Option.isSome
+                            |> Array.map Option.get
+                            |> Array.toList
 
-                    match transformations with
-                    [] -> []
-                    | h::tail ->
-                        tail
-                        |> List.fold(fun (lst : (string * TransformationRecord.Root) list) t ->
-                            let prevKey, prevT = lst |> List.head
-                            (prevKey + ":" + prevT.Id,t) :: lst
-                        ) [keyFromConfig configuration,h]
-                ) |> Seq.groupBy fst
-                |> Seq.map(fun (key,deps) ->
-                    key,
-                        deps 
-                        |> Seq.map snd 
-                        |> Seq.distinctBy(fun t -> t.Id)
-                ) |> Map.ofSeq
+                        match transformations with
+                        [] -> []
+                        | h::tail ->
+                            tail
+                            |> List.fold(fun (lst : (string * TransformationRecord.Root) list) t ->
+                                let prevKey, prevT = lst |> List.head
+                                (prevKey + ":" + prevT.Id,t) :: lst
+                            ) [keyFromConfig configuration,h]
+                    ) |> Seq.groupBy fst
+                    |> Seq.map(fun (key,deps) ->
+                        key,
+                            deps 
+                            |> Seq.map snd 
+                            |> Seq.distinctBy(fun t -> t.Id)
+                    ) |> Map.ofSeq
             match dependencies |> Map.tryFind cacheKey with
             None -> 404,sprintf "No dependencies found for key (%s)" cacheKey
             | Some dependencies ->

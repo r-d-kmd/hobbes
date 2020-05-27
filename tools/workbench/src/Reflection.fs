@@ -4,10 +4,10 @@ open Hobbes.Web.Reflection
 
 type Source = 
     AzureDevOps = 1
-    | GitBranches = 2
+    | Branches = 2
     | Jira = 3
     | Test = 4
-    | GitCommits = 5
+    | Commits = 5
 
 [<System.FlagsAttribute>]
 type Project =
@@ -45,7 +45,7 @@ module Project =
 
     let toList (p: Project) =
         let rec inner (n : int) acc = 
-            if n <= int Project.Jira then acc
+            if n <= int Project.Branches then acc
             else
                 let acc = 
                     if (p |> int) &&& n = n then (enum<Project> n)::acc
@@ -66,7 +66,7 @@ module Project =
         | Project.Delta::_ -> "delta"
         | Project.Nexus::_ -> "nexus"
         | Project.UVskole::_ -> "uvskole"
-        | _ -> failwith "Can't happen"
+        | ps -> failwithf "Can't happen. %A" ps
 
     let configString (s: Project) =
         let p = s |> toList |> List.head //removes any source 'projects'
@@ -108,8 +108,8 @@ module Source =
     let project (s: Source) =
         match s with
         Source.AzureDevOps -> Project.AzureDevOps
-        | Source.GitBranches -> Project.Branches
-        | Source.GitCommits -> Project.Commits
+        | Source.Branches -> Project.Branches
+        | Source.Commits -> Project.Commits
         | Source.Jira -> Project.Jira
         | _ -> failwith "Can't happen"
 

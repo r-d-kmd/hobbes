@@ -1,4 +1,4 @@
-namespace Hobbes.Workers.Shared
+namespace Hobbes.Messaging
 open RabbitMQ.Client
 open RabbitMQ.Client.Events
 open System

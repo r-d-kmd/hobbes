@@ -4,7 +4,7 @@ open Readers.AzureDevOps.Data
 open Hobbes.Web.RawdataTypes
 open Readers.AzureDevOps
 open Hobbes.Web
-open Hobbes.Workers.Shared.Queue
+open Hobbes.Messaging.Queue
 
 let synchronize (source : AzureDevOpsSource.Root) token =
         try

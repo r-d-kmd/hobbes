@@ -94,12 +94,3 @@ module State =
           ]
       @>
 
-[<Configurations(Source.Branches)>]
-module VCS =
-    [<Configuration(State.Projects)>]
-    let branchLifeTime =
-        <@
-            [
-                Transformations.Git.branchLifeTime
-            ]
-        @>

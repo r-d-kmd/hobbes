@@ -11,6 +11,6 @@ module UVskole =
     let renaming = 
         [
             only ((WorkItemType.Expression == "User Story") .|| (WorkItemType.Expression == "Bug"))
-            //rename "Iteration.IterationLevel3" SprintName.Name
-            //create (column SprintNumber.Name) (int (regex (!> "Sprint Name") "[Ss][Pp][Rr][Ii][Nn][Tt] [^\\d]*([\\d]+).*" [``$1``]))
+            rename "Iteration.IterationLevel3" SprintName.Name
+            create (column SprintNumber.Name) (int (regex (!> "Sprint Name") "[Ss][Pp][Rr][Ii][Nn][Tt] [^\\d]*([\\d]+).*" [``$1``]))
         ]

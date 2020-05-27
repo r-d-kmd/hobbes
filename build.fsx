@@ -343,7 +343,7 @@ let buildApp (app : App) workingDir =
     Target.create buildTargetName build
     Target.create pushTargetName push
     "PreBuild" + appType + "s" ==> buildTargetName |> ignore
-    buildTargetName ==> pushTargetName |> ignore
+    buildTargetName ==> pushTargetName ==> "PushAllApps" |> ignore
 
 Target.create "ForceBuildServices" ignore
 Target.create "ForceBuildWorkers" ignore
@@ -356,7 +356,7 @@ Target.create "BuildServices" ignore
 Target.create "PreBuildServices" ignore
 Target.create "BuildWorkers" ignore
 Target.create "PreBuildWorkers" ignore
-Target.create "PushAppSdk" ignore
+Target.create "PushAllApps" ignore
 
 Target.create "CleanCommon" (fun _ ->
     let deleteFiles lib =
@@ -430,7 +430,7 @@ Target.create "PushHobbesSdk" (fun _ ->
     pushImage "sdk:hobbes"
 )
 
-Target.create "PushServiceSdk" (fun _ ->  
+Target.create "PushAppSdk" (fun _ ->  
     pushImage "sdk:app"
 )
 
@@ -501,7 +501,8 @@ workers
 "BuildGenericImages" ==> "PushGenericImages"
 "BuildServices" ==> "Build"
 "BuildWorkers" ==> "Build"
-"BuildAppSdk" ==> "PushAppSdk"
+"BuildAppSdk" ==> "PushAppSdk" 
+"PushHobbesSdk" ==> "PushAppSdk"
 "ForceBuildServices" ==> "Rebuild"
 "ForceBuildWorkers" ==> "Rebuild"
 

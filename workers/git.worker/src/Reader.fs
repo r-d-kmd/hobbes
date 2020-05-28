@@ -225,12 +225,12 @@ module Reader =
                 |> Seq.filter(fun branch -> branch.Name.StartsWith "refs/heads/")
                 |> Seq.collect(fun branch ->
                     let body = 
-                        """{
+                        sprintf """{
                           "itemVersion": {
                             "versionType": "branch",
-                            "version": "develop"
+                            "version": "%s"
                           }
-                        }""" |> Some
+                        }""" repo.DefaultBranch |> Some
                     let statusCode,commits = 
                         repo.Id |> sprintf "/%s/commitsbatch" |> request account project body
                     let name = branch.Name.Substring("ref/heads/".Length)

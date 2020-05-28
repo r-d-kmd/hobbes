@@ -1,6 +1,6 @@
 namespace Workbench.Transformations
+open Workbench.Types
 
-[<Workbench.Transformations(Workbench.Project.AzureDevOps)>]
 module Azure = 
 
     open Hobbes.DSL
@@ -23,7 +23,6 @@ module Azure =
                                     )))
         ]*)
 
-    [<Workbench.Transformation 3>]
     let stateRenaming =
         [
             create "SimpleState" (If (contains State.Expression [
@@ -35,4 +34,4 @@ module Azure =
                                 (Else
                                     (!!> "NotDone"))
                                  )                                     
-        ]
+        ]|> Transformation.Create "stateRenaming"

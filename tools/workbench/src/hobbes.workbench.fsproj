@@ -9,7 +9,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Reflection.fs" />
+    <Compile Include="Types.fs" />
     <Compile Include="production transformations/*.fs" />
     <Compile Include="Configurations/*.fs" />
     <Compile Include="Tests/Tests.fs" />

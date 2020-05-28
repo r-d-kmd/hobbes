@@ -1,12 +1,11 @@
 namespace Workbench.Transformations
+open Workbench.Types
 
-[<Workbench.Transformations(Workbench.Project.Flowerpot)>]
 module Git =
 
     open Hobbes.Parsing.AST
     open Hobbes.DSL
 
-    [<Workbench.Transformation 1>]
     let branchLifeTime =
         [
             create "Branch Life Time" (
@@ -14,4 +13,4 @@ module Git =
                     !> "BranchLifeTimeInHours"
                 )
             )                                
-        ]
+        ] |> Transformation.Create "branchLifeTime"

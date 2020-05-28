@@ -1,20 +1,16 @@
 
 namespace Workbench.Configurations
-open Workbench
+open Workbench.Types
 
-[<Configurations(Source.Branches)>]
 module DevOps = 
 
-  [<Literal>]
-  let Projects = 
-      Project.Flowerpot
+  let projects = 
+      [Project.Flowerpot]
 
-[<Configurations(Source.Branches)>]
 module VCS =
-    [<Configuration(DevOps.Projects)>]
-    let branchLifeTime =
-        <@
-            [
-                Transformations.Git.branchLifeTime
-            ]
-        @>
+    DevOps.projects 
+    |> List.iter(fun p ->
+        [
+            Workbench.Transformations.Git.branchLifeTime
+        ] |> addConfiguration (Source.Git(Branches,p)) "branchLifeTime" 
+    )

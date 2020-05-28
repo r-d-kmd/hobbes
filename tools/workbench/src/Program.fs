@@ -95,6 +95,8 @@ type TransformationList = JsonProvider<"""{"transformations" : [{
     "create column \"State\" ( if [  \"StateCategory\"  =  'Proposed' ] { 'Todo' } else { if [  \"StateCategory\"  =  'InProgress' ] { 'Doing' } else { 'Done' }})"
   ]
 }]}""">
+
+
 [<EntryPoint>]
 let main args =
    
@@ -152,35 +154,12 @@ let main args =
 
                     let pat = settings.Hobbes
                     let transformations = 
-                        Workbench.Reflection.transformations()
-                        |> Seq.map(fun (name,statements) ->
-                            statements
-                            |> List.map parse
-                            |> ignore
-                            
-                            System.String.Join(",",
-                                statements
-                                |> List.map (fun stmt ->
-                                   (stmt |> string).Replace("\\","\\\\\\\\").Replace("\"", "\\\"") |> sprintf "\n  %A"
-                                )
-                            ) |> sprintf "[%s\n]"
-                            |> sprintf """{
-                                "_id" : "%s",
-                                "lines" : %s
-                            }
-                            """ name
-                        )
+                        Workbench.Types.allTransformations()
+                        |> Seq.map string
+
                     let configurations = 
-                        Workbench.Reflection.configurations()
-                        |> Seq.map(fun c ->
-                            sprintf """{
-                                "_id" : "%s",
-                                %s,
-                                "transformations" : [%s]
-                            }""" c.Id
-                                 ((c.Source |> Workbench.Source.project ||| c.Project) |> Workbench.Project.configString)
-                                 (System.String.Join(",",c.Transformations |> Seq.map(sprintf "%A")))
-                        ) 
+                        Workbench.Types.allConfigurations()
+                        |> Seq.map string
                     
                     transformations 
                     |> Seq.iter(fun doc ->

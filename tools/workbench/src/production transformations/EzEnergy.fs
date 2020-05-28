@@ -1,12 +1,11 @@
 namespace Workbench.Transformations
+open Workbench.Types
 
-[<Workbench.Transformations(Workbench.Project.EzEnergy)>]
 module EzEnergy = 
 
     open Hobbes.DSL
     open General
     
-    [<Workbench.Transformation 0 >]
     let renaming = 
         [
             only ((WorkItemType.Expression == "User Story") .|| (WorkItemType.Expression == "Bug"))
@@ -21,4 +20,4 @@ module EzEnergy =
                                           (If ((!> "StateCategory" == !!> "In-Progress") .|| (!> "StateCategory" == !!> "Completed")) (Then !!> "Todo") (Else !!> "Done" ))
                                        ))
                                     
-        ]
+        ]  |> Transformation.Create "ezenergy.renaming"

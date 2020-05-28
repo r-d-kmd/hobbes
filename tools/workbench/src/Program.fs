@@ -153,6 +153,8 @@ let main args =
                     let urlConfigurations = settings.Host + "/admin/configuration"
 
                     let pat = settings.Hobbes
+                    Workbench.Configurations.State.initialise()
+                    Workbench.Configurations.DevOps.initialise()
                     let transformations = 
                         Workbench.Types.allTransformations()
                         |> Seq.map string

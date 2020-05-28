@@ -34,48 +34,48 @@ module State =
         Types.addConfiguration source name transformations
       )
   
-  
-  [
-    General.foldBySprint
-  ] |> add "foldBySprint"
-     
-  [
-    General.foldBySprint
-    Metrics.stateCountBySprint
-  ] |> add "stateCountBySprint"
-  
-  [
-    General.foldBySprint
-    Metrics.stateCountBySprint
-    Metrics.simpleBurnUp
-  ]  |> add "simpleBurnUp"
-  
-  [
-    General.foldBySprint
-    Metrics.stateCountBySprint
-    Metrics.simpleBurnUp
-    Metrics.burnUpWithForecast
-  ]  |> add "burnUpWithForecast"
-  
-  [
-    General.foldBySprint
-    Metrics.stateCountBySprint
-    Metrics.workItemDoneMovingMean
-  ] |> add "workItemMovingMean"
-  
-  [
-    General.foldBySprint
-    Metrics.storyPointSumBySprint
-    Metrics.storyPointMovingMean
-  ] |> add "storyPOintsMovingMean"
-  
-  [
-    General.foldBySprint
-    Metrics.bugCountBySprint
-    Metrics.bugsPerSprint
-  ] |> add "bugsPerSprint"
-  
-  [
-    Metrics.martin
-  ]  |> add "martin"
+  let initialise() = 
+    [
+      General.foldBySprint
+    ] |> add "foldBySprint"
+       
+    [
+      General.foldBySprint
+      Metrics.stateCountBySprint
+    ] |> add "stateCountBySprint"
+    
+    [
+      General.foldBySprint
+      Metrics.stateCountBySprint
+      Metrics.simpleBurnUp
+    ]  |> add "simpleBurnUp"
+
+    [
+      General.foldBySprint
+      Metrics.stateCountBySprint
+      Metrics.simpleBurnUp
+      Metrics.burnUpWithForecast
+    ]  |> add "burnUpWithForecast"
+
+    [
+      General.foldBySprint
+      Metrics.stateCountBySprint
+      Metrics.workItemDoneMovingMean
+    ] |> add "workItemMovingMean"
+
+    [
+      General.foldBySprint
+      Metrics.storyPointSumBySprint
+      Metrics.storyPointMovingMean
+    ] |> add "storyPOintsMovingMean"
+
+    [
+      General.foldBySprint
+      Metrics.bugCountBySprint
+      Metrics.bugsPerSprint
+    ] |> add "bugsPerSprint"
+
+    [
+      Metrics.martin
+    ]  |> add "martin"
 

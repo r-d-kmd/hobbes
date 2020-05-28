@@ -4,18 +4,8 @@ kind: Kustomization
 bases:
     - ../
 
-patchesStrategicMerge:
-  - db-volume.yaml
-  - db-deployment.yaml
-  - db-svc.yaml
-  - azuredevops-deployment.yaml
-  - calculator-deployment.yaml
-  - configurations-deployment.yaml
-  - configurations-svc.yaml
-  - gateway-deployment.yaml
-  - gateway-svc.yaml
-  - git-deployment.yaml
-  - rabbitmq-svc.yaml
+ressources:
+  - azuredevops-scaling.yaml
+  - git-scaling.yaml
+  - calculator.yaml
   - syncronization-job.yaml
-  - uniformdata-deployment.yaml
-  - uniformdata-svc.yaml

@@ -1,13 +1,12 @@
 namespace Workbench.Transformations
 open Hobbes.Parsing.AST
+open Workbench.Types
 
-[<Workbench.Transformations(Workbench.Project.General)>]
 module Metrics = 
 
     open Hobbes.DSL
     open General
 
-    [<Workbench.Transformation 0>]
     let stateCountBySprint = 
         [
             only (SprintNumber.Expression |> isntMissing)
@@ -19,9 +18,8 @@ module Metrics =
                   (!> "SimpleState")
                   //count the number of workitemids
                   Count WorkItemId.Expression
-        ]
+        ]  |> Transformation.Create "stateCountBySprint"
 
-    [<Workbench.Transformation 1>]
     let bugCountBySprint =
         [
             only (SprintNumber.Expression |> isntMissing)
@@ -35,9 +33,8 @@ module Metrics =
                   (!> "SimpleState")
                   //count the number of workitemids
                   Count WorkItemId.Expression
-        ]    
+        ]  |> Transformation.Create "bugCountbySprint"
 
-    [<Workbench.Transformation 2>]
     let storyPointSumBySprint = 
         [
             only (SprintNumber.Expression |> isntMissing)
@@ -50,9 +47,8 @@ module Metrics =
                   (!> "SimpleState")
                   //count the number of workitemids
                   Sum (!> "StoryPoints")
-        ]    
+        ]   |> Transformation.Create "storyPointSumBySprint"    
     
-    [<Workbench.Transformation 3>]
     let simpleBurnUp =
         [
             //remove all other columns than those metioned
@@ -63,9 +59,8 @@ module Metrics =
             create (column "Burn up") (expanding Sum (!> "Done")) 
             //Create a column named Velocity that's the moving mean of 'Done' of the last three rows
             create (column "Velocity") ((moving Mean 3 (!> "Done")))
-        ]
+        ]  |> Transformation.Create "simpleBurnUp"
 
-    [<Workbench.Transformation 4>]
     let burnUpWithForecast =
         [
             //index the rows by sprint number
@@ -82,9 +77,8 @@ module Metrics =
             ]
             //required to populate the Sprint number column with the predicted values
             create SprintNumber.Name Keys
-        ]
+        ]  |> Transformation.Create "burnUpWithForecast"
 
-    [<Workbench.Transformation 5>]
     let workItemDoneMovingMean =
         [
             //remove all other columns than those metioned
@@ -93,9 +87,8 @@ module Metrics =
             sort by SprintNumber.Name
             //Create a column named Velocity that's the moving mean of 'Done' of the last three rows
             create (column "Moving Mean") ((moving Mean 3 (!> "Done")))
-        ]
+        ]   |> Transformation.Create "workItemDoneMovingMean"
 
-    [<Workbench.Transformation 6>]
     let storyPointMovingMean =
         [
             //remove all other columns than those metioned
@@ -106,9 +99,8 @@ module Metrics =
             sort by SprintNumber.Name
             //Create a column named Velocity that's the moving mean of 'Done' of the last three rows
             create (column "Moving Mean") ((moving Mean 3 (!> "StoryPoints")))
-        ]  
+        ]    |> Transformation.Create "storyPointMovingMean"
 
-    [<Workbench.Transformation 7>]
     let bugsPerSprint =
         [
             //remove all other columns than those metioned
@@ -117,9 +109,8 @@ module Metrics =
             rename "Done" "Bugs"
             //moving mean and expanding sum only make sense if we are sure we know the order
             sort by SprintNumber.Name
-        ]        
+        ]   |> Transformation.Create "bugsPerSprint"       
 
-    [<Workbench.Transformation 8>]
     let martin =
         [
             slice columns [
@@ -135,5 +126,5 @@ module Metrics =
                 "Iteration.StartDate"
                 "TimeStamp"
             ]
-        ]    
+        ]   |> Transformation.Create "martin"    
         

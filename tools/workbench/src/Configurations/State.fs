@@ -1,96 +1,81 @@
 namespace Workbench.Configurations
 open Workbench
+open Workbench.Transformations
 
-[<Configurations(Source.AzureDevOps)>]
 module State = 
 
-  [<Literal>]
-  let Projects = 
-      Project.AzureDevOps
-      ||| Project.Flowerpot 
-      ||| Project.Gandalf 
-      ||| Project.Delta 
-      ||| Project.Momentum
-      ||| Project.Nexus
-      ||| Project.UVskole
+  let projects = 
+       [
+          Project.Flowerpot 
+          Project.Gandalf 
+          Project.Delta 
+          Project.Momentum
+          Project.Nexus
+          Project.UVskole
+       ]
+  let uniformingTransformations = 
+      [
+          Project.Flowerpot , [Flowerpot.renaming]
+          Project.Gandalf, [Gandalf.renaming]
+          Project.Delta, [Delta.renaming]
+          Project.Momentum, [Momentum.renaming]
+          Project.Nexus, [Nexus.renaming]
+          Project.UVskole, [UVskole.renaming]
+      ] |> List.map(fun (p,lst) -> p,(Azure.stateRenaming::(lst |> List.rev)) |> List.rev )
+      |> Map.ofList
+
+  let add name transformations = 
+      projects
+      |> List.iter(fun project ->
+        let source = 
+            project |> Source.AzureDevOps
+        let transformations = 
+            uniformingTransformations.[project]@transformations
+        Types.addConfiguration source name transformations
+      )
   
-  [<Configuration(Projects)>]
-  let baseInformations : Quotations.Expr<Hobbes.DSL.Statements list list> =
-      <@ [] @>
-
-  [<Configuration(Projects)>]
-  let foldBySprint =
-      <@
-          [
-            Transformations.General.foldBySprint
-          ]
-      @>  
-      
-  [<Configuration(Projects)>]
-  let stateCountBySprint =
-      <@
-          [
-            Transformations.General.foldBySprint
-            Transformations.Metrics.stateCountBySprint
-          ]
-      @>
-
-  [<Configuration(Projects)>]
-  let simpleBurnUp =
-      <@
-          [
-            Transformations.General.foldBySprint
-            Transformations.Metrics.stateCountBySprint
-            Transformations.Metrics.simpleBurnUp
-          ]
-
-      @>
-  [<Configuration(Projects)>]
-  let burnUpWithForecast =
-      <@
-          [
-            Transformations.General.foldBySprint
-            Transformations.Metrics.stateCountBySprint
-            Transformations.Metrics.simpleBurnUp
-            Transformations.Metrics.burnUpWithForecast
-          ]
-      @>
-
-  [<Configuration(Projects)>]
-  let workItemMovingMean = 
-      <@
-          [
-            Transformations.General.foldBySprint
-            Transformations.Metrics.stateCountBySprint
-            Transformations.Metrics.workItemDoneMovingMean
-          ]
-      @>
-
-  [<Configuration(Projects)>]
-  let storyPointsMovingMean = 
-      <@
-          [
-            Transformations.General.foldBySprint
-            Transformations.Metrics.storyPointSumBySprint
-            Transformations.Metrics.storyPointMovingMean
-          ]
-      @>
-
-  [<Configuration(Projects)>]
-  let bugsPerSprint = 
-      <@
-          [
-            Transformations.General.foldBySprint
-            Transformations.Metrics.bugCountBySprint
-            Transformations.Metrics.bugsPerSprint
-          ]
-      @>
-
-  [<Configuration(Projects)>]
-  let martin = 
-      <@
-          [
-            Transformations.Metrics.martin
-          ]
-      @>
+  
+  [
+    General.foldBySprint
+  ] |> add "foldBySprint"
+     
+  [
+    General.foldBySprint
+    Metrics.stateCountBySprint
+  ] |> add "stateCountBySprint"
+  
+  [
+    General.foldBySprint
+    Metrics.stateCountBySprint
+    Metrics.simpleBurnUp
+  ]  |> add "simpleBurnUp"
+  
+  [
+    General.foldBySprint
+    Metrics.stateCountBySprint
+    Metrics.simpleBurnUp
+    Metrics.burnUpWithForecast
+  ]  |> add "burnUpWithForecast"
+  
+  [
+    General.foldBySprint
+    Metrics.stateCountBySprint
+    Metrics.workItemDoneMovingMean
+  ] |> add "workItemMovingMean"
+  
+  [
+    General.foldBySprint
+    Metrics.storyPointSumBySprint
+    Metrics.storyPointMovingMean
+  ] |> add "storyPOintsMovingMean"
+  
+  [
+    General.foldBySprint
+    Metrics.bugCountBySprint
+    Metrics.bugsPerSprint
+  ] |> add "bugsPerSprint"
+  
+  [
+    Metrics.martin
+  ]  |> add "martin"
 

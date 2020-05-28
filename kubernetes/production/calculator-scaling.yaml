@@ -1,14 +1,14 @@
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: azuredevops
+  name: calculator
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: azuredevops
+    name: calculator
   minReplicas: 1
-  maxReplicas: 10
+  maxReplicas: 50
   metrics:
   - type: Resource
     resource:

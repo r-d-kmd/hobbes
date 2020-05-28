@@ -1,7 +1,7 @@
 namespace Workbench.Transformations
 open Hobbes.DSL
+open Workbench.Types
 
-[<Workbench.Transformations(Workbench.Project.General)>]
 module General = 
 
     type ColumnName =
@@ -35,7 +35,7 @@ module General =
                 with get() = 
                     x.ToString()
 
-    [<Workbench.Transformation 1>]
+    
     //used to limit the amount of data that's kept in memory for calculations
     let baseData =
         [
@@ -46,9 +46,8 @@ module General =
                 SprintEndDate
             ] |> List.map string
             |> slice columns 
-        ] 
+        ] |> Transformation.Create "baseData"
 
-    [<Workbench.Transformation 0>]
     let foldBySprint = 
         [
             //group by the tuple sprint name and workitem id
@@ -56,4 +55,9 @@ module General =
                  //keep the row in each group where the ChangedDate is the highest 
                  //Ie keep the latest change of the work item in that particular sprint
                 ( maxby ChangedDate.Expression)
-        ]
+        ] |> Transformation.Create "foldBySprint"
+
+    let onlyInSprint = 
+        [
+            only (SprintNumber.Expression |> isntMissing)
+        ] |> Transformation.Create "onlyInSprint"

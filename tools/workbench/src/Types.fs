@@ -24,9 +24,9 @@ module Types =
                match this with
                Flowerpot -> "Flowerpot"
                | UVskole -> "UVskole"
-               | Nexus  -> "Nexus "
-               | Delta  -> "Delta "
-               | EzEnergy  -> "EzEnergy "
+               | Nexus  -> "Nexus"
+               | Delta  -> "Delta"
+               | EzEnergy  -> "EzEnergy"
                | Gandalf -> "Gandalf"
                | Momentum -> "Momentum"
 
@@ -41,13 +41,13 @@ module Types =
                AzureDevOps p ->
                    sprintf """{
                        "name" : "azure devops",
-                       "project" : %s
+                       "project" :"%s"
                    }""" (p.ToString())
                | Git (dataset,p) ->
                    sprintf """{
                        "name" : "git",
-                       "project" : %s,
-                       "dataset" : %s
+                       "project" : "%s",
+                       "dataset" : "%s"
                    }""" (p.ToString()) (dataset.ToString())
                | Jira _
                | None -> failwith "Don't know what to do"
@@ -91,10 +91,10 @@ module Types =
                     ) |> sprintf "[%s\n]"
                     |> sprintf """{
                         "_id" : "%s",
-                        "description" : %s,
+                        "description" : "%s",
                         "lines" : %s
                     }
-                    """ this.Name (if this.Description |> isNull then "" else this.Description)
+                    """ this.Name (if this.Description |> isNull then "" else this.Description.Replace("\\","\\\\\\\\").Replace("\"", "\\\""))
                  
     type Configuration =
         {
@@ -110,7 +110,7 @@ module Types =
                         }
                override this.ToString() = 
                     sprintf """{
-                        "name" : "%s",
+                        "_id" : "%s",
                         "source" : %s,
                         "transformations" : [%s]
                     }""" this.Name 

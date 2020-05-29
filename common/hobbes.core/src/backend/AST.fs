@@ -20,6 +20,7 @@ module AST =
         | Variance
         | Max
         | Min
+        | Frequency
 
 
     type BinaryOperator = 

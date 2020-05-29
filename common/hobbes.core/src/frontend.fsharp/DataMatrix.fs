@@ -6,6 +6,26 @@ open Hobbes.Parsing
 open System
 open Accord.Statistics.Models.Regression.Linear
 
+
+[<AutoOpen>]
+module Functions =
+    let calculateFrequency series =
+        let getNumber (o:obj) =
+            match o with
+            :? float as f -> f
+            | :? int as i -> i |> float
+            | :? decimal as d -> d |> float
+            | :? DateTime as dt ->
+                (dt - DateTime.MinValue).TotalSeconds
+            | _ -> failwithf "Can't calculate frequency with %A" o
+        let obs = 
+            series
+            |> Series.observations
+        let first = obs |> Seq.head |> snd |> getNumber 
+        let last = obs |> Seq.head |> snd |> getNumber 
+        (last - first) / float(obs |> Seq.length)
+    
+
 module Clustering = 
     let withKeys colName (frame : Frame<AST.KeyType,_>) = 
             frame?(colName) <- 
@@ -94,6 +114,8 @@ module Clustering =
                 Series.applyLevel fst (Stats.max)
             | AST.Min-> 
                 Series.applyLevel fst (Stats.min)
+            | AST.Frequency ->
+                Series.applyLevel fst (calculateFrequency)
 
         frame
         |> Frame.sliceCols allOther
@@ -234,6 +256,8 @@ module DataStructures =
                              aggregate (Stats.movingMax windowSize)
                         | AST.Min -> 
                              aggregate (Stats.movingMin windowSize)
+                        | AST.Frequency ->
+                            failwith "not implemented yet"
                     f 
                 | AST.Expanding(reduction, columnExpression) -> 
                     let aggregate = aggregate (compileExpression columnExpression)
@@ -253,7 +277,9 @@ module DataStructures =
                      | AST.Max -> 
                          aggregate Stats.expandingMax 
                      | AST.Min -> 
-                         aggregate Stats.expandingMin 
+                         aggregate Stats.expandingMin
+                     | AST.Frequency ->
+                         failwith "Not implemented yet"
             match expr with
             AST.Number n ->
                let n = 
@@ -704,7 +730,10 @@ module DataStructures =
                                  | AST.Max -> 
                                       Stats.max
                                  | AST.Min -> 
-                                      Stats.min ))
+                                      Stats.min 
+                                 | AST.Frequency ->
+                                     calculateFrequency
+                                 ))
 
                 match rowKeyExpression with
                 AST.ComputationExpression.ColumnName name ->

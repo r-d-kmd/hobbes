@@ -43,12 +43,14 @@ module Queue =
         | AzureDevOps
         | Git
         | Generic of string
+        | Calculation
         with member queue.Name 
               with get() =
                   match queue with
                   Cache -> "cache"
                   | AzureDevOps -> "azuredevops"
                   | Git -> "git"
+                  | Calculation -> "calculation"
                   | Generic s -> s.ToLower().Replace(" ","")
 
     let rec awaitQueue() = 

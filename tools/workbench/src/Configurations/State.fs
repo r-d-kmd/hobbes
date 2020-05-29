@@ -39,7 +39,7 @@ module State =
       General.foldBySprint
     ] |> add "foldBySprint"
        
-    [
+    (*[
       General.foldBySprint
       Metrics.stateCountBySprint
     ] |> add "stateCountBySprint"
@@ -77,5 +77,5 @@ module State =
 
     [
       Metrics.martin
-    ]  |> add "martin"
+    ]  |> add "martin"*)
 

@@ -5,8 +5,8 @@ open Hobbes.Helpers.Environment
 
 module Reader =
 
-    let user = env "GIT_AZURE_USER" null
-    let pwd = env "GIT_AZURE_PASSWORD" null
+    let user = env "AZURE_TOKEN_KMDDK" null //env "GIT_AZURE_USER" null
+    let pwd = env "AZURE_TOKEN_KMDDK" null //env "GIT_AZURE_PASSWORD" null
     type ErrorBody = JsonProvider<"""{"$id":"1","innerException":null,"message":"TF401175:The version descriptor <Branch: refs/heads/develop > could not be resolved to a version in the repository Gandalf","typeName":"Microsoft.TeamFoundation.Git.Server.GitUnresolvableToCommitException, Microsoft.TeamFoundation.Git.Server","typeKey":"GitUnresolvableToCommitException","errorCode":0,"eventId":3000}""">
     type GitSource = JsonProvider<"""{
                             "name"    : "git",
@@ -240,21 +240,24 @@ module Reader =
                 |> Seq.collect (fun branch -> 
                     let name = branch.Name.Substring("ref/heads/".Length)
                     let commits = commitsForBranch account project repo branch.Name
-                    let lastCommit = 
-                        commits 
-                        |> Seq.last
-                    let firstCommit = 
+                    if commits |> Seq.isEmpty then 
+                        Seq.empty
+                    else
+                        let lastCommit = 
+                            commits 
+                            |> Seq.last
+                        let firstCommit = 
+                            commits
+                            |> Seq.head
                         commits
-                        |> Seq.head
-                    commits
-                    |> Seq.map(fun commit ->
-                        {
-                            Name = name
-                            IsFirstCommit = (commit = firstCommit)
-                            IsLastCommit = (commit = lastCommit)
-                            Commit = commit
-                        }
-                    ))
+                        |> Seq.map(fun commit ->
+                            {
+                                Name = name
+                                IsFirstCommit = (commit = firstCommit)
+                                IsLastCommit = (commit = lastCommit)
+                                Commit = commit
+                            }
+                        ))
             else
                 errorf  "Error when reading branches of %s. Staus: %d. Message: %s" repo.Name statusCode branches
                 Seq.empty

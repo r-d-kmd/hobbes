@@ -5,7 +5,10 @@ open Workbench.Types
 module DevOps = 
 
     let projects = 
-      [Project.Flowerpot]
+      [
+          Project.Flowerpot
+          Project.Delta
+      ]
 
     let initialise() = 
         projects 

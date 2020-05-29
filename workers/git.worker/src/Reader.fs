@@ -143,7 +143,9 @@ module Reader =
                     silentHttpErrors = true,
                     headers = headers,
                     body = HttpRequestBody.TextRequest body
-                ) 
+                )
+        if resp.StatusCode = 401 then
+           errorf "Not authorized for that ressource. %s:%s %s" user pwd url
         resp.StatusCode,resp.Body |> readBody
 
     let get account project =

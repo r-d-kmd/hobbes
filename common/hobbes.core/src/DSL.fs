@@ -28,6 +28,7 @@ type Expression =
     | Gt of Expression * Expression
     | NumberConstant of float
     | DateTimeConstant of System.DateTime
+    | DateFormat of string * AST.DateFormat
     | Not of Expression
     | Regression of AST.Regression * Expression * Expression
     | Extrapolation of AST.Regression * Expression * int * int option
@@ -67,6 +68,16 @@ type Expression =
              | Keys -> "keys"
              | DateTimeConstant d -> sprintf "\'%s\'" (d.ToString "dd/MM/yyyy")
              | Ordinals -> "ordinals"
+             | DateFormat(columnName,f) ->
+                 let dateFormat = 
+                     match f with
+                     AST.Year -> "year"
+                     | AST.Month -> "month"
+                     | AST.Day -> "day"
+                     | AST.Date -> "date"
+                     | AST.Week -> "week"
+                     | AST.Weekday -> "weekday"
+                 sprintf """format date "%s" %s """ columnName dateFormat
              | Regression(reg, inputs, outputs) ->
                  let regStr = 
                      match reg with
@@ -123,8 +134,8 @@ type Selector =
             sprintf "%s %s" s (e.ToString())
 
 type  Grouping = 
-    Simple of columnList: string list * reduction : AST.Reduction
-    | RowSelection of columnList: string list * selector : Selector
+    Simple of expressionList: Expression list * reduction : AST.Reduction
+    | RowSelection of expressionList: Expression list * selector : Selector
 
 type ColumnsOrRows =
      Rows
@@ -142,17 +153,17 @@ type Statements =
     with override x.ToString() = 
            match x with
            GroupStatement grp ->
-               let formatColumns columns = 
-                      let columns = 
+               let formatExpressions expressions = 
+                      let expressions = 
                           System.String.Join(" ", 
-                              columns
-                              |> List.map(sprintf """ "%s" """))
-                      sprintf "group by %s -> %s" columns
+                              expressions
+                              |> List.map string)
+                      sprintf "group by %s -> %s" expressions
                match grp with
                Simple (columns,reduction) ->
-                  columns |> formatColumns <| (reduction |> toString)
+                  columns |> formatExpressions <| (reduction |> toString)
                | RowSelection(columns, selector)  ->
-                  let grp = columns |> formatColumns
+                  let grp = columns |> formatExpressions
                   let sel = selector.ToString()
                   grp sel
            | CreateColumn(name,exp) ->
@@ -175,20 +186,28 @@ type Statements =
 
 let by = ()
 
-type GroupByWithColumnNames = GroupByWithColumnNames of string list
-    with static member (=>) (grouping:GroupByWithColumnNames,r : AST.Reduction) = 
-             let columnNames = 
-                 match grouping with
-                 GroupByWithColumnNames names -> names
-             Simple(columnNames, r)  |> GroupStatement
-         static member (=>) (grouping:GroupByWithColumnNames,r : Selector) = 
-             let columnNames = 
-                 match grouping with
-                 GroupByWithColumnNames names -> names
-             RowSelection(columnNames, r) |> GroupStatement
 
-let group _ (columnNames : string list) = 
-    GroupByWithColumnNames columnNames
+let inline (!!>) (text:string) = 
+         TextLiteral text
+
+let inline (!>) (identifier:string) = 
+         Identifier identifier
+
+let inline (<!>) (regexLiteral : string) =
+    AST.RegExResultString regexLiteral
+
+type GroupBy = 
+    GroupByWithExpressions of Expression list
+    with static member (=>) (grouping:GroupBy,r : AST.Reduction) = 
+             Simple(grouping.Expressions, r)  |> GroupStatement
+         static member (=>) (grouping:GroupBy,r : Selector) = 
+             RowSelection(grouping.Expressions, r) |> GroupStatement
+         member grouping.Expressions 
+             with get() =
+                 match grouping with GroupByWithExpressions es -> es
+
+let group _ expressions = 
+    GroupByWithExpressions expressions
 
 let expanding reduction expression = 
     Expanding(reduction,expression)
@@ -268,14 +287,6 @@ let extrapolation regressionType outputs count=
 let extrapolationLimited regressionType outputs count length= 
     Extrapolation(regressionType,outputs,count, Some length)
 
-let inline (!!>) (text:string) = 
-         TextLiteral text
-
-let inline (!>) (identifier:string) = 
-         Identifier identifier
-
-let inline (<!>) (regexLiteral : string) =
-    AST.RegExResultString regexLiteral
 
 let ``$1`` = AST.RegExGroupIdentifier 1
 let ``$2`` = AST.RegExGroupIdentifier 2
@@ -289,3 +300,6 @@ let int e = Int(e)
 
 let isMissing e = e == Missing
 let isntMissing e = e != Missing 
+let format = ()
+let date _ columnName dt =
+    DateFormat(columnName,dt)

@@ -1,4 +1,4 @@
-namespace Collector.Git
+namespace Worker.Git
 open Hobbes.Web.Log
 open FSharp.Data
 open Hobbes.Helpers.Environment
@@ -7,7 +7,7 @@ module Reader =
 
     let user = env "GIT_AZURE_USER" null
     let pwd = env "GIT_AZURE_PASSWORD" null
-
+    type ErrorBody = JsonProvider<"""{"$id":"1","innerException":null,"message":"TF401175:The version descriptor <Branch: refs/heads/develop > could not be resolved to a version in the repository Gandalf","typeName":"Microsoft.TeamFoundation.Git.Server.GitUnresolvableToCommitException, Microsoft.TeamFoundation.Git.Server","typeKey":"GitUnresolvableToCommitException","errorCode":0,"eventId":3000}""">
     type GitSource = JsonProvider<"""{
                             "name"    : "git",
                             "account" : "kmddk",
@@ -148,7 +148,46 @@ module Reader =
 
     let get account project =
         request account project None
-    
+          
+    type Commit = {
+        Time : System.DateTime
+        Message : string
+        Author : string
+    }
+
+    let private commitsForBranch account project (repo : Repository) (branchName : string) = 
+        let shortBranchName = branchName.Substring("refs/heads/".Length)
+        let body = 
+            sprintf """{
+              "itemVersion": {
+                "versionType": "branch",
+                "version": "%s"
+              }
+            }""" shortBranchName |> Some
+        let statusCode,commits = 
+            repo.Id |> sprintf "/%s/commitsbatch" |> request account project body
+        
+        if statusCode = 200 then
+            let parsedCommits = 
+               commits |> CommitBatch.Parse
+            let commits = 
+                parsedCommits.Value
+                |> Seq.map(fun commit ->
+                    {
+                        Time = commit.Author.Date.Date
+                        Message = commit.Comment
+                        Author = commit.Author.Email
+                    }
+                ) |> Seq.sortBy (fun c -> c.Time)
+            assert(commits |> Seq.length = parsedCommits.Count)
+            commits
+        else
+            let err = ErrorBody.Parse commits
+            if err.TypeKey = "GitUnresolvableToCommitException" then
+                errorf "Couldn't resolve version %s for branch %s. \n%s" shortBranchName branchName commits
+            else
+                errorf  "Error when reading commit batch of %s. Staus: %d. Message: %s" branchName statusCode commits
+            Seq.empty
 
     let private repositories account project = 
         let statusCode, list = 
@@ -167,40 +206,12 @@ module Reader =
         else
             errorf  "Error when reading repositories. Staus: %d. Message: %s" statusCode list
             Seq.empty
-            
-    type Commit = {
-        Time : System.DateTime
-        Message : string
-        Author : string
-    }
 
     let commits account project = 
         let commits = 
             repositories account project
             |> Seq.collect(fun repo -> 
-                let statusCode,commits = 
-                    repo.Id |> sprintf "/%s/commits" |> get account project
-                logf "commits: %d %s" statusCode commits
-                if statusCode = 200 then 
-                    let parsedCommits = 
-                       commits |> CommitRecord.Parse
-                    let commits = 
-                        parsedCommits.Value
-                        |> Seq.map(fun commit ->
-                            
-                            {
-                                Time = commit.Author.Date.Date
-                                Message = commit.Comment
-                                Author = commit.Author.Email
-                                
-                            }
-                        )
-
-                    assert(commits |> Seq.length = parsedCommits.Count)
-                    commits
-                else
-                    errorf  "Error when reading commits of %s. Staus: %d. Message: %s" repo.Name statusCode commits
-                    Seq.empty
+                commitsForBranch account project repo repo.DefaultBranch
             )
         commits
            
@@ -211,6 +222,7 @@ module Reader =
         IsLastCommit : bool
     }
 
+    
     let branches account project =
        repositories account project
        |> Seq.collect(fun repo -> 
@@ -223,50 +235,25 @@ module Reader =
                 
                 parsedBranches.Value
                 |> Seq.filter(fun branch -> branch.Name.StartsWith "refs/heads/")
-                |> Seq.collect(fun branch ->
-                    let body = 
-                        sprintf """{
-                          "itemVersion": {
-                            "versionType": "branch",
-                            "version": "%s"
-                          }
-                        }""" repo.DefaultBranch |> Some
-                    let statusCode,commits = 
-                        repo.Id |> sprintf "/%s/commitsbatch" |> request account project body
+                |> Seq.collect (fun branch -> 
                     let name = branch.Name.Substring("ref/heads/".Length)
-                    if statusCode = 200 then
-                        let parsedCommits = 
-                           commits |> CommitBatch.Parse
-                        let commits = 
-                            parsedCommits.Value
-                            |> Seq.map(fun commit ->
-                                {
-                                    Time = commit.Author.Date.Date
-                                    Message = commit.Comment
-                                    Author = commit.Author.Email
-                                }
-                            ) |> Seq.sortBy (fun c -> c.Time)
-                        assert(commits |> Seq.length = parsedCommits.Count)
-                        let lastCommit = 
-                            commits 
-                            |> Seq.last
-                        let firstCommit = 
-                            commits
-                            |> Seq.head
+                    let commits = commitsForBranch account project repo branch.Name
+                    let lastCommit = 
+                        commits 
+                        |> Seq.last
+                    let firstCommit = 
                         commits
-                        |> Seq.map(fun commit ->
-                            {
-                                Name = name
-                                IsFirstCommit = (commit = firstCommit)
-                                IsLastCommit = (commit = lastCommit)
-                                Commit = commit
-                            }
-                        )
-                    else
-                        errorf  "Error when reading commit batch of %s. Staus: %d. Message: %s" branch.Name statusCode commits
-                        Seq.empty
-                )
+                        |> Seq.head
+                    commits
+                    |> Seq.map(fun commit ->
+                        {
+                            Name = name
+                            IsFirstCommit = (commit = firstCommit)
+                            IsLastCommit = (commit = lastCommit)
+                            Commit = commit
+                        }
+                    ))
             else
-                errorf  "Error when reading commits of %s. Staus: %d. Message: %s" repo.Name statusCode branches
+                errorf  "Error when reading branches of %s. Staus: %d. Message: %s" repo.Name statusCode branches
                 Seq.empty
         )

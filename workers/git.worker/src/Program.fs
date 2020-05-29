@@ -1,6 +1,5 @@
 open Hobbes.Helpers.Environment
-open Hobbes.Web.RawdataTypes
-open Collector.Git.Reader
+open Worker.Git.Reader
 open Hobbes.Web
 open Hobbes.Messaging.Queue
 
@@ -81,6 +80,10 @@ let handleMessage sourceDoc =
 let main _ =
     Database.awaitDbServer()
     Database.initDatabases ["azure_devops_rawdata"]
-    watch Queue.Git handleMessage 5000
+    
+    async{    
+        do! awaitQueue()
+        watch Queue.Git handleMessage 5000
+    } |> Async.RunSynchronously
     
     0

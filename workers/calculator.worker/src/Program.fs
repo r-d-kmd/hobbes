@@ -72,5 +72,9 @@ let handleMessage cacheKey =
         false
 [<EntryPoint>]
 let main _ =
-    watch Queue.Cache handleMessage 5000
+    
+    async{    
+        do! awaitQueue()
+        watch Queue.Cache handleMessage 5000
+    } |> Async.RunSynchronously
     0

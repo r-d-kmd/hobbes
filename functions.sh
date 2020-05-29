@@ -144,8 +144,29 @@ function listServices(){
 
 function start() {
     local CURRENT_DIR=$(pwd)
-    kubectl kustomize . > temp.yaml
-    kubectl apply -f temp.yaml
+    cd $KUBERNETES_DIR
+        local FILES=""
+
+    cd $KUBERNETES_DIR
+    kubectl apply -f env.JSON;
+    
+    for i in "${APPS[@]}"; do 
+        if test -f "$i-svc.yaml"
+        then
+            FILES="$i-deployment.yaml,$i-svc.yaml"
+        else
+            if test -f "$i-deployment.yaml"
+            then
+                FILES="$i-deployment.yaml"
+            else
+                FILES="$i-job.yaml"
+            fi
+        fi
+        kubectl apply -f $(echo $FILES)
+    done
+    for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
+    kubectl apply -f rabbitmq-svc.yaml
+
     cd $CURRENT_DIR
 }
 

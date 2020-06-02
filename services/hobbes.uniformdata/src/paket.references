@@ -6,3 +6,4 @@ group web
     
 group collectors
     RabbitMQ.Client
+    Fsharp.Json

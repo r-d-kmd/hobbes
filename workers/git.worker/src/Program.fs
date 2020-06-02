@@ -14,7 +14,7 @@ let synchronize (source : GitSource.Root) token =
                 let values =
                     commits
                     |> Seq.map(fun c ->
-                         [|c.Time.ToString() :> obj; c.Message :> obj; c.Author :> obj |]
+                         [|c.Time |> Cache.Date; c.Message |> Cache.String; c.Author |> Cache.String |]
                     ) |> Array.ofSeq
                 columnNames, values, (commits |> Seq.length)
             | ds -> failwithf "Datsaet (%s) not known" ds

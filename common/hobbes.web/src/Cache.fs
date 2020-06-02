@@ -1,31 +1,34 @@
 namespace Hobbes.Web
 
-open FSharp.Data
 open Hobbes.Helpers.Environment
 open FSharp.Json
 
 module Cache =
+    type Value =
+        String of string
+        | Int of int
+        | Float of float
+        | Date of System.DateTime
+    type Row =
+        Element of Value
+        | Row of Value * Row
+        with 
+            member x.ToList() =
+              match x with
+              Element v -> [v]
+              | Row(v,tail) -> v::(tail.ToList())
+            member x.ToArray() =
+                x.ToList() |> List.toArray
+
     type DataResult = 
         {
             [<JsonField("columnNames")>]
             ColumnNames : string []
             [<JsonField("rows")>]
-            Rows : obj [] []
+            Rows : Row []
             [<JsonField("rowCount")>]
             RowCount : int
         }
-    [<Literal>]
-    let internal DataResultString = """ {
-            "_id": "khkj",
-            "columnNames" : ["a","b"], 
-            "rows" : [[0,"hk",null,2.,3,4,"2019-01-01"],
-                      [0.4,1.2,2.4,3.5,4.1],
-                      ["x","y","z"],
-                      ["2019-01.01","2019-01.01"]
-                     ],
-            "rowCount" : 4
-        } """
-
     
     type CacheRecord = 
         {
@@ -42,7 +45,8 @@ module Cache =
         source.Split(whitespaceToRemove,System.StringSplitOptions.RemoveEmptyEntries)
         |> System.String.Concat
         |> hash
-
+    
+      
     let private createCacheRecord key (data : DataResult) =
 
         let timeStamp = System.DateTime.Now
@@ -59,8 +63,8 @@ module Cache =
         
         data.Rows
         |> Seq.mapi(fun index row ->
-            index,row
-                  |> Seq.zip columnNames
+            index,(row.ToArray()
+                   |> Seq.zip columnNames)
         )
 
     type ICacheProvider = 

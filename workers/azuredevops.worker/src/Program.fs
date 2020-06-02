@@ -24,7 +24,8 @@ let synchronize (source : AzureDevOpsSource.Root) token =
 
 let handleMessage message =
     match message with
-    Sync sourceDoc -> 
+    Empty -> true
+    | Sync sourceDoc -> 
         Log.debugf "Received message. %s" sourceDoc
         try
             let source = sourceDoc |> AzureDevOpsSource.Parse

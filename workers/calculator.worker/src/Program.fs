@@ -1,6 +1,7 @@
 open Hobbes.Web
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
+open FSharp.Json
 
 let cache = Cache.Cache(Http.UniformData)
 let transformData (message : CalculationMessage) =
@@ -13,13 +14,17 @@ let transformData (message : CalculationMessage) =
                 Log.logf "No data for that key (%s)" cacheKey
                 false
             | Some cacheRecord -> 
-                if cacheRecord.Id <> cacheKey then
-                    failwithf "Wrong data returned. Got %s expected %s" cacheRecord.Id cacheKey
+                if cacheRecord.CacheKey <> cacheKey then
+                    failwithf "Wrong data returned. Got %s expected %s" cacheRecord.CacheKey cacheKey
                 let transformedData = 
                     try
+                        let columnNames = cacheRecord.Data.ColumnNames
                         let data = 
-                            cacheRecord
-                            |> Cache.readData
+                            cacheRecord.Data.Rows
+                            |> Seq.mapi(fun index row ->
+                                index,row
+                                      |> Seq.zip columnNames
+                            )
                          
                         data
                         |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
@@ -33,7 +38,7 @@ let transformData (message : CalculationMessage) =
                 let key = cacheKey + ":" + transformation.Name
                 try
                     transformedData
-                    |> Option.bind(Cache.DataResult.Parse >> cache.InsertOrUpdate key >> Some)
+                    |> Option.bind(Json.deserialize<Cache.DataResult> >> cache.InsertOrUpdate key >> Some)
                     |> Option.bind(fun _ -> 
                         Log.logf "Transformation of [%s] using [%s] resulting in [%s] completed" cacheKey transformation.Name key
                         Some(true)

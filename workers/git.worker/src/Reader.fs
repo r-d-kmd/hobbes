@@ -123,7 +123,7 @@ module Reader =
             | Text t -> t
     
     let request account project body path  = 
-        let url = sprintf "https://dev.azure.com/%s/%s/_apis/git/repositories%s?api-version=5.1" account project path
+        let url = sprintf "https://dev.azure.com/%s/%s/_apis/git/repositories%s?api-version=5.1&$top=10000000" account project path
         let headers =
             [
                 HttpRequestHeaders.BasicAuth user pwd
@@ -158,7 +158,7 @@ module Reader =
     }
 
     let private commitsForBranch account project (repo : Repository) (branchName : string) =
-        logf "Reading commit for %s" branchName
+        logf "Reading commits for %s" branchName
         let shortBranchName = branchName.Substring("refs/heads/".Length)
         let body = 
             sprintf """{
@@ -168,11 +168,12 @@ module Reader =
               }
             }""" shortBranchName |> Some
         let statusCode,commits = 
-            repo.Id |> sprintf "/%s/commitsbatch/?$top=10000000" |> request account project body
+            repo.Id |> sprintf "%s/commitsbatch" |> request account project body
         
         if statusCode = 200 then
             let parsedCommits = 
                commits |> CommitBatch.Parse
+            logf "Read %d commits from %s" parsedCommits.Value.Length branchName
             let commits = 
                 parsedCommits.Value
                 |> Seq.map(fun commit ->

@@ -156,4 +156,5 @@ module Broker =
         static member Calculation (handler : CalculationMessage -> _) = 
             watch "calculation" handler
         static member Generic queueName msg =
+            printfn "Publishing (%s) as generic on (%s)" msg queueName
             publishString queueName msg

@@ -1,6 +1,7 @@
 open Saturn
 open Giraffe
 open Hobbes.Calculator.Services.Data
+open Hobbes.Web
 open Hobbes.Web.Routing
 open Hobbes.Helpers.Environment
 open Hobbes.Messaging.Broker
@@ -28,7 +29,13 @@ let private app = application {
     memory_cache
     use_gzip
 }
-
+let cache = Cache.Cache(Http.UniformData)
+type DependingTransformationList = FSharp.Data.JsonProvider<"""[
+    {
+        "_id" : "lkjlkj",
+        "lines" : ["lkjlkj", "lkjlkj","o9uulkj"]
+    }
+]""">
 let getDependingTransformations (cacheMsg : CacheMessage) = 
     try
          match cacheMsg with

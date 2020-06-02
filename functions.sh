@@ -243,7 +243,12 @@ function run(){
 }
 
 function restartApp(){
-    fake build --target $1 && delete $1 && logs $1 -f
+    fake build --target "$1" && delete "$1" && logs "$1" -f
+}
+
+function rebuildApp(){
+    fake build --target "$1"
+    restartApp $1
 }
 
 function sync(){

@@ -17,26 +17,6 @@ let synchronize (source : GitSource.Root) token =
                          [|c.Time.ToString() :> obj; c.Message :> obj; c.Author :> obj |]
                     ) |> Array.ofSeq
                 columnNames, values, (commits |> Seq.length)
-            | "branches" ->
-                let branches = branches source.Account source.Project
-                let columnNames = [|"name";"CreateionDate";"LastCommit";"CommitTime";"CommitMessage";"CommitAuthor"|]
-                let values =
-                    branches
-                    |> Seq.map(fun branch ->
-                        let c = branch.Commit
-                        let msg = 
-                            c.Message.Replace("\\","\\\\")
-                                     .Replace("\"","\\\"") 
-                        [|
-                            branch.Name :> obj
-                            branch.IsFirstCommit :> obj
-                            branch.IsLastCommit :> obj
-                            c.Time.ToString() :> obj
-                            msg :> obj
-                            c.Author :> obj
-                        |]
-                    ) |> Array.ofSeq
-                columnNames, values, (branches |> Seq.length)
             | ds -> failwithf "Datsaet (%s) not known" ds
         
         {

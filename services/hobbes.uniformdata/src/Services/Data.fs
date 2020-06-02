@@ -24,10 +24,12 @@ module Data =
 
     [<Post ("/update", true)>]
     let update dataAndKey =
-        async {
+        try
             let args = 
                 dataAndKey 
                 |> Json.deserialize<Cache.CacheRecord>
+
+            
             let key = args.CacheKey
             let data = args.Data
             Log.logf "updating cache with _id: %s" key
@@ -37,9 +39,10 @@ module Data =
                 Broker.Cache (Updated key)
             with e ->
                 Log.excf e "Failed to insert %s" key
-        } |> Async.Start
-        200, "updating"
-
+            200, "updated"
+        with e -> 
+            Log.excf e "Couldn't update (%s)" dataAndKey
+            500,"Internal server error"
     [<Get "/ping">]
     let ping () =
         200, "ping - UniformData"

@@ -21,9 +21,9 @@ let synchronize (source : GitSource.Root) token =
         
         {
             ColumnNames = columnNames
-            Values = values
+            Rows = values
             RowCount = rowCount
-        } : RawdataTypes.DataResult
+        } : Cache.DataResult
         |> Some
     with e ->
         Log.excf e "Sync failed due to exception"
@@ -50,9 +50,15 @@ let handleMessage message =
                 Log.logf "Conldn't syncronize. %s %s" sourceDoc token
                 false
             | Some data -> 
-                let jsonData = FSharp.Json.Json.serializeU data
+                let jsonData  = 
+                    ({
+                        CacheKey = key
+                        TimeStamp = None 
+                        Data = data
+                    } : Cache.CacheRecord) |> FSharp.Json.Json.serializeU
+
                 try
-                    match Http.post (Http.UniformData Http.Update) id (sprintf """["%s",%s]""" key jsonData) with
+                    match Http.post (Http.UniformData Http.Update) id jsonData with
                     Http.Success _ -> 
                        Log.logf "Data uploaded to cache"
                        true

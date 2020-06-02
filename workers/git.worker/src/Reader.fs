@@ -158,7 +158,7 @@ module Reader =
     }
 
     let private commitsForBranch account project (repo : Repository) (branchName : string) =
-        logf "Reading commits for %s" branchName
+        logf "Reading commits for %s - %s" repo.Name branchName
         let shortBranchName = branchName.Substring("refs/heads/".Length)
         let body = 
             sprintf """{

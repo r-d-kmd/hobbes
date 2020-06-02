@@ -16,21 +16,6 @@ module RawdataTypes =
             "transformations" : ["jlk","lkjlk"],
             "subconfigs" : ["jlk","lkjlk"]
         }""">
-
-    [<Literal>]
-    let internal DataResultString = 
-        """{
-             "columnNames" : ["kjkl","kjlkj"],
-             "rows" : [["dsfsd","kjlk"],[2.0,1.3]],
-             "rowCount" : 2
-        }"""
-    type ProvidedDataResult = JsonProvider<DataResultString>
-    type DataResult =
-        {
-            ColumnNames : string array
-            Values : obj [] []
-            RowCount : int
-        }
         
     let keyFromSourceDoc (source : string) = 
         source

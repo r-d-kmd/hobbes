@@ -5,6 +5,7 @@ storage: none
 
 nuget FSharp.Core
 
+
 group workbench
     source https://www.nuget.org/api/v2 
     framework: auto-detect
@@ -27,6 +28,7 @@ group collectors
     storage: none
 
     nuget RabbitMQ.Client
+    nuget fsharp.json
 
 group web
     source https://www.nuget.org/api/v2 

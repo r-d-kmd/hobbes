@@ -3,8 +3,8 @@ namespace Hobbes.UniformData.Services
 open Hobbes.Web.Routing
 open Hobbes.Web
 open Hobbes.Web.RawdataTypes
-open Hobbes.Messaging.Queue
-open FSharp.Data
+open Hobbes.Messaging.Broker
+open Hobbes.Messaging
 
 [<RouteArea ("/data", false)>]
 module Data =
@@ -44,7 +44,7 @@ module Data =
                     |> Cache.DataResult.Parse
                 dataRecord
                 |> cache.InsertOrUpdate key
-                publish Queue.Cache key
+                Broker.Cache (Updated key)
             with e ->
                 Log.excf e "Failed to insert %s" key
         } |> Async.Start

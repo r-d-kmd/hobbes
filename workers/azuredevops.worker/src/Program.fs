@@ -4,7 +4,8 @@ open Readers.AzureDevOps.Data
 open Hobbes.Web.RawdataTypes
 open Readers.AzureDevOps
 open Hobbes.Web
-open Hobbes.Messaging.Queue
+open Hobbes.Messaging
+open Hobbes.Messaging.Broker
 
 let synchronize (source : AzureDevOpsSource.Root) token =
         try
@@ -21,31 +22,33 @@ let synchronize (source : AzureDevOpsSource.Root) token =
             Log.excf e "Sync failed due to exception"
             None
 
-let handleMessage sourceDoc =
-    Log.debugf "Received message. %s" sourceDoc
-    try
-        let source = sourceDoc |> AzureDevOpsSource.Parse
-        let token = 
-            if source.Account.ToString() = "kmddk" then
-                env "AZURE_TOKEN_KMDDK" null
-            else
-                env "AZURE_TOKEN_TIME_PAYROLL_KMDDK" null
+let handleMessage message =
+    match message with
+    Sync sourceDoc -> 
+        Log.debugf "Received message. %s" sourceDoc
+        try
+            let source = sourceDoc |> AzureDevOpsSource.Parse
+            let token = 
+                if source.Account.ToString() = "kmddk" then
+                    env "AZURE_TOKEN_KMDDK" null
+                else
+                    env "AZURE_TOKEN_TIME_PAYROLL_KMDDK" null
 
-        match synchronize source token with
-        None -> 
-            Log.errorf  "Conldn't syncronize. %s %s" sourceDoc token
-            false
-        | Some (key,data) -> 
-            match Http.post (Http.UniformData Http.Update) id (sprintf """["%s",%s]""" key data) with
-            Http.Success _ -> 
-               Log.logf "Data uploaded to cache"
-               true
-            | Http.Error(status,msg) -> 
-                Log.logf "Upload to uniform data failed. %d %s" status msg
+            match synchronize source token with
+            None -> 
+                Log.errorf  "Conldn't syncronize. %s %s" sourceDoc token
                 false
-    with e ->
-        Log.excf e "Failed to process message"
-        false
+            | Some (key,data) -> 
+                match Http.post (Http.UniformData Http.Update) id (sprintf """["%s",%s]""" key data) with
+                Http.Success _ -> 
+                   Log.logf "Data uploaded to cache"
+                   true
+                | Http.Error(status,msg) -> 
+                    Log.logf "Upload to uniform data failed. %d %s" status msg
+                    false
+        with e ->
+            Log.excf e "Failed to process message"
+            false
     
 
 [<EntryPoint>]
@@ -54,6 +57,6 @@ let main _ =
     Database.initDatabases ["azure_devops_rawdata"]
     async{    
         do! awaitQueue()
-        watch Queue.AzureDevOps handleMessage 5000
+        Broker.AzureDevOps handleMessage
     } |> Async.RunSynchronously
     0

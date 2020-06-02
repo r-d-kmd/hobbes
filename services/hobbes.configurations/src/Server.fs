@@ -3,6 +3,8 @@ open Giraffe
 open Hobbes.Calculator.Services.Data
 open Hobbes.Web.Routing
 open Hobbes.Helpers.Environment
+open Hobbes.Messaging.Broker
+open Hobbes.Messaging
 
 let private port = env "PORT" "8085"
                    |> int
@@ -27,10 +29,52 @@ let private app = application {
     use_gzip
 }
 
-
+let getDependingTransformations (cacheMsg : CacheMessage) = 
+    try
+         match cacheMsg with
+         Updated cacheKey -> 
+            match cache.Get cacheKey with
+            None -> 
+                Log.logf "No data for that key (%s)" cacheKey
+                false
+            | Some cacheRecord -> 
+                if cacheRecord.Id <> cacheKey then
+                    failwithf "Wrong data returned. Got %s expected %s" cacheRecord.Id cacheKey
+                let service = cacheKey |> Http.DependingTransformations |> Http.Configurations
+                match Http.get service DependingTransformationList.Parse  with
+                Http.Success transformations ->
+                    transformations
+                    |> Seq.iter(fun transformation ->    
+                        {
+                            Transformation = 
+                                {
+                                    Name = transformation.Id
+                                    Statements = transformation.Lines
+                                }
+                            CacheKey = cacheKey
+                        }
+                        |> Transform
+                        |> Broker.Calculation
+                    )
+                    true
+                | Http.Error(404,_) ->
+                    Log.debug "No depending transformations found."
+                    true
+                | Http.Error(sc,m) ->
+                    Log.errorf  "Failed to transform data (%s) %d %s" cacheKey sc m
+                    false
+    with e ->
+        Log.excf e "Failed to perform calculation."
+        false
 
 [
    "configurations"
    "transformations"
 ] |> Hobbes.Web.Database.initDatabases
+
+async {    
+    do! awaitQueue()
+    Broker.Cache getDependingTransformations
+} |> Async.Start
+
 run app

@@ -44,8 +44,8 @@ module Broker =
         null -> failwith "Post not specified"
         | p -> int p
 
-    let private factory = ConnectionFactory()
     let private init() =
+        let factory = ConnectionFactory()
         try
             factory.HostName <- host
             factory.Port <- port

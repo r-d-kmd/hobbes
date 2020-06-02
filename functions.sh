@@ -242,6 +242,10 @@ function run(){
     kubectl run -i --tty temp-$1 --image kmdrd/$1 
 }
 
+function restartApp(){
+    fake build --target $1 && delete $1 && logs $1 -f
+}
+
 function sync(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR

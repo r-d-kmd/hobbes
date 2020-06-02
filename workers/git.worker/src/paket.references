@@ -5,4 +5,4 @@ group web
     Microsoft.Extensions.PlatformAbstractions
 
 group collectors
-    nuget fsharp.json
+    fsharp.json

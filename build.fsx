@@ -338,8 +338,8 @@ let buildApp (app : App) workingDir =
             run "docker" workingDir args
         )
     
-    let buildTargetName = "Build" + appType + tag 
-    let pushTargetName = "Push" + appType + tag 
+    let buildTargetName = tag 
+    let pushTargetName = "Push" + tag 
     Target.create buildTargetName build
     Target.create pushTargetName push
     "PreBuild" + appType + "s" ==> buildTargetName |> ignore

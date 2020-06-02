@@ -241,7 +241,6 @@ module Reader =
                            Log.logf "Continuing with %s" nextlink
                            _read hashes nextlink
                     )
-                    
                 | _ -> 
                     ()
             else 

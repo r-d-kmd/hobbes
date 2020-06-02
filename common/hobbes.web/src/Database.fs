@@ -355,7 +355,7 @@ namespace Hobbes.Web
                 if failed then
                     log.Debugf "Response status code : %d.  Body: %s. Url: %s" 
                         statusCode 
-                        (body.Substring(0,min 1000 body.Length).Replace("\"","\\\"")) 
+                        (body.Substring(0,min 1000 body.Length)) 
                         url
                  
                 if isTrial || not(failed) then

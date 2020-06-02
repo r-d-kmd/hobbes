@@ -89,13 +89,26 @@ module Broker =
             let consumer = EventingBasicConsumer(channel)
             consumer.Received.AddHandler(EventHandler<BasicDeliverEventArgs>(fun _ (ea : BasicDeliverEventArgs) ->
                 try
-                    let msg = 
+                    let msgText = 
                         Encoding.UTF8.GetString(ea.Body.ToArray())
-                    if msg |> Json.deserialize<'a> |> handler then
-                        printfn "Message ack'ed"
-                        channel.BasicAck(ea.DeliveryTag,false)
-                    else
-                        printfn "Message could not be processed. %s" msg
+                    let typedMessage = 
+                        try
+                            msgText 
+                            |> Json.deserialize<'a>
+                            |> Some
+                        with e ->
+                            //todo move to dead letter queue instead of ack'ing/ignoring
+                            eprintfn "Failed to parse message (%s) (Message will be ack'ed). Error: %s %s" msgText e.Message e.StackTrace
+                            channel.BasicAck(ea.DeliveryTag,false) 
+                            None
+                    typedMessage
+                    |> Option.iter(fun msg ->
+                        if msg |> handler then
+                            printfn "Message ack'ed"
+                            channel.BasicAck(ea.DeliveryTag,false)
+                        else
+                            printfn "Message could not be processed. %s" msgText
+                    )
                 with e ->
                    eprintfn  "Failed while processing message. %s %s" e.Message e.StackTrace
             ))

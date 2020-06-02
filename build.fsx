@@ -274,8 +274,8 @@ let genricImages =
 
 let appTargets : seq<_> -> _ = 
     Seq.map(fun (app : App) ->
-        let name,appType = app.NameAndType         
-        name,"Build" + appType + (name.ToLower())
+        let name,_ = app.NameAndType         
+        name,(name.ToLower())
     ) >> Map.ofSeq
 
 let serviceTargets = 

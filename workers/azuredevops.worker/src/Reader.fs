@@ -217,22 +217,28 @@ module Reader =
                     let body' = 
                         body.Replace("\\\"","'")
                     
-                    let rawdataRecord = createDataRecord rawId body' [
-                                                                                    "url", String url
-                                                                                    "source", source.JsonValue.ToString() |> Object
-                                                                                    "recordCount", hashes 
-                                                                                                   |> List.length 
-                                                                                                   |> Int
-                                                                                    "hashes", hashes
-                                                                                              |> Seq.map String
-                                                                                              |> Array
-                                                                                 ] 
+                    let rawdataRecord =
+                        sprintf """{
+                            "_id" : "%s",
+                            "timeStamp" : "%s",
+                            "data" : %s,
+                            "url" : "%s",
+                            "source" : %s,
+                            "recordCount" : %d,
+                            "hashes" : [%s]
+                            }""" rawId 
+                                 (System.DateTime.Now.ToString()) 
+                                 body' 
+                                 url 
+                                 (source.JsonValue.ToString()) 
+                                 hashes.Length
+                                 (System.String.Join(",",hashes |> Seq.map(sprintf """ "%s" """))) 
                     insertOrUpdate rawdataRecord
 
                     body
                     |> tryNextLink
                     |> Option.iter(fun nextlink ->   
-                           Hobbes.Web.Log.logf "Continuing with %s" nextlink
+                           Log.logf "Continuing with %s" nextlink
                            _read hashes nextlink
                     )
                     

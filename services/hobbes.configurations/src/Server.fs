@@ -39,14 +39,15 @@ type DependingTransformationList = FSharp.Data.JsonProvider<"""[
 let getDependingTransformations (cacheMsg : CacheMessage) = 
     try
          match cacheMsg with
-         Updated cacheKey -> 
+         CacheMessage.Empty -> true
+         | Updated cacheKey -> 
             match cache.Get cacheKey with
             None -> 
                 Log.logf "No data for that key (%s)" cacheKey
                 false
             | Some cacheRecord -> 
-                if cacheRecord.Id <> cacheKey then
-                    failwithf "Wrong data returned. Got %s expected %s" cacheRecord.Id cacheKey
+                if cacheRecord.CacheKey <> cacheKey then
+                    failwithf "Wrong data returned. Got %s expected %s" cacheRecord.CacheKey cacheKey
                 let service = cacheKey |> Http.DependingTransformations |> Http.Configurations
                 match Http.get service DependingTransformationList.Parse  with
                 Http.Success transformations ->

@@ -2,3 +2,6 @@ group web
     Saturn
     Giraffe
     FSharp.Data
+    
+group collectors
+    FSharp.Json

@@ -2,7 +2,7 @@ namespace Hobbes.UniformData.Services
 
 open Hobbes.Web.Routing
 open Hobbes.Web
-open Hobbes.Web.RawdataTypes
+open FSharp.Json
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
 
@@ -18,14 +18,7 @@ module Data =
         match uniformData with
         Some uniformData ->
             let data = uniformData.Data
-            
-            assert(data.ColumnNames.Length > 0)
-            assert(data.RowCount = data.Rows.Length)
-            assert(data.RowCount = 0 || data.ColumnNames.Length = data.Rows.[0].Numbers.Length + data.Rows.[0].Strings.Length)
-
-            Log.debugf "Data returned: %s" (uniformData.JsonValue.ToString())
-
-            200, (uniformData.JsonValue.ToString())
+            200, (uniformData |> Json.serialize)
         | None -> 
             404,"No data found"
 
@@ -34,15 +27,12 @@ module Data =
         async {
             let args = 
                 dataAndKey 
-                |> Cache.UpdateArguments.Parse
-            let key = args.String
-            let data = args.Record
+                |> Json.deserialize<Cache.CacheRecord>
+            let key = args.CacheKey
+            let data = args.Data
             Log.logf "updating cache with _id: %s" key
-            try
-                let dataRecord = 
-                    data.JsonValue.ToString() 
-                    |> Cache.DataResult.Parse
-                dataRecord
+            try    
+                data
                 |> cache.InsertOrUpdate key
                 Broker.Cache (Updated key)
             with e ->

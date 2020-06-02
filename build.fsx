@@ -242,7 +242,9 @@ let services =
         let workingDir = 
             file.Directory.Parent.FullName
         
-        Path.GetFileNameWithoutExtension file.Name, workingDir
+        let n = Path.GetFileNameWithoutExtension file.Name
+        if n.StartsWith "hobbes." then n.Remove(0,"hobbes.".Length) else n
+        , workingDir
     )
 
 let workers = 

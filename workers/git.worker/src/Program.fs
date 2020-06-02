@@ -69,7 +69,7 @@ let handleMessage message =
                 Log.logf "Conldn't syncronize. %s %s" sourceDoc token
                 false
             | Some data -> 
-                let jsonData = FSharp.Json.Json.serialize data
+                let jsonData = FSharp.Json.Json.serializeU data
                 try
                     match Http.post (Http.UniformData Http.Update) id (sprintf """["%s",%s]""" key jsonData) with
                     Http.Success _ -> 

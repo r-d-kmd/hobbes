@@ -10,9 +10,11 @@ open FSharp.Json
 module Broker = 
     type CacheMessage = 
         Updated of key : string
+        | Empty
 
     type SyncMessage = 
         Sync of string
+        | Empty
 
     type TransformationMessageBody = 
         {

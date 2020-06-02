@@ -27,7 +27,7 @@ let main _ =
             let message = 
                 source.JsonValue.ToString()
                 |> FSharp.Json.Json.serialize
-                |> sprintf """{ "Sync" : %s }""" 
+                |> sprintf """{ "Sync" : "%s" }""" 
             Broker.Generic queueName message
         )
         0

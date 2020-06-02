@@ -168,7 +168,7 @@ module Reader =
               }
             }""" shortBranchName |> Some
         let statusCode,commits = 
-            repo.Id |> sprintf "%s/commitsbatch" |> request account project body
+            repo.Id |> sprintf "/%s/commitsbatch" |> request account project body
         
         if statusCode = 200 then
             let parsedCommits = 
@@ -226,7 +226,6 @@ module Reader =
         IsLastCommit : bool
     }
 
-    
     let branches account project =
        repositories account project
        |> Seq.collect(fun repo -> 
@@ -245,7 +244,7 @@ module Reader =
                         let commits = 
                             try
                                 let commits = commitsForBranch account project repo branch.Name
-                                logf "Read %d commits from %s" (commits |> Seq.length) branch.Name
+                                logf "Read %d commits from %s - %s" (commits |> Seq.length) repo.Name name
                                 commits
                             with e -> 
                                 excf e "Error when reading commits for branch. %s" branch.Name

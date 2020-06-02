@@ -24,8 +24,14 @@ module RawdataTypes =
              "rows" : [["dsfsd","kjlk"],[2.0,1.3]],
              "rowCount" : 2
         }"""
-    type DataResult = JsonProvider<DataResultString>
-
+    type ProvidedDataResult = JsonProvider<DataResultString>
+    type DataResult =
+        {
+            ColumnNames : string array
+            Values : obj [] []
+            RowCount : int
+        }
+        
     let keyFromSourceDoc (source : string) = 
         source
         |> Hobbes.Web.Cache.key

@@ -502,7 +502,7 @@ workers
 "BuildServices" ==> "Build"
 "BuildWorkers" ==> "Build"
 "BuildAppSdk" ==> "PushAppSdk" 
-"PushHobbesSdk" ==> "PushAppSdk"
+"BuildHobbesSdk" ==> "PushHobbesSdk" ==> "PushAppSdk"
 "ForceBuildServices" ==> "Rebuild"
 "ForceBuildWorkers" ==> "Rebuild"
 

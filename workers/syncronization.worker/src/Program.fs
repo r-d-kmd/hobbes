@@ -1,9 +1,7 @@
 
-open System.Text
-open Hobbes.Helpers.Environment
-open Hobbes.Web.RawdataTypes
 open Hobbes.Web
-open Hobbes.Messaging.Queue
+open Hobbes.Messaging
+open Hobbes.Messaging.Broker
 
 type CollectorList = FSharp.Data.JsonProvider<"""["azure devops","git"]""">
 type SourceList = FSharp.Data.JsonProvider<"""[{
@@ -25,9 +23,12 @@ let main _ =
         Log.debugf "Syncronizing %d sources" (sources |> Seq.length)
         sources
         |> Array.iter(fun source ->
-            let queue = source.Name |> Queue.Generic
-            let message = source.JsonValue.ToString()
-            publish queue message
+            let queueName = source.Name.ToLower().Replace(" ","")
+            let message = 
+                source.JsonValue.ToString()
+                |> FSharp.Json.Json.serialize
+                |> sprintf """{ "Sync" : %s }""" 
+            Broker.Generic queueName message
         )
         0
     | Http.Error(sc,m) -> 

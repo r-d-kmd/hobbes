@@ -1,7 +1,7 @@
 open Hobbes.Web
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
-open FSharp.Json
+open Hobbes.Helpers
 
 let cache = Cache.Cache(Http.UniformData)
 let transformData (message : CalculationMessage) =

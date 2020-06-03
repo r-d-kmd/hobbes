@@ -5,7 +5,6 @@ open RabbitMQ.Client.Events
 open System
 open System.Text
 open Hobbes.Helpers.Environment
-open FSharp.Json
 
 module Broker = 
     type CacheMessage = 
@@ -21,11 +20,13 @@ module Broker =
             Name : string
             Statements : seq<string>
         }
+
     type TransformMessage = 
         {
             Transformation : TransformationMessageBody
             CacheKey : string
         }
+
     type CalculationMessage = 
         Transform of TransformMessage
 

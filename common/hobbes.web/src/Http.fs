@@ -94,7 +94,7 @@ module Http =
 
     let readBody = 
         function
-            | Binary b -> System.Text.Encoding.ASCII.GetString b
+            | Binary b -> System.Text.Encoding.Unicode.GetString b
             | Text t -> t
             
     let readResponse parser (resp : HttpResponse) = 

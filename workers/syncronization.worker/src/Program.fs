@@ -2,6 +2,7 @@
 open Hobbes.Web
 open Hobbes.Messaging
 open Hobbes.Messaging.Broker
+open Hobbes.Helpers
 
 type CollectorList = FSharp.Data.JsonProvider<"""["azure devops","git"]""">
 type SourceList = FSharp.Data.JsonProvider<"""[{
@@ -27,7 +28,7 @@ let main _ =
             let message = 
                 source.JsonValue.ToString()
                 |> Sync
-                |> FSharp.Json.Json.serializeU
+                |> Json.serialize
             printfn "Syncing generic (%s)" message
             Broker.Generic queueName message
         )

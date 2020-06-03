@@ -3,6 +3,7 @@ open Worker.Git.Reader
 open Hobbes.Web
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
+open Hobbes.Helpers
 
 let synchronize (source : GitSource.Root) token =
     try
@@ -14,7 +15,11 @@ let synchronize (source : GitSource.Root) token =
                 let values =
                     commits
                     |> Seq.map(fun c ->
-                         Cache.Row(c.Time |> Cache.Date, Cache.Row(c.Message |> Cache.String, c.Author |> Cache.String |> Cache.Element))
+                         [|
+                             c.Time |> Cache.Date 
+                             c.Message |> Cache.String
+                             c.Author |> Cache.String
+                         |]
                     ) |> Array.ofSeq
                 columnNames, values, (commits |> Seq.length)
             | ds -> failwithf "Datsaet (%s) not known" ds
@@ -55,7 +60,7 @@ let handleMessage message =
                         CacheKey = key
                         TimeStamp = None 
                         Data = data
-                    } : Cache.CacheRecord) |> FSharp.Json.Json.serializeU
+                    } : Cache.CacheRecord) |> Json.serialize
 
                 try
                     match Http.post (Http.UniformData Http.Update) id jsonData with

@@ -5,6 +5,7 @@ open RabbitMQ.Client.Events
 open System
 open System.Text
 open Hobbes.Helpers.Environment
+open Hobbes.Helpers
 
 module Broker = 
     type CacheMessage = 
@@ -139,7 +140,7 @@ module Broker =
            eprintfn "Failed to publish to the queue. Message: %s" e.Message
     let private publish<'a> queueName (message : 'a) =
         message
-        |> Json.serializeU
+        |> Json.serialize
         |> publishString queueName
     type Broker() =
         static member Cache(msg : CacheMessage) = 

@@ -10,23 +10,13 @@ module Cache =
         | Int of int
         | Float of float
         | Date of System.DateTime
-    type Row =
-        Element of Value
-        | Row of Value * Row
-        with 
-            member x.ToList() =
-              match x with
-              Element v -> [v]
-              | Row(v,tail) -> v::(tail.ToList())
-            member x.ToArray() =
-                x.ToList() |> List.toArray
 
     type DataResult = 
         {
             [<JsonProperty("columnNames")>]
             ColumnNames : string []
             [<JsonProperty("rows")>]
-            Rows : Row []
+            Rows : Value [][]
             [<JsonProperty("rowCount")>]
             RowCount : int
         }
@@ -64,7 +54,7 @@ module Cache =
         
         data.Rows
         |> Seq.mapi(fun index row ->
-            index,(row.ToArray()
+            index,(row
                    |> Seq.zip columnNames)
         )
 

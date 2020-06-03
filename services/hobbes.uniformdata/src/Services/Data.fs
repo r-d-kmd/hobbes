@@ -2,7 +2,7 @@ namespace Hobbes.UniformData.Services
 
 open Hobbes.Web.Routing
 open Hobbes.Web
-open FSharp.Json
+open Hobbes.Helpers
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
 

@@ -119,7 +119,7 @@ module Reader =
 
     let private readBody = 
         function
-            | Binary b -> System.Text.Encoding.ASCII.GetString b
+            | Binary b -> System.Text.Encoding.Unicode.GetString b
             | Text t -> t
     
     let request account project body path  = 
@@ -215,6 +215,7 @@ module Reader =
         let commits = 
             repositories account project
             |> Seq.collect(fun repo -> 
+                //todo make a job for each repo plus one for uniforming the data
                 commitsForBranch account project repo repo.DefaultBranch
             )
         commits

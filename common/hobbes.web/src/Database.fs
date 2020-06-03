@@ -120,11 +120,6 @@ namespace Hobbes.Web
                 Rows : 'a []
             }
 
-        let readBody = 
-                function
-                    | Binary b -> System.Text.Encoding.ASCII.GetString b
-                    | Text t -> t
-
         let private _awaitDbServer() =    
             async {
                 let dbUser = 
@@ -148,7 +143,7 @@ namespace Hobbes.Web
                                                        ) 
                                 
                                 if resp.StatusCode > 299 then
-                                   eprintfn "Error checking [%s]. %d - %s" url resp.StatusCode (resp.Body |> readBody)
+                                   eprintfn "Error checking [%s]. %d - %s" url resp.StatusCode (resp.Body |> Http.readBody)
                                    do! Async.Sleep 2000
                                    return! inner()
                              with
@@ -204,7 +199,7 @@ namespace Hobbes.Web
                     | 401 -> 
                         failwith "DB user not configured correctly" 
                     | _ ->
-                       eprintfn "Database creation failed with %d - %s. Will try again" resp.StatusCode (resp.Body |> readBody)
+                       eprintfn "Database creation failed with %d - %s. Will try again" resp.StatusCode (resp.Body |> Http.readBody)
                        true
                    )
                 if failed |> List.isEmpty |> not then

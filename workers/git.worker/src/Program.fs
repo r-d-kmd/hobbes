@@ -61,14 +61,14 @@ let handleMessage message =
                         TimeStamp = None 
                         Data = data
                     } : Cache.CacheRecord) |> Json.serialize
-
+     
                 try
                     match Http.post (Http.UniformData Http.Update) id jsonData with
                     Http.Success _ -> 
                        Log.logf "Data uploaded to cache"
                        true
                     | Http.Error(status,msg) -> 
-                        Log.logf "Upload to uniform data failed. %d %s" status msg
+                        Log.logf "Upload to uniform data failed. %d %s. Data: %s" status msg jsonData
                         false
                 with e ->
                     Log.excf e "Failed to cache data"

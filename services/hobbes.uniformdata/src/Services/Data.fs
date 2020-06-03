@@ -17,7 +17,6 @@ module Data =
             
         match uniformData with
         Some uniformData ->
-            let data = uniformData.Data
             200, (uniformData |> Json.serialize)
         | None -> 
             404,"No data found"

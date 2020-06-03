@@ -108,18 +108,19 @@ module Http =
     
     let get (service : Service) parser  = 
         let url = service.ServiceUrl
-        Log.logf "Getting %s" url
+        printfn "Getting %s" url
         Http.Request(url,
                      httpMethod = "GET",
                      silentHttpErrors = true
         ) |> readResponse parser
 
-    let private putOrPost parser httpMethod (service : Service) body = 
+    let private putOrPost parser httpMethod (service : Service) (body : string) = 
         let url = service.ServiceUrl
-        Log.logf "%sting to %s" httpMethod url
+        printfn "%sting binary to %s" httpMethod url
+        let bytes = System.Text.Encoding.Unicode.GetBytes body
         Http.Request(url,
                      httpMethod = httpMethod,
-                     body = TextRequest body,
+                     body = BinaryUpload bytes,
                      silentHttpErrors = true
         ) |> readResponse parser
 

@@ -73,7 +73,7 @@ module Broker =
                                      null) |> ignore
             with e -> 
                printfn "Queue not yet ready. Message: %s" e.Message
-               do! Async.Sleep 1000
+               do! Async.Sleep 5000
                do! awaitQueue()
         } 
 

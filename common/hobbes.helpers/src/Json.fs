@@ -125,8 +125,8 @@ module Json =
             not (objectType.IsGenericType  && objectType.GetGenericTypeDefinition() = typedefof<list<_>>) &&
             not (objectType.IsGenericType  && objectType.GetGenericTypeDefinition() = typedefof<option<_>>) &&
             not (FSharpType.IsRecord objectType)
-            
+
     let private settings = JsonSerializerSettings()
     settings.Converters.Add(DuConverter())
     let serialize<'a> (o:'a) = JsonConvert.SerializeObject(o,settings)
-    let deserialize<'a> (o:'a) = JsonConvert.SerializeObject(o,settings)
+    let deserialize<'a> json = JsonConvert.DeserializeObject<'a>(json,settings)

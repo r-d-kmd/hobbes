@@ -1,7 +1,8 @@
 namespace Hobbes.Web
 
 open Hobbes.Helpers.Environment
-open FSharp.Json
+open Hobbes.Helpers
+open Newtonsoft.Json
 
 module Cache =
     type Value =
@@ -22,21 +23,21 @@ module Cache =
 
     type DataResult = 
         {
-            [<JsonField("columnNames")>]
+            [<JsonProperty("columnNames")>]
             ColumnNames : string []
-            [<JsonField("rows")>]
+            [<JsonProperty("rows")>]
             Rows : Row []
-            [<JsonField("rowCount")>]
+            [<JsonProperty("rowCount")>]
             RowCount : int
         }
     
     type CacheRecord = 
         {
-            [<JsonField("_id")>]
+            [<JsonProperty("_id")>]
             CacheKey : string
-            [<JsonField("timestamp")>]
+            [<JsonProperty("timestamp")>]
             TimeStamp : System.DateTime option
-            [<JsonField("data")>]
+            [<JsonProperty("data")>]
             Data : DataResult
         }
 
@@ -92,7 +93,7 @@ module Cache =
             Cache {new ICacheProvider with 
                             member __.InsertOrUpdate key data = 
                                 data
-                                |> Json.serializeU 
+                                |> Json.serialize 
                                 |> sprintf """["%s",%s]""" key
                                 |> Http.post (Http.Update |> service) id 
                                 |> ignore

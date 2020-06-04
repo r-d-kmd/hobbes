@@ -95,14 +95,7 @@ module Http =
     let readBody = 
         function
             | Binary b -> System.Text.Encoding.Unicode.GetString b
-            | Text t -> 
-                try
-                    t
-                    |> System.Convert.FromBase64String
-                    |> System.Text.Encoding.Unicode.GetString
-                with e ->
-                   printfn "Couldn't read %s as base64. %s" t e.Message
-                   t
+            | Text t -> t
             
     let readResponse parser (resp : HttpResponse) = 
         if resp.StatusCode <> 200 then
@@ -126,11 +119,8 @@ module Http =
         printfn "%sting binary to %s" httpMethod url
         Http.Request(url,
                      httpMethod = httpMethod,
-                     body = 
-                         (body
-                          |> System.Text.Encoding.Unicode.GetBytes
-                          |> System.Convert.ToBase64String
-                          |> TextRequest),
+                     body = TextRequest body,
+                     headers = [HttpRequestHeaders.ContentTypeWithEncoding("application/json", System.Text.Encoding.Unicode)],
                      silentHttpErrors = true
         ) |> readResponse parser
 

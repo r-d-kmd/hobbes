@@ -24,14 +24,9 @@ module Data =
     [<Post ("/update", true)>]
     let update dataAndKey =
         try
-            let json = 
-                dataAndKey
-                |> System.Convert.FromBase64String
-                |> System.Text.Encoding.Unicode.GetString
-            printfn "Updating with %s" json
             let args =
                 try
-                    json
+                    dataAndKey
                     |> Json.deserialize<Cache.CacheRecord>
                     |> Some
                 with e ->

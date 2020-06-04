@@ -6,10 +6,7 @@ metadata:
   name: rabbitmq-service
 spec:
   ports:
-  - name: main
-    port: 5672
-  - name: management
-    port: 15672
+  - port: 5672
   selector:
     app: taskQueue
     component: rabbitmq

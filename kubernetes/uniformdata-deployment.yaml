@@ -15,7 +15,7 @@ spec:
       containers:
       - env:
         imagePullPolicy: Never
-        image: hobbes.uniformdata
+        image: uniformdata
         name: hobbes-uniformdata
         envFrom:
         - secretRef:

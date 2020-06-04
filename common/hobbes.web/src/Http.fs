@@ -124,13 +124,13 @@ module Http =
     let private putOrPost parser httpMethod (service : Service) (body : string) = 
         let url = service.ServiceUrl
         printfn "%sting binary to %s" httpMethod url
-        let bytes = 
-            body
-            |> System.Text.Encoding.Unicode.GetBytes
-            |> System.Convert.ToBase64String
         Http.Request(url,
                      httpMethod = httpMethod,
-                     body = TextRequest bytes,
+                     body = 
+                         (body
+                          |> System.Text.Encoding.Unicode.GetBytes
+                          |> System.Convert.ToBase64String
+                          |> TextRequest),
                      silentHttpErrors = true
         ) |> readResponse parser
 

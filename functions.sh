@@ -19,11 +19,8 @@ function services(){
     local APP_NAME=""
     for APP in $(find ${SCRIPT_DIR}/services -name *.fsproj | rev | cut -d'/' -f1 | rev)
     do
-        if [[ "$APP" = hobbes.* ]] 
-        then
-            APP_NAME=$(echo $APP | cut -d'.' -f 2 | tr '[:upper:]' '[:lower:]')
-            APPS+=($APP_NAME)
-        fi
+        APP_NAME=$(echo $APP | cut -d'.' -f 2 | tr '[:upper:]' '[:lower:]')
+        APPS+=($APP_NAME)
     done 
     APP_NAME=""
     for APP in $(find ${SCRIPT_DIR}/workers -name *.fsproj | rev | cut -d'/' -f1 | rev)
@@ -165,7 +162,7 @@ function start() {
         kubectl apply -f $(echo $FILES)
     done
     for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
-    kubectl apply -f rabbitmq-svc.yaml
+    kubectl apply -f kubernetes/rabbitmq-svc.yaml,kubernetes/rabbitmq-deployment.yaml
 
     cd $CURRENT_DIR
 }

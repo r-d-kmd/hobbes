@@ -19,7 +19,7 @@ function services(){
     local APP_NAME=""
     for APP in $(find ${SCRIPT_DIR}/services -name *.fsproj | rev | cut -d'/' -f1 | rev)
     do
-        APP_NAME=$(echo $APP | cut -d'.' -f 2 | tr '[:upper:]' '[:lower:]')
+        APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
         APPS+=($APP_NAME)
     done 
     APP_NAME=""

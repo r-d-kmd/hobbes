@@ -13,9 +13,12 @@ spec:
         app: taskQueue
     spec:
       containers:
+      - env:
         imagePullPolicy: Always
         image: rabbitmq
         name: rabbitmq
-        resources: {}
+        envFrom:
+          - secretRef:
+              name: env
       restartPolicy: Always
 status: {}

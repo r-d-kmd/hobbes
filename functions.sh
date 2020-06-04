@@ -162,7 +162,7 @@ function start() {
         kubectl apply -f $(echo $FILES)
     done
     for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
-    kubectl apply -f kubernetes/rabbitmq-svc.yaml,kubernetes/rabbitmq-deployment.yaml
+    kubectl apply -f rabbitmq-svc.yaml,rabbitmq-deployment.yaml
 
     cd $CURRENT_DIR
 }

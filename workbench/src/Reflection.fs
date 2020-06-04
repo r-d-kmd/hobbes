@@ -4,9 +4,10 @@ open Hobbes.Web.Reflection
 
 type Source = 
     AzureDevOps = 1
-    | Rally = 2
+    | GitBranches = 2
     | Jira = 3
     | Test = 4
+    | GitCommits = 5
 
 [<System.FlagsAttribute>]
 type Project =
@@ -19,7 +20,7 @@ type Project =
     | Flowerpot = 16
     | Jira = 8
     | AzureDevOps = 4
-    | Rally = 2
+    | Git = 2
     | General = 1
 
 
@@ -28,10 +29,10 @@ type Project =
 module Project =
     let source (p : Project)=
         match (p &&& Project.AzureDevOps)
-               ||| (p &&& Project.Rally)
+               ||| (p &&& Project.Git)
                ||| (p &&& Project.Jira) with
         Project.AzureDevOps 
-        | Project.Rally 
+        | Project.Git 
         | Project.Jira  as p -> p
         | _ -> 
             eprintfn "No source specified %A" p
@@ -39,7 +40,7 @@ module Project =
 
     let toList (p: Project) =
         let rec inner (n : int) acc = 
-            if n = int Project.Jira then acc
+            if n <= int Project.Jira then acc
             else
                 let acc = 
                     if (p |> int) &&& n = n then (enum<Project> n)::acc
@@ -60,12 +61,17 @@ module Project =
         | Project.Delta::_ -> "delta"
         | Project.Nexus::_ -> "nexus"
         | Project.UVskole::_ -> "uvskole"
-        | _ -> failwith "Can happen"
+        | _ -> failwith "Can't happen"
 
     let configString (s: Project) =
         let p = s |> toList |> List.head //removes any source 'projects'
         let projectName = p |> name
-
+        let getAzureDevopsAccount = 
+            function
+                Project.Delta ->
+                    "time-payroll-kmddk"
+                | _ -> 
+                    "kmddk"
         match s |> source with
         Project.AzureDevOps ->
             let detailedSourceConfig account = 
@@ -73,11 +79,14 @@ module Project =
                             "account" : "%s",
                             "project" : "%s",
                             "searchKey" : "%s" """ account projectName ("azure devops" + projectName)
-            match p with
-            Project.Delta ->
-                detailedSourceConfig "time-payroll-kmddk"
-            | _ -> 
-                detailedSourceConfig "kmddk"
+            p |> getAzureDevopsAccount |> detailedSourceConfig
+        | Project.Git ->
+            let detailedSourceConfig account = 
+                sprintf """ "source" : "git",
+                            "account" : "%s",
+                            "project" : "%s",
+                            "searchKey" : "%s" """ account projectName ("git" + projectName)
+            p |> getAzureDevopsAccount |> detailedSourceConfig
         | _ -> failwith "Project source not supported yet!"
         
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -85,7 +94,8 @@ module Source =
     let project (s: Source) =
         match s with
         Source.AzureDevOps -> Project.AzureDevOps
-        | Source.Rally -> Project.Rally
+        | Source.GitBranches -> Project.Git
+        | Source.GitCommits -> Project.Git
         | Source.Jira -> Project.Jira
         | _ -> failwith "Can't happen"
 

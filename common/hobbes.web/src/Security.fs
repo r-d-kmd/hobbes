@@ -159,21 +159,22 @@ module Security =
 
     let verifyAuthToken (authToken : string) = 
         try
-            printfn "%s :::: %s" (env "MASTER_USER" null) authToken
-            if (env "MASTER_USER" null) = authToken then 
+
+        let key = 
+            printfn "Auth token: (%s)" authToken
+            if authToken.ToLower().StartsWith(Basic) then
+                    authToken.Substring(Basic.Length)
+                    |> fromB64
+                    |> (fun s -> 
+                        s.Substring(0,s.Length - 1) //skip the last character ':'
+                    ) 
+            else
+                authToken 
+
+            if (env "MASTER_USER" null) = key then 
                 printfn "Authenticating using master key"
                 true
             else
-                let key = 
-                    printfn "Auth token: (%s)" authToken
-                    if authToken.ToLower().StartsWith(Basic) then
-                            authToken.Substring(Basic.Length)
-                            |> fromB64
-                            |> (fun s -> 
-                                s.Substring(0,s.Length - 1) //skip the last character ':'
-                            ) 
-                    else
-                        authToken 
                 key 
                 |> decrypt
                 |> verifyKey

@@ -1,5 +1,5 @@
 eval $(minikube -p minikube docker-env)
-declare -a APPS=(db)
+declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "rabbitmq" "sync" "uniformdata")
 VOLUMES=(db)
 function get_script_dir () {
      SOURCE="${BASH_SOURCE[0]}"
@@ -14,26 +14,26 @@ function get_script_dir () {
      echo "$DIR"
 }
 
-SCRIPT_DIR=$(get_script_dir)
-function services(){
-    local APP_NAME=""
-    for APP in $(find ${SCRIPT_DIR}/services -name *.fsproj | rev | cut -d'/' -f1 | rev)
-    do
-        APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
-        APPS+=($APP_NAME)
-    done 
-    APP_NAME=""
-    for APP in $(find ${SCRIPT_DIR}/workers -name *.fsproj | rev | cut -d'/' -f1 | rev)
-    do
-        if [[ "$APP" = *.worker.* ]] 
-        then
-           APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
-        fi
-        APPS+=($APP_NAME)
-    done 
-}
-
-services
+#SCRIPT_DIR=$(get_script_dir)
+#function services(){
+#    local APP_NAME=""
+#    for APP in $(find ${SCRIPT_DIR}/services -name *.fsproj | rev | cut -d'/' -f1 | rev)
+#    do
+#        APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
+#        APPS+=($APP_NAME)
+#    done 
+#    APP_NAME=""
+#    for APP in $(find ${SCRIPT_DIR}/workers -name *.fsproj | rev | cut -d'/' -f1 | rev)
+#    do
+#        if [[ "$APP" = *.worker.* ]] 
+#        then
+#           APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
+#        fi
+#        APPS+=($APP_NAME)
+#    done 
+#}
+#
+#services
 
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 

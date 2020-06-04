@@ -5,18 +5,12 @@ open Hobbes.Helpers
 open Newtonsoft.Json
 
 module Cache =
-    type Value =
-        String of string
-        | Int of int
-        | Float of float
-        | Date of System.DateTime
-
     type DataResult = 
         {
             [<JsonProperty("columnNames")>]
             ColumnNames : string []
             [<JsonProperty("rows")>]
-            Rows : Value [][]
+            Rows : obj [][]
             [<JsonProperty("rowCount")>]
             RowCount : int
         }

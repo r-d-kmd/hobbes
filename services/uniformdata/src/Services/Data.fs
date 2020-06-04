@@ -30,7 +30,7 @@ module Data =
                     |> Json.deserialize<Cache.CacheRecord>
                     |> Some
                 with e ->
-                    eprintfn "Deserialization failed. %s %s" e.Message e.StackTrace
+                    eprintfn "Failed to deserialization (%s). %s %s" dataAndKey e.Message e.StackTrace
                     None
             match args with
             Some args ->

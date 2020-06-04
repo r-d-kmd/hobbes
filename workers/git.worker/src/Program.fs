@@ -11,14 +11,13 @@ let synchronize (source : GitSource.Root) token =
             match source.Dataset.ToLower() with
             "commits" ->
                 let commits = commits source.Account source.Project
-                let columnNames = [|"Time";"Message";"Author"|]
+                let columnNames = [|"Time";"Author"|]
                 let values =
                     commits
                     |> Seq.map(fun c ->
                          [|
-                             c.Time |> Cache.Date 
-                             c.Message |> Cache.String
-                             c.Author |> Cache.String
+                             c.Time.ToString(System.Globalization.CultureInfo.InvariantCulture) :> obj
+                             c.Author :> obj
                          |]
                     ) |> Array.ofSeq
                 columnNames, values, (commits |> Seq.length)

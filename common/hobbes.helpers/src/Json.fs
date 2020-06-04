@@ -100,7 +100,7 @@ module Json =
                         let recordType = ucDef.PropertyType
                         let recordFields = recordType.GetProperties()
                         let matched = fieldsValues |> Seq.forall ( fun (fieldName,_,fieldValue) ->
-                            recordFields |> Array.exists(fun f-> f.Name = (fieldName :?> string))
+                            recordFields |> Array.exists(fun f-> f.Name = (fieldName |> string))
                         )    
                         //if we have found a match onthe record let's keep the union case and type of the record
                         match matched with

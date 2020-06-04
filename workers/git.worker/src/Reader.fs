@@ -148,7 +148,6 @@ module Reader =
           
     type Commit = {
         Time : System.DateTime
-        Message : string
         Author : string
     }
 
@@ -174,7 +173,6 @@ module Reader =
                 |> Seq.map(fun commit ->
                     {
                         Time = commit.Author.Date.Date
-                        Message = commit.Comment
                         Author = commit.Author.Email
                     }
                 ) |> Seq.sortBy (fun c -> c.Time)

@@ -97,12 +97,13 @@ module Http =
             | Binary b -> 
                 let enc = 
                     match resp.Headers |> Map.tryFind "Content-Type" with
-                    None -> System.Text.Encoding.ASCII
+                    None -> System.Text.Encoding.Default
                     | Some s ->
                         s.Split "=" 
                         |> Array.last
                         |> System.Text.Encoding.GetEncoding 
                 enc.GetString b
+                
             | Text t -> t
             
     let readResponse parser (resp : HttpResponse)  = 
@@ -127,8 +128,8 @@ module Http =
         printfn "%sting binary to %s" httpMethod url
         Http.Request(url,
                      httpMethod = httpMethod,
-                     body = BinaryUpload (body |> System.Text.Encoding.Unicode.GetBytes),
-                     headers = [HttpRequestHeaders.ContentTypeWithEncoding("application/json", System.Text.Encoding.Unicode)],
+                     body = TextRequest body,
+                     headers = [HttpRequestHeaders.ContentTypeWithEncoding("application/json", System.Text.Encoding.Default)],
                      silentHttpErrors = true
         ) |> readResponse parser
 

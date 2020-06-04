@@ -208,7 +208,7 @@ module Reader =
                 |> request azureToken azureToken "GET" None                 
             if resp.StatusCode = 200 then
                 let body = 
-                    resp.Body |> Hobbes.Web.Http.readBody
+                    resp |> Hobbes.Web.Http.readBody
                 let rawId =  (url |> hash)
                 let hashes = rawId::hashes
                 match body with

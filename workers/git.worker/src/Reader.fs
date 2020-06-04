@@ -116,11 +116,6 @@ module Reader =
         Name : string
         DefaultBranch : string
     }
-
-    let private readBody = 
-        function
-            | Binary b -> System.Text.Encoding.Unicode.GetString b
-            | Text t -> t
     
     let request account project body path  = 
         let url = sprintf "https://dev.azure.com/%s/%s/_apis/git/repositories%s?api-version=5.1&$top=10000000" account project path
@@ -146,7 +141,7 @@ module Reader =
                 )
         if resp.StatusCode = 401 then
            errorf "Not authorized for that ressource. %s:%s %s" user pwd url
-        resp.StatusCode,resp.Body |> readBody
+        resp.StatusCode,resp |> Hobbes.Web.Http.readBody
 
     let get account project =
         request account project None

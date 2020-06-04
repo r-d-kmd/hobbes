@@ -92,16 +92,24 @@ module Http =
                       sprintf "http://%s-svc:%d/%s"  serviceName port pathString
 
 
-    let readBody = 
-        function
-            | Binary b -> System.Text.Encoding.Unicode.GetString b
+    let readBody (resp : HttpResponse) =
+        match resp.Body with
+            | Binary b -> 
+                let enc = 
+                    match resp.Headers |> Map.tryFind "Content-Type" with
+                    None -> System.Text.Encoding.ASCII
+                    | Some s ->
+                        s.Split "=" 
+                        |> Array.last
+                        |> System.Text.Encoding.GetEncoding 
+                enc.GetString b
             | Text t -> t
             
-    let readResponse parser (resp : HttpResponse) = 
+    let readResponse parser (resp : HttpResponse)  = 
         if resp.StatusCode <> 200 then
-            Error(resp.StatusCode,resp.Body |> readBody)
+            Error(resp.StatusCode,resp |> readBody)
         else
-           resp.Body
+           resp
            |> readBody
            |> parser
            |> Success
@@ -119,7 +127,7 @@ module Http =
         printfn "%sting binary to %s" httpMethod url
         Http.Request(url,
                      httpMethod = httpMethod,
-                     body = TextRequest body,
+                     body = BinaryUpload (body |> System.Text.Encoding.Unicode.GetBytes),
                      headers = [HttpRequestHeaders.ContentTypeWithEncoding("application/json", System.Text.Encoding.Unicode)],
                      silentHttpErrors = true
         ) |> readResponse parser

@@ -3,8 +3,9 @@ open Workbench
 
 [<Configurations(Source.AzureDevOps)>]
 module State = 
+
   [<Literal>]
-  let private Projects = 
+  let Projects = 
       Project.Flowerpot 
       ||| Project.Gandalf 
       ||| Project.Delta 
@@ -92,3 +93,13 @@ module State =
             Transformations.Metrics.martin
           ]
       @>
+
+[<Configurations(Source.GitBranches)>]
+module VCS =
+    [<Configuration(State.Projects)>]
+    let branchLifeTime =
+        <@
+            [
+                Transformations.Git.branchLifeTime
+            ]
+        @>

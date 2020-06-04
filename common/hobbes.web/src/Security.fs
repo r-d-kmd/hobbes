@@ -159,6 +159,7 @@ module Security =
 
     let verifyAuthToken (authToken : string) = 
         try
+            printfn "%s :::: %s" (env "MASTER_USER" null) authToken
             if (env "MASTER_USER" null) = authToken then 
                 printfn "Authenticating using master key"
                 true

@@ -123,7 +123,7 @@ module Http =
                      silentHttpErrors = true
         ) |> readResponse parser
 
-    let private putOrPost parser httpMethod (service : Service) (body : string) = 
+    let private putOrPost httpMethod (service : Service) (body : string) = 
         let url = service.ServiceUrl
         printfn "%sting binary to %s" httpMethod url
         Http.Request(url,
@@ -131,7 +131,9 @@ module Http =
                      body = TextRequest body,
                      headers = [HttpRequestHeaders.ContentTypeWithEncoding("application/json", System.Text.Encoding.Default)],
                      silentHttpErrors = true
-        ) |> readResponse parser
+        ) |> readResponse id
 
-    let put = putOrPost id "PUT"
-    let post service parser body = putOrPost parser "POST" service body
+    let put = putOrPost "PUT"
+    let post service body = 
+        let payload = (body |> Hobbes.Helpers.Json.serialize)
+        putOrPost "POST" service payload

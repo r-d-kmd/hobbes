@@ -147,13 +147,18 @@ module Reader =
         request account project None
           
     type Commit = {
-        Time : System.DateTime
+        Date : System.DateTime
+        Id : string
         Author : string
     }
 
     let private commitsForBranch account project (repo : Repository) (branchName : string) =
         logf "Reading commits for %s - %s" repo.Name branchName
-        let shortBranchName = branchName.Substring("refs/heads/".Length)
+        let shortBranchName = 
+            if branchName.StartsWith "refs/heads/" then
+                branchName.Substring("refs/heads/".Length)
+            else
+                branchName
         let body = 
             sprintf """{
               "itemVersion": {
@@ -172,10 +177,11 @@ module Reader =
                 parsedCommits.Value
                 |> Seq.map(fun commit ->
                     {
-                        Time = commit.Author.Date.Date
+                        Date = commit.Author.Date.DateTime
+                        Id = commit.CommitId
                         Author = commit.Author.Email
                     }
-                ) |> Seq.sortBy (fun c -> c.Time)
+                ) |> Seq.sortBy (fun c -> c.Date)
             assert(commits |> Seq.length = parsedCommits.Count)
             commits
         else

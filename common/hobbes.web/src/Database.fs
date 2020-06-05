@@ -473,7 +473,7 @@ namespace Hobbes.Web
             member this.InsertOrUpdate (record : 'a) =
                 match record :> obj with
                   :? Runtime.BaseTypes.IJsonDocument as j -> j.JsonValue.ToString()
-                  | o -> o.ToString()
+                  | _ -> record |> Json.serialize
                 |> this.InsertOrUpdate
             member this.InsertOrUpdate doc =
                  

@@ -155,10 +155,8 @@ module Reader =
     let private commitsForBranch account project (repo : Repository) (branchName : string) =
         logf "Reading commits for %s - %s" repo.Name branchName
         let shortBranchName = 
-            if branchName.StartsWith "refs/heads/" then
-                branchName.Substring("refs/heads/".Length)
-            else
-                branchName
+            branchName.Substring("refs/heads/".Length)
+            
         let body = 
             sprintf """{
               "itemVersion": {
@@ -215,7 +213,10 @@ module Reader =
             repositories account project
             |> Seq.collect(fun repo -> 
                 //todo make a job for each repo plus one for uniforming the data
-                commitsForBranch account project repo repo.DefaultBranch
+                if System.String.IsNullOrWhiteSpace repo.DefaultBranch then 
+                    Seq.empty
+                else
+                    commitsForBranch account project repo repo.DefaultBranch
             )
         commits
            

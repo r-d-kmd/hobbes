@@ -35,14 +35,6 @@ environment:
 
 services:
   - docker
-
-install:
-  - docker version
-  - dotnet tool install --global fake-cli
-  - dotnet tool install --global paket
-  - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
-  - chmod +x kubectl
-  - sudo mv kubectl /usr/local/bin/
   
 for:
   -
@@ -51,6 +43,13 @@ for:
         - master
     environment: 
       CONFIGURATION: Release
+    install:
+      - docker version
+      - dotnet tool install --global fake-cli
+      - dotnet tool install --global paket
+      - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
+      - chmod +x kubectl
+      - sudo mv kubectl /usr/local/bin/
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
     build_script:  
@@ -63,6 +62,12 @@ for:
       only:
         - development
     install:
+      - docker version
+      - dotnet tool install --global fake-cli
+      - dotnet tool install --global paket
+      - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
+      - chmod +x kubectl
+      - sudo mv kubectl /usr/local/bin/
       - npm install -s -g --unicode=false newman@4.6.1
       - curl -sL https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 -o minikube
       - chmod +x minikube

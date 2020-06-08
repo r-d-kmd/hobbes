@@ -9,20 +9,21 @@ let synchronize (source : GitSource.Root) token =
     try
         let columnNames,values,rowCount = 
             match source.Dataset.ToLower() with
-            "commits" ->
+            _ ->
                 let commits = commits source.Account source.Project
-                let columnNames = [|"Time";"Message";"Author"|]
+                let columnNames = [|"id";"Time";"Author"|]
                 let values =
                     commits
+                    |> Seq.distinct
                     |> Seq.map(fun c ->
                          [|
-                             c.Time |> Cache.Date 
-                             c.Message |> Cache.String
-                             c.Author |> Cache.String
+                             c.Id :> obj
+                             c.Date :> obj
+                             c.Author :> obj
                          |]
                     ) |> Array.ofSeq
                 columnNames, values, (commits |> Seq.length)
-            | ds -> failwithf "Datsaet (%s) not known" ds
+            //| ds -> failwithf "Datsaet (%s) not known" ds
         
         {
             ColumnNames = columnNames
@@ -55,20 +56,20 @@ let handleMessage message =
                 Log.logf "Conldn't syncronize. %s %s" sourceDoc token
                 false
             | Some data -> 
-                let jsonData  = 
-                    ({
+                let data = 
+                    {
                         CacheKey = key
                         TimeStamp = None 
                         Data = data
-                    } : Cache.CacheRecord) |> Json.serialize
+                    } : Cache.CacheRecord
      
                 try
-                    match Http.post (Http.UniformData Http.Update) id jsonData with
+                    match Http.post (Http.UniformData Http.Update) data with
                     Http.Success _ -> 
                        Log.logf "Data uploaded to cache"
                        true
                     | Http.Error(status,msg) -> 
-                        Log.logf "Upload to uniform data failed. %d %s. Data: %s" status msg jsonData
+                        Log.logf "Upload to uniform data failed. %d %s. Data: %s" status msg (data |> Json.serialize)
                         false
                 with e ->
                     Log.excf e "Failed to cache data"

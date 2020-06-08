@@ -116,11 +116,6 @@ module Reader =
         Name : string
         DefaultBranch : string
     }
-
-    let private readBody = 
-        function
-            | Binary b -> System.Text.Encoding.Unicode.GetString b
-            | Text t -> t
     
     let request account project body path  = 
         let url = sprintf "https://dev.azure.com/%s/%s/_apis/git/repositories%s?api-version=5.1&$top=10000000" account project path
@@ -146,20 +141,22 @@ module Reader =
                 )
         if resp.StatusCode = 401 then
            errorf "Not authorized for that ressource. %s:%s %s" user pwd url
-        resp.StatusCode,resp.Body |> readBody
+        resp.StatusCode,resp |> Hobbes.Web.Http.readBody
 
     let get account project =
         request account project None
           
     type Commit = {
-        Time : System.DateTime
-        Message : string
+        Date : System.DateTime
+        Id : string
         Author : string
     }
 
     let private commitsForBranch account project (repo : Repository) (branchName : string) =
         logf "Reading commits for %s - %s" repo.Name branchName
-        let shortBranchName = branchName.Substring("refs/heads/".Length)
+        let shortBranchName = 
+            branchName.Substring("refs/heads/".Length)
+            
         let body = 
             sprintf """{
               "itemVersion": {
@@ -178,11 +175,11 @@ module Reader =
                 parsedCommits.Value
                 |> Seq.map(fun commit ->
                     {
-                        Time = commit.Author.Date.Date
-                        Message = commit.Comment
+                        Date = commit.Author.Date.DateTime
+                        Id = commit.CommitId
                         Author = commit.Author.Email
                     }
-                ) |> Seq.sortBy (fun c -> c.Time)
+                ) |> Seq.sortBy (fun c -> c.Date)
             assert(commits |> Seq.length = parsedCommits.Count)
             commits
         else
@@ -216,7 +213,10 @@ module Reader =
             repositories account project
             |> Seq.collect(fun repo -> 
                 //todo make a job for each repo plus one for uniforming the data
-                commitsForBranch account project repo repo.DefaultBranch
+                if System.String.IsNullOrWhiteSpace repo.DefaultBranch then 
+                    Seq.empty
+                else
+                    commitsForBranch account project repo repo.DefaultBranch
             )
         commits
            

@@ -92,16 +92,25 @@ module Http =
                       sprintf "http://%s-svc:%d/%s"  serviceName port pathString
 
 
-    let readBody = 
-        function
-            | Binary b -> System.Text.Encoding.Unicode.GetString b
+    let readBody (resp : HttpResponse) =
+        match resp.Body with
+            | Binary b -> 
+                let enc = 
+                    match resp.Headers |> Map.tryFind "Content-Type" with
+                    None -> System.Text.Encoding.Default
+                    | Some s ->
+                        s.Split "=" 
+                        |> Array.last
+                        |> System.Text.Encoding.GetEncoding 
+                enc.GetString b
+                
             | Text t -> t
             
-    let readResponse parser (resp : HttpResponse) = 
+    let readResponse parser (resp : HttpResponse)  = 
         if resp.StatusCode <> 200 then
-            Error(resp.StatusCode,resp.Body |> readBody)
+            Error(resp.StatusCode,resp |> readBody)
         else
-           resp.Body
+           resp
            |> readBody
            |> parser
            |> Success
@@ -114,15 +123,17 @@ module Http =
                      silentHttpErrors = true
         ) |> readResponse parser
 
-    let private putOrPost parser httpMethod (service : Service) (body : string) = 
+    let private putOrPost httpMethod (service : Service) (body : string) = 
         let url = service.ServiceUrl
         printfn "%sting binary to %s" httpMethod url
         Http.Request(url,
                      httpMethod = httpMethod,
                      body = TextRequest body,
-                     headers = [HttpRequestHeaders.ContentTypeWithEncoding("application/json", System.Text.Encoding.Unicode)],
+                     headers = [HttpRequestHeaders.ContentTypeWithEncoding("application/json", System.Text.Encoding.Default)],
                      silentHttpErrors = true
-        ) |> readResponse parser
+        ) |> readResponse id
 
-    let put = putOrPost id "PUT"
-    let post service parser body = putOrPost parser "POST" service body
+    let put = putOrPost "PUT"
+    let post service body = 
+        let payload = (body |> Hobbes.Helpers.Json.serialize)
+        putOrPost "POST" service payload

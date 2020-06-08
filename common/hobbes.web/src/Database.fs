@@ -143,7 +143,7 @@ namespace Hobbes.Web
                                                        ) 
                                 
                                 if resp.StatusCode > 299 then
-                                   eprintfn "Error checking [%s]. %d - %s" url resp.StatusCode (resp.Body |> Http.readBody)
+                                   eprintfn "Error checking [%s]. %d - %s" url resp.StatusCode (resp |> Http.readBody)
                                    do! Async.Sleep 2000
                                    return! inner()
                              with
@@ -199,7 +199,7 @@ namespace Hobbes.Web
                     | 401 -> 
                         failwith "DB user not configured correctly" 
                     | _ ->
-                       eprintfn "Database creation failed with %d - %s. Will try again" resp.StatusCode (resp.Body |> Http.readBody)
+                       eprintfn "Database creation failed with %d - %s. Will try again" resp.StatusCode (resp |> Http.readBody)
                        true
                    )
                 if failed |> List.isEmpty |> not then
@@ -473,7 +473,7 @@ namespace Hobbes.Web
             member this.InsertOrUpdate (record : 'a) =
                 match record :> obj with
                   :? Runtime.BaseTypes.IJsonDocument as j -> j.JsonValue.ToString()
-                  | o -> o.ToString()
+                  | _ -> record |> Json.serialize
                 |> this.InsertOrUpdate
             member this.InsertOrUpdate doc =
                  

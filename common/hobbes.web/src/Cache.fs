@@ -5,18 +5,12 @@ open Hobbes.Helpers
 open Newtonsoft.Json
 
 module Cache =
-    type Value =
-        String of string
-        | Int of int
-        | Float of float
-        | Date of System.DateTime
-
     type DataResult = 
         {
             [<JsonProperty("columnNames")>]
             ColumnNames : string []
             [<JsonProperty("rows")>]
-            Rows : Value [][]
+            Rows : obj [][]
             [<JsonProperty("rowCount")>]
             RowCount : int
         }
@@ -83,12 +77,10 @@ module Cache =
             Cache {new ICacheProvider with 
                             member __.InsertOrUpdate key data = 
                                 data
-                                |> Json.serialize 
-                                |> sprintf """["%s",%s]""" key
-                                |> Http.post (Http.Update |> service) id 
+                                |> createCacheRecord key 
+                                |> Http.post (Http.Update |> service)
                                 |> ignore
                                 
-                            
                             member __.Get (key : string) = 
                                 match Http.get (key |> Http.CacheService.Read |> service) parser with
                                 Http.Success d -> Some d

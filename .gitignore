@@ -26,3 +26,4 @@ repositories/
 temp.*
 *.ignore
 docker/tmp
+**/src/Properties/

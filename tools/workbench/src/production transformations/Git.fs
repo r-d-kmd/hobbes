@@ -7,6 +7,11 @@ module Git =
     open Hobbes.Parsing
     open Hobbes.DSL
 
+    let all =
+        [
+            only (True==True)
+        ]
+
     let branchLifeTime =
         [
             //group by the tuple sprint name and workitem id

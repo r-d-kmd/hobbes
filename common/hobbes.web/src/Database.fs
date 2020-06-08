@@ -417,7 +417,8 @@ namespace Hobbes.Web
                 (get id None |> Rev.Parse).Rev      
 
             member __.TryGetRev id = 
-                let statusCode,body = tryGet id None
+                if System.String.IsNullOrWhiteSpace id then failwith "Can't get revision of empty id"
+                let statusCode,body = tryGet [id] None
                 if statusCode >=200 && statusCode < 300 then
                     let revision = 
                         (body |> Rev.Parse).Rev
@@ -483,7 +484,7 @@ namespace Hobbes.Web
                 assert(id |> System.String.IsNullOrWhiteSpace |> not)
 
                 let request() = 
-                    let rev = [id] |> this.TryGetRev
+                    let rev = id |> this.TryGetRev
                     request Put true (Some doc) [id] rev None
                     
                 let status,body = 

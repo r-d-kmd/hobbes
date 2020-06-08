@@ -67,14 +67,14 @@ for:
       - npm install -s -g --unicode=false newman@4.6.1
       - sudo apt install conntrack
       
-      dotnet_csproj:
-        patch: true
-        file: '**\*.fsproj'
-        version: '{version}'
-        package_version: '{version}'
-        assembly_version: '{version}'
-        file_version: '{version}'
-        informational_version: '{version}'
+    dotnet_csproj:
+      patch: true
+      file: '**\*.fsproj'
+      version: '{version}'
+      package_version: '{version}'
+      assembly_version: '{version}'
+      file_version: '{version}'
+      informational_version: '{version}'
 
     before_build:
       - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --vm-driver=none --memory=4096

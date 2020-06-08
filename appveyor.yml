@@ -61,15 +61,18 @@ for:
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
     build_script:  
-      - fake build --target PushAllApps
+      - fake build --parallel 16 --target PushAllApps
     deploy_script:
       - echo "Deploying"
       #should run kustomize for production and apply the configuration
-      
+
   -
     branches:
       only:
         - development
+    environment:
+      GIT_ACCESS_TOKEN:
+        secure: bYL40RWEXYSqfLLEOipwrMfkLLotoTB8T5B0QSPheafq7p9jbqdHVaa9SUn+GYff
     install:
       - docker version
       - dotnet tool install --global fake-cli
@@ -87,10 +90,11 @@ for:
       - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --vm-driver=none --memory=4096
       - eval $(minikube docker-env) 
       - echo ${ENV_FILE} | kubectl apply -f -
+      - git config --global credential.helper store
 
     build_script:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-      - fake build --target Rebuild
+      - fake build --parallel 16 --target Rebuild
       
     test_script:
       - source functions.sh
@@ -105,6 +109,7 @@ for:
       #- newman run https://api.getpostman.com/collections/9463780-a7355a7a-5fe6-42b5-a1ed-877f3c9bc2f7?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url} --env-var "collectordburl"=${db_url} --env-var "pat"=${MASTER_KEY}
     
     deploy_script:
+      - ps: Add-Content "$HOME\.git-credentials" "https://$($env:GIT_ACCESS_TOKEN):x-oauth-basic@github.com`n"
       - git config --global user.email "hobbes_buildserver@kmd.dk"
       - git config --global user.name "Build server"
       - git checkout master

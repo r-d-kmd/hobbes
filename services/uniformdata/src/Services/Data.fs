@@ -30,7 +30,7 @@ module Data =
                     |> Json.deserialize<Cache.CacheRecord>
                     |> Some
                 with e ->
-                    eprintfn "Deserialization failed. %s %s" e.Message e.StackTrace
+                    eprintfn "Failed to deserialization (%s). %s %s" dataAndKey e.Message e.StackTrace
                     None
             match args with
             Some args ->
@@ -42,7 +42,7 @@ module Data =
                     |> cache.InsertOrUpdate key
                     Broker.Cache (Updated key)
                 with e ->
-                    Log.excf e "Failed to insert %s" key
+                    Log.excf e "Failed to insert %s" (dataAndKey.Substring(0,min 500 dataAndKey.Length))
                 200, "updated"
             | None -> 400,"Failed to parse payload"
         with e -> 

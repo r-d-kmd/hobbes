@@ -114,70 +114,66 @@ module Reader =
               .Replace("\"","\\\"") 
             + "\""
         let columnNames = 
-            (",", [
-                    "TimeStamp"
-                    "Area.AreaPath"
-                    "Iteration.IterationPath"
-                    "Iteration.IterationLevel1"
-                    "Iteration.IterationLevel2"
-                    "Iteration.IterationLevel3"
-                    "Iteration.IterationLevel4"
-                    "Iteration.StartDate"
-                    "Iteration.EndDate"
-                    "Iteration.Number"
-                ] @ (azureFields |> List.map fst)
-                |> List.map jsonString)
-            |> System.String.Join
+            [
+                "TimeStamp"
+                "Area.AreaPath"
+                "Iteration.IterationPath"
+                "Iteration.IterationLevel1"
+                "Iteration.IterationLevel2"
+                "Iteration.IterationLevel3"
+                "Iteration.IterationLevel4"
+                "Iteration.StartDate"
+                "Iteration.EndDate"
+                "Iteration.Number"
+            ] @ (azureFields |> List.map fst)
+            |> Array.ofList
         let rows = 
-            (",",rawdataCache
-                |> Seq.map(fun (row : AzureDevOpsAnalyticsRecord.Value) ->
-                    let iterationProperties =
-                        match (row.Iteration) with
-                        Some iteration ->
-                            [
-                               box iteration.IterationPath
-                               asObj iteration.IterationLevel1 
-                               asObj iteration.IterationLevel2 
-                               asObj iteration.IterationLevel3 
-                               asObj iteration.IterationLevel4
-                               asObj iteration.StartDate
-                               asObj iteration.EndDate
-                               iteration.Number |> box
-                            ]
-                        | None -> []
-                    let areaProperty =
-                        match row.Area with
-                        Some area -> box area.AreaPath
-                        | None -> null
-                    let properties = 
-                        azureFields
-                        |> List.map(fun (name, getter) ->
-                            getter row
-                        )
-                    let timeStamp =
-                        box timeStamp
-                    (",",
-                     (timeStamp::areaProperty::iterationProperties@properties)
-                     |> List.map(fun v -> 
-                        match v with 
-                        null -> "null"
-                        | :? string as s -> 
-                            jsonString s
-                        | :? System.DateTime as d -> 
-                            d |> string |> jsonString
-                        | :? System.DateTimeOffset as d -> 
-                            d.ToLocalTime() |> string |> jsonString
-                        | v -> string v
-                    )) |> System.String.Join
-                    |> sprintf "[%s]"
-                )) |> System.String.Join        
+            rawdataCache
+            |> Seq.map(fun (row : AzureDevOpsAnalyticsRecord.Value) ->
+                let iterationProperties =
+                    match (row.Iteration) with
+                    Some iteration ->
+                        [
+                           box iteration.IterationPath
+                           asObj iteration.IterationLevel1 
+                           asObj iteration.IterationLevel2 
+                           asObj iteration.IterationLevel3 
+                           asObj iteration.IterationLevel4
+                           asObj iteration.StartDate
+                           asObj iteration.EndDate
+                           iteration.Number |> box
+                        ]
+                    | None -> []
+                let areaProperty =
+                    match row.Area with
+                    Some area -> box area.AreaPath
+                    | None -> null
+                let properties = 
+                    azureFields
+                    |> List.map(fun (name, getter) ->
+                        getter row
+                    )
+                let timeStamp =
+                    box timeStamp
+                
+                (timeStamp::areaProperty::iterationProperties@properties)
+                |> List.map(fun v -> 
+                    match v with 
+                    null -> null
+                    | :? System.DateTime as d -> 
+                        d :> obj
+                    | :? System.DateTimeOffset as d -> 
+                        d.ToLocalTime() :> obj
+                    | _ -> v
+                ) |> Array.ofList
+            ) |> Array.ofSeq    
         let data = 
-            sprintf """{
-               "columnNames" : [%s],
-               "rows" : [%s],
-               "rowCount" : %d
-               }
-            """ columnNames rows (rawdataCache |> Seq.length)
+            {
+               ColumnNames = columnNames
+               Rows = rows
+               RowCount = rows.Length
+            } : Cache.DataResult
+            
         key, data
 
     //Reads data from the raw data store. This should be exposed as part of the API in some form 
@@ -196,9 +192,6 @@ module Reader =
         Log.logf "\n\n azure devops:%s \n\n" (source.JsonValue.ToString())        
         raw
 
-    //TODO should be async and in parallel-ish
-    //part of the API (see server to how it's exposed)
-    //we might want to store azureToken as an env variable
     let sync azureToken (source : AzureDevOpsSource.Root) = 
         
         let rec _read hashes url = 
@@ -208,7 +201,7 @@ module Reader =
                 |> request azureToken azureToken "GET" None                 
             if resp.StatusCode = 200 then
                 let body = 
-                    resp.Body |> Hobbes.Web.Http.readBody
+                    resp |> Http.readBody
                 let rawId =  (url |> hash)
                 let hashes = rawId::hashes
                 match body with

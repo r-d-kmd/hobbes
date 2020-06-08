@@ -11,7 +11,7 @@ let synchronize (source : GitSource.Root) token =
             match source.Dataset.ToLower() with
             _ ->
                 let commits = commits source.Account source.Project
-                let columnNames = [|"id";"Time";"Author"|]
+                let columnNames = [|"id";"Time";"Author";"Repository Name";"Branch Name"|]
                 let values =
                     commits
                     |> Seq.distinct
@@ -20,6 +20,8 @@ let synchronize (source : GitSource.Root) token =
                              c.Id :> obj
                              c.Date :> obj
                              c.Author :> obj
+                             c.RepositoryName :> obj
+                             c.BranchName :> obj
                          |]
                     ) |> Array.ofSeq
                 columnNames, values, (commits |> Seq.length)

@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gitcollector
+  name: git
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gitcollector
+      app: git
   template:
     metadata:
       labels:
-        app: gitcollector
+        app: git
     spec:
       containers:
       - envFrom:
         - secretRef:
             name: env
         imagePullPolicy: Never
-        image: collectors.git
-        name: collectors-git
+        image: git
+        name: hobbes-git
       restartPolicy: Always
 status: {}

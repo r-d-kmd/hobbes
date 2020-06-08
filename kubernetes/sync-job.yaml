@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sync
+spec:
+  template:
+    spec:
+        containers:
+        - envFrom:
+          - secretRef:
+              name: env
+          name: sync
+          imagePullPolicy: Never
+          image: syncronization
+        restartPolicy: Never
+  backoffLimit: 4

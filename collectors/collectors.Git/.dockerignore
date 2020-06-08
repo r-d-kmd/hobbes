@@ -1,7 +1,0 @@
-bin/
-deploy/
-**/.fake/
-**/.lib/
-**/.bin/
-**/.deploy/
-**/.obj/

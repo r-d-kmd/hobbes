@@ -1,26 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: azuredevopscollector
+  name: azuredevops
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: azuredevopscollector
+      app: azuredevops
   template:
     metadata:
       labels:
-        app: azuredevopscollector
+        app: azuredevops
     spec:
       containers:
-      - env:
-        - name: DB_SERVER_URL
-          value: http://collectordb-svc:5984/
-        imagePullPolicy: Never
-        image: collectors.azuredevops
-        name: collectors-azuredevops
-        envFrom:
+      - envFrom:
         - secretRef:
             name: env
+        imagePullPolicy: Never
+        image: azuredevops
+        name: hobbes-azuredevops
       restartPolicy: Always
 status: {}

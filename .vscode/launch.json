@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Hobbes debug",
+            "name": "Gateway debug",
             "type": "coreclr",
             "request": "attach",
             "processId": "${command:pickRemoteProcess}",
@@ -14,7 +14,7 @@
                 "pipeArgs": [
                     "exec",
                     "-i",
-                    "hobbes"
+                    "gateway"
                 ],
                 "debuggerPath": "/root/vsdbg/vsdbg",
                 "pipeCwd": "${workspaceRoot}",
@@ -34,7 +34,7 @@
                 "pipeArgs": [
                     "exec",
                     "-i",
-                    "azuredevopscollector"
+                    "azuredevops.worker"
                 ],
                 "debuggerPath": "/root/vsdbg/vsdbg",
                 "pipeCwd": "${workspaceRoot}",

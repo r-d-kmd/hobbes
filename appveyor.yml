@@ -1,12 +1,14 @@
 version: 2.0.{build} 
 image: 
   - Ubuntu
+
 branches:
   only:
     - development
 environment:
+  BUILD_ENV: AppVeyor
   ENV_FILE:
-    secure: 1EY0PW6l+4E/ZiuaRlC8WHb8v2J6o+YWksH852D5wIVfRnWBC6Ih6bPQMSwQ1Smm71oEOrsd8WJsabgdIkZIxinJ4chtLNBEjx2Wm32JuQziI+jvxc+Q+9YUtwrijB6xP2jHPA0n5wLEE1yHiicn6FFTFcXMJnOpizKcVkU9CgAywwJC+hXp17Vmp96jkfoDT9T+gPRSlB+N/GZubiaVXrSobSv0QTqyziDkBYRHg/DfElTuSkigaX/fDaF5OZ7jdM9QF0Th6uIHxW+OdBqb+xKZ09smfvWwkjo/1u8AsSnUR4+/mxeKXkV72w4py1zGPH4hXVOT+OOzWnSAvlR2Gwl7oAkOdoexi9X7o05Oajm5FLzFiqAzOz2ElBejPYdopqGV2xHhOAYOsLI32fq/P8NKX3gIYbRayLW/GCUE5biUDcBGVKeoU5qIMhoKF1Nhh5BOhvp/3OLKW68e+eejHD/yrN95P0yNhyzQQQl0bqhd6GPIBiFk/wPXtiqg6Pf2B8UXKzu2xtxBB2SiRRnkcZUjRi8KjlRGvIALYhWu9syCTN+TQIe6oxGh7f3j7tUyKFbATCAz6BJEz5mJtNeNCmTeUASvX0TkH7aMuumgd15nmdpSEy2sIS6gMjD026yUNU48PSBL91R71+hBFv0B6Ts89Azidc0x6GGX5204Sg4=
+    secure: 1EY0PW6l+4E/ZiuaRlC8WHb8v2J6o+YWksH852D5wIVfRnWBC6Ih6bPQMSwQ1Smm71oEOrsd8WJsabgdIkZIxinJ4chtLNBEjx2Wm32JuQziI+jvxc+Q+9YUtwrijB6xP2jHPA0n5wLEE1yHiicn6FFTFcXMJnOpizKcVkU9CgAywwJC+hXp17Vmp96jkfoDem7ZnOpSfUplJti7Vw55aHz4IkkP/G60d+9ak2cks3SHXE80y4ouOnULCZbr2JwekIbxOCJjgOBGeUu7X2hGNMd1u9z00M3iqyS6cwIwnlea5x8cGJrO2XYQ00PCUkzlmGjdeGN5S5In5e7T7VB2aUew383/xTgOzlnUXICso8TmCXibR7hoIm33sE7Uf+RlCboVQWvcBnnCFWmsFhenkl9w2x6Ub7/RUb+f+p8jHTLVtWp5OqDP08kvnBP+vcGWZtCDE8m1UGP5coniBWcrMJdGxanOl9TIicKHJaMpb3AAri9f8GZ8VkF1XaKRWnm/Vk9MA6AgHi2UeMJ7xHf8T8lgcyFMIOi8sPzjlipmQ8HTReazYOvrsdbQp0cMx+Ds1e054B11GrytHMOBt5dXBOu42s2X8rzp9Ish3WqMQVrF6FacQY/34n+ZiOE4Trq4D/7tuOZGlnSS3nscnt9h9dCtZK109jiSE9RyHViGIAgVtN/91bpxxcUME3epyKN4qU1/Afxmf6xGbyn0pjTz6cmPpPrh7eX/Ka5UIBBahoyk+v0b7zoVpqNQ/9y2F6xpnYqltqx5Ukkp2iSfqTPHx50dwWbHlVPhODfXdfXnEQ03vr6YDzNoJd2rGoyXH+mUzQuAPpq1N1KxtqoejEoyYuR7KGjzIiqitW+OWrlrfTII7BK4oThlgNTvFw3kOkOBLE8hKfA3k7TW2U0gDHrdWA==
   DOCKER_USER:
     secure: CbwbpNPxLV9AwhjSpIz7LA==
   DOCKER_PASS:
@@ -17,6 +19,8 @@ environment:
     secure: FMSdnVu01kCl/h3wLYiJfrZh9g8XCScl5sT98lVFr8KakwD9C5Lsqs01fn4o7DwX7zu+voHMzTqJ+eE+eTP/j63LoH5DHq81hW2w0Rq6EOEXg1EAUolVHsVerSUAXzfpwnvRHzagS9pD6MX7/n7813lHo9vFL4lIZeqmc1oK/eFy4trd2cGfwbrgxFY2NZnzpzY2R9vVHTCiIJuDS33BuQ==
   PM_APIKEY:
     secure: ujCKbQHfvl9fiBouXlRQH9yn/EgkW5nFHauiPeNbSwu7eJm4Y0S4It0+6DVwM/CjxwTUKof64cXLgVzEBmnSi6JfqB2UZRMeY95HGSK/JOM=
+  MASTER_KEY:
+    secure: CiAPUpATu+acH602aFC2ow==
   # Disable Powershell on Linux machines
   APPVEYOR_YML_DISABLE_PS_LINUX: "true"
   # Changes ownership of minikube config dirs to running user
@@ -27,54 +31,81 @@ environment:
   # Disable prompts for CI
   MINIKUBE_WANTUPDATENOTIFICATION: "false"
   MINIKUBE_WANTREPORTERRORPROMPT: "false"
+  CONFIGURATION: Debug
 
 services:
   - docker
+  
+for:
+  -
+    branches:
+      only:
+        - master
+    environment: 
+      CONFIGURATION: Release
+    dotnet_csproj:
+      patch: true
+      file: '**\*.fsproj'
+      version: '{version}'
+      package_version: '{version}'
+      assembly_version: '{version}'
+      file_version: '{version}'
+      informational_version: '{version}'
+    install:
+      - docker version
+      - dotnet tool install --global fake-cli
+      - dotnet tool install --global paket
+      - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
+      - chmod +x kubectl
+      - sudo mv kubectl /usr/local/bin/
+    before_build:
+      - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
+    build_script:  
+      - fake build --target PushAllApps
+    deploy_script:
+      - echo "Deploying"
+      #should run kustomize for production and apply the configuration
+  -
+    branches:
+      only:
+        - development
+    install:
+      - docker version
+      - dotnet tool install --global fake-cli
+      - dotnet tool install --global paket
+      - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
+      - chmod +x kubectl
+      - sudo mv kubectl /usr/local/bin/
+      - npm install -s -g --unicode=false newman@4.6.1
+      - curl -sL https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 -o minikube
+      - chmod +x minikube
+      - sudo mv minikube /usr/local/bin/
+      - sudo apt install conntrack
 
-install:
-  - docker version
-  - dotnet tool install --global fake-cli
-  - npm install -s -g --unicode=false newman@4.6.1
-  
-  - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
-  - chmod +x kubectl
-  - sudo mv kubectl /usr/local/bin/
-  
-  - curl -sL https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 -o minikube
-  - chmod +x minikube
-  - sudo mv minikube /usr/local/bin/
+    before_build:
+      - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --vm-driver=none --memory=4096
+      - eval $(minikube docker-env) 
+      - echo ${ENV_FILE} | kubectl apply -f -
 
-  - sudo apt install conntrack
-  
-before_build:
-  - mkdir "c:\projects\hobbes\hobbes.server\db\data"
-  - mkdir "c:\projects\hobbes\collectors\db\data"
-  - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --vm-driver=none --memory=4096
-  - eval $(minikube docker-env) 
-  - echo ${ENV_FILE} | kubectl apply -f -
-
-build_script:
-  - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-  - fake build
-  
-test_script:
-  - cd kubernetes
-  - kubectl apply -f db-deployment.yaml,db-svc.yaml,db-volume.yaml,hobbes-deployment.yaml,hobbes-svc.yaml,collectordb-volume.yaml,collectordb-deployment.yaml,collectordb-svc.yaml,azuredevops-deployment.yaml,azuredevops-svc.yaml
-  - while [[ $(kubectl get pods -l app=db -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for database" && sleep 1; done
-  #- source ../functions.sh
-  #- logs db -f
-  - while [[ $(kubectl get pods -l app=hobbes-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for hobbes-server" && sleep 1; done
-  - while [[ $(kubectl get pods -l app=collectordb -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for collector database" && sleep 1; done
-  - while [[ $(kubectl get pods -l app=azuredevopscollector -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting azuredevops collector" && sleep 1; done
-  - kubectl get all
-  - cd ../
-  - front_url=$(minikube ip)":30080"
-  - db_url=$(minikube ip)":30084"
-  - collectordb_url=$(minikube ip)":30094"
-  - curl http://${front_url}/init
-  - NAME=$(kubectl get pods -l app=hobbes-server -o name) 
-  - newman run https://api.getpostman.com/collections/4127812-d535bce5-ad9a-4346-acb4-311c8443c478?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url} --env-var "collectordburl"=${collectordb_url}
-  - newman run https://api.getpostman.com/collections/9463780-a7355a7a-5fe6-42b5-a1ed-877f3c9bc2f7?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url} --env-var "collectordburl"=${collectordb_url} --env-var "pat"=${HOBBES_PAT}
- 
-deploy_script:
-  - fake build --target pushtodocker
+    build_script:
+      - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
+      - fake build --target Rebuild
+      
+    test_script:
+      - source functions.sh
+      - export APP=(configurations gateway uniformdata azuredevops calculator syncronization db)
+      - start
+      - awaitRunningState
+      - front_url=$(minikube ip)":30080"
+      - db_url=$(minikube ip)":30084"
+      - curl http://${front_url}/ping
+      - NAME=$(kubectl get pods -l app=gateway -o name) 
+      #- newman run https://api.getpostman.com/collections/4127812-d535bce5-ad9a-4346-acb4-311c8443c478?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url} --env-var "collectordburl"=${db_url}
+      #- newman run https://api.getpostman.com/collections/9463780-a7355a7a-5fe6-42b5-a1ed-877f3c9bc2f7?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url} --env-var "collectordburl"=${db_url} --env-var "pat"=${MASTER_KEY}
+    
+    deploy_script:
+      - git config --global user.email "hobbes_buildserver@kmd.dk"
+      - git config --global user.name "Build server"
+      - git checkout master
+      - git merge development
+      - git push origin master

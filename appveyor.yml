@@ -65,6 +65,7 @@ for:
     deploy_script:
       - echo "Deploying"
       #should run kustomize for production and apply the configuration
+      
   -
     branches:
       only:

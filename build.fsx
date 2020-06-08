@@ -190,14 +190,16 @@ let shouldRebuildDependencies =
     hasChanged PaketDependencies
 
 let shouldRebuildHobbesSdk =
-     shouldRebuildGenericDockerImages 
-     || hasDockerStageChanged DockerStage.BaseSdk
-     || shouldRebuildDependencies
+     (not skipSdkBuilds) &&
+     (shouldRebuildGenericDockerImages 
+      || hasDockerStageChanged DockerStage.BaseSdk
+      || shouldRebuildDependencies)
 
 let shouldRebuildAppSdk =
-    shouldRebuildHobbesSdk 
-    || hasDockerStageChanged DockerStage.AppSdk
-    || ((not skipSdkBuilds) && (hasChanged (Common CommonLib.Any)))
+    (not skipSdkBuilds) &&
+    (shouldRebuildHobbesSdk 
+     || hasDockerStageChanged DockerStage.AppSdk
+     || ((not skipSdkBuilds) && (hasChanged (Common CommonLib.Any))))
 
 let shouldRebuildService name = 
     shouldRebuildCommon CommonLib.Any
@@ -242,7 +244,9 @@ let services =
         let workingDir = 
             file.Directory.Parent.FullName
         
-        Path.GetFileNameWithoutExtension file.Name, workingDir
+        let n = Path.GetFileNameWithoutExtension file.Name
+        if n.StartsWith "hobbes." then n.Remove(0,"hobbes.".Length) else n
+        , workingDir
     )
 
 let workers = 
@@ -274,8 +278,8 @@ let genricImages =
 
 let appTargets : seq<_> -> _ = 
     Seq.map(fun (app : App) ->
-        let name,appType = app.NameAndType         
-        name,"Build" + appType + (name.ToLower())
+        let name,_ = app.NameAndType         
+        name,(name.ToLower())
     ) >> Map.ofSeq
 
 let serviceTargets = 
@@ -293,13 +297,13 @@ let workerTargets =
 let setupServiceTarget serviceName = 
     let shouldRebuild = shouldRebuildService serviceName
     let target = serviceTargets.[serviceName]
-    "PreBuildServices" =?> (target, shouldRebuild) |> ignore
+    "PreBuildServices" ==> target |> ignore
     target =?> ("BuildServices" , shouldRebuild) |> ignore
 
 let setupWorkerTarget workerName = 
     let shouldRebuild = shouldRebuildWorker workerName
     let target = workerTargets.[workerName]
-    "PreBuildWorkers" =?> (target, shouldRebuild) |> ignore
+    "PreBuildWorkers" ==> target |> ignore
     target =?> ("BuildWorkers" , shouldRebuild) |> ignore
 
 let buildApp (app : App) workingDir =
@@ -338,8 +342,9 @@ let buildApp (app : App) workingDir =
             run "docker" workingDir args
         )
     
-    let buildTargetName = "Build" + appType + tag 
-    let pushTargetName = "Push" + appType + tag 
+    let buildTargetName = tag 
+    let pushTargetName = "Push" + tag 
+    
     Target.create buildTargetName build
     Target.create pushTargetName push
     "PreBuild" + appType + "s" ==> buildTargetName |> ignore
@@ -353,8 +358,8 @@ Target.create "BuildCommon" ignore
 Target.create "BuildGenericImages" ignore
 Target.create "PushGenericImages" ignore
 Target.create "BuildServices" ignore
-Target.create "PreBuildServices" ignore
 Target.create "BuildWorkers" ignore
+Target.create "PreBuildServices" ignore
 Target.create "PreBuildWorkers" ignore
 Target.create "PushAllApps" ignore
 
@@ -376,7 +381,7 @@ Target.create "CleanCommon" (fun _ ->
 )
 
 Target.create "Dependencies" (fun _ ->
-  let outputDir = "./docker/tmp"
+  let outputDir = "./docker/build"
   let paketDir = outputDir + "/.paket"
   Shell.cleanDirs 
       [
@@ -409,7 +414,7 @@ genricImages
     
     Target.create buildTargetName (fun _ ->  buildImage (sprintf "Dockerfile.%s" name) name)
     Target.create pushTargetName (fun _ ->  pushImage name)
-    buildTargetName  ==> pushTargetName |> ignore
+    buildTargetName  ==> pushTargetName ==> "PushGenericImages" |> ignore
 )
 
 let commonTargetName common =
@@ -502,7 +507,7 @@ workers
 "BuildServices" ==> "Build"
 "BuildWorkers" ==> "Build"
 "BuildAppSdk" ==> "PushAppSdk" 
-"PushHobbesSdk" ==> "PushAppSdk"
+"BuildHobbesSdk" ==> "PushHobbesSdk" ==> "PushAppSdk"
 "ForceBuildServices" ==> "Rebuild"
 "ForceBuildWorkers" ==> "Rebuild"
 

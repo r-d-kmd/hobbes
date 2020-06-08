@@ -1,0 +1,9 @@
+{
+  "_id": "_design/default",
+  "views": {
+    "bySource": {
+      "map": "function (doc) {\n             var srcproj = doc.searchKey || (doc.source + (doc.project || doc.dataset));\n emit(srcproj, doc._id);\n}"
+    }
+  },
+  "language": "javascript"
+}

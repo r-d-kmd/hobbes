@@ -19,11 +19,8 @@ function services(){
     local APP_NAME=""
     for APP in $(find ${SCRIPT_DIR}/services -name *.fsproj | rev | cut -d'/' -f1 | rev)
     do
-        if [[ "$APP" = hobbes.* ]] 
-        then
-            APP_NAME=$(echo $APP | cut -d'.' -f 2 | tr '[:upper:]' '[:lower:]')
-            APPS+=($APP_NAME)
-        fi
+        APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
+        APPS+=($APP_NAME)
     done 
     APP_NAME=""
     for APP in $(find ${SCRIPT_DIR}/workers -name *.fsproj | rev | cut -d'/' -f1 | rev)
@@ -166,6 +163,7 @@ function start() {
     done
     for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
     kubectl apply -f rabbitmq-svc.yaml
+    kubectl apply -f rabbitmq-controller.yaml
 
     cd $CURRENT_DIR
 }
@@ -240,6 +238,15 @@ function awaitRunningState(){
 
 function run(){
     kubectl run -i --tty temp-$1 --image kmdrd/$1 
+}
+
+function restartApp(){
+    delete "$1" && logs "$1" -f
+}
+
+function rebuildApp(){
+    fake build --target "$1"
+    restartApp $1
 }
 
 function sync(){

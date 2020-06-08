@@ -94,6 +94,7 @@ module Clustering =
                 Series.applyLevel fst (Stats.max)
             | AST.Min-> 
                 Series.applyLevel fst (Stats.min)
+           
 
         frame
         |> Frame.sliceCols allOther
@@ -234,6 +235,7 @@ module DataStructures =
                              aggregate (Stats.movingMax windowSize)
                         | AST.Min -> 
                              aggregate (Stats.movingMin windowSize)
+                       
                     f 
                 | AST.Expanding(reduction, columnExpression) -> 
                     let aggregate = aggregate (compileExpression columnExpression)
@@ -253,7 +255,8 @@ module DataStructures =
                      | AST.Max -> 
                          aggregate Stats.expandingMax 
                      | AST.Min -> 
-                         aggregate Stats.expandingMin 
+                         aggregate Stats.expandingMin
+                    
             match expr with
             AST.Number n ->
                let n = 
@@ -704,7 +707,9 @@ module DataStructures =
                                  | AST.Max -> 
                                       Stats.max
                                  | AST.Min -> 
-                                      Stats.min ))
+                                      Stats.min 
+                                 
+                                 ))
 
                 match rowKeyExpression with
                 AST.ComputationExpression.ColumnName name ->

@@ -17,11 +17,11 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.helpers", "common\ho
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.messaging", "common\hobbes.messaging\src\hobbes.messaging.fsproj", "{CCB5A2AB-E707-498F-B6B2-CF529105451F}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.configurations", "services\hobbes.configurations\src\hobbes.configurations.fsproj", "{77A8AE02-8252-43BF-ABF0-CD73073910A5}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.configurations", "services\configurations\src\configurations.fsproj", "{77A8AE02-8252-43BF-ABF0-CD73073910A5}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.gateway", "services\hobbes.gateway\src\hobbes.gateway.fsproj", "{6D2F467E-4E86-46BD-8AAA-D9CCE165F402}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.gateway", "services\gateway\src\gateway.fsproj", "{6D2F467E-4E86-46BD-8AAA-D9CCE165F402}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.uniformdata", "services\hobbes.uniformdata\src\hobbes.uniformdata.fsproj", "{2B2B57E3-076D-4F57-A927-90D58C49890A}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.uniformdata", "services\uniformdata\src\uniformdata.fsproj", "{2B2B57E3-076D-4F57-A927-90D58C49890A}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "azureDevOps.worker", "workers\azuredevops.worker\src\azureDevOps.worker.fsproj", "{331CC185-3292-4B55-BCFB-FBC33B77741E}"
 EndProject

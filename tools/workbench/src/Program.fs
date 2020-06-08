@@ -166,6 +166,7 @@ let main args =
                     transformations 
                     |> Seq.iter(fun doc ->
                         Log.logf "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
+                        printfn "DOCUMENT = %A" doc
                         try
                             Http.Request(urlTransformations, 
                                          httpMethod = "PUT",

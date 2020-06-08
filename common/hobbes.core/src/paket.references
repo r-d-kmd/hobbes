@@ -1,0 +1,4 @@
+group core
+    Accord.MachineLearning
+    Deedle
+    FParsec

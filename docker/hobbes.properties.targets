@@ -1,0 +1,22 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <CommonLibPath>/.lib/</CommonLibPath>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <CommonLibPath>/.lib/</CommonLibPath>
+    <IncludeCore Condition="$(IncludeCore) == ''">True</IncludeCore>
+    <IncludeHelpers Condition="$(IncludeHelpers) == ''">True</IncludeHelpers>
+    <IncludeWeb Condition="$(IncludeWeb) == ''">True</IncludeWeb>
+    <IncludeMessaging Condition="$(IncludeMessaging) == ''">True</IncludeMessaging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Condition="$(IncludeCore) == 'True'"      Include="hobbes.core"><HintPath>$(CommonLibPath)hobbes.core.dll</HintPath></Reference>
+    <Reference Condition="$(IncludeHelpers) == 'True'"   Include="hobbes.helpers"><HintPath>$(CommonLibPath)hobbes.helpers.dll</HintPath></Reference>
+    <Reference Condition="$(IncludeWeb) == 'True'"       Include="hobbes.web"><HintPath>$(CommonLibPath)hobbes.web.dll</HintPath></Reference>
+    <Reference Condition="$(IncludeMessaging) == 'True'" Include="hobbes.messaging"><HintPath>$(CommonLibPath)hobbes.messaging.dll</HintPath></Reference>
+  </ItemGroup>
+</Project>

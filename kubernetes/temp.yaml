@@ -1,20 +1,277 @@
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
+apiVersion: v1
+kind: Service
 metadata:
-  name: managed-premium-retain
-provisioner: kubernetes.io/azure-disk
-reclaimPolicy: Retain
-parameters:
-  storageaccounttype: Premium_LRS
-  kind: Managed
-
+  name: configurations-svc
+spec:
+  ports:
+  - nodePort: 30093
+    port: 8085
+    targetPort: 8085
+  selector:
+    app: configurations
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-svc
+spec:
+  ports:
+  - name: "5984"
+    nodePort: 30084
+    port: 5984
+    targetPort: 5984
+  selector:
+    app: db
+  type: NodePort
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-svc
+spec:
+  ports:
+  - nodePort: 30080
+    port: 80
+    targetPort: 8085
+  selector:
+    app: gateway
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    component: rabbitmq
+  name: rabbitmq-service
+spec:
+  ports:
+  - port: 5672
+  selector:
+    app: taskQueue
+    component: rabbitmq
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: uniformdata-svc
+spec:
+  ports:
+  - nodePort: 30089
+    port: 8085
+    targetPort: 8085
+  selector:
+    app: uniformdata
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azuredevops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: azuredevops
+  template:
+    metadata:
+      labels:
+        app: azuredevops
+    spec:
+      containers:
+      - envFrom:
+        - secretRef:
+            name: env
+        image: azuredevops
+        imagePullPolicy: Never
+        name: hobbes-azuredevops
+      restartPolicy: Always
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calculator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: calculator
+  template:
+    metadata:
+      labels:
+        app: calculator
+    spec:
+      containers:
+      - envFrom:
+        - secretRef:
+            name: env
+        image: calculator
+        imagePullPolicy: Never
+        name: hobbes-calculator
+      restartPolicy: Always
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: configurations
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: configurations
+  template:
+    metadata:
+      labels:
+        app: configurations
+    spec:
+      containers:
+      - env: null
+        envFrom:
+        - secretRef:
+            name: env
+        image: hobbes.configurations
+        imagePullPolicy: Never
+        name: hobbes-configurations
+      restartPolicy: Always
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+spec:
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+      - env:
+        - name: COUCHDB_PASSWORD
+          value: password
+        - name: COUCHDB_USER
+          value: admin
+        image: kmdrd/couchdb
+        imagePullPolicy: Always
+        name: db
+        ports:
+        - containerPort: 5984
+        volumeMounts:
+        - mountPath: /opt/couchdb/data
+          name: db-storage
+      restartPolicy: Always
+      volumes:
+      - name: db-storage
+        persistentVolumeClaim:
+          claimName: db-volume-claim
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+      - envFrom:
+        - secretRef:
+            name: env
+        image: hobbes.gateway
+        imagePullPolicy: Never
+        name: gateway
+        resources: {}
+      restartPolicy: Always
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: git
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: git
+  template:
+    metadata:
+      labels:
+        app: git
+    spec:
+      containers:
+      - envFrom:
+        - secretRef:
+            name: env
+        image: git
+        imagePullPolicy: Never
+        name: hobbes-git
+      restartPolicy: Always
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uniformdata
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: uniformdata
+  template:
+    metadata:
+      labels:
+        app: uniformdata
+    spec:
+      containers:
+      - env: null
+        envFrom:
+        - secretRef:
+            name: env
+        image: hobbes.uniformdata
+        imagePullPolicy: Never
+        name: hobbes-uniformdata
+      restartPolicy: Always
+status: {}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  labels:
+    volume: db-volume
+  name: db-volume
+spec:
+  accessModes:
+  - ReadWriteMany
+  capacity:
+    storage: 3Gi
+  hostPath:
+    path: data
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: azure-managed-disk
+  name: db-volume-claim
 spec:
-  accessModes: ReadWriteOnce
-  storageClassName: managed-premium-retain
+  accessModes:
+  - ReadWriteMany
   resources:
     requests:
-      storage: 5Gi
+      storage: 3Gi
+  selector:
+    matchLabels:
+      volume: db-volume
+  storageClassName: standard

@@ -17,7 +17,7 @@ spec:
         - secretRef:
             name: env
         imagePullPolicy: Never
-        image: hobbes.gateway
+        image: gateway
         name: gateway
         resources: {}
       restartPolicy: Always

@@ -20,7 +20,17 @@ module Types =
         | EzEnergy 
         | Gandalf
         | Momentum
-        with override this.ToString() = 
+        with member p.Account
+                with get() =
+                    match p with
+                    Flowerpot
+                    | UVskole
+                    | Nexus                      
+                    | EzEnergy 
+                    | Gandalf
+                    | Momentum -> "kmddk"
+                    | Delta -> "time-payroll-kmddk"
+             override this.ToString() = 
                match this with
                Flowerpot -> "Flowerpot"
                | UVskole -> "UVskole"
@@ -41,14 +51,16 @@ module Types =
                AzureDevOps p ->
                    sprintf """{
                        "name" : "azure devops",
+                       "account" : "%s",
                        "project" :"%s"
-                   }""" (p.ToString())
+                   }""" (p.Account) (p.ToString())
                | Git (dataset,p) ->
                    sprintf """{
                        "name" : "git",
                        "project" : "%s",
+                       "account" : "%s",
                        "dataset" : "%s"
-                   }""" (p.ToString()) (dataset.ToString())
+                   }""" (p.ToString()) (p.Account) (dataset.ToString())
                | Jira _
                | None -> failwith "Don't know what to do"
              member this.Name 

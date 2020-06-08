@@ -1,4 +1,5 @@
 FSharp.Core
+Newtonsoft.Json
 
 group web
     FSharp.Data

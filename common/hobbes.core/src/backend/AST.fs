@@ -21,7 +21,6 @@ module AST =
         | Max
         | Min
 
-
     type BinaryOperator = 
         Addition         
         | Subtraction    

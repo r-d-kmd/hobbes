@@ -1,96 +1,70 @@
 namespace Hobbes.Web
 
-open FSharp.Data
 open Hobbes.Helpers.Environment
+open Hobbes.Helpers
+open Newtonsoft.Json
 
 module Cache =
-    [<Literal>]
-    let internal DataResultString = """ {
-            "_id": "khkj",
-            "columnNames" : ["a","b"], 
-            "rows" : [[0,"hk",null,2.,3,4,"2019-01-01"],
-                      [0.4,1.2,2.4,3.5,4.1],
-                      ["x","y","z"],
-                      ["2019-01.01","2019-01.01"]
-                     ],
-            "rowCount" : 4
-        } """
-
-    [<Literal>]
-    let private UpdateArgumentsString = """["cache key",""" + DataResultString + "]"
-
-    [<Literal>]
-    let internal CacheRecordString = 
-        """{
-            "_id" : "name",
-            "timeStamp" : "24-09-2019",
-            "data" : """ + DataResultString + """
-        }"""
-
+    type DataResult = 
+        {
+            [<JsonProperty("columnNames")>]
+            ColumnNames : string []
+            [<JsonProperty("rows")>]
+            Rows : obj [][]
+            [<JsonProperty("rowCount")>]
+            RowCount : int
+        }
     
-    type DataResult = JsonProvider<DataResultString>
-    type CacheRecord = JsonProvider<CacheRecordString>
-    type UpdateArguments = JsonProvider<UpdateArgumentsString>
+    type CacheRecord = 
+        {
+            [<JsonProperty("_id")>]
+            CacheKey : string
+            [<JsonProperty("timestamp")>]
+            TimeStamp : System.DateTime option
+            [<JsonProperty("data")>]
+            Data : DataResult
+        }
 
     let key (source : string) = 
         let whitespaceToRemove = [|' ';'\t';'\n';'\r'|]
         source.Split(whitespaceToRemove,System.StringSplitOptions.RemoveEmptyEntries)
         |> System.String.Concat
         |> hash
+    
+      
+    let private createCacheRecord key (data : DataResult) =
 
-    let private createCacheRecord key data =
-        //fail if the data is invalid in form
-        let dataRecord = data |> DataResult.Parse
-        assert(dataRecord.ColumnNames |> isNull |> not)
-        assert(dataRecord.RowCount = dataRecord.Rows.Length)
-        
-        let timeStamp = System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)
-        let record = 
-            sprintf """{
-                        "_id" : "%s",
-                        "timeStamp" : "%s",
-                        "data" : %s
-                    }""" key
-                         timeStamp
-                         data
+        let timeStamp = System.DateTime.Now
+        {
+            CacheKey =  key
+            TimeStamp = Some timeStamp
+            Data = data
+        }
 
-        let cacheRecord = record |> CacheRecord.Parse
-
-        assert(cacheRecord.Id = key)
-        assert(cacheRecord.TimeStamp = timeStamp)
-        cacheRecord
-
-    let readData (cacheRecord : CacheRecord.Root) = 
+    let readData (cacheRecordText : string) =
+        let cacheRecord = Json.deserialize<CacheRecord> cacheRecordText 
         let data = cacheRecord.Data
         let columnNames = data.ColumnNames
         
         data.Rows
         |> Seq.mapi(fun index row ->
-            index,row.JsonValue.AsArray()
-                  |> Seq.map(fun v ->
-                      match v with
-                      JsonValue.String s -> box s
-                      | JsonValue.Null -> null
-                      | JsonValue.Number n -> box n
-                      | JsonValue.Float f -> box f
-                      | JsonValue.Boolean b -> box b
-                      | v -> failwithf "Only simple values expected but got %A" v
-                  ) |> Seq.zip columnNames
+            index,(row
+                   |> Seq.zip columnNames)
         )
 
     type ICacheProvider = 
-         abstract member InsertOrUpdate : string -> DataResult.Root -> unit
-         abstract member Get : string -> CacheRecord.Root option
+         abstract member InsertOrUpdate : string -> DataResult -> unit
+         abstract member Get : string -> CacheRecord option
 
     type Cache private(provider : ICacheProvider) =
-        static let parser = CacheRecord.Parse
+        static let parser = Json.deserialize<CacheRecord>
         new(name) =  
             let db = 
                 Database.Database(name + "cache", parser, Log.loggerInstance)
             
             Cache {new ICacheProvider with 
-                            member __.InsertOrUpdate key doc = 
-                                    doc.JsonValue.ToString()
+                            member __.InsertOrUpdate key data = 
+                                    data
                                     |> createCacheRecord key 
                                     |> db.InsertOrUpdate 
                                     |> Log.debugf "Inserted data: %s"
@@ -101,13 +75,12 @@ module Cache =
                                 |> db.TryGet }
         new(service : Http.CacheService -> Http.Service) =
             Cache {new ICacheProvider with 
-                            member __.InsertOrUpdate key doc = 
-                                doc.JsonValue.ToString() 
-                                |> sprintf """["%s",%s]""" key
-                                |> Http.post (Http.Update |> service) id 
+                            member __.InsertOrUpdate key data = 
+                                data
+                                |> createCacheRecord key 
+                                |> Http.post (Http.Update |> service)
                                 |> ignore
                                 
-                            
                             member __.Get (key : string) = 
                                 match Http.get (key |> Http.CacheService.Read |> service) parser with
                                 Http.Success d -> Some d

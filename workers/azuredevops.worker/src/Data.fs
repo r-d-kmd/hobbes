@@ -131,54 +131,16 @@ module Data =
        | String of string
        | Array of seq<Value>
 
-    let createDataRecord key (data : string) keyValue =
-        
-        let data = if isNull data then data else data.Replace("\\", "\\\\")
-        let timeStamp = System.DateTime.Now.ToString (System.Globalization.CultureInfo.CurrentCulture)
-        let record = 
-            (sprintf """{
-                        "_id" : "%s",
-                        "timeStamp" : "%s"
-                        %s%s
-                    }""" key
-                         timeStamp
-                         (if data |> isNull then 
-                              "" 
-                          else 
-                              sprintf """, "data": %s""" data)
-                          (match keyValue with
-                          [] -> ""
-                          | values ->
-                              let rec getValue  = 
-                                  function
-                                      Object s ->
-                                          s
-                                      | Int i -> 
-                                          string i
-                                      | Float f ->
-                                          string f
-                                      | String s ->
-                                          sprintf """ "%s" """ s
-                                      | Array a ->
-                                          System.String.Join(",",a |> Seq.map(getValue))
-                                          |> sprintf "[%s]"
-                              System.String.Join(",",
-                                  values
-                                  |> Seq.map(fun (k,v) -> 
-                                     v
-                                     |> getValue
-                                     |> sprintf """ %A : %s """ k
-                                  )
-                              ) |> sprintf """,%s"""
-                         )
-            )
-
-        let cacheRecord = record |> Cache.CacheRecord.Parse
-
-        assert(cacheRecord.Id = key)
-        assert(cacheRecord.TimeStamp = timeStamp)
-
+    let createDataRecord key (data : Cache.DataResult) =
+        let timeStamp = System.DateTime.Now
+        let record : Cache.CacheRecord= 
+            {
+                CacheKey = key
+                TimeStamp = Some timeStamp
+                Data = data
+            } 
         record
+
 
     type private RawList = JsonProvider<"""["id_a","id_b"]""">
     let private db = 

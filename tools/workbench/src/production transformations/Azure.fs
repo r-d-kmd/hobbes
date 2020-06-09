@@ -34,4 +34,4 @@ module Azure =
                                 (Else
                                     (!!> "NotDone"))
                                  )                                     
-        ]|> Transformation.Create "stateRenaming"
+        ]|> createTransformation "stateRenaming"

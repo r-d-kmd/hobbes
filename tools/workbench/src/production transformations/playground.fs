@@ -12,7 +12,7 @@ module Playground =
         [
             group by ([SprintName.Expression; WorkItemId.Expression]) => 
                 ( maxby ChangedDate.Expression)
-        ] |> Transformation.Create "foldBySprint"
+        ] |> createTransformation "foldBySprint"
 
     let foldByMonth = 
         [
@@ -31,4 +31,4 @@ module Playground =
                   (!> "WorkItemType")
                   //count the number of workitemids
                   Count WorkItemId.Expression
-        ] |> Transformation.Create "foldByMonth"
+        ] |> createTransformation "foldByMonth"

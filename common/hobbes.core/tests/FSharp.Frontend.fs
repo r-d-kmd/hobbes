@@ -65,12 +65,14 @@ module Frontend =
         >> Map.find name
 
     let compareColumns expected (actual : Column) = 
+        let actual = actual |> Seq.sortBy fst
+        let expected = expected |> Seq.sortBy fst
         Assert.True((expected |> Seq.length) = (actual |> Seq.length), sprintf "%A and %A have different lengths" expected actual)
         actual
         |> Seq.iter2(fun (rowKeyExpected,rowValueExpected) (rowKeyActual,rowValueActual) -> 
             Assert.True(rowKeyExpected.Equals rowKeyActual,sprintf "%A and %A have different keys. %A <> %A" expected actual rowKeyExpected rowKeyActual)
             Assert.True((rowValueExpected = rowValueActual), sprintf "Expected %A but got %A" rowValueExpected rowValueActual)
-        ) expected 
+        ) expected
 
     let assertTablesEqual (expected : Table) (actual : Table) =
         Assert.Equal(expected |> Seq.length, actual |> Seq.length)
@@ -182,6 +184,7 @@ module Frontend =
 
     [<Fact>]
     let onlyReturnSomeDateTime() =
+    
         let step = 3
         let date = System.DateTime(2019,8,25).AddDays(float step)
         let statement = only (!> "Sprint Start Date" == date) |> parse

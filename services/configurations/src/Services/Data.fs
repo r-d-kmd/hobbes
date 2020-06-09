@@ -110,7 +110,7 @@ module Data =
     [<Post ("/transformation", true)>]
     let storeTransformation (transformation : string) =
         let trans = TransformationRecord.Parse transformation
-
+        eprintfn "Transformation: %s" transformation
         assert(System.String.IsNullOrWhiteSpace(trans.Id) |> not)
         assert(trans.Lines |> Array.isEmpty |> not)
 

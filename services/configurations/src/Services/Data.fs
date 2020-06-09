@@ -10,7 +10,7 @@ open Hobbes.Web.RawdataTypes
 module Data =
     
     let configurations = Database.Database("configurations", Config.Parse, Log.loggerInstance)
-    let transformations = Database.Database("transformations", TransformationRecord.Parse, Log.loggerInstance)
+    let transformations = Database.Database("transformations", Hobbes.Helpers.Json.deserialize<Transformation>, Log.loggerInstance)
    
     let inline private listConfigurations () = 
         configurations.List()
@@ -26,7 +26,7 @@ module Data =
                   |> Seq.map(fun config ->
                     config.Source.Name 
                   ) |> Seq.distinct
-                  |> Seq.filter(fun s -> System.String.IsNullOrWhiteSpace s |> not)
+                  |> Seq.filter(System.String.IsNullOrWhiteSpace >> not)
                   |> Seq.map (sprintf "%A")
             ) |> System.String.Join
             |> sprintf "[%s]"
@@ -48,7 +48,8 @@ module Data =
         match configurations.TryGet configurationName with
         None -> 404, sprintf "Configuration (%s) not found" configurationName
         | Some c -> 200, c.JsonValue.ToString()
-    let mutable (time,dependencies : Map<string,seq<TransformationRecord.Root>>) = (System.DateTime.MinValue,Map.empty)
+
+    let mutable (time,dependencies : Map<string,seq<Transformation>>) = (System.DateTime.MinValue,Map.empty)
     [<Get ("/dependingtransformations/%s")>]
     let dependingTransformations (cacheKey : string) =
         if cacheKey.EndsWith(":") then 404, "Invalid cache key"
@@ -74,16 +75,16 @@ module Data =
                         [] -> []
                         | h::tail ->
                             tail
-                            |> List.fold(fun (lst : (string * TransformationRecord.Root) list) t ->
+                            |> List.fold(fun (lst : (string * Transformation) list) t ->
                                 let prevKey, prevT = lst |> List.head
-                                (prevKey + ":" + prevT.Id,t) :: lst
+                                (prevKey + ":" + prevT.Name,t) :: lst
                             ) [keyFromConfig configuration,h]
                     ) |> Seq.groupBy fst
                     |> Seq.map(fun (key,deps) ->
                         key,
                             deps 
                             |> Seq.map snd 
-                            |> Seq.distinctBy(fun t -> t.Id)
+                            |> Seq.distinctBy(fun t -> t.Name)
                     ) |> Map.ofSeq
             match dependencies |> Map.tryFind cacheKey with
             None -> 404,sprintf "No dependencies found for key (%s)" cacheKey
@@ -95,7 +96,7 @@ module Data =
     let transformation (transformationName : string) =
         match transformations.TryGet transformationName with
         None -> 404, sprintf "Transformation (%s) not found" transformationName
-        | Some c -> 200, c.JsonValue.ToString()
+        | Some transformation -> 200, transformation |> Hobbes.Helpers.Json.serialize
 
     [<Post ("/configuration", true)>]
     let storeConfiguration (configuration : string) =
@@ -109,10 +110,15 @@ module Data =
 
     [<Post ("/transformation", true)>]
     let storeTransformation (transformation : string) =
-        let trans = TransformationRecord.Parse transformation
-
-        assert(System.String.IsNullOrWhiteSpace(trans.Id) |> not)
-        assert(trans.Lines |> Array.isEmpty |> not)
+        let trans = 
+            try
+                Hobbes.Helpers.Json.deserialize<Transformation> transformation
+            with e ->
+               Log.excf e "Failed to deserialize %s" transformation
+               reraise()
+        eprintfn "Transformation: %s. #Statements: %d" transformation (trans.Statements.Length)
+        assert(System.String.IsNullOrWhiteSpace(trans.Name) |> not)
+        assert(trans.Statements |> List.isEmpty |> not)
 
         200,transformations.InsertOrUpdate transformation
 

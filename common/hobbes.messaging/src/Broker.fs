@@ -9,7 +9,7 @@ open Hobbes.Helpers
 
 module Broker = 
     type CacheMessage = 
-        Updated of key : string
+        Updated of string
         | Empty
 
     type SyncMessage = 

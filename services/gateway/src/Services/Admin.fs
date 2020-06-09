@@ -62,7 +62,7 @@ module Admin =
         try
             match Http.post (None |> Http.Transformation |> Http.Configurations) doc with
             Http.Success _ -> 200,sprintf """{"transformation":%s, "status" : "ok" }""" doc
-            | Http.Error(s,m) -> s,m
+            | Http.Error(s,m) -> s,sprintf "message: %A, doc: %A" m doc
         with e -> 
             Log.excf e "Trying to store %s" doc
             500,sprintf "internal server error"

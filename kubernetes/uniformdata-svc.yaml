@@ -3,10 +3,8 @@ kind: Service
 metadata:
   name: uniformdata-svc
 spec:
-  type: NodePort
   ports:
   - port: 8085
     targetPort: 8085
-    nodePort: 30089
   selector:
     app: uniformdata

@@ -1,7 +1,7 @@
 eval $(minikube -p minikube docker-env)
 if [ $(uname -s) = "Darwin" ]
 then
-    declare -a APPS=()
+    declare -a APPS=(db)
     function services(){
          local APP_NAME=""
          for APP in $(find ${SCRIPT_DIR}/services -name *.fsproj | rev | cut -d'/' -f1 | rev)

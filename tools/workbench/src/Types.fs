@@ -71,43 +71,16 @@ module Types =
                      | Jira p -> "jira." + p.ToString()
                      | None -> null
     
-
-    type Transformation = 
-        {
-            Name : string
-            Statements : Hobbes.DSL.Statements list
-            Description : string
-        } with static member Empty 
-                 with get() = {Name = null; Statements = []; Description = null}
-               static member Create name statements =
-                   {
-                       Name = name
-                       Statements = statements
-                       Description = null
-                   }
-               override this.ToString() =
-                    let parse stmt =
-                        let stmt = stmt |> string
-                        Hobbes.Parsing.Parser.parse [stmt]
-                        |> Seq.exactlyOne
-
-                    this.Statements
-                    |> List.map parse
-                    |> ignore
-                    
-                    System.String.Join(",",
-                        this.Statements
-                        |> List.map (fun stmt ->
-                           (stmt |> string).Replace("\\","\\\\\\\\").Replace("\"", "\\\"") |> sprintf "\n  %A"
-                        )
-                    ) |> sprintf "[%s\n]"
-                    |> sprintf """{
-                        "_id" : "%s",
-                        "description" : "%s",
-                        "lines" : %s
-                    }
-                    """ this.Name (if this.Description |> isNull then "" else this.Description.Replace("\\","\\\\\\\\").Replace("\"", "\\\""))
-                 
+    
+    open Hobbes.Web.RawdataTypes
+    let createTransformation name (statements : Hobbes.DSL.Statements list) =
+       {
+           Name = name
+           Statements = 
+               statements |> List.map string
+           Description = null
+       }
+               
     type Configuration =
         {
             Name : string
@@ -120,15 +93,7 @@ module Types =
                             Source = Source.None
                             Transformations  = []
                         }
-               override this.ToString() = 
-                    sprintf """{
-                        "_id" : "%s",
-                        "source" : %s,
-                        "transformations" : [%s]
-                    }""" this.Name 
-                         (this.Source.ToString()) 
-                         (System.String.Join(",",this.Transformations |> Seq.map (fun t -> t.Name |> sprintf "%A")))
-
+               
     let mutable private configurations : Map<string,Configuration> = Map.empty
     let addConfiguration (source : Source ) name transformations =
       configurations <- 

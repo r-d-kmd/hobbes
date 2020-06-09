@@ -16,9 +16,9 @@ module Git =
                 Count 
             create (column "Commit frequency") (moving Mean 90 !> "Column name")
             
-        ] |> Transformation.Create "commit frequency"
+        ] |> createTransformation "commit frequency"
 
     let allCommits = 
         [
             only (!> "Time" == !> "Time")
-        ] |> Transformation.Create "AllCommits"
+        ] |> createTransformation "AllCommits"

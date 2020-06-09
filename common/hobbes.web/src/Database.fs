@@ -297,13 +297,16 @@ namespace Hobbes.Web
             
             let request httpMethod isTrial body path rev queryString =
                 let enc (s : string) = System.Web.HttpUtility.UrlEncode s           
-
-                let url = 
-                    System.String.Join("/", [
+                let root = 
+                     System.String.Join("/", [
                                                 ServerUrl
                                                 databaseName
-                                            ]@(path
-                                               |> List.map enc))+
+                                            ])
+                let urlWithoutQS = 
+                    System.String.Join("/", root::(path
+                                                   |> List.map enc)) 
+                let url = 
+                    urlWithoutQS +
                     match queryString with
                     None -> ""
                     | Some qs -> 
@@ -318,7 +321,7 @@ namespace Hobbes.Web
                       | Put -> "PUT", "to"
                       | Delete -> "DELETE", "from"          
                     
-                log.Debugf "%sting %A %s %s" m url direction databaseName
+                log.Debugf "%sting %A %s (%s,%A) %s" m url direction root path databaseName
                 
                 let headers =
                     [

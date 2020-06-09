@@ -20,4 +20,4 @@ module EzEnergy =
                                           (If ((!> "StateCategory" == !!> "In-Progress") .|| (!> "StateCategory" == !!> "Completed")) (Then !!> "Todo") (Else !!> "Done" ))
                                        ))
                                     
-        ]  |> Transformation.Create "ezenergy.renaming"
+        ]  |> createTransformation "ezenergy.renaming"

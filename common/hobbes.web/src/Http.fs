@@ -134,6 +134,9 @@ module Http =
         ) |> readResponse id
 
     let put = putOrPost "PUT"
-    let post service body = 
-        let payload = (body |> Hobbes.Helpers.Json.serialize)
+    let post<'a> service (body : 'a) = 
+        let payload = 
+            match body :> obj with
+            :? string as payload -> payload
+            | _ -> (body |> Hobbes.Helpers.Json.serialize)
         putOrPost "POST" service payload

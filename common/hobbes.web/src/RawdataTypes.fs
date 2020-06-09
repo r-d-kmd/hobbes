@@ -3,8 +3,13 @@ namespace Hobbes.Web
 open FSharp.Data
 
 module RawdataTypes =
-   
-    type TransformationRecord = JsonProvider<"""{"_id" : "jlk", "lines" : ["","jghkhj"]}""">
+    type Transformation = 
+        {
+            [<Newtonsoft.Json.JsonProperty("_id")>]
+            Name : string
+            Statements : string list
+            Description : string
+        }
 
     type Config = JsonProvider<"""{
             "_id" : "name",

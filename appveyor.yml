@@ -97,6 +97,7 @@ for:
       - fake build --parallel 16 --target Rebuild
       
     test_script:
+      - dotnet test
       - source functions.sh
       - export APP=(configurations gateway uniformdata azuredevops calculator syncronization db)
       - start

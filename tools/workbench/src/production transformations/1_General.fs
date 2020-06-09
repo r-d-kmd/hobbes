@@ -61,3 +61,8 @@ module General =
         [
             only (SprintNumber.Expression |> isntMissing)
         ] |> Transformation.Create "onlyInSprint"
+
+    let all = 
+        [
+            only (SprintNumber.Expression == SprintNumber.Expression)
+        ] |> Transformation.Create "AllWorkItems"

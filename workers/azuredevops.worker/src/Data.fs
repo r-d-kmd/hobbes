@@ -57,29 +57,7 @@ module Data =
         }
     ], "@odata.nextLink":"https://analytics.dev.azure.com/"}""">
 
-    type SyncStatus = 
-        Synced
-        | Started
-        | Failed
-        | Updated
-        | NotStarted
-        with override x.ToString() = 
-                match x with
-                Synced -> "synced"
-                | NotStarted -> "not started"
-                | Started -> "started"
-                | Updated -> "updated"
-                | Failed -> "failed"
-             static member Parse (s:string) =
-                    match s.ToLower() with
-                    "synced" -> Synced
-                    | "started" -> Started
-                    | "failed" -> Failed
-                    | "updated" -> Updated
-                    | "not started" -> NotStarted
-                    | _ -> 
-                        Log.debug (sprintf "Unknown sync state: %s" s)
-                        Failed
+   
     [<Literal>]
     let AzureDevOpsSourceString = """{
             "name": "azuredevops",

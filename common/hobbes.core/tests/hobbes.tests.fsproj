@@ -9,7 +9,9 @@
     <ProjectReference Include="../../hobbes.core/src/hobbes.core.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="*.fs" />
+    <Compile Include="AST.fs" />
+    <Compile Include="FSharp.Frontend.fs" />
+    <Compile Include="Parser.fs" />
   </ItemGroup>
   <Import Project="..\..\..\.paket\Paket.Restore.targets" />
 </Project>

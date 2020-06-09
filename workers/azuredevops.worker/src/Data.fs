@@ -125,10 +125,9 @@ module Data =
         Database.Database("azure_devops_rawdata", AzureDevOpsData.Parse, Log.loggerInstance)
 
     let insertOrUpdate (doc : string) = 
-        async{
-            db.InsertOrUpdate doc
-            |> Log.debugf "Inserted data: %s"
-        } |> Async.Start
+        db.InsertOrUpdate doc
+        |> Log.debugf "Inserted data: %s"
+        
         
     let get key = 
         db.TryGet key

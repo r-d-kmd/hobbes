@@ -1,5 +1,29 @@
 eval $(minikube -p minikube docker-env)
-declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "rabbitmq" "sync" "uniformdata")
+if [ $(uname -s) = "Darwin" ]
+then
+    declare -a APPS=()
+    function services(){
+         local APP_NAME=""
+         for APP in $(find ${SCRIPT_DIR}/services -name *.fsproj | rev | cut -d'/' -f1 | rev)
+         do
+             APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
+             APPS+=($APP_NAME)
+         done 
+         APP_NAME=""
+         for APP in $(find ${SCRIPT_DIR}/workers -name *.fsproj | rev | cut -d'/' -f1 | rev)
+         do
+             if [[ "$APP" = *.worker.* ]] 
+             then
+                APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
+             fi
+             APPS+=($APP_NAME)
+         done 
+    }
+    
+    services
+else
+    declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "sync" "uniformdata")
+fi
 VOLUMES=(db)
 function get_script_dir () {
      SOURCE="${BASH_SOURCE[0]}"
@@ -14,27 +38,7 @@ function get_script_dir () {
      echo "$DIR"
 }
 
-#SCRIPT_DIR=$(get_script_dir)
-#function services(){
-#    local APP_NAME=""
-#    for APP in $(find ${SCRIPT_DIR}/services -name *.fsproj | rev | cut -d'/' -f1 | rev)
-#    do
-#        APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
-#        APPS+=($APP_NAME)
-#    done 
-#    APP_NAME=""
-#    for APP in $(find ${SCRIPT_DIR}/workers -name *.fsproj | rev | cut -d'/' -f1 | rev)
-#    do
-#        if [[ "$APP" = *.worker.* ]] 
-#        then
-#           APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
-#        fi
-#        APPS+=($APP_NAME)
-#    done 
-#}
-#
-#services
-
+SCRIPT_DIR=$(get_script_dir)
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 
 
@@ -147,9 +151,8 @@ function installRabbitMQ(){
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-        local FILES=""
+    local FILE=""
 
-    cd $KUBERNETES_DIR
     kubectl apply -f env.JSON;
 
     installRabbitMQ
@@ -157,20 +160,21 @@ function start() {
     for i in "${APPS[@]}"; do 
         if test -f "$i-svc.yaml"
         then
-            FILES="$i-deployment.yaml,$i-svc.yaml"
+            FILE="$i-deployment.yaml,$i-svc.yaml"
         else
             if test -f "$i-deployment.yaml"
             then
-                FILES="$i-deployment.yaml"
+                FILE="$i-deployment.yaml"
             else
-                FILES="$i-job.yaml"
+                FILE="$i-job.yaml"
             fi
         fi
-        kubectl apply -f $(echo $FILES)
+        if [ -f "$FILE" ]
+        then
+            kubectl apply -f $(echo $FILE)
+        fi
     done
     for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
-    kubectl apply -f rabbitmq-svc.yaml
-    kubectl apply -f rabbitmq-controller.yaml
 
     cd $CURRENT_DIR
 }

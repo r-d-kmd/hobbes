@@ -37,8 +37,12 @@ let run command workingDir args =
     |> CreateProcess.ensureExitCode
     |> Proc.run
     |> ignore
-
-
+let buildConfigurationName = (Environment.environVarOrDefault "CONFIGURATION" "Debug").ToLower()
+let buildConfiguration = 
+    match buildConfigurationName with
+    "release" -> 
+        DotNet.BuildConfiguration.Release
+    | _ -> DotNet.BuildConfiguration.Debug
 let commonLibDir = "./docker/.lib/"
 
 let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "2.0.default"
@@ -176,7 +180,7 @@ let rec shouldRebuildCommon =
             |> hasChanged
 
 let skipSdkBuilds =
-    (not force) && (Environment.environVarOrDefault "BUILD_ENV" "local") = "AppVeyor"
+    (Environment.environVarOrDefault "BUILD_ENV" "local") = "AppVeyor"
 
 let hasDockerStageChanged ds = 
     (not skipSdkBuilds) &&  
@@ -426,7 +430,7 @@ commons |> List.iter(fun common ->
     let targetName = commonTargetName common
     Target.create targetName (fun _ ->
         let projectFile = commonPath commonName
-        package DotNet.BuildConfiguration.Release commonLibDir projectFile
+        package buildConfiguration commonLibDir projectFile
     )
     targetName ==> "Build" |> ignore
 ) 
@@ -435,12 +439,18 @@ Target.create "PushHobbesSdk" (fun _ ->
     pushImage "sdk:hobbes"
 )
 
-Target.create "PushAppSdk" (fun _ ->  
-    pushImage "sdk:app"
-)
 
 Target.create "BuildAppSdk" (fun _ ->   
-    buildImage "Dockerfile.sdk-app" "sdk:app"
+    let tag = dockerOrg + "/sdk:app"
+    let file = "Dockerfile.sdk-app"
+    //we do it this way because we want a debug version locally but want to push a release version to docker hub
+    sprintf "build -f %s -t %s ." file tag
+    |> run "docker" dockerDir.Name
+    pushImage "sdk:app"
+
+    //build the debug version for local use
+    sprintf "build -f %s -t %s --build-arg CONFIGURATION=%s ." file tag buildConfigurationName
+    |> run "docker" dockerDir.Name  
 )
 
 Target.create "BuildHobbesSdk" (fun _ ->   
@@ -497,17 +507,16 @@ workers
 "BuildCommonWeb" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Web)    
 
 "BuildCommon" =?> ("BuildAppSdk", shouldRebuildCommon CommonLib.Any)
-"PushAppSdk" =?> ("PreBuildServices", shouldRebuildAppSdk)
+"BuildAppSdk" =?> ("PreBuildServices", shouldRebuildAppSdk)
 
 "buildcommonMessaging" =?> ("PreBuildWorkers",shouldRebuildCommon CommonLib.Messaging)
-"PushAppSdk" =?> ("PreBuildWorkers", shouldRebuildAppSdk)
+"BuildAppSdk" =?> ("PreBuildWorkers", shouldRebuildAppSdk)
 "BuildCommon" =?> ("BuildWorkbench", shouldRebuildCommon CommonLib.Web) 
 
 "BuildGenericImages" ==> "PushGenericImages"
 "BuildServices" ==> "Build"
 "BuildWorkers" ==> "Build"
-"BuildAppSdk" ==> "PushAppSdk" 
-"BuildHobbesSdk" ==> "PushHobbesSdk" ==> "PushAppSdk"
+"BuildHobbesSdk" ==> "PushHobbesSdk" ==> "BuildAppSdk"
 "ForceBuildServices" ==> "Rebuild"
 "ForceBuildWorkers" ==> "Rebuild"
 

@@ -27,3 +27,4 @@ temp.*
 *.ignore
 docker/tmp
 **/src/Properties/
+docker/build

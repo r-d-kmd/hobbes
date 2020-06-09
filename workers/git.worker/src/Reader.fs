@@ -150,6 +150,8 @@ module Reader =
         Date : System.DateTime
         Id : string
         Author : string
+        RepositoryName : string
+        BranchName : string
     }
 
     let private commitsForBranch account project (repo : Repository) (branchName : string) =
@@ -178,6 +180,8 @@ module Reader =
                         Date = commit.Author.Date.DateTime
                         Id = commit.CommitId
                         Author = commit.Author.Email
+                        RepositoryName = repo.Name
+                        BranchName = branchName
                     }
                 ) |> Seq.sortBy (fun c -> c.Date)
             assert(commits |> Seq.length = parsedCommits.Count)

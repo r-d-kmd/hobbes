@@ -72,31 +72,7 @@ type WorkbenchSettings = FSharp.Data.JsonProvider<"""{
     }
 }""">
 
-type RawdataKeyList = JsonProvider<"""{"rawdata" : ["_design/default","default_hash"]}""">
-type ConfigurationsList = JsonProvider<"""{"configurations" : [{
-  "_id": "_design/default",
-  "_rev": "1-0a33cc75bce4cd13e58611618da4cc1d",
-  "views": {
-    "bySource": {
-      "map": "function (doc) {\n             var srcproj = [doc.source,doc.dataset];\n emit(srcproj, doc._id);\n}"
-    }
-  },
-  "language": "javascript"
-},{
-  "_id": "default_hash",
-  "_rev": "1-49ed2bec0b6f1907f91f3937fcc94f4a",
-  "hash": "ff87ad355ebd038ec8c78794f3278d9a"
-}]}""">
-type TransformationList = JsonProvider<"""{"transformations" : [{
-  "_id": "Azure.stateRenaming",
-  "_rev": "1-5f2b13ecbffefca7c484833cdd2e9e38",
-  "lines": [
-    "rename column \"State\" \"DetailedState\" ",
-    "create column \"State\" ( if [  \"StateCategory\"  =  'Proposed' ] { 'Todo' } else { if [  \"StateCategory\"  =  'InProgress' ] { 'Doing' } else { 'Done' }})"
-  ]
-}]}""">
-
-
+open Workbench.Types
 [<EntryPoint>]
 let main args =
    
@@ -157,16 +133,41 @@ let main args =
                     Workbench.Configurations.DevOps.initialise()
                     let transformations = 
                         Workbench.Types.allTransformations()
-                        |> Seq.map string
+                        |> Seq.map Json.serialize
 
                     let configurations = 
                         Workbench.Types.allConfigurations()
-                        |> Seq.map string
+                        |> Seq.map (fun conf ->
+                            let trans = 
+                               let ts = conf.Transformations |> List.map(fun t -> sprintf "%A" t.Name)
+                               System.String.Join(",", ts)
+                            let source = 
+                                    match conf.Source with
+                                    Source.AzureDevOps p ->
+                                        sprintf """{
+                                            "name" : "azure devops",
+                                            "project" : "%s",
+                                            "account" : "%s"
+                                        }""" (string p) p.Account
+                                    | Source.Git(ds,p) ->
+                                        sprintf """{
+                                            "name" : "git",
+                                            "project" : "%s",
+                                            "account" : "%s",
+                                            "dataset" : "%s"
+                                        }""" (string p) p.Account (string ds)
+                                    | s -> failwithf "not supported yet. %A" s
+                            sprintf """{
+                                    "_id" : "%s",
+                                    "transformations" : [%s],
+                                    "source" : %s
+                                }""" conf.Name trans source
+                        )
                     
                     transformations 
                     |> Seq.iter(fun doc ->
                         Log.logf "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
-                        printfn "DOCUMENT = %A" doc
+                        
                         try
                             Http.Request(urlTransformations, 
                                          httpMethod = "PUT",

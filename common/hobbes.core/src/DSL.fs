@@ -68,7 +68,7 @@ type Expression =
              | Gt(a,b) ->  sprintf " (%s) > (%s)" (a.ToString()) (b.ToString())
              | Not e -> sprintf "!(%s)" (e.ToString())
              | Keys -> "keys"
-             | DateTimeConstant d -> sprintf "\'%s\'" (d.ToString "dd/MM/yyyy")
+             | DateTimeConstant d -> sprintf "\'%s\'" (d.ToString(System.Globalization.CultureInfo.InvariantCulture))
              | Ordinals -> "ordinals"
              | DateFormat(columnName,f) ->
                  let dateFormat = 

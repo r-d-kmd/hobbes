@@ -1,9 +1,9 @@
 open Saturn
 open Giraffe
 open Hobbes.Web.Routing
-open Hobbes.Server.Services.Admin
-open Hobbes.Server.Services.Data
-open Hobbes.Server.Services.Root
+open Hobbes.Gateway.Services.Admin
+open Hobbes.Gateway.Services.Data
+open Hobbes.Gateway.Services.Root
 open Hobbes.Helpers
 
 let private port = 
@@ -14,12 +14,6 @@ let adminRouter =
         pipe_through verifiedPipe
 
         withBody <@ storeTransformations @>
-        fetch    <@ listConfigurations@>
-        fetch    <@ listTransformations @>
-        fetch    <@ listLog @> 
-        withArgs <@ setting @>
-        
-        withBody <@ configureStr @>
         withBody <@storeConfigurations@>
     }
 

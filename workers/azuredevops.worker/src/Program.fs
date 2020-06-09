@@ -24,7 +24,7 @@ let synchronize (source : AzureDevOpsSource.Root) token =
 
 let handleMessage message =
     match message with
-    Empty -> true
+    Empty -> Success
     | Sync sourceDoc -> 
         Log.debugf "Received message. %s" sourceDoc
         try
@@ -37,8 +37,8 @@ let handleMessage message =
 
             match synchronize source token with
             None -> 
-                Log.errorf  "Conldn't syncronize. %s %s" sourceDoc token
-                false
+                sprintf "Conldn't syncronize. %s %s" sourceDoc token
+                |> Failure 
             | Some (key,data) -> 
                 let data = 
                     {
@@ -49,13 +49,13 @@ let handleMessage message =
                 match Http.post (Http.UniformData Http.Update) data with
                 Http.Success _ -> 
                    Log.logf "Data uploaded to cache"
-                   true
+                   Success
                 | Http.Error(status,msg) -> 
-                    Log.logf "Upload to uniform data failed. %d %s" status msg
-                    false
+                    sprintf "Upload to uniform data failed. %d %s" status msg
+                    |> Failure
         with e ->
             Log.excf e "Failed to process message"
-            false
+            Excep e
     
 
 [<EntryPoint>]

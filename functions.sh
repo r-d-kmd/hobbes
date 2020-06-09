@@ -139,6 +139,11 @@ function listServices(){
     minikube service list 
 }
 
+function installRabbitMQ(){
+    helm repo add bitnami https://charts.bitnami.com/bitnami
+    helm install test --set rabbitmq.username=guest,rabbitmq.password=guest bitnami/rabbitmq
+}
+
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
@@ -146,6 +151,8 @@ function start() {
 
     cd $KUBERNETES_DIR
     kubectl apply -f env.JSON;
+
+    installRabbitMQ
     
     for i in "${APPS[@]}"; do 
         if test -f "$i-svc.yaml"

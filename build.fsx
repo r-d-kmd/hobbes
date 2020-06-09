@@ -230,7 +230,7 @@ let package conf outputDir projectFile =
                         }
                    ) projectFile
 
-printfn "Changes: %A" changes
+printfn "Changes: %s" (System.String.Join("\n",changes |> Seq.map (sprintf "%A")))
 
 let commonPath name = 
     sprintf "./common/hobbes.%s/src/hobbes.%s.fsproj" name name

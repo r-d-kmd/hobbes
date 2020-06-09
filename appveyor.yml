@@ -98,6 +98,7 @@ for:
       
     test_script:
       #- dotnet test
+      - ./get_helm.sh
       - source functions.sh
       - export APP=(configurations gateway uniformdata azuredevops calculator syncronization db)
       - start

@@ -11,9 +11,10 @@ metadata:
     chart: rabbitmq-6.26.0
     heritage: Helm
     release: test
-  name: test-rabbitmq
-  selfLink: /api/v1/namespaces/default/services/test-rabbitmq
+  name: test-rabbitmq-headless
+  selfLink: /api/v1/namespaces/default/services/test-rabbitmq-headless
 spec:
+  clusterIP: None
   ports:
   - name: epmd
     port: 4369

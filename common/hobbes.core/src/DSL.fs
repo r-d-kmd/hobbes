@@ -37,6 +37,8 @@ type Expression =
     | Missing
     | Keys
     | Int of Expression
+    | True
+    | False
     with override x.ToString() =
            match x with
              Identifier s -> sprintf """ "%s" """ s
@@ -93,6 +95,8 @@ type Expression =
                     | Some l -> sprintf " %d" l
                  sprintf "%s extrapolation [%s] %d %s" regStr (outputs.ToString()) count l
              | Int e -> sprintf "int (%s)" (e.ToString())
+             | True -> "true"
+             | False -> "false"
            
          static member private ParseStringOrDate (stringOrDate : string) = 
             match System.DateTime.TryParse(stringOrDate) with

@@ -59,8 +59,8 @@ module Types =
                        "name" : "git",
                        "project" : "%s",
                        "account" : "%s",
-                       "dataset" : "%s"
-                   }""" (p.ToString()) (p.Account) (dataset.ToString())
+                       "dataset" : "commits"
+                   }""" (p.ToString()) (p.Account)
                | Jira _
                | None -> failwith "Don't know what to do"
              member this.Name 

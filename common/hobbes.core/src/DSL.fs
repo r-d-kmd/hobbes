@@ -107,11 +107,15 @@ type Expression =
              Equal(e1,e2)
          static member (==) (e1:Expression, e2:int) = 
              e1 == (e2 |> float |> NumberConstant)
+         static member (==) (e1:Expression, e2:System.DateTime) = 
+             e1 == (e2 |> DateTimeConstant)
+         
          static member (!=) (e1:Expression, e2:Expression) = 
              Not(Equal(e1,e2))     
          static member (!=) (e1:Expression, e2:string) = 
              let e2 = Expression.ParseStringOrDate e2
              e1 != e2
+             
          static member (.||) (exp1:Expression,exp2:Expression) =
              Or(exp1,exp2)
          static member (.&&) (exp1:Expression,exp2:Expression) =
@@ -298,8 +302,8 @@ let regex expr pattern tokens =
 
 let int e = Int(e)
 
-let isMissing e = e == Missing
-let isntMissing e = e != Missing 
+let isMissing (e : Expression) = e == Missing
+let isntMissing (e : Expression) = e != Missing 
 let format = ()
 let date _ columnName dt =
     DateFormat(columnName,dt)

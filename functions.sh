@@ -1,6 +1,7 @@
 eval $(minikube -p minikube docker-env)
 if [ $(uname -s) = "Darwin" ]
 then
+    echo "Evolution"
     declare -a APPS=(db)
     function services(){
          local APP_NAME=""
@@ -22,6 +23,7 @@ then
     
     services
 else
+    echo "Creationism"
     declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "sync" "uniformdata")
 fi
 VOLUMES=(db)

@@ -84,14 +84,14 @@ module Types =
     type Configuration =
         {
             Name : string
-            Source : Source
             Transformations : Transformation list
+            Source : Source
         } with static member Empty 
                   with get() =
                         {
                             Name = null
-                            Source = Source.None
                             Transformations  = []
+                            Source = Source.None
                         }
                
     let mutable private configurations : Map<string,Configuration> = Map.empty

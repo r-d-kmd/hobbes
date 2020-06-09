@@ -72,6 +72,7 @@ type WorkbenchSettings = FSharp.Data.JsonProvider<"""{
     }
 }""">
 
+open Workbench.Types
 [<EntryPoint>]
 let main args =
    
@@ -136,7 +137,32 @@ let main args =
 
                     let configurations = 
                         Workbench.Types.allConfigurations()
-                        |> Seq.map Json.serialize
+                        |> Seq.map (fun conf ->
+                            let trans = 
+                               let ts = conf.Transformations |> List.map(fun t -> sprintf "%A" t.Name)
+                               System.String.Join(",", ts)
+                            let source = 
+                                    match conf.Source with
+                                    Source.AzureDevOps p ->
+                                        sprintf """{
+                                            "name" : "azure devops",
+                                            "project" : "%s",
+                                            "account" : "%s"
+                                        }""" (string p) p.Account
+                                    | Source.Git(ds,p) ->
+                                        sprintf """{
+                                            "name" : "git",
+                                            "project" : "%s",
+                                            "account" : "%s",
+                                            "dataset" : "%s"
+                                        }""" (string p) p.Account (string ds)
+                                    | s -> failwithf "not supported yet. %A" s
+                            sprintf """{
+                                    "_id" : %s,
+                                    "transformations" : [%s],
+                                    "source" : %s
+                                }""" conf.Name trans source
+                        )
                     
                     transformations 
                     |> Seq.iter(fun doc ->

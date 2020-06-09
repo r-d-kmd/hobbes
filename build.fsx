@@ -158,26 +158,33 @@ let changes =
                 File file
     ) |> Seq.distinct
 
+let commonChanges = 
+    changes
+    |> Seq.fold(fun lst c ->
+        match c with
+        Common com -> com::lst 
+        | _ -> lst
+    ) []
+
+let hasCommonChanged change =
+    match change with
+    CommonLib.Any -> commonChanges |> List.isEmpty |> not
+    | c -> commonChanges |> List.tryFind(fun c' -> c = c') |> Option.isSome
 
 let hasChanged change = 
-    force || changes |> Seq.tryFind (function
-                              Common c ->
-                                  match change with
-                                  Common CommonLib.Any -> true
-                                  | Common c' when c' = c -> true
-                                  | _ -> false
-                              | c -> c = change) |> Option.isSome
+    force || changes |> Seq.tryFind (fun c -> c = change) |> Option.isSome
      
 let rec shouldRebuildCommon = 
     function
        CommonLib.Web ->
-           //Web depends on Helpers
-           shouldRebuildCommon CommonLib.Helpers || (CommonLib.Web |> Common |> hasChanged)
-       | CommonLib.Messaging -> shouldRebuildCommon CommonLib.Web || (CommonLib.Messaging |> Common |> hasChanged)
+           shouldRebuildCommon CommonLib.Helpers 
+           || (CommonLib.Web |> hasCommonChanged)
+       | CommonLib.Messaging -> 
+           shouldRebuildCommon CommonLib.Web 
+           || (CommonLib.Messaging |> hasCommonChanged)
        | common ->
             common
-            |> Common
-            |> hasChanged
+            |> hasCommonChanged
 
 let skipSdkBuilds =
     (Environment.environVarOrDefault "BUILD_ENV" "local") = "AppVeyor"
@@ -457,14 +464,6 @@ Target.create "BuildHobbesSdk" (fun _ ->
         buildImage "Dockerfile.sdk-hobbes" "sdk:hobbes"
 )
 
-Target.create "BuildWorkbench" (fun _ -> 
-        package DotNet.BuildConfiguration.Release commonLibDir  """workbench/src/hobbes.workbench.fsproj"""
-)
-       
-Target.create "Publish" (fun _ -> 
-    run "dotnet" "./workbench/src" "run -- --publish" 
-)
-
 commons |> List.iter(fun common ->
         let targetName = commonTargetName common
         "CleanCommon" =?> (targetName, shouldRebuildCommon common) |> ignore
@@ -511,15 +510,11 @@ workers
 
 "buildcommonMessaging" =?> ("PreBuildWorkers",shouldRebuildCommon CommonLib.Messaging)
 "BuildAppSdk" =?> ("PreBuildWorkers", shouldRebuildAppSdk)
-"BuildCommon" =?> ("BuildWorkbench", shouldRebuildCommon CommonLib.Web) 
 
 "BuildGenericImages" ==> "PushGenericImages"
 "BuildServices" ==> "Build"
-"BuildWorkers" ==> "Build"
 "BuildHobbesSdk" ==> "PushHobbesSdk" ==> "BuildAppSdk"
 "ForceBuildServices" ==> "Rebuild"
 "ForceBuildWorkers" ==> "Rebuild"
-
-"BuildWorkbench" ==> "Publish"
 
 Target.runOrDefaultWithArguments "Build"

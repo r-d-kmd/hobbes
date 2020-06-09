@@ -101,7 +101,7 @@ module Data =
     [<Post ("/configuration", true)>]
     let storeConfiguration (configuration : string) =
         let conf = Config.Parse configuration
-        
+        Log.logf "Configuration %s" configuration
         assert(System.String.IsNullOrWhiteSpace(conf.Id) |> not)
         assert(System.String.IsNullOrWhiteSpace(conf.Source.Name) |> not)
         assert(conf.Transformations |> Array.isEmpty |> not)

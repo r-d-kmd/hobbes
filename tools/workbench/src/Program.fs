@@ -158,7 +158,7 @@ let main args =
                                         }""" (string p) p.Account (string ds)
                                     | s -> failwithf "not supported yet. %A" s
                             sprintf """{
-                                    "_id" : %s,
+                                    "_id" : "%s",
                                     "transformations" : [%s],
                                     "source" : %s
                                 }""" conf.Name trans source
@@ -167,7 +167,7 @@ let main args =
                     transformations 
                     |> Seq.iter(fun doc ->
                         Log.logf "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
-                        printfn "DOCUMENT = %A" doc
+                        
                         try
                             Http.Request(urlTransformations, 
                                          httpMethod = "PUT",

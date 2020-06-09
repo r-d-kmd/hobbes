@@ -1,0 +1,8 @@
+- op: replace
+  path: /spec/template/spec/volumes/0/name
+  value: volume
+
+- op: replace
+  path: /spec/template/spec/volumes/0/persistentVolumeClaim/claimName
+  value: db-disk
+

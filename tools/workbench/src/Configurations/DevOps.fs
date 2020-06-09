@@ -14,6 +14,10 @@ module DevOps =
         projects 
         |> List.iter(fun p ->
             [
-                Workbench.Transformations.Git.branchLifeTime
-            ] |> addConfiguration (Source.Git(Branches,p)) "branchLifeTime" 
+                Workbench.Transformations.Git.commitFrequency
+            ] |> addConfiguration (Source.Git(Commits,p)) "commitFrequency" 
+
+            [
+                Workbench.Transformations.Git.allCommits
+            ] |> addConfiguration (Source.Git(Commits,p)) "allCommits" 
         )

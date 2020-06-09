@@ -16,6 +16,14 @@ module Broker =
         Sync of string
         | Empty
 
+    type DeadLetter =
+        {
+            OriginalQueue : string
+            OriginalMessage : string
+            ExceptionMessage : string
+            ExceptionStackTrace : string
+        }
+
     type TransformationMessageBody = 
         {
             Name : string
@@ -83,47 +91,10 @@ module Broker =
                                  false,
                                  false,
                                  null) |> ignore
-
-    let private watch<'a> queueName (handler : 'a -> bool) =
-        let mutable keepAlive = true
-        try
-            let channel = init()
-            declare channel queueName
-
-            let consumer = EventingBasicConsumer(channel)
-            consumer.Received.AddHandler(EventHandler<BasicDeliverEventArgs>(fun _ (ea : BasicDeliverEventArgs) ->
-                try
-                    let msgText = 
-                        Encoding.UTF8.GetString(ea.Body.ToArray())
-                    let typedMessage = 
-                        try
-                            msgText 
-                            |> Json.deserialize<'a>
-                            |> Some
-                        with e ->
-                            //todo move to dead letter queue instead of ack'ing/ignoring
-                            eprintfn "Failed to parse message (%s) (Message will be ack'ed). Error: %s %s" msgText e.Message e.StackTrace
-                            channel.BasicAck(ea.DeliveryTag,false) 
-                            None
-                    typedMessage
-                    |> Option.iter(fun msg ->
-                        if msg |> handler then
-                            printfn "Message ack'ed"
-                            channel.BasicAck(ea.DeliveryTag,false)
-                        else
-                            printfn "Message could not be processed. %s" msgText
-                    )
-                with e ->
-                   eprintfn  "Failed while processing message. %s %s" e.Message e.StackTrace
-            ))
-            
-            channel.BasicConsume(queueName,false,consumer) |> ignore
-            printfn "Watching queue: %s" queueName
-            while keepAlive do
-                System.Threading.Thread.Sleep(60000)
-         with e ->
-           eprintfn "Failed to subscribe to the queue. %s:%d. Message: %s" host port e.Message
-           keepAlive <- false
+    type MessageResult = 
+        Success
+        | Failure of string
+        | Excep of System.Exception
 
     let private publishString queueName (message : string) =
         try
@@ -138,11 +109,66 @@ module Broker =
             printfn "Message published to %s" queueName
         with e -> 
            eprintfn "Failed to publish to the queue. Message: %s" e.Message
-    let private publish<'a> queueName (message : 'a) =
+
+    let private publish<'a> queueName (message : 'a) =    
         message
         |> Json.serialize
         |> publishString queueName
+
+    let private watch<'a> queueName (handler : 'a -> MessageResult) =
+        let mutable keepAlive = true
+         
+        try
+            let channel = init()
+            declare channel queueName
+
+            let consumer = EventingBasicConsumer(channel)
+            consumer.Received.AddHandler(EventHandler<BasicDeliverEventArgs>(fun _ (ea : BasicDeliverEventArgs) ->
+                let deadLetter msgText (e : System.Exception) =
+                    {
+                        OriginalQueue = queueName
+                        OriginalMessage = msgText
+                        ExceptionMessage = e.Message
+                        ExceptionStackTrace = e.StackTrace
+                    } |> publish "dead_letter" 
+                    channel.BasicAck(ea.DeliveryTag,false)
+                try
+                    let msgText = 
+                        Encoding.UTF8.GetString(ea.Body.ToArray())
+                    try
+                        let msg = 
+                            msgText 
+                            |> Json.deserialize<'a>
+                        match msg |> handler with
+                        Success ->
+                            printfn "Message ack'ed"
+                            channel.BasicAck(ea.DeliveryTag,false)
+                        | Failure m ->
+                            printfn "Message could not be processed (%s). %s" m msgText
+                        | Excep e ->
+                            e |> deadLetter msgText
+                    with e ->
+                        e |> deadLetter msgText 
+                        eprintfn "Failed to parse message (%s) (Message will be ack'ed). Error: %s %s" msgText e.Message e.StackTrace 
+                with e ->
+                   eprintfn  "Failed while processing message. %s %s" e.Message e.StackTrace
+                   e |> deadLetter null
+            ))
+            
+            channel.BasicConsume(queueName,false,consumer) |> ignore
+            printfn "Watching queue: %s" queueName
+            while keepAlive do
+                System.Threading.Thread.Sleep(60000)
+         with e ->
+           eprintfn "Failed to subscribe to the queue. %s:%d. Message: %s" host port e.Message
+           keepAlive <- false
+
+   
+
     type Broker() =
+        do
+            let channel = init()
+            declare channel "dead_letter"
         static member Cache(msg : CacheMessage) = 
             publish "cache" msg
         static member Cache (handler : CacheMessage -> _) = 

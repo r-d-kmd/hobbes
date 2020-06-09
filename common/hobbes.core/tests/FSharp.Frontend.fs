@@ -65,11 +65,11 @@ module Frontend =
         >> Map.find name
 
     let compareColumns expected (actual : Column) = 
-        Assert.Equal(expected |> Seq.length, actual |> Seq.length)
+        Assert.True((expected |> Seq.length) = (actual |> Seq.length), sprintf "%A and %A have different lengths" expected actual)
         actual
         |> Seq.iter2(fun (rowKeyExpected,rowValueExpected) (rowKeyActual,rowValueActual) -> 
-            Assert.True(rowKeyExpected.Equals rowKeyActual)
-            Assert.Equal(rowValueExpected,rowValueActual)
+            Assert.True(rowKeyExpected.Equals rowKeyActual,sprintf "%A and %A have different keys. %A <> %A" expected actual rowKeyExpected rowKeyActual)
+            Assert.True((rowValueExpected = rowValueActual), sprintf "Expected %A but got %A" rowValueExpected rowValueActual)
         ) expected 
 
     let assertTablesEqual (expected : Table) (actual : Table) =
@@ -182,15 +182,16 @@ module Frontend =
 
     [<Fact>]
     let onlyReturnSomeDateTime() =
-        let date = System.DateTime(2019,8,25).AddDays(float 5)
-        let statement = only (!> "Sprint Start Date" == date.ToString(Globalization.CultureInfo.CurrentCulture)) |> parse
+        let step = 3
+        let date = System.DateTime(2019,8,25).AddDays(float step)
+        let statement = only (!> "Sprint Start Date" == date) |> parse
         let execute = Compile.parsedExpressions [statement]
         let actual = 
             testDataset() 
             |> execute 
             |> asTable
             |> getColumn "Sprint Start Date"
-        let expected = seq{yield (AST.KeyType.Create 4, date :> IComparable)}        
+        let expected = seq{yield (AST.KeyType.Create (step - 1), date :> IComparable)}        
 
         compareColumns expected actual
     
@@ -342,7 +343,7 @@ module Frontend =
 
     [<Fact>]
     let groupByMaxBy() =
-        let statement = group by ["State"] => maxby !> "Sprint" |> parse
+        let statement = group by [!> "State"] => maxby !> "Sprint" |> parse
         let execute =  Compile.parsedExpressions [statement]
         let actual =
             testDataset() 
@@ -382,7 +383,7 @@ module Frontend =
 
     [<Fact>]
     let groupByMinBy() =
-        let statement = group by ["State"] => minby !> "Sprint" |> parse
+        let statement = group by [!> "State"] => minby !> "Sprint" |> parse
         let execute =  Compile.parsedExpressions [statement]
         let actual =
             testDataset() 

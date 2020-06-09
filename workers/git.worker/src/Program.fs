@@ -39,7 +39,7 @@ let synchronize (source : GitSource.Root) token =
 
 let handleMessage message =
     match message with
-    Empty -> true
+    Empty -> Success
     | Sync sourceDoc -> 
         Log.logf "Received message. %s" sourceDoc
         let key = 
@@ -55,8 +55,8 @@ let handleMessage message =
 
             match synchronize source token with
             None -> 
-                Log.logf "Conldn't syncronize. %s %s" sourceDoc token
-                false
+                sprintf "Conldn't syncronize. %s %s" sourceDoc token
+                |> Failure
             | Some data -> 
                 let data = 
                     {
@@ -69,16 +69,16 @@ let handleMessage message =
                     match Http.post (Http.UniformData Http.Update) data with
                     Http.Success _ -> 
                        Log.logf "Data uploaded to cache"
-                       true
+                       Success
                     | Http.Error(status,msg) -> 
-                        Log.logf "Upload to uniform data failed. %d %s. Data: %s" status msg (data |> Json.serialize)
-                        false
+                        sprintf "Upload to uniform data failed. %d %s. Data: %s" status msg (data |> Json.serialize)
+                        |> Failure
                 with e ->
                     Log.excf e "Failed to cache data"
-                    false
+                    Excep e
         with e ->
             Log.excf e "Failed to process message"
-            false
+            Excep e
     
 
 [<EntryPoint>]

@@ -7,7 +7,7 @@ module Git =
     open Hobbes.Parsing
     open Hobbes.DSL
 
-    let branchLifeTime =
+    let commitFrequency =
         [
             //group by the tuple sprint name and workitem id
             group by ([date format "Time" AST.Date]) => 
@@ -17,3 +17,8 @@ module Git =
             create (column "Commit frequency") (moving Mean 90 !> "Column name")
             
         ] |> Transformation.Create "commit frequency"
+
+    let allCommits = 
+        [
+            only (!> "Time" == !> "Time")
+        ] |> Transformation.Create "AllCommits"

@@ -1,0 +1,38 @@
+apiVersion: v1
+data:
+  rabbitmq-api-check: |-
+    #!/bin/sh
+    set -e
+    URL=$1
+    EXPECTED=$2
+    ACTUAL=$(curl --silent --show-error --fail "${URL}")
+    echo "${ACTUAL}"
+    test "${EXPECTED}" = "${ACTUAL}"
+  rabbitmq-health-check: |-
+    #!/bin/sh
+    START_FLAG=/opt/bitnami/rabbitmq/var/lib/rabbitmq/.start
+    if [ -f ${START_FLAG} ]; then
+        rabbitmqctl node_health_check
+        RESULT=$?
+        if [ $RESULT -ne 0 ]; then
+          rabbitmqctl status
+          exit $?
+        fi
+        rm -f ${START_FLAG}
+        exit ${RESULT}
+    fi
+    rabbitmq-api-check $1 $2
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: test
+    meta.helm.sh/release-namespace: default
+  creationTimestamp: null
+  labels:
+    app: rabbitmq
+    app.kubernetes.io/managed-by: Helm
+    chart: rabbitmq-6.26.0
+    heritage: Helm
+    release: test
+  name: test-rabbitmq-healthchecks
+  selfLink: /api/v1/namespaces/default/configmaps/test-rabbitmq-healthchecks

@@ -8,7 +8,7 @@ branches:
 environment:
   BUILD_ENV: AppVeyor
   ENV_FILE:
-    secure: 1EY0PW6l+4E/ZiuaRlC8WHb8v2J6o+YWksH852D5wIVfRnWBC6Ih6bPQMSwQ1Smm71oEOrsd8WJsabgdIkZIxinJ4chtLNBEjx2Wm32JuQziI+jvxc+Q+9YUtwrijB6xP2jHPA0n5wLEE1yHiicn6FFTFcXMJnOpizKcVkU9CgAywwJC+hXp17Vmp96jkfoDem7ZnOpSfUplJti7Vw55aHz4IkkP/G60d+9ak2cks3SHXE80y4ouOnULCZbr2JwekIbxOCJjgOBGeUu7X2hGNMd1u9z00M3iqyS6cwIwnlea5x8cGJrO2XYQ00PCUkzlmGjdeGN5S5In5e7T7VB2aUew383/xTgOzlnUXICso8TmCXibR7hoIm33sE7Uf+RlCboVQWvcBnnCFWmsFhenkl9w2x6Ub7/RUb+f+p8jHTLVtWp5OqDP08kvnBP+vcGWZtCDE8m1UGP5coniBWcrMJdGxanOl9TIicKHJaMpb3AAri9f8GZ8VkF1XaKRWnm/Vk9MA6AgHi2UeMJ7xHf8T8lgcyFMIOi8sPzjlipmQ8HTReazYOvrsdbQp0cMx+Ds1e054B11GrytHMOBt5dXBOu42s2X8rzp9Ish3WqMQVrF6FacQY/34n+ZiOE4Trq4D/7tuOZGlnSS3nscnt9h9dCtZK109jiSE9RyHViGIAgVtN/91bpxxcUME3epyKN4qU1/Afxmf6xGbyn0pjTz6cmPpPrh7eX/Ka5UIBBahoyk+v0b7zoVpqNQ/9y2F6xpnYqltqx5Ukkp2iSfqTPHx50dwWbHlVPhODfXdfXnEQ03vr6YDzNoJd2rGoyXH+mUzQuAPpq1N1KxtqoejEoyYuR7KGjzIiqitW+OWrlrfTII7BK4oThlgNTvFw3kOkOBLE8hKfA3k7TW2U0gDHrdWA==
+    secure: 1EY0PW6l+4E/ZiuaRlC8WHb8v2J6o+YWksH852D5wIVfRnWBC6Ih6bPQMSwQ1Smm71oEOrsd8WJsabgdIkZIxinJ4chtLNBEjx2Wm32JuQziI+jvxc+Q+9YUtwrijB6xP2jHPA0n5wLEE1yHiicn6FFTFcXMJnOpizKcVkU9CgAywwJC+hXp17Vmp96jkfoDem7ZnOpSfUplJti7Vw55aHz4IkkP/G60d+9ak2cks3SHXE80y4ouOnULCZbr2JwekIbxOCJjgOBGeUu7X2hGNMd1u9z00M3iqyS6cwIwnlea5x8cGJrO2XYQ00PCUkzlmGjdeGN5S5In5e7T7VB2aSMJCZMcBS/zw4trIpgWtriFds2AZMPo2zdTk6A+16TL1tNKJJ17bs6IWtev2wP1uIKFSw5OIoIOocnzKdafhhHP5WFKXHpLeXSW8gqL9KRtv876UvF6mFvP/3vGQUIhlirPePvTk1LdWGi7cigm/m0d1AhOkkNFccD3EfofM5v12EYlTA3vwGtDHrmuBewyZnTvS2YriKkYf9V2+LuXV4qUQOf5qwiYlK0yjrF8qa/TVAjzL2sX4oi38wS95S1ncU9kqdiU4a8RKhpCv3CKYH8a2zFdjGaTLP4I0PALDhlmpLlWF+dw5hX6NgCf8MfE2u/zgMG25K115mlZfF2H2KvV17HjpqXH5ItcRTCROGCGds1fqIbgvYlFYH3K8EHX3xbxGMgUVxDqatcOyb7dbj0AIR9IjEMftoT+NlkXJoWEorLRatsVm+9MIVfY/d8+dzK0mR1kQxq8jM4QmnXN1d+RhhgEPKFteiom4uhjUTIF2wdVlAeNmn1oHdn24o0zAF3yc3Yqigk19ZKWi0eXEK8ylShA0+Xt3ysKVRQRSLjNfmaEasurSdCGw/8Khiif2eb+HOS+HaAjxaVsRjVce70MAgIoCPkK3LM0sXnsxkdDKmD6kw2CGqVglikW4m8U9CeX2NqM4kyk3KIseR9eXc6UXYQ71k817FmWMeUfzh/HEzm447aOWdJJhfQ4DEOyFq7zrrkNNIpMI0zEmw6CGKigDmU6eDAdGzREjhdZk3mWeCFiaJYSbwzRckkYQmaPYw==
   DOCKER_USER:
     secure: CbwbpNPxLV9AwhjSpIz7LA==
   DOCKER_PASS:
@@ -31,48 +31,92 @@ environment:
   # Disable prompts for CI
   MINIKUBE_WANTUPDATENOTIFICATION: "false"
   MINIKUBE_WANTREPORTERRORPROMPT: "false"
+  CONFIGURATION: Debug
 
 services:
   - docker
+  
+for:
+  -
+    branches:
+      only:
+        - master
+    environment: 
+      CONFIGURATION: Release
+    dotnet_csproj:
+      patch: true
+      file: '**\*.fsproj'
+      version: '{version}'
+      package_version: '{version}'
+      assembly_version: '{version}'
+      file_version: '{version}'
+      informational_version: '{version}'
+    install:
+      - docker version
+      - dotnet tool install --global fake-cli
+      - dotnet tool install --global paket
+      - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
+      - chmod +x kubectl
+      - sudo mv kubectl /usr/local/bin/
+    before_build:
+      - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
+    build_script:  
+      - fake build --parallel 16 --target PushAllApps
+    deploy_script:
+      - echo "Deploying"
+      #should run kustomize for production and apply the configuration
 
-install:
-  - docker version
-  - dotnet tool install --global fake-cli
-  - dotnet tool install --global paket
-  - npm install -s -g --unicode=false newman@4.6.1
-  
-  - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
-  - chmod +x kubectl
-  - sudo mv kubectl /usr/local/bin/
-  
-  - curl -sL https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 -o minikube
-  - chmod +x minikube
-  - sudo mv minikube /usr/local/bin/
+  -
+    branches:
+      only:
+        - development
+    environment:
+      GIT_ACCESS_TOKEN:
+        secure: bYL40RWEXYSqfLLEOipwrMfkLLotoTB8T5B0QSPheafq7p9jbqdHVaa9SUn+GYff
+    install:
+      - docker version
+      - dotnet tool install --global fake-cli
+      - dotnet tool install --global paket
+      - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
+      - chmod +x kubectl
+      - sudo mv kubectl /usr/local/bin/
+      - npm install -s -g --unicode=false newman@4.6.1
+      - curl -sL https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 -o minikube
+      - chmod +x minikube
+      - sudo mv minikube /usr/local/bin/
+      - sudo apt install conntrack
+      - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+      - chmod 700 get_helm.sh
+      - ./get_helm.sh
 
-  - sudo apt install conntrack
-  
-before_build:
-  - mkdir "c:\projects\hobbes\hobbes.server\db\data"
-  - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --vm-driver=none --memory=4096
-  - eval $(minikube docker-env) 
-  - echo ${ENV_FILE} | kubectl apply -f -
+    before_build:
+      - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --vm-driver=none
+      - eval $(minikube docker-env) 
+      - echo ${ENV_FILE} | kubectl apply -f -
+      
 
-build_script:
-  - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-  - fake build --target Rebuild
-  
-test_script:
-  - source functions.sh
-  - export APP=(configurations gateway uniformdata azuredevops calculator syncronization db)
-  - start
-  - awaitRunningState
-  #- logs azu -f
-  - front_url=$(minikube ip)":30080"
-  - db_url=$(minikube ip)":30084"
-  - curl http://${front_url}/ping
-  - NAME=$(kubectl get pods -l app=gateway -o name) 
-  - newman run https://api.getpostman.com/collections/4127812-d535bce5-ad9a-4346-acb4-311c8443c478?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url} --env-var "collectordburl"=${db_url}
-  - newman run https://api.getpostman.com/collections/9463780-a7355a7a-5fe6-42b5-a1ed-877f3c9bc2f7?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url} --env-var "collectordburl"=${db_url} --env-var "pat"=${MASTER_KEY}
- 
-#deploy_script:
-  #- fake build --target pushdocker
+    build_script:
+      - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
+      - fake build --parallel 16 --target Rebuild
+      
+    test_script:
+      #- dotnet test
+      - source functions.sh
+      - export APP=(configurations gateway uniformdata azuredevops calculator syncronization db)
+      - start
+      - awaitRunningState
+      - front_url=$(minikube ip)":30080"
+      - db_url=$(minikube ip)":30084"
+      - curl http://${front_url}/ping
+      - NAME=$(kubectl get pods -l app=gateway -o name) 
+      - newman run https://api.getpostman.com/collections/4127812-d535bce5-ad9a-4346-acb4-311c8443c478?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url} --env-var "collectordburl"=${db_url}
+      - newman run https://api.getpostman.com/collections/9463780-a7355a7a-5fe6-42b5-a1ed-877f3c9bc2f7?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url} --env-var "collectordburl"=${db_url} --env-var "pat"=${MASTER_KEY}
+    
+    deploy_script:
+      - git config --global credential.helper store
+      - git config --global user.email "hobbes_buildserver@kmd.dk"
+      - git config --global user.name "Build server"
+      - git remote add pseudo https://${GIT_ACCESS_TOKEN}:x-oauth-basic@github.com/r-d-kmd/hobbes.git
+      - git checkout master
+      - git merge development
+      - git push pseudo master

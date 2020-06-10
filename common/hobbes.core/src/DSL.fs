@@ -37,6 +37,8 @@ type Expression =
     | Missing
     | Keys
     | Int of Expression
+    | True
+    | False
     with override x.ToString() =
            match x with
              Identifier s -> sprintf """ "%s" """ s
@@ -66,7 +68,7 @@ type Expression =
              | Gt(a,b) ->  sprintf " (%s) > (%s)" (a.ToString()) (b.ToString())
              | Not e -> sprintf "!(%s)" (e.ToString())
              | Keys -> "keys"
-             | DateTimeConstant d -> sprintf "\'%s\'" (d.ToString "dd/MM/yyyy")
+             | DateTimeConstant d -> sprintf "\'%s\'" (d.ToString(System.Globalization.CultureInfo.InvariantCulture))
              | Ordinals -> "ordinals"
              | DateFormat(columnName,f) ->
                  let dateFormat = 
@@ -93,6 +95,8 @@ type Expression =
                     | Some l -> sprintf " %d" l
                  sprintf "%s extrapolation [%s] %d %s" regStr (outputs.ToString()) count l
              | Int e -> sprintf "int (%s)" (e.ToString())
+             | True -> "true"
+             | False -> "false"
            
          static member private ParseStringOrDate (stringOrDate : string) = 
             match System.DateTime.TryParse(stringOrDate) with
@@ -107,11 +111,15 @@ type Expression =
              Equal(e1,e2)
          static member (==) (e1:Expression, e2:int) = 
              e1 == (e2 |> float |> NumberConstant)
+         static member (==) (e1:Expression, e2:System.DateTime) = 
+             e1 == (e2 |> DateTimeConstant)
+         
          static member (!=) (e1:Expression, e2:Expression) = 
              Not(Equal(e1,e2))     
          static member (!=) (e1:Expression, e2:string) = 
              let e2 = Expression.ParseStringOrDate e2
              e1 != e2
+             
          static member (.||) (exp1:Expression,exp2:Expression) =
              Or(exp1,exp2)
          static member (.&&) (exp1:Expression,exp2:Expression) =
@@ -298,8 +306,8 @@ let regex expr pattern tokens =
 
 let int e = Int(e)
 
-let isMissing e = e == Missing
-let isntMissing e = e != Missing 
+let isMissing (e : Expression) = e == Missing
+let isntMissing (e : Expression) = e != Missing 
 let format = ()
 let date _ columnName dt =
     DateFormat(columnName,dt)

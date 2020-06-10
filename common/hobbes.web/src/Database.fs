@@ -297,13 +297,16 @@ namespace Hobbes.Web
             
             let request httpMethod isTrial body path rev queryString =
                 let enc (s : string) = System.Web.HttpUtility.UrlEncode s           
-
-                let url = 
-                    System.String.Join("/", [
+                let root = 
+                     System.String.Join("/", [
                                                 ServerUrl
                                                 databaseName
-                                            ]@(path
-                                               |> List.map enc))+
+                                            ])
+                let urlWithoutQS = 
+                    System.String.Join("/", root::(path
+                                                   |> List.map enc)) 
+                let url = 
+                    urlWithoutQS +
                     match queryString with
                     None -> ""
                     | Some qs -> 
@@ -318,7 +321,7 @@ namespace Hobbes.Web
                       | Put -> "PUT", "to"
                       | Delete -> "DELETE", "from"          
                     
-                log.Debugf "%sting %A %s %s" m url direction databaseName
+                log.Debugf "%sting %A %s (%s,%A) %s" m url direction root path databaseName
                 
                 let headers =
                     [
@@ -417,7 +420,8 @@ namespace Hobbes.Web
                 (get id None |> Rev.Parse).Rev      
 
             member __.TryGetRev id = 
-                let statusCode,body = tryGet id None
+                if System.String.IsNullOrWhiteSpace id then failwith "Can't get revision of empty id"
+                let statusCode,body = tryGet [id] None
                 if statusCode >=200 && statusCode < 300 then
                     let revision = 
                         (body |> Rev.Parse).Rev
@@ -483,7 +487,7 @@ namespace Hobbes.Web
                 assert(id |> System.String.IsNullOrWhiteSpace |> not)
 
                 let request() = 
-                    let rev = [id] |> this.TryGetRev
+                    let rev = id |> this.TryGetRev
                     request Put true (Some doc) [id] rev None
                     
                 let status,body = 

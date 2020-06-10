@@ -1,5 +1,32 @@
 eval $(minikube -p minikube docker-env)
-declare -a APPS=(db)
+OS= uname -s
+if [ ${OS:0:5} != "MINGW" ]
+then
+    echo "Not windows"
+    declare -a APPS=(db)
+    function services(){
+         local APP_NAME=""
+         for APP in $(find ${SCRIPT_DIR}/services -name *.fsproj | rev | cut -d'/' -f1 | rev)
+         do
+             APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
+             APPS+=($APP_NAME)
+         done 
+         APP_NAME=""
+         for APP in $(find ${SCRIPT_DIR}/workers -name *.fsproj | rev | cut -d'/' -f1 | rev)
+         do
+             if [[ "$APP" = *.worker.* ]] 
+             then
+                APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
+             fi
+             APPS+=($APP_NAME)
+         done 
+    }
+    
+    services
+else
+    echo "Windows"
+    declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "sync" "uniformdata")
+fi
 VOLUMES=(db)
 function get_script_dir () {
      SOURCE="${BASH_SOURCE[0]}"
@@ -15,26 +42,6 @@ function get_script_dir () {
 }
 
 SCRIPT_DIR=$(get_script_dir)
-function services(){
-    local APP_NAME=""
-    for APP in $(find ${SCRIPT_DIR}/services -name *.fsproj | rev | cut -d'/' -f1 | rev)
-    do
-        APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
-        APPS+=($APP_NAME)
-    done 
-    APP_NAME=""
-    for APP in $(find ${SCRIPT_DIR}/workers -name *.fsproj | rev | cut -d'/' -f1 | rev)
-    do
-        if [[ "$APP" = *.worker.* ]] 
-        then
-           APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
-        fi
-        APPS+=($APP_NAME)
-    done 
-}
-
-services
-
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 
 
@@ -104,6 +111,8 @@ function clean(){
     kubectl delete --all pods
     kubectl delete --all pvc
     kubectl delete --all secrets
+    kubectl delete --all jobs
+    kubectl delete --all statefulset
 }
 
 function build(){    
@@ -139,31 +148,34 @@ function listServices(){
     minikube service list 
 }
 
+function installRabbitMQ(){
+    helm repo add bitnami https://charts.bitnami.com/bitnami
+    helm install test --set rabbitmq.username=guest,rabbitmq.password=guest bitnami/rabbitmq
+}
+
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-        local FILES=""
-
-    cd $KUBERNETES_DIR
+    local FILE=""
     kubectl apply -f env.JSON;
     
+    installRabbitMQ
+
     for i in "${APPS[@]}"; do 
         if test -f "$i-svc.yaml"
         then
-            FILES="$i-deployment.yaml,$i-svc.yaml"
+            FILE="$i-deployment.yaml,$i-svc.yaml"
         else
             if test -f "$i-deployment.yaml"
             then
-                FILES="$i-deployment.yaml"
+                FILE="$i-deployment.yaml"
             else
-                FILES="$i-job.yaml"
+                FILE="$i-job.yaml"
             fi
         fi
-        kubectl apply -f $(echo $FILES)
+        kubectl apply -f $(echo $FILE)
     done
     for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
-    kubectl apply -f rabbitmq-svc.yaml
-    kubectl apply -f rabbitmq-controller.yaml
 
     cd $CURRENT_DIR
 }

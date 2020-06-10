@@ -1,4 +1,4 @@
-namespace Hobbes.Server.Services
+namespace Hobbes.Gateway.Services
 
 open Hobbes.Web.Log
 open Hobbes.Web.Routing

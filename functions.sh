@@ -59,7 +59,7 @@ function getJobWorker(){
 }
 
 function getName(){
-    local NAME=$(kubectl get all | grep -e pod/$1 -e pod/collectors-$1 | cut -d ' ' -f 1 )
+    local NAME=$(kubectl get all | grep -e pod/$1 | cut -d ' ' -f 1 )
     if [ -z "$NAME" ]
     then
        NAME=$(getJobWorker $1)
@@ -181,11 +181,12 @@ function update(){
 }
 
 function isRunning(){
-    if [ "$1" == "syncronization" ]
+    local APP_NAME=$(echo "$1" | cut -d '-' -f1)
+    if [ "$APP_NAME" == "sync" ]
     then 
         echo "True"
     else
-        echo $(kubectl get pods -l app=$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
+        echo $(kubectl get pod/$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
     fi
 }
 
@@ -196,16 +197,16 @@ function pingService(){
 function testServiceIsFunctioning(){
     pingService $1 2>/dev/null | grep HTTP | tail -1 | cut -d$' ' -f2
 }
-
+declare -a pods=$(kubectl get pods | grep - | cut -d ' ' -f 1)
 function awaitRunningState(){
-    declare -a APPS_COPY=()
-    for NAME in ${APPS[@]}
+    declare -a PODS_COPY=()
+    for NAME in ${PODS[@]}
     do
-        APPS_COPY+=($NAME)
+        PODS_COPY+=($NAME)
     done
-    while (( ${#APPS_COPY[@]} ))
+    while (( ${#PODS_COPY[@]} ))
     do
-        for NAME in ${APPS_COPY[@]}
+        for NAME in ${PODS_COPY[@]}
         do 
             if [[ $(isRunning $NAME)  != "True" ]]
             then
@@ -213,11 +214,11 @@ function awaitRunningState(){
                 logs $NAME
                 sleep 1
             else
-                for i in "${!APPS_COPY[@]}"
+                for i in "${!PODS_COPY[@]}"
                 do
-                    if [[ ${APPS_COPY[i]} = $NAME ]]
+                    if [[ ${PODS_COPY[i]} = $NAME ]]
                     then
-                        unset 'APPS_COPY[i]'
+                        unset 'PODS_COPY[i]'
                     fi
                 done
                 echo "$NAME is running"
@@ -225,7 +226,7 @@ function awaitRunningState(){
         done
         echo ""
         echo "Still waiting for:"
-        printf '%s\n' "${APPS_COPY[@]}"
+        printf '%s\n' "${PODS_COPY[@]}"
     done
     all
 }

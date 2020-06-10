@@ -74,7 +74,9 @@ for:
       GIT_ACCESS_TOKEN:
         secure: bYL40RWEXYSqfLLEOipwrMfkLLotoTB8T5B0QSPheafq7p9jbqdHVaa9SUn+GYff
     install:
-      - sudo go get kustomize
+      - sudo add-apt-repository ppa:longsleep/golang-backports
+      - sudo apt update
+      - sudo apt install golang-go
       - docker version
       - dotnet tool install --global fake-cli
       - dotnet tool install --global paket

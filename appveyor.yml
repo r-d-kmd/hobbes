@@ -74,7 +74,7 @@ for:
       GIT_ACCESS_TOKEN:
         secure: bYL40RWEXYSqfLLEOipwrMfkLLotoTB8T5B0QSPheafq7p9jbqdHVaa9SUn+GYff
     install:
-      - curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
+      - curl -fsSL -o install_kustomize.sh "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
       - chmod 700 install_kustomize.sh
       - ./install_kustomize.sh
       - docker version

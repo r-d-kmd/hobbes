@@ -2,8 +2,14 @@
 FROM kmdrd/sdk:hobbes
 
 ENV BUILD_ENV docker
-
+ARG CONFIGURATION=release
+ENV BUILD_CONFIGURATION ${CONFIGURATION}
 COPY .lib/ ../.lib/
 COPY hobbes.properties.targets ./
+RUN if [ "$BUILD_CONFIGURATION" = "debug" ]; \
+    then apt-get update && \
+         apt-get install -y unzip procps && \
+         curl -sSL https://aka.ms/getvsdbgsh | /bin/sh /dev/stdin -v latest -l ~/vsdbg; \
+    fi
 ONBUILD COPY ./src/ .
-ONBUILD RUN dotnet publish -c release -o /app
+ONBUILD RUN dotnet publish -c ${BUILD_CONFIGURATION} -o /app

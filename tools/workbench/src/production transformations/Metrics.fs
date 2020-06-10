@@ -18,7 +18,7 @@ module Metrics =
                   (!> "SimpleState")
                   //count the number of workitemids
                   Count WorkItemId.Expression
-        ]  |> Transformation.Create "stateCountBySprint"
+        ]  |> createTransformation "stateCountBySprint"
 
     let bugCountBySprint =
         [
@@ -33,7 +33,7 @@ module Metrics =
                   (!> "SimpleState")
                   //count the number of workitemids
                   Count WorkItemId.Expression
-        ]  |> Transformation.Create "bugCountbySprint"
+        ]  |> createTransformation "bugCountbySprint"
 
     let storyPointSumBySprint = 
         [
@@ -47,7 +47,7 @@ module Metrics =
                   (!> "SimpleState")
                   //count the number of workitemids
                   Sum (!> "StoryPoints")
-        ]   |> Transformation.Create "storyPointSumBySprint"    
+        ]   |> createTransformation "storyPointSumBySprint"    
     
     let simpleBurnUp =
         [
@@ -59,7 +59,7 @@ module Metrics =
             create (column "Burn up") (expanding Sum (!> "Done")) 
             //Create a column named Velocity that's the moving mean of 'Done' of the last three rows
             create (column "Velocity") ((moving Mean 3 (!> "Done")))
-        ]  |> Transformation.Create "simpleBurnUp"
+        ]  |> createTransformation "simpleBurnUp"
 
     let burnUpWithForecast =
         [
@@ -77,7 +77,7 @@ module Metrics =
             ]
             //required to populate the Sprint number column with the predicted values
             create SprintNumber.Name Keys
-        ]  |> Transformation.Create "burnUpWithForecast"
+        ]  |> createTransformation "burnUpWithForecast"
 
     let workItemDoneMovingMean =
         [
@@ -87,7 +87,7 @@ module Metrics =
             sort by SprintNumber.Name
             //Create a column named Velocity that's the moving mean of 'Done' of the last three rows
             create (column "Moving Mean") ((moving Mean 3 (!> "Done")))
-        ]   |> Transformation.Create "workItemDoneMovingMean"
+        ]   |> createTransformation "workItemDoneMovingMean"
 
     let storyPointMovingMean =
         [
@@ -99,7 +99,7 @@ module Metrics =
             sort by SprintNumber.Name
             //Create a column named Velocity that's the moving mean of 'Done' of the last three rows
             create (column "Moving Mean") ((moving Mean 3 (!> "StoryPoints")))
-        ]    |> Transformation.Create "storyPointMovingMean"
+        ]    |> createTransformation "storyPointMovingMean"
 
     let bugsPerSprint =
         [
@@ -109,7 +109,7 @@ module Metrics =
             rename "Done" "Bugs"
             //moving mean and expanding sum only make sense if we are sure we know the order
             sort by SprintNumber.Name
-        ]   |> Transformation.Create "bugsPerSprint"       
+        ]   |> createTransformation "bugsPerSprint"       
 
     let martin =
         [
@@ -126,5 +126,5 @@ module Metrics =
                 "Iteration.StartDate"
                 "TimeStamp"
             ]
-        ]   |> Transformation.Create "martin"    
+        ]   |> createTransformation "martin"    
         

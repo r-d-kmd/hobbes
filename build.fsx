@@ -37,8 +37,12 @@ let run command workingDir args =
     |> CreateProcess.ensureExitCode
     |> Proc.run
     |> ignore
-
-
+let buildConfigurationName = (Environment.environVarOrDefault "CONFIGURATION" "Debug").ToLower()
+let buildConfiguration = 
+    match buildConfigurationName with
+    "release" -> 
+        DotNet.BuildConfiguration.Release
+    | _ -> DotNet.BuildConfiguration.Debug
 let commonLibDir = "./docker/.lib/"
 
 let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "2.0.default"
@@ -154,29 +158,36 @@ let changes =
                 File file
     ) |> Seq.distinct
 
+let commonChanges = 
+    changes
+    |> Seq.fold(fun lst c ->
+        match c with
+        Common com -> com::lst 
+        | _ -> lst
+    ) []
+
+let hasCommonChanged change =
+    match change with
+    CommonLib.Any -> commonChanges |> List.isEmpty |> not
+    | c -> commonChanges |> List.tryFind(fun c' -> c = c') |> Option.isSome
 
 let hasChanged change = 
-    force || changes |> Seq.tryFind (function
-                              Common c ->
-                                  match change with
-                                  Common CommonLib.Any -> true
-                                  | Common c' when c' = c -> true
-                                  | _ -> false
-                              | c -> c = change) |> Option.isSome
+    force || changes |> Seq.tryFind (fun c -> c = change) |> Option.isSome
      
 let rec shouldRebuildCommon = 
     function
        CommonLib.Web ->
-           //Web depends on Helpers
-           shouldRebuildCommon CommonLib.Helpers || (CommonLib.Web |> Common |> hasChanged)
-       | CommonLib.Messaging -> shouldRebuildCommon CommonLib.Web || (CommonLib.Messaging |> Common |> hasChanged)
+           shouldRebuildCommon CommonLib.Helpers 
+           || (CommonLib.Web |> hasCommonChanged)
+       | CommonLib.Messaging -> 
+           shouldRebuildCommon CommonLib.Web 
+           || (CommonLib.Messaging |> hasCommonChanged)
        | common ->
             common
-            |> Common
-            |> hasChanged
+            |> hasCommonChanged
 
 let skipSdkBuilds =
-    (not force) && (Environment.environVarOrDefault "BUILD_ENV" "local") = "AppVeyor"
+    (Environment.environVarOrDefault "BUILD_ENV" "local") = "AppVeyor"
 
 let hasDockerStageChanged ds = 
     (not skipSdkBuilds) &&  
@@ -226,7 +237,7 @@ let package conf outputDir projectFile =
                         }
                    ) projectFile
 
-printfn "Changes: %A" changes
+printfn "Changes: %s" (System.String.Join("\n",changes |> Seq.map (sprintf "%A")))
 
 let commonPath name = 
     sprintf "./common/hobbes.%s/src/hobbes.%s.fsproj" name name
@@ -426,7 +437,7 @@ commons |> List.iter(fun common ->
     let targetName = commonTargetName common
     Target.create targetName (fun _ ->
         let projectFile = commonPath commonName
-        package DotNet.BuildConfiguration.Release commonLibDir projectFile
+        package buildConfiguration commonLibDir projectFile
     )
     targetName ==> "Build" |> ignore
 ) 
@@ -435,24 +446,22 @@ Target.create "PushHobbesSdk" (fun _ ->
     pushImage "sdk:hobbes"
 )
 
-Target.create "PushAppSdk" (fun _ ->  
-    pushImage "sdk:app"
-)
 
 Target.create "BuildAppSdk" (fun _ ->   
-    buildImage "Dockerfile.sdk-app" "sdk:app"
+    let tag = dockerOrg + "/sdk:app"
+    let file = "Dockerfile.sdk-app"
+    //we do it this way because we want a debug version locally but want to push a release version to docker hub
+    sprintf "build -f %s -t %s ." file tag
+    |> run "docker" dockerDir.Name
+    pushImage "sdk:app"
+
+    //build the debug version for local use
+    sprintf "build -f %s -t %s --build-arg CONFIGURATION=%s ." file tag buildConfigurationName
+    |> run "docker" dockerDir.Name  
 )
 
 Target.create "BuildHobbesSdk" (fun _ ->   
         buildImage "Dockerfile.sdk-hobbes" "sdk:hobbes"
-)
-
-Target.create "BuildWorkbench" (fun _ -> 
-        package DotNet.BuildConfiguration.Release commonLibDir  """workbench/src/hobbes.workbench.fsproj"""
-)
-       
-Target.create "Publish" (fun _ -> 
-    run "dotnet" "./workbench/src" "run -- --publish" 
 )
 
 commons |> List.iter(fun common ->
@@ -497,20 +506,15 @@ workers
 "BuildCommonWeb" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Web)    
 
 "BuildCommon" =?> ("BuildAppSdk", shouldRebuildCommon CommonLib.Any)
-"PushAppSdk" =?> ("PreBuildServices", shouldRebuildAppSdk)
+"BuildAppSdk" =?> ("PreBuildServices", shouldRebuildAppSdk)
 
 "buildcommonMessaging" =?> ("PreBuildWorkers",shouldRebuildCommon CommonLib.Messaging)
-"PushAppSdk" =?> ("PreBuildWorkers", shouldRebuildAppSdk)
-"BuildCommon" =?> ("BuildWorkbench", shouldRebuildCommon CommonLib.Web) 
+"BuildAppSdk" =?> ("PreBuildWorkers", shouldRebuildAppSdk)
 
 "BuildGenericImages" ==> "PushGenericImages"
 "BuildServices" ==> "Build"
-"BuildWorkers" ==> "Build"
-"BuildAppSdk" ==> "PushAppSdk" 
-"BuildHobbesSdk" ==> "PushHobbesSdk" ==> "PushAppSdk"
+"BuildHobbesSdk" ==> "PushHobbesSdk" ==> "BuildAppSdk"
 "ForceBuildServices" ==> "Rebuild"
 "ForceBuildWorkers" ==> "Rebuild"
-
-"BuildWorkbench" ==> "Publish"
 
 Target.runOrDefaultWithArguments "Build"

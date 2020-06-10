@@ -4,7 +4,7 @@ let env name =
     System.Environment.GetEnvironmentVariable name
 
 let sync configuration azureToken= 
-    //let _,key = Hobbes.Server.Services.Data.sync configuration azureToken
+    //let _,key = Hobbes.Gateway.Services.Data.sync configuration azureToken
     //printfn "sync key: %s" key
     ()
 

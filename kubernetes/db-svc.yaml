@@ -3,12 +3,10 @@ kind: Service
 metadata:
   name: db-svc
 spec:
-  type: NodePort
   ports:
   - name: "5984"
     port: 5984
     targetPort: 5984
-    nodePort: 30084
   selector:
     app: db
 status:

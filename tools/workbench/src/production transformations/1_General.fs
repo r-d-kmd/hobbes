@@ -46,7 +46,7 @@ module General =
                 SprintEndDate
             ] |> List.map string
             |> slice columns 
-        ] |> Transformation.Create "baseData"
+        ] |> createTransformation "baseData"
 
     let foldBySprint = 
         [
@@ -55,9 +55,14 @@ module General =
                  //keep the row in each group where the ChangedDate is the highest 
                  //Ie keep the latest change of the work item in that particular sprint
                 ( maxby ChangedDate.Expression)
-        ] |> Transformation.Create "foldBySprint"
+        ] |> createTransformation "foldBySprint"
 
     let onlyInSprint = 
         [
             only (SprintNumber.Expression |> isntMissing)
-        ] |> Transformation.Create "onlyInSprint"
+        ] |> createTransformation "onlyInSprint"
+
+    let all = 
+        [
+            only (SprintNumber.Expression == SprintNumber.Expression)
+        ] |> createTransformation "AllWorkItems"

@@ -6,12 +6,6 @@
   </PropertyGroup>
   <Import Project="$(TargetsPath)hobbes.properties.targets" />
   <ItemGroup>
-    <Compile Include="db/Transformations.fs" />
-    <Compile Include="db/DataConfiguration.fs " />
-    <None Include="db/documents/**/*.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <Compile Include="Collector.fs" />
     <Compile Include="Services/Admin.fs" />
     <Compile Include="Services/Data.fs" />
     <Compile Include="Services/Root.fs" />

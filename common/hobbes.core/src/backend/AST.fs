@@ -187,7 +187,7 @@ module AST =
                     match other with
                     :? KeyType as otherKey ->
                         let result = 
-                            match otherKey, x with
+                            match x,otherKey with
                             Numbers n1,Numbers n2 -> n1.CompareTo n2
                             | Text t1, Text t2 -> t1.CompareTo t2
                             | List lst1, List lst2 -> 

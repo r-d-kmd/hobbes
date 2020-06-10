@@ -1,6 +1,6 @@
 eval $(minikube -p minikube docker-env)
-OS= uname -s
-if [ ${OS:0:5} != "MINGW" ]
+name=$(uname -s)
+if [ ${name:0:5} != "MINGW" ]
 then
     echo "Not windows"
     declare -a APPS=(db)
@@ -219,7 +219,10 @@ function awaitRunningState(){
     declare -a APPS_COPY=()
     for NAME in ${APPS[@]}
     do
-        APPS_COPY+=($NAME)
+        if [ "$NAME" != "sync" ]
+        then
+            APPS_COPY+=($NAME)
+        fi
     done
     while (( ${#APPS_COPY[@]} ))
     do

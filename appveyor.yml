@@ -77,7 +77,7 @@ for:
       - docker version
       - dotnet tool install --global fake-cli
       - dotnet tool install --global paket
-      - sudo apt-get kustomize
+      - go get sigs.k8s.io/kustomize
       - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
       - chmod +x kubectl
       - sudo mv kubectl /usr/local/bin/

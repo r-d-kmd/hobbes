@@ -157,10 +157,8 @@ function start() {
 
     installRabbitMQ
     
-    kustomize build -o all.yaml
-
-    kubectl apply -f all.yaml
-
+    kubectl apply -k ./
+    
     cd $CURRENT_DIR
 }
 

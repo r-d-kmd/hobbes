@@ -80,7 +80,6 @@ for:
       - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
       - chmod +x kubectl
       - sudo mv kubectl /usr/local/bin/
-      - kubectl apply -k ./kubernetes
       - npm install -s -g --unicode=false newman@4.6.1
       - curl -sL https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 -o minikube
       - chmod +x minikube
@@ -94,6 +93,7 @@ for:
       - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --vm-driver=none
       - eval $(minikube docker-env) 
       - echo ${ENV_FILE} | kubectl apply -f -
+      - kubectl apply -k ./kubernetes
       
 
     build_script:

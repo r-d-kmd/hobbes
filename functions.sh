@@ -1,8 +1,6 @@
 eval $(minikube -p minikube docker-env)
-name=$(uname -s)
-if [ ${name:0:5} != "MINGW" ]
+if [ $(uname -s) = "Darwin" ]
 then
-    echo "Not windows"
     declare -a APPS=(db)
     function services(){
          local APP_NAME=""
@@ -24,7 +22,6 @@ then
     
     services
 else
-    echo "Windows"
     declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "sync" "uniformdata")
 fi
 VOLUMES=(db)
@@ -111,8 +108,6 @@ function clean(){
     kubectl delete --all pods
     kubectl delete --all pvc
     kubectl delete --all secrets
-    kubectl delete --all jobs
-    kubectl delete --all statefulset
 }
 
 function build(){    
@@ -157,25 +152,14 @@ function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
     local FILE=""
-    kubectl apply -f env.JSON;
-    
-    installRabbitMQ
 
-    for i in "${APPS[@]}"; do 
-        if test -f "$i-svc.yaml"
-        then
-            FILE="$i-deployment.yaml,$i-svc.yaml"
-        else
-            if test -f "$i-deployment.yaml"
-            then
-                FILE="$i-deployment.yaml"
-            else
-                FILE="$i-job.yaml"
-            fi
-        fi
-        kubectl apply -f $(echo $FILE)
-    done
-    for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
+    kubectl apply -f env.JSON;
+
+    installRabbitMQ
+    
+    kustomize build -o all.yaml
+
+    kubectl apply -f all.yaml
 
     cd $CURRENT_DIR
 }
@@ -219,10 +203,7 @@ function awaitRunningState(){
     declare -a APPS_COPY=()
     for NAME in ${APPS[@]}
     do
-        if [ "$NAME" != "sync" ]
-        then
-            APPS_COPY+=($NAME)
-        fi
+        APPS_COPY+=($NAME)
     done
     while (( ${#APPS_COPY[@]} ))
     do

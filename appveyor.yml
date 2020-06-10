@@ -93,9 +93,7 @@ for:
       - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --vm-driver=none
       - eval $(minikube docker-env) 
       - echo ${ENV_FILE} | kubectl apply -f -
-      - kubectl apply -k ./kubernetes
       
-
     build_script:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
       - fake build --parallel 16 --target Rebuild

@@ -203,6 +203,7 @@ function awaitRunningState(){
     for NAME in ${PODS[@]}
     do
         PODS_COPY+=($NAME)
+        echo "waiting for $NAME"
     done
     while (( ${#PODS_COPY[@]} ))
     do

@@ -96,12 +96,11 @@ for:
       
     build_script:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-      - fake build --target Rebuild
+      - fake build --parallel 32 --target Rebuild
       
     test_script:
       #- dotnet test
       - source functions.sh
-      - sleep 5
       - start
       - awaitRunningState
       - front_url=$(minikube ip)":30080"

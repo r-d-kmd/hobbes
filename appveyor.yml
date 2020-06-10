@@ -76,8 +76,7 @@ for:
     install:
       - sudo add-apt-repository ppa:longsleep/golang-backports
       - sudo apt update
-      - sudo apt install golang-go
-      - y
+      - sudo apt -y install golang-go
       - docker version
       - dotnet tool install --global fake-cli
       - dotnet tool install --global paket

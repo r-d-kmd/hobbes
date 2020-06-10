@@ -74,7 +74,7 @@ for:
       GIT_ACCESS_TOKEN:
         secure: bYL40RWEXYSqfLLEOipwrMfkLLotoTB8T5B0QSPheafq7p9jbqdHVaa9SUn+GYff
     install:
-      - sudo apt install kustomize
+      - curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
       - docker version
       - dotnet tool install --global fake-cli
       - dotnet tool install --global paket

@@ -96,12 +96,12 @@ for:
       
     build_script:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-      - fake build --parallel 16 --target Rebuild
+      - fake build --target Rebuild
       
     test_script:
       #- dotnet test
       - source functions.sh
-      - export APP=(configurations gateway uniformdata azuredevops calculator syncronization db)
+      - sleep 5
       - start
       - awaitRunningState
       - front_url=$(minikube ip)":30080"

@@ -197,37 +197,39 @@ function pingService(){
 function testServiceIsFunctioning(){
     pingService $1 2>/dev/null | grep HTTP | tail -1 | cut -d$' ' -f2
 }
-declare -a PODS=$(kubectl get pods | grep - | cut -d ' ' -f 1)
-function awaitRunningState(){
-    declare -a PODS_COPY=()
-    for NAME in ${PODS[@]}
-    do
-        PODS_COPY+=($NAME)
-        echo "waiting for $NAME"
+declare -a PODS=()
+function pods(){
+    PODS=()
+    PODS_=$(kubectl get pods | grep - | cut -d ' ' -f 1)
+    for NAME in ${PODS_[@]}
+    do 
+        if [[ $(isRunning $NAME) != "True" ]]
+        then
+            PODS+="$NAME"
+        fi
     done
-    while (( ${#PODS_COPY[@]} ))
+}
+
+function awaitRunningState(){
+    PODS=$(kubectl get pods | grep - )
+    while [ ${#PODS[@]} -eq 0 ]
     do
-        for NAME in ${PODS_COPY[@]}
+        sleep 1
+        PODS=$(kubectl get pods | grep - )
+    done
+    pods    
+    while (( ${#PODS[@]} ))
+    do
+        PODS_=$(kubectl get pods | grep - | cut -d ' ' -f 1 )
+        echo "Still waiting for:"
+        for NAME in ${PODS_[@]}
         do 
-            if [[ $(isRunning $NAME)  != "True" ]]
+            if [[ $(isRunning $NAME) != "True" ]]
             then
-                echo "waiting for $NAME"
-                logs $NAME
-                sleep 1
-            else
-                for i in "${!PODS_COPY[@]}"
-                do
-                    if [[ ${PODS_COPY[i]} = $NAME ]]
-                    then
-                        unset 'PODS_COPY[i]'
-                    fi
-                done
-                echo "$NAME is running"
+                echo "$(echo "$NAME" | cut -d '-' -f1)"
             fi
         done
-        echo ""
-        echo "Still waiting for:"
-        printf '%s\n' "${PODS_COPY[@]}"
+        sleep 1
     done
     all
 }

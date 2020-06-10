@@ -197,7 +197,7 @@ function pingService(){
 function testServiceIsFunctioning(){
     pingService $1 2>/dev/null | grep HTTP | tail -1 | cut -d$' ' -f2
 }
-declare -a pods=$(kubectl get pods | grep - | cut -d ' ' -f 1)
+declare -a PODS=$(kubectl get pods | grep - | cut -d ' ' -f 1)
 function awaitRunningState(){
     declare -a PODS_COPY=()
     for NAME in ${PODS[@]}

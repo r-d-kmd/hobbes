@@ -74,16 +74,13 @@ for:
       GIT_ACCESS_TOKEN:
         secure: bYL40RWEXYSqfLLEOipwrMfkLLotoTB8T5B0QSPheafq7p9jbqdHVaa9SUn+GYff
     install:
-      - sudo add-apt-repository ppa:longsleep/golang-backports
-      - sudo apt update
-      - sudo apt -y install golang-go
-      - sudo go install sigs.k8s.io/kustomize
       - docker version
       - dotnet tool install --global fake-cli
       - dotnet tool install --global paket
       - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
       - chmod +x kubectl
       - sudo mv kubectl /usr/local/bin/
+      - kubectl apply -k ./kubernetes
       - npm install -s -g --unicode=false newman@4.6.1
       - curl -sL https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 -o minikube
       - chmod +x minikube

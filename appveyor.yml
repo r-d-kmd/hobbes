@@ -100,10 +100,10 @@ for:
       
     test_script:
       #- dotnet test
-      - kubectl port-forward service/test-rabbitmq 15672:15672
       - source functions.sh
       - start
       - awaitRunningState
+      - kubectl port-forward service/test-rabbitmq 15672:15672
       - ip=$(minikube ip)
       - curl http://${front_url}/ping
       - NAME=$(kubectl get pods -l app=gateway -o name) 

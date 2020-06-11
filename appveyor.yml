@@ -105,7 +105,7 @@ for:
       - awaitRunningState
       - kubectl port-forward service/test-rabbitmq 15672:15672 &
       - ip=$(minikube ip)
-      - curl http://${front_url}/ping
+      - curl http://${ip}:30080/ping
       - NAME=$(kubectl get pods -l app=gateway -o name) 
       #- newman run https://api.getpostman.com/collections/4127812-d535bce5-ad9a-4346-acb4-311c8443c478?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url} --env-var "collectordburl"=${db_url}
       - newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=${ip} --env-var "master_key"=${MASTER_KEY}

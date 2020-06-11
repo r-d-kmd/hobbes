@@ -171,8 +171,9 @@ let hasCommonChanged change =
     CommonLib.Any -> commonChanges |> List.isEmpty |> not
     | c -> commonChanges |> List.tryFind(fun c' -> c = c') |> Option.isSome
 
-let hasChanged change = 
-    force || changes |> Seq.tryFind (fun c -> c = change) |> Option.isSome
+let hasChanged change =
+    true 
+    //force || changes |> Seq.tryFind (fun c -> c = change) |> Option.isSome
      
 let rec shouldRebuildCommon = 
     function
@@ -439,7 +440,7 @@ commons |> List.iter(fun common ->
         let projectFile = commonPath commonName
         package buildConfiguration commonLibDir projectFile
     )
-    targetName ==> "Build" |> ignore
+    targetName ==> "BuildCommon" |> ignore
 ) 
 
 Target.create "PushHobbesSdk" (fun _ ->  
@@ -506,13 +507,11 @@ workers
 "BuildCommonWeb" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Web)    
 
 "BuildCommon" =?> ("BuildAppSdk", shouldRebuildCommon CommonLib.Any)
-"BuildAppSdk" =?> ("PreBuildServices", shouldRebuildAppSdk)
 
-"buildcommonMessaging" =?> ("PreBuildWorkers",shouldRebuildCommon CommonLib.Messaging)
-"BuildAppSdk" =?> ("PreBuildWorkers", shouldRebuildAppSdk)
 
 "BuildGenericImages" ==> "PushGenericImages"
 "BuildServices" ==> "Build"
+"BuildWorkers" ==> "Build"
 "BuildHobbesSdk" ==> "PushHobbesSdk" ==> "BuildAppSdk"
 "ForceBuildServices" ==> "Rebuild"
 "ForceBuildWorkers" ==> "Rebuild"

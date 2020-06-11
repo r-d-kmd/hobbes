@@ -20,5 +20,5 @@ module Git =
 
     let allCommits = 
         [
-            only (!> "Time" == !> "Time")
+            only True
         ] |> createTransformation "AllCommits"

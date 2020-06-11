@@ -40,8 +40,12 @@ let mutable (time,dependencies : Map<string,seq<Transformation>>) = (System.Date
     
 let dependingTransformations (cacheKey : string) =
     assert(not(cacheKey.EndsWith(":") || System.String.IsNullOrWhiteSpace cacheKey))
-    
-    if time < System.DateTime.Now.AddHours -1. then
+#if DEBUG    
+    let isCacheStale = true
+#else
+    let isCacheStale = time < System.DateTime.Now.AddHours -1. 
+#endif    
+    if isCacheStale then
         time <- System.DateTime.Now
         dependencies <-
             configurations.List()

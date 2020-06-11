@@ -64,5 +64,5 @@ module General =
 
     let all = 
         [
-            only (SprintNumber.Expression == SprintNumber.Expression)
+            only True
         ] |> createTransformation "AllWorkItems"

@@ -95,8 +95,8 @@ type Expression =
                     | Some l -> sprintf " %d" l
                  sprintf "%s extrapolation [%s] %d %s" regStr (outputs.ToString()) count l
              | Int e -> sprintf "int (%s)" (e.ToString())
-             | True -> "true"
-             | False -> "false"
+             | True -> "1 = 1"
+             | False -> "1 = 2"
            
          static member private ParseStringOrDate (stringOrDate : string) = 
             match System.DateTime.TryParse(stringOrDate) with

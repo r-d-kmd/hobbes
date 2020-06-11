@@ -188,7 +188,6 @@ function isRunning(){
     then 
         echo "True"
     else
-        echo $(kubectl describe pod/test-rabbitmq-0)
         echo $(kubectl get pod/$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
     fi
 }
@@ -234,6 +233,7 @@ function awaitRunningState(){
             if [[ $(isRunning $NAME) != "True" ]]
             then
                 echo "$(echo "$NAME" | cut -d '-' -f1)"
+                echo "$(kubectl describe pod/test-rabbitmq-0)"
             fi
         done
         sleep 1

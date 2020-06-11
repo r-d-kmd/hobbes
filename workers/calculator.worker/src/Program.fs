@@ -17,7 +17,7 @@ let transformData (message : CalculationMessage) =
             try
                 let columnNames = cacheRecord.Data.ColumnNames
                 let data = 
-                    cacheRecord.Data.Rows
+                    cacheRecord.Data.Rows()
                     |> Seq.mapi(fun index row ->
                         index,row
                               |> Seq.zip columnNames

@@ -5,15 +5,34 @@ open Hobbes.Helpers
 open Newtonsoft.Json
 
 module Cache =
+    [<RequireQualifiedAccess>]
+    type Value = 
+       Int of int
+       | Float of float
+       | Date of System.DateTime
+       | Text of string
+       | Null
+
     type DataResult = 
         {
             [<JsonProperty("columnNames")>]
             ColumnNames : string []
             [<JsonProperty("rows")>]
-            Rows : obj [][]
+            Values : Value [][]
             [<JsonProperty("rowCount")>]
             RowCount : int
-        }
+        } with member x.Rows() =
+                    x.Values
+                    |> Array.map(
+                           Array.map(
+                               function
+                                   Value.Int i -> box i
+                                   | Value.Float f -> box f
+                                   | Value.Date d -> box d
+                                   | Value.Text s -> box s
+                                   | Value.Null -> null
+                           )
+                    )
     
     type CacheRecord = 
         {
@@ -46,7 +65,7 @@ module Cache =
         let data = cacheRecord.Data
         let columnNames = data.ColumnNames
         
-        data.Rows
+        data.Rows()
         |> Seq.mapi(fun index row ->
             index,(row
                    |> Seq.zip columnNames)

@@ -233,7 +233,7 @@ function awaitRunningState(){
             if [[ $(isRunning $NAME) != "True" ]]
             then
                 echo "$(echo "$NAME" | cut -d '-' -f1)"
-                echo "$(kubectl describe pod/test-rabbitmq-0)"
+                echo "$(kubectl logs -f pod/test-rabbitmq-0)"
             fi
         done
         sleep 1

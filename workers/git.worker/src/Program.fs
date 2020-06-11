@@ -4,12 +4,13 @@ open Hobbes.Web
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
 open Hobbes.Helpers
+open Hobbes.Web.Cache
 
 let synchronize (source : GitSource.Root) token =
     try
         let columnNames,values,rowCount = 
             match source.Dataset.ToLower() with
-            _ ->
+            "commits" ->
                 let commits = commits source.Account source.Project
                 let columnNames = [|"id";"Time";"Author";"Repository Name";"Branch Name"|]
                 let values =
@@ -17,19 +18,19 @@ let synchronize (source : GitSource.Root) token =
                     |> Seq.distinct
                     |> Seq.map(fun c ->
                          [|
-                             c.Id :> obj
-                             c.Date :> obj
-                             c.Author :> obj
-                             c.RepositoryName :> obj
-                             c.BranchName :> obj
+                             c.Id |> Value.Text
+                             c.Date |> Value.Date
+                             c.Author |> Value.Text
+                             c.RepositoryName |> Value.Text
+                             c.BranchName |> Value.Text
                          |]
                     ) |> Array.ofSeq
                 columnNames, values, (commits |> Seq.length)
-            //| ds -> failwithf "Datsaet (%s) not known" ds
+            | ds -> failwithf "Datsaet (%s) not known" ds
         
         {
             ColumnNames = columnNames
-            Rows = values
+            Values = values
             RowCount = rowCount
         } : Cache.DataResult
         |> Some

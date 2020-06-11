@@ -5,7 +5,7 @@ open Readers.AzureDevOps.Data
 open Hobbes.Helpers.Environment
 open Hobbes.Web.RawdataTypes
 open Hobbes.Web
-
+open Hobbes.Web.Cache
 module Reader =
     //Helper method for optional properties of the data record
     let inline private asObj v =
@@ -159,18 +159,20 @@ module Reader =
                 (timeStamp::areaProperty::iterationProperties@properties)
                 |> List.map(fun v -> 
                     match v with 
-                    null -> null
+                    null -> Value.Null
                     | :? System.DateTime as d -> 
-                        d :> obj
+                        d |> Value.Date
                     | :? System.DateTimeOffset as d -> 
-                        d.ToLocalTime() :> obj
-                    | _ -> v
+                        d.ToLocalTime().DateTime |> Value.Date
+                    | :? int as i  -> i |> Value.Int
+                    | :? float as f -> f |> Value.Float
+                    | s -> s |> string |> Value.Text
                 ) |> Array.ofList
             ) |> Array.ofSeq    
         let data = 
             {
                ColumnNames = columnNames
-               Rows = rows
+               Values = rows
                RowCount = rows.Length
             } : Cache.DataResult
             

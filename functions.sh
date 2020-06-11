@@ -108,6 +108,8 @@ function clean(){
     kubectl delete --all pods
     kubectl delete --all pvc
     kubectl delete --all secrets
+    kubectl delete --all statefulset
+    kubectl delete --all job
 }
 
 function build(){    

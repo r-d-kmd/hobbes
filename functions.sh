@@ -183,8 +183,8 @@ function update(){
 }
 
 function isRunning(){
-    local APP_NAME=$(echo "$1" | cut -d '-' -f1)
-    if [ "$APP_NAME" = "sync" ] || [ "$APP_NAME" = "test" ]
+    local APP_NAME=$(echo "$1")
+    if [ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "sync" ]
     then 
         echo "True"
     else
@@ -233,6 +233,7 @@ function awaitRunningState(){
             if [[ $(isRunning $NAME) != "True" ]]
             then
                 echo "$(echo "$NAME" | cut -d '-' -f1)"
+                echo "$(kubectl logs -f pod/test-rabbitmq-0)"
             fi
         done
         sleep 1

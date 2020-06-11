@@ -188,6 +188,7 @@ function isRunning(){
     then 
         echo "True"
     else
+        echo $(kubectl describe pod/test-rabbitmq-0)
         echo $(kubectl get pod/$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
     fi
 }

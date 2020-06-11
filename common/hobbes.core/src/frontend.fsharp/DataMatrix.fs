@@ -873,17 +873,17 @@ module DataStructures =
             ) |> Seq.filter(fun (_,values) -> values |> Seq.isEmpty |> not)
 
         let serialiseValue (value : obj) = 
-            match value with
-            null -> "null"
-            | :? string as s -> jsonString s
-            | :? bool as b -> 
-                    if b then "true" else "false"
-            | :? int as i -> i |> string
-            | :? float as f -> f |> string
-            | :? decimal as d -> d |> string
-            | :? DateTime as d -> sprintf """ "%s" """ (d.ToString "dd/MM/yyyy")
-            | :? DateTimeOffset as d -> sprintf """ "%s" """ (d.ToString "dd/MM/yyyy")
-            | _ -> sprintf "%A" value
+            let caseName,value = 
+                match value with
+                null -> "Null", ""
+                | :? int ->  "Int", string value
+                | :? float | :? decimal -> "Float", string value
+                | :? DateTime -> "Date", value |> string |> sprintf "%A"
+                | :? string -> "Text", sprintf "%A" value
+                | :? bool as b -> 
+                    if b then "Boolean","true" else "Boolean","false"
+                | _ -> "Text", sprintf "%A" value
+            sprintf """{"Case": "%s","Fields": [%s]}""" caseName value
 
         member private ___.Columns 
             with get() =
@@ -964,7 +964,7 @@ module DataStructures =
                         (",",table
                             |> Seq.map(fun (_,values) ->
                                 System.String.Join(",", values 
-                                                        |> Seq.map serialiseValue
+                                                        |> Seq.map (snd >> serialiseValue)
                                 ) |> sprintf "[%s]"
                             )) |> String.Join |> sprintf "[%s]"
 
@@ -994,7 +994,7 @@ module DataStructures =
                                     |> Series.observationsAll
                                     |> Seq.sortBy(fun (columnName,_) -> columnMap.[columnName])
                                     |> Seq.map (function
-                                                _,None -> "null"
+                                                _,None -> serialiseValue null
                                                 | _,Some v -> serialiseValue v))
                                 |> System.String.Join
                                 |> sprintf "[%s]"

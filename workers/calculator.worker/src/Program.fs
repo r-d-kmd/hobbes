@@ -23,12 +23,18 @@ let transformData (message : CalculationMessage) =
                               |> Seq.zip columnNames
                     )
                 let key = cacheKey + ":" + transformation.Name
-                let transformedData = 
+                let dataJson = 
                     data
                     |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
                     |> Hobbes.FSharp.Compile.expressions transformation.Statements 
-                    |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows 
-                    |> Json.deserialize<Cache.DataResult> 
+                    |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows                 
+                let transformedData = 
+                    try
+                        dataJson
+                        |> Json.deserialize<Cache.DataResult> 
+                    with e ->
+                        Log.excf e "Could deserialize (%s)" dataJson
+                        reraise()
                 try
                     transformedData
                     |> cache.InsertOrUpdate key

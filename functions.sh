@@ -215,13 +215,17 @@ function awaitRunningState(){
     while [ ${#PODS[@]} -eq 0 ]
     do
         sleep 1
+        for NAME in ${PODS_[@]}
+        do
+            echo "$NAME"
+        done
         PODS=$(kubectl get pods | grep - )
     done
     pods    
     while (( ${#PODS[@]} ))
     do
         PODS_=$(kubectl get pods | grep - | cut -d ' ' -f 1 )
-        echo "Still waiting for:"
+        echo "Still waiting for: ${#PODS[@]}"
         for NAME in ${PODS_[@]}
         do 
             if [[ $(isRunning $NAME) != "True" ]]
@@ -230,6 +234,7 @@ function awaitRunningState(){
             fi
         done
         sleep 1
+        pods
     done
     all
 }

@@ -183,8 +183,8 @@ function update(){
 }
 
 function isRunning(){
-    local APP_NAME=$(echo "$1" | cut -d '-' -f1)
-    if [ "$APP_NAME" = "sync" ]
+    local APP_NAME=$(echo "$1")
+    if [ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "sync" ]
     then 
         echo "True"
     else

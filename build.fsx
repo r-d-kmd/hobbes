@@ -87,9 +87,7 @@ type App =
                     name, "service"
 [<RequireQualifiedAccess>]
 type DockerStage =
-     Generic
-     | BaseSdk
-     | AppSdk
+     AppSdk
      | Other
 
 type Change =
@@ -124,8 +122,6 @@ let changes =
             if isBelow dockerDir then
                 let dockerStage = 
                     match file.Replace("Dockerfile.","") with
-                    "aspnet" | "couchdb" | "sdk" -> DockerStage.Generic
-                    | "sdk-hobbes" -> DockerStage.BaseSdk
                     | "sdk-app" | "hobbes.properties.targets" -> DockerStage.AppSdk
                     | _ -> DockerStage.Other
                 Docker dockerStage
@@ -193,9 +189,6 @@ let skipSdkBuilds =
 let hasDockerStageChanged ds = 
     (not skipSdkBuilds) &&  
     (Docker ds |> hasChanged)
-
-let shouldRebuildGenericDockerImages =
-    hasDockerStageChanged DockerStage.Generic
 
 let shouldRebuildDependencies = 
     (not skipSdkBuilds) &&  
@@ -276,12 +269,6 @@ let pushImage (tag : string) =
     sprintf "push %s" tag
     |> run "docker" dockerDir.Name
 
-let genricImages = 
-    [
-        "couchdb"
-        "sdk"
-    ]
-
 let appTargets : seq<_> -> _ = 
     Seq.map(fun (app : App) ->
         let name,_ = app.NameAndType         
@@ -303,14 +290,12 @@ let workerTargets =
 let setupServiceTarget serviceName = 
     let shouldRebuild = shouldRebuildService serviceName
     let target = serviceTargets.[serviceName]
-    "PreBuildServices" ==> target |> ignore
-    target =?> ("BuildServices" , shouldRebuild) |> ignore
+    target ==> "BuildServices" |> ignore
 
 let setupWorkerTarget workerName = 
     let shouldRebuild = shouldRebuildWorker workerName
     let target = workerTargets.[workerName]
-    "PreBuildWorkers" ==> target |> ignore
-    target =?> ("BuildWorkers" , shouldRebuild) |> ignore
+    target ==> "BuildWorkers" |> ignore
 
 let buildApp (app : App) workingDir =
     let name,appType = app.NameAndType
@@ -353,19 +338,14 @@ let buildApp (app : App) workingDir =
     
     Target.create buildTargetName build
     Target.create pushTargetName push
-    "PreBuild" + appType + "s" ==> buildTargetName |> ignore
-    buildTargetName ==> pushTargetName ==> "PushAllApps" |> ignore
+    buildTargetName ==> pushTargetName |> ignore
 
-Target.create "Rebuild" ignore
+Target.create "All" ignore
 Target.create "Build" ignore
 Target.create "BuildCommon" ignore
-Target.create "BuildGenericImages" ignore
-Target.create "PushGenericImages" ignore
+
 Target.create "BuildServices" ignore
 Target.create "BuildWorkers" ignore
-Target.create "PreBuildServices" ignore
-Target.create "PreBuildWorkers" ignore
-Target.create "PushAllApps" ignore
 
 Target.create "CleanCommon" (fun _ ->
     let deleteFiles lib =
@@ -410,17 +390,6 @@ workers
     buildApp (Worker name) dir
 ) 
 
-//Generic images
-genricImages
-|> List.iter(fun name ->
-    let buildTargetName = "BuildGeneric" + name
-    let pushTargetName = "PushGeneric" + name
-    
-    Target.create buildTargetName (fun _ ->  buildImage (sprintf "Dockerfile.%s" name) name)
-    Target.create pushTargetName (fun _ ->  pushImage name)
-    buildTargetName  ==> pushTargetName ==> "PushGenericImages" |> ignore
-)
-
 let commonTargetName common =
     common.ToString() 
     |> sprintf "BuildCommon%s"
@@ -432,7 +401,6 @@ commons |> List.iter(fun common ->
         let projectFile = commonPath commonName
         package buildConfiguration commonLibDir projectFile
     )
-    targetName ==> "BuildCommon" |> ignore
 ) 
 
 
@@ -450,12 +418,6 @@ Target.create "Sdk" (fun _ ->
     |> run "docker" dockerDir.Name  
 )
 
-commons |> List.iter(fun common ->
-        let targetName = commonTargetName common
-        "CleanCommon" =?> (targetName, shouldRebuildCommon common) |> ignore
-        targetName =?> ("BuildCommon" , shouldRebuildCommon common) |> ignore
-)
-
 services
 |> Seq.iter(fun (serviceName,_) ->
         setupServiceTarget serviceName
@@ -466,23 +428,20 @@ workers
         setupWorkerTarget workerName
 )
 
-"Dependencies" =?> ("Sdk", shouldRebuildDependencies)
+"CleanCommon" 
+    ==> "Dependencies"
+    ==> "BuildCommonHelpers" 
+    ==> "BuildCommonWeb"
+    ==> "BuildCommonMessaging"
+    ==> "BuildCommon" 
+    ==> "Sdk"
 
-"BuildCommonHelpers" =?> ("BuildCommonWeb", shouldRebuildCommon CommonLib.Helpers)
-"BuildCommonHelpers" =?> ("BuildCommonMessaging", shouldRebuildCommon CommonLib.Helpers)
-"BuildCommonWeb" =?> ("BuildCommonMessaging", shouldRebuildCommon CommonLib.Web)
-
-"BuildCommonHelpers" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Helpers)
-"BuildCommonMessaging" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Messaging)
-"BuildCommonWeb" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Web)    
-
-"BuildCommon" =?> ("Sdk", shouldRebuildCommon CommonLib.Any)
-
-
-"BuildGenericImages" ==> "PushGenericImages" ==> "Sdk"
 "BuildServices" ==> "Build"
 "BuildWorkers" ==> "Build"
 
-"Build" ==> "all"
-"Sdk" ==> "all"
+"Sdk" 
+    ?=> "Build"
+    ==> "All"
+"Sdk" ==> "All"
+
 Target.runOrDefaultWithArguments "Build"

@@ -35,6 +35,21 @@ module Cache =
                                    | Value.Boolean b -> box b
                            )
                     )
+               member x.StringRows() =
+                    printfn "Hello"
+                    x.Values
+                    |> Array.map(
+                           Array.map(
+                               function
+                                   Value.Int i -> sprintf "%i" i
+                                   | Value.Float f -> sprintf "%f" f
+                                   | Value.Date d -> sprintf "\"%A\"" d
+                                   | Value.Text s -> s.Replace("\\", "\\\\")
+                                                     |> sprintf "%A"
+                                   | Value.Null -> "null"
+                                   | Value.Boolean b -> sprintf "%b" b
+                           )
+                    )
     
     type CacheRecord = 
         {

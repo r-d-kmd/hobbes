@@ -29,7 +29,7 @@ let main _ =
                 source.JsonValue.ToString()
                 |> Sync
                 |> Json.serialize
-            printfn "Syncing generic (%s)" message
+            printfn "Syncing generic (%s) on %s %d" message 
             Broker.Generic queueName message
         )
         0

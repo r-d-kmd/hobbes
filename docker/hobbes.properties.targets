@@ -3,11 +3,6 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <CommonLibPath>/.lib/</CommonLibPath>
-  </PropertyGroup>
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <CommonLibPath>/.lib/</CommonLibPath>
     <IncludeCore Condition="$(IncludeCore) == ''">True</IncludeCore>
     <IncludeHelpers Condition="$(IncludeHelpers) == ''">True</IncludeHelpers>
     <IncludeWeb Condition="$(IncludeWeb) == ''">True</IncludeWeb>

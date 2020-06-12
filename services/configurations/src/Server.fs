@@ -8,8 +8,7 @@ open Hobbes.Messaging.Broker
 open Hobbes.Messaging
 open Hobbes.Web.RawdataTypes
 
-let private port = env "PORT" "8085"
-                   |> int
+let private port = 8085
 
 let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "The requested ressource does not exist")
@@ -24,7 +23,7 @@ let private appRouter = router {
 } 
 
 let private app = application {
-    url (sprintf "http://0.0.0.0:%d/" port)
+    url "http://0.0.0.0:8085/"
     use_router appRouter
     memory_cache
     use_gzip

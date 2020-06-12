@@ -1,3 +1,0 @@
-FROM kmdrd/base
-ONBUILD COPY /deploy /
-WORKDIR /Server

@@ -1,9 +1,0 @@
-ARG SDK_ENV=sdk:latest
-FROM kmdrd/${SDK_ENV}
-
-ENV BUILD_ENV docker
-
-COPY ./build/paket.* ./
-COPY build/.paket /.paket
-
-RUN mono /.paket/paket.exe restore 

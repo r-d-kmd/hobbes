@@ -201,17 +201,12 @@ let shouldRebuildDependencies =
     (not skipSdkBuilds) &&  
     hasChanged PaketDependencies
 
-let shouldRebuildHobbesSdk =
-     (not skipSdkBuilds) &&
-     (shouldRebuildGenericDockerImages 
-      || hasDockerStageChanged DockerStage.BaseSdk
-      || shouldRebuildDependencies)
-
 let shouldRebuildAppSdk =
     (not skipSdkBuilds) &&
-    (shouldRebuildHobbesSdk 
-     || hasDockerStageChanged DockerStage.AppSdk
-     || ((not skipSdkBuilds) && (hasChanged (Common CommonLib.Any))))
+     (hasDockerStageChanged DockerStage.AppSdk
+      || ((not skipSdkBuilds) && (hasChanged (Common CommonLib.Any))
+         )
+     )
 
 let shouldRebuildService name = 
     shouldRebuildCommon CommonLib.Any
@@ -284,7 +279,6 @@ let pushImage (tag : string) =
 let genricImages = 
     [
         "couchdb"
-        "aspnet"
         "sdk"
     ]
 
@@ -443,12 +437,9 @@ commons |> List.iter(fun common ->
     targetName ==> "BuildCommon" |> ignore
 ) 
 
-Target.create "PushHobbesSdk" (fun _ ->  
-    pushImage "sdk:hobbes"
-)
 
 
-Target.create "BuildAppSdk" (fun _ ->   
+Target.create "Sdk" (fun _ ->   
     let tag = dockerOrg + "/sdk:app"
     let file = "Dockerfile.sdk-app"
     //we do it this way because we want a debug version locally but want to push a release version to docker hub
@@ -459,10 +450,6 @@ Target.create "BuildAppSdk" (fun _ ->
     //build the debug version for local use
     sprintf "build -f %s -t %s --build-arg CONFIGURATION=%s ." file tag buildConfigurationName
     |> run "docker" dockerDir.Name  
-)
-
-Target.create "BuildHobbesSdk" (fun _ ->   
-        buildImage "Dockerfile.sdk-hobbes" "sdk:hobbes"
 )
 
 commons |> List.iter(fun common ->
@@ -494,10 +481,8 @@ workers
 )
 
 
-"PushGenericImages" =?> ("Dependencies",shouldRebuildGenericDockerImages)
-"Dependencies" =?> ("BuildHobbesSdk", shouldRebuildDependencies)
+"Dependencies" =?> ("Sdk", shouldRebuildDependencies)
 
-"BuildHobbesSdk" =?> ("BuildCommonHelpers", shouldRebuildHobbesSdk)
 "BuildCommonHelpers" =?> ("BuildCommonWeb", shouldRebuildCommon CommonLib.Helpers)
 "BuildCommonHelpers" =?> ("BuildCommonMessaging", shouldRebuildCommon CommonLib.Helpers)
 "BuildCommonWeb" =?> ("BuildCommonMessaging", shouldRebuildCommon CommonLib.Web)
@@ -506,13 +491,12 @@ workers
 "BuildCommonMessaging" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Messaging)
 "BuildCommonWeb" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Web)    
 
-"BuildCommon" =?> ("BuildAppSdk", shouldRebuildCommon CommonLib.Any)
+"BuildCommon" =?> ("Sdk", shouldRebuildCommon CommonLib.Any)
 
 
-"BuildGenericImages" ==> "PushGenericImages"
+"BuildGenericImages" ==> "PushGenericImages" ==> "Sdk"
 "BuildServices" ==> "Build"
 "BuildWorkers" ==> "Build"
-"BuildHobbesSdk" ==> "PushHobbesSdk" ==> "BuildAppSdk"
 "ForceBuildServices" ==> "Rebuild"
 "ForceBuildWorkers" ==> "Rebuild"
 

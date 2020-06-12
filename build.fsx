@@ -356,8 +356,6 @@ let buildApp (app : App) workingDir =
     "PreBuild" + appType + "s" ==> buildTargetName |> ignore
     buildTargetName ==> pushTargetName ==> "PushAllApps" |> ignore
 
-Target.create "ForceBuildServices" ignore
-Target.create "ForceBuildWorkers" ignore
 Target.create "Rebuild" ignore
 Target.create "Build" ignore
 Target.create "BuildCommon" ignore
@@ -468,19 +466,6 @@ workers
         setupWorkerTarget workerName
 )
 
-services
-|> Seq.iter(fun (serviceName, _) ->
-     serviceTargets.[serviceName]
-         ==> "ForceBuildServices" |> ignore
-)
-
-workers
-|> Seq.iter(fun (workerName, _) ->
-     workerTargets.[workerName]
-         ==> "ForceBuildWorkers" |> ignore
-)
-
-
 "Dependencies" =?> ("Sdk", shouldRebuildDependencies)
 
 "BuildCommonHelpers" =?> ("BuildCommonWeb", shouldRebuildCommon CommonLib.Helpers)
@@ -497,7 +482,7 @@ workers
 "BuildGenericImages" ==> "PushGenericImages" ==> "Sdk"
 "BuildServices" ==> "Build"
 "BuildWorkers" ==> "Build"
-"ForceBuildServices" ==> "Rebuild"
-"ForceBuildWorkers" ==> "Rebuild"
 
+"Build" ==> "Rebuild"
+"Sdk" ==> "Rebuild"
 Target.runOrDefaultWithArguments "Build"

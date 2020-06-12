@@ -20,7 +20,7 @@ let adminRouter =
 let dataRouter = 
     router {
         pipe_through verifiedPipe
-        withArg <@ csv @> 
+        withArg <@ json @> 
     }
 
 let private appRouter = router {

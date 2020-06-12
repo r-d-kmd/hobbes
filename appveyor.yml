@@ -93,11 +93,9 @@ for:
       - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --vm-driver=none
       - eval $(minikube docker-env) 
       - echo ${ENV_FILE} | kubectl apply -f -
-      - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-      - docker pull kmdrd/aspnet
-      - docker pull kmdrd/sdk:app
       
     build_script:
+      - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
       - fake build --parallel 32 --target Rebuild
       
     test_script:

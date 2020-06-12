@@ -159,6 +159,8 @@ function start() {
 
     installRabbitMQ
     
+    kubectl patch statefulset test-rabbitmq --patch "$(cat rabbitmq-patch.yaml)"
+
     kubectl apply -k ./
     
     cd $CURRENT_DIR
@@ -233,7 +235,10 @@ function awaitRunningState(){
             if [[ $(isRunning $NAME) != "True" ]]
             then
                 echo "$(echo "$NAME" | cut -d '-' -f1)"
-                echo "$(kubectl logs -f pod/test-rabbitmq-0)"
+                echo "$(kubectl get events --all-namespaces)"
+                echo "$(kubectl get all)"
+                echo "$(logs azu)"
+                echo "$(logs conf)"
             fi
         done
         sleep 1

@@ -235,9 +235,10 @@ function awaitRunningState(){
             if [[ $(isRunning $NAME) != "True" ]]
             then
                 echo "$(echo "$NAME" | cut -d '-' -f1)"
-                echo "$(kubectl describe service/kubernetes)"
                 echo "$(kubectl get events --all-namespaces)"
                 echo "$(kubectl get all)"
+                echo "$(logs azu)"
+                echo "$(logs conf)"
             fi
         done
         sleep 1

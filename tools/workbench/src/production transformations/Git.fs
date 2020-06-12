@@ -14,7 +14,7 @@ module Git =
                  //keep the row in each group where the ChangedDate is the highest 
                  //Ie keep the latest change of the work item in that particular sprint
                 Count 
-            create (column "Commit frequency") (moving Mean 90 !> "Column name")
+            //create (column "Commit frequency") (moving Mean 90)
             
         ] |> createTransformation "commit frequency"
 

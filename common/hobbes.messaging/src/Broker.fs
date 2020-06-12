@@ -106,7 +106,7 @@ module Broker =
             properties.Persistent <- true
 
             channel.BasicPublish("",queueName, false,properties,body)
-            printfn "Message published to %s" queueName
+            printfn "Message published to %s:%d/%s" host port queueName
         with e -> 
            eprintfn "Failed to publish to the queue. Message: %s" e.Message
 

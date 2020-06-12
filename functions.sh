@@ -159,6 +159,8 @@ function start() {
 
     installRabbitMQ
     
+    kubectl patch statefulset test-rabbitmq --patch "$(cat rabbitmq-patch.yaml)"
+
     kubectl apply -k ./
     
     cd $CURRENT_DIR

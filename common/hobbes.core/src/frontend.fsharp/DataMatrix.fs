@@ -695,7 +695,9 @@ module DataStructures =
                 compiledExpressionFunc frame keySeries
                 let col = frame.GetColumn columnkey |> Series.observationsAll |> List.ofSeq
                 let row = frame.GetColumn rowkey |> Series.observationsAll |> List.ofSeq
+                
                 assert(col <> row)
+
                 let resultingFrame : Frame<AST.KeyType, string>  = 
                     frame
                     |> Frame.pivotTable 
@@ -974,7 +976,7 @@ module DataStructures =
                 | AST.NoOp -> 
                     this
                     :> IDataMatrix
-            member __.ToJson format =
+            member this.ToJson format =
                 match format with
                 Rows -> 
                     let table = 
@@ -991,12 +993,19 @@ module DataStructures =
                             |> Seq.map (fun (_,v) -> v |> serialiseValue) 
                             |> Array.ofSeq
                         ) |> Array.ofSeq
+                        |> Array.transpose
+                        
+                    let result = 
+                        {
+                            ColumnNames = columnNames
+                            Values = values
+                            RowCount = (this :> IDataMatrix).RowCount
+                        } 
 
-                    {
-                        ColumnNames = columnNames
-                        Values = values
-                        RowCount = values |> Seq.length
-                    } |> Newtonsoft.Json.JsonConvert.SerializeObject
+                    assert(result.RowCount = result.Values.Length)
+
+                    result
+                    |> Newtonsoft.Json.JsonConvert.SerializeObject
                 | Csv ->
                     let rows = 
                         frame

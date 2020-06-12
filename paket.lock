@@ -130,7 +130,7 @@ NUGET
     NETStandard.Library (2.0.3) - restriction: || (&& (== net40) (>= net451)) (&& (== net40) (>= netstandard1.3)) (== netcoreapp3.1)
       Microsoft.NETCore.Platforms (>= 1.1) - restriction: || (&& (== net40) (>= net45)) (&& (== net40) (>= net46)) (&& (== net40) (>= net461)) (&& (== net40) (>= netcoreapp2.0)) (&& (== net40) (>= netstandard1.0)) (&& (== net40) (>= netstandard1.1)) (&& (== net40) (>= netstandard1.2)) (&& (== net40) (>= netstandard1.3)) (&& (== net40) (>= netstandard1.4)) (&& (== net40) (>= netstandard1.5)) (&& (== net40) (>= netstandard1.6)) (&& (== net40) (>= netstandard2.0)) (&& (== net40) (>= portable-net45+win8)) (&& (== net40) (>= portable-net45+win8+wp8+wpa81)) (&& (== net40) (>= portable-net45+win8+wpa81)) (&& (== net40) (>= uap10.0)) (&& (== net40) (>= uap10.1)) (&& (== net40) (>= win8)) (&& (== net40) (>= wp8)) (&& (== net40) (>= wpa81)) (== netcoreapp3.1)
     Newtonsoft.Json (12.0.3) - restriction: || (&& (== net40) (>= net461)) (&& (== net40) (>= netstandard2.0)) (== netcoreapp3.1)
-    Saturn (0.13.2)
+    Saturn (0.13.1)
       FSharp.Control.Websockets (>= 0.2.2) - restriction: || (&& (== net40) (>= netstandard2.0)) (== netcoreapp3.1)
       FSharp.Core (>= 4.7.1) - restriction: || (&& (== net40) (>= netstandard2.0)) (== netcoreapp3.1)
       Giraffe (>= 4.1) - restriction: || (&& (== net40) (>= netstandard2.0)) (== netcoreapp3.1)

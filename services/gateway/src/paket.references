@@ -1,5 +1,5 @@
 group web
     Microsoft.Extensions.PlatformAbstractions
-    Saturn
+    Saturn 
     Giraffe
     FSharp.Data

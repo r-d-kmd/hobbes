@@ -176,9 +176,27 @@ module Clustering =
          counting frame.RowCount transformation frame
 
 module DataStructures =
+    [<RequireQualifiedAccess>]
+    type Value = 
+       Int of int
+       | Float of float
+       | Date of System.DateTime
+       | Text of string
+       | Boolean of bool
+       | Null
+
+    type DataResult = 
+        {
+            [<Newtonsoft.Json.JsonProperty("columnNames")>]
+            ColumnNames : string []
+            [<Newtonsoft.Json.JsonProperty("rows")>]
+            Values : Value [][]
+            [<Newtonsoft.Json.JsonProperty("rowCount")>]
+            RowCount : int
+        }
+
     type JsonTableFormat = 
-        Column
-        | Rows
+        Rows
         | Csv
     let inline private jsonString (s : string) = 
         "\"" +
@@ -871,19 +889,25 @@ module DataStructures =
                 )
 
             ) |> Seq.filter(fun (_,values) -> values |> Seq.isEmpty |> not)
-
+        
         let serialiseValue (value : obj) = 
-            let caseName,value = 
-                match value with
-                null -> "Null", ""
-                | :? int ->  "Int", string value
-                | :? float | :? decimal -> "Float", string value
-                | :? DateTime -> "Date", value |> string |> sprintf "%A"
-                | :? string -> "Text", sprintf "%A" value
-                | :? bool as b -> 
-                    if b then "Boolean","true" else "Boolean","false"
-                | _ -> "Text", sprintf "%A" value
-            sprintf """{"Case": "%s","Fields": [%s]}""" caseName value
+            match value with
+            null -> Value.Null
+            | :? int as value ->  
+                Value.Int value
+            | :? float as value -> 
+                Value.Float value
+            | :? decimal as value -> 
+                value 
+                |> float 
+                |> Value.Float
+            | :? DateTime as value -> 
+                Value.Date value
+            | :? string as value -> 
+                Value.Text value
+            | :? bool as b -> 
+                Value.Boolean b
+            | value -> failwithf "Don't know how to value %A" value
 
         member private ___.Columns 
             with get() =
@@ -952,61 +976,27 @@ module DataStructures =
                     :> IDataMatrix
             member __.ToJson format =
                 match format with
-                Column -> 
+                Rows -> 
                     let table = 
                         frame
                         |> toTable
 
                     let columnNames = 
-                        String.Join(",",table |> Seq.map (fst >> sprintf "%A")) |> sprintf "[%s]"
+                        table |> Seq.map fst |> Array.ofSeq
 
                     let values =
-                        (",",table
-                            |> Seq.map(fun (_,values) ->
-                                System.String.Join(",", values 
-                                                        |> Seq.map (snd >> serialiseValue)
-                                ) |> sprintf "[%s]"
-                            )) |> String.Join |> sprintf "[%s]"
+                        table
+                        |> Seq.map(fun (_,values) ->
+                            values
+                            |> Seq.map (fun (_,v) -> v |> serialiseValue) 
+                            |> Array.ofSeq
+                        ) |> Array.ofSeq
 
-                    sprintf """{"columnNames": %s, "values" : %s}""" columnNames values
-                | Rows ->
-                    let columnKeys = 
-                        frame.GetColumns()
-                        |> Series.keys
-
-                    let columnNames =
-                       (",",columnKeys
-                            |> Seq.map(jsonString))
-                        |> System.String.Join
-
-                    let columnMap = 
-                        columnKeys
-                        |> Seq.mapi(fun i c -> c,i)
-                        |> Map.ofSeq
-
-                    let rows =
-                        (",",frame
-                            |> Frame.rows
-                            |> Series.observations
-                            |> Seq.map(fun (_,row) ->
-                                (",",
-                                    row
-                                    |> Series.observationsAll
-                                    |> Seq.sortBy(fun (columnName,_) -> columnMap.[columnName])
-                                    |> Seq.map (function
-                                                _,None -> serialiseValue null
-                                                | _,Some v -> serialiseValue v))
-                                |> System.String.Join
-                                |> sprintf "[%s]"
-                            )
-                        ) |> System.String.Join
-
-                    sprintf """{
-                        "columnNames" : [%s],
-                        "rows" : [%s],
-                        "rowCount" : %d
-                    }""" columnNames rows (frame.RowCount)
-
+                    {
+                        ColumnNames = columnNames
+                        Values = values
+                        RowCount = values |> Seq.length
+                    } |> Newtonsoft.Json.JsonConvert.SerializeObject
                 | Csv ->
                     let rows = 
                         frame

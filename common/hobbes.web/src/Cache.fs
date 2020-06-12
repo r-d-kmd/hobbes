@@ -11,6 +11,7 @@ module Cache =
        | Float of float
        | Date of System.DateTime
        | Text of string
+       | Boolean of bool
        | Null
 
     type DataResult = 
@@ -31,6 +32,7 @@ module Cache =
                                    | Value.Date d -> box d
                                    | Value.Text s -> box s
                                    | Value.Null -> null
+                                   | Value.Boolean b -> box b
                            )
                     )
     

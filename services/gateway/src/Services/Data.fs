@@ -16,7 +16,8 @@ module Data =
         match Http.get (configuration |> Some |> Http.Configuration |> Http.Configurations) RawdataTypes.Config.Parse with
         Http.Success config -> 
             match Http.get (config.Source |> RawdataTypes.keyFromSource |> Http.CacheService.Read |> Http.UniformData) id with
-            Http.Success csv ->
-                200, csv
+            Http.Success json ->
+                let data = Json.deserialize<Cache.DataResult> json
+                200, """[{"id" : "ljkjkkkj",-1,"2019-12-31"},{"id" : "ljklkj",4,"2019-12-31"}]"""
             | Http.Error(sc,m) -> sc,sprintf "Data for configuration %s not found. Message: %s" configuration m
         | Http.Error(sc,m) -> sc,sprintf "Configuration %s not found. Message: %s" configuration m

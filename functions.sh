@@ -146,8 +146,8 @@ function listServices(){
 }
 
 function installRabbitMQ(){
-    helm repo add bitnami https://charts.bitnami.com/bitnami
-    helm install test --set rabbitmq.username=guest,rabbitmq.password=guest bitnami/rabbitmq
+    #helm repo add bitnami https://charts.bitnami.com/bitnami
+    helm install test --set rabbitmq.username=guest,rabbitmq.password=guest stable/rabbitmq
 }
 
 function start() {

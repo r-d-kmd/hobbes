@@ -101,14 +101,6 @@ module Data =
              "value": 90060205
     }""">
 
-    
-    type Value =
-       Object of string
-       | Int of int 
-       | Float of float
-       | String of string
-       | Array of seq<Value>
-
     let createDataRecord key (data : Cache.DataResult) =
         let timeStamp = System.DateTime.Now
         let record : Cache.CacheRecord= 

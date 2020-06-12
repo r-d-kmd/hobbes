@@ -33,7 +33,7 @@ let transformData (message : CalculationMessage) =
                         dataJson
                         |> Json.deserialize<Cache.DataResult> 
                     with e ->
-                        Log.excf e "Could deserialize (%s)" dataJson
+                        Log.excf e "Couldn't deserialize (%s)" dataJson
                         reraise()
                 try
                     transformedData

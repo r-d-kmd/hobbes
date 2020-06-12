@@ -20,10 +20,10 @@ let synchronize (source : GitSource.Root) token =
                          [|
                              c.Id |> Value.Text
                              c.Date |> Value.Date
-                             c.Author |> Value.Text
+                             c.Project |> Value.Text
                              c.RepositoryName |> Value.Text
                              c.BranchName |> Value.Text
-                             c.Project |> Value.Text
+                             c.Author |> Value.Text
                          |]
                     ) |> Array.ofSeq
                 columnNames, values, (commits |> Seq.length)

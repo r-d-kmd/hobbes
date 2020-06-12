@@ -34,7 +34,7 @@ group web
     framework: auto-detect
     storage: none
 
-    nuget Saturn
+    nuget Saturn = 0.13.1
     nuget Giraffe
     nuget FSharp.Data
     nuget Microsoft.Extensions.PlatformAbstractions

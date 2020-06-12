@@ -176,9 +176,27 @@ module Clustering =
          counting frame.RowCount transformation frame
 
 module DataStructures =
+    [<RequireQualifiedAccess>]
+    type Value = 
+       Int of int
+       | Float of float
+       | Date of System.DateTime
+       | Text of string
+       | Boolean of bool
+       | Null
+
+    type DataResult = 
+        {
+            [<Newtonsoft.Json.JsonProperty("columnNames")>]
+            ColumnNames : string []
+            [<Newtonsoft.Json.JsonProperty("rows")>]
+            Values : Value [][]
+            [<Newtonsoft.Json.JsonProperty("rowCount")>]
+            RowCount : int
+        }
+
     type JsonTableFormat = 
-        Column
-        | Rows
+        Rows
         | Csv
     let inline private jsonString (s : string) = 
         "\"" +
@@ -677,7 +695,9 @@ module DataStructures =
                 compiledExpressionFunc frame keySeries
                 let col = frame.GetColumn columnkey |> Series.observationsAll |> List.ofSeq
                 let row = frame.GetColumn rowkey |> Series.observationsAll |> List.ofSeq
+                
                 assert(col <> row)
+
                 let resultingFrame : Frame<AST.KeyType, string>  = 
                     frame
                     |> Frame.pivotTable 
@@ -871,19 +891,25 @@ module DataStructures =
                 )
 
             ) |> Seq.filter(fun (_,values) -> values |> Seq.isEmpty |> not)
-
+        
         let serialiseValue (value : obj) = 
             match value with
-            null -> "null"
-            | :? string as s -> jsonString s
+            null -> Value.Null
+            | :? int as value ->  
+                Value.Int value
+            | :? float as value -> 
+                Value.Float value
+            | :? decimal as value -> 
+                value 
+                |> float 
+                |> Value.Float
+            | :? DateTime as value -> 
+                Value.Date value
+            | :? string as value -> 
+                Value.Text value
             | :? bool as b -> 
-                    if b then "true" else "false"
-            | :? int as i -> i |> string
-            | :? float as f -> f |> string
-            | :? decimal as d -> d |> string
-            | :? DateTime as d -> sprintf """ "%s" """ (d.ToString "dd/MM/yyyy")
-            | :? DateTimeOffset as d -> sprintf """ "%s" """ (d.ToString "dd/MM/yyyy")
-            | _ -> sprintf "%A" value
+                Value.Boolean b
+            | value -> failwithf "Don't know how to value %A" value
 
         member private ___.Columns 
             with get() =
@@ -950,63 +976,36 @@ module DataStructures =
                 | AST.NoOp -> 
                     this
                     :> IDataMatrix
-            member __.ToJson format =
+            member this.ToJson format =
                 match format with
-                Column -> 
+                Rows -> 
                     let table = 
                         frame
                         |> toTable
 
                     let columnNames = 
-                        String.Join(",",table |> Seq.map (fst >> sprintf "%A")) |> sprintf "[%s]"
+                        table |> Seq.map fst |> Array.ofSeq
 
                     let values =
-                        (",",table
-                            |> Seq.map(fun (_,values) ->
-                                System.String.Join(",", values 
-                                                        |> Seq.map serialiseValue
-                                ) |> sprintf "[%s]"
-                            )) |> String.Join |> sprintf "[%s]"
+                        table
+                        |> Seq.map(fun (_,values) ->
+                            values
+                            |> Seq.map (fun (_,v) -> v |> serialiseValue) 
+                            |> Array.ofSeq
+                        ) |> Array.ofSeq
+                        |> Array.transpose
+                        
+                    let result = 
+                        {
+                            ColumnNames = columnNames
+                            Values = values
+                            RowCount = (this :> IDataMatrix).RowCount
+                        } 
 
-                    sprintf """{"columnNames": %s, "values" : %s}""" columnNames values
-                | Rows ->
-                    let columnKeys = 
-                        frame.GetColumns()
-                        |> Series.keys
+                    assert(result.RowCount = result.Values.Length)
 
-                    let columnNames =
-                       (",",columnKeys
-                            |> Seq.map(jsonString))
-                        |> System.String.Join
-
-                    let columnMap = 
-                        columnKeys
-                        |> Seq.mapi(fun i c -> c,i)
-                        |> Map.ofSeq
-
-                    let rows =
-                        (",",frame
-                            |> Frame.rows
-                            |> Series.observations
-                            |> Seq.map(fun (_,row) ->
-                                (",",
-                                    row
-                                    |> Series.observationsAll
-                                    |> Seq.sortBy(fun (columnName,_) -> columnMap.[columnName])
-                                    |> Seq.map (function
-                                                _,None -> "null"
-                                                | _,Some v -> serialiseValue v))
-                                |> System.String.Join
-                                |> sprintf "[%s]"
-                            )
-                        ) |> System.String.Join
-
-                    sprintf """{
-                        "columnNames" : [%s],
-                        "rows" : [%s],
-                        "rowCount" : %d
-                    }""" columnNames rows (frame.RowCount)
-
+                    result
+                    |> Newtonsoft.Json.JsonConvert.SerializeObject
                 | Csv ->
                     let rows = 
                         frame

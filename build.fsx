@@ -483,6 +483,6 @@ workers
 "BuildServices" ==> "Build"
 "BuildWorkers" ==> "Build"
 
-"Build" ==> "Rebuild"
-"Sdk" ==> "Rebuild"
+"Build" ==> "all"
+"Sdk" ==> "all"
 Target.runOrDefaultWithArguments "Build"

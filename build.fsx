@@ -180,7 +180,7 @@ let commons =
         CommonLib.Core
         CommonLib.Messaging
     ]
-let apps = 
+let apps : Seq<App,string> = 
     let services = 
         serviceDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
         |> Seq.map(fun file ->
@@ -216,7 +216,7 @@ let pushImage (tag : string) =
 
 let appTargets = 
     apps
-    |> List.map(fun (app : App) ->
+    |> List.map(fun (app : App,_) ->
         let name,_ = app.NameAndType         
         name,(name.ToLower())
     ) |> Map.ofList

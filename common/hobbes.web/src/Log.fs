@@ -86,9 +86,8 @@ module Log =
  
     let error msg = 
 #if DEBUG
-       ksprintf (fun msg -> 
-           eprintfn msg
-           assert(fale))
+        eprintfn "%s" msg
+        assert(false)
 #else    
         writeLogMessage Error null msg
 #endif
@@ -101,7 +100,7 @@ module Log =
        
     let errorf format = 
 #if DEBUG
-       ksprintf (fun _ -> assert(fale)) format
+       ksprintf (fun _ -> assert(false)) format
 #else
        ksprintf (writeLogMessage Error null) format
 #endif
@@ -110,11 +109,11 @@ module Log =
 #if DEBUG
        ksprintf (fun msg -> 
                     eprintfn "%s Message: %s " msg e.Message
-                    assert(fale)
+                    assert(false)
                  ) format
 #else
        ksprintf (fun msg -> msg + " Message: " + e.Message |> writeLogMessage Error e.StackTrace) format
-
+#endif
     let exc (e:System.Exception) message = excf e "%s" message
 
     let debugf format =

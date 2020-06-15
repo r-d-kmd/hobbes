@@ -147,6 +147,8 @@ function listServices(){
 
 function installRabbitMQ(){
     #helm repo add bitnami https://charts.bitnami.com/bitnami
+    helm repo add stable https://kubernetes-charts.storage.googleapis.com
+
     helm install test --set rabbitmq.username=guest,rabbitmq.password=guest stable/rabbitmq
 }
 
@@ -253,11 +255,6 @@ function run(){
 
 function restartApp(){
     delete "$1" && logs "$1" -f
-}
-
-function rebuildApp(){
-    fake build --target "$1"
-    restartApp $1
 }
 
 function sync(){

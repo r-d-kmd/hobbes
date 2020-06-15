@@ -101,59 +101,6 @@ let dockerDir = DirectoryInfo "./docker"
 let serviceDir = DirectoryInfo "./services"
 let workerDir = DirectoryInfo "./workers"
 
-let changes =
-    let commonDir = DirectoryInfo "./common"
-    let coreDir = DirectoryInfo "./common/hobbes.core"
-    let helpersDir = DirectoryInfo "./common/hobbes.helpers"
-    let webDir = DirectoryInfo "./common/hobbes.web"
-    let messagingDir = DirectoryInfo "./common/hobbes.messaging"
-    
-    Fake.Tools.Git.FileStatus.getChangedFilesInWorkingCopy "." "HEAD@{1}"
-    |> Seq.map(fun (_,(file : string)) ->
-        let info = FileInfo file
-        match info.Name with
-        "paket.dependencies" | "paket.references" -> PaketDependencies
-        | _ ->
-            let dir = info.Directory
-            let isBelow = isBelow dir
-            let getName (p : string) =
-                p.Split([|'/';'\\'|], System.StringSplitOptions.RemoveEmptyEntries)
-                |> Array.head 
-            if isBelow dockerDir then
-                let dockerStage = 
-                    match file.Replace("Dockerfile.","") with
-                    | "sdk-app" | "hobbes.properties.targets" -> DockerStage.AppSdk
-                    | _ -> DockerStage.Other
-                Docker dockerStage
-            elif isBelow commonDir then
-                let cm = 
-                    if isBelow coreDir then
-                        CommonLib.Core
-                    elif isBelow helpersDir then
-                        CommonLib.Helpers
-                    elif isBelow webDir then
-                        CommonLib.Web
-                    elif isBelow messagingDir then
-                        CommonLib.Messaging
-                    else
-                        CommonLib.Any //failwithf "Common not known %s" file
-                Common cm
-            elif isBelow serviceDir then
-                info.DirectoryName
-                    .Substring(serviceDir.FullName.Length)
-                |> getName
-                |> Service
-                |> App
-            elif isBelow workerDir then
-                info.DirectoryName
-                    .Substring(workerDir.FullName.Length)
-                |> getName
-                |> Worker
-                |> App
-            else
-                File file
-    ) |> Seq.distinct
-
 //Set to 'Normal' to have more information when trouble shooting 
 let verbosity = Quiet
     
@@ -169,7 +116,6 @@ let package conf outputDir projectFile =
                         }
                    ) projectFile
 
-printfn "Changes: %s" (System.String.Join("\n",changes |> Seq.map (sprintf "%A")))
 
 let commonPath name = 
     sprintf "./common/hobbes.%s/src/hobbes.%s.fsproj" name name
@@ -180,7 +126,7 @@ let commons =
         CommonLib.Core
         CommonLib.Messaging
     ]
-let apps : Seq<App,string> = 
+let apps : seq<App*string> = 
     let services = 
         serviceDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
         |> Seq.map(fun file ->
@@ -201,31 +147,12 @@ let apps : Seq<App,string> =
             
             Path.GetFileNameWithoutExtension (file.Name.Split('.') |> Array.head) |> Worker, workingDir
         )
-    services |> Seq.append
+    services |> Seq.append workers
 
-let buildImage path (tag : string) =
-    let tag = dockerOrg + "/" + tag.ToLower()
+let buildApp (name : string) (appType : string) workingDir =
     
-    sprintf "build -f %s -t %s ." path tag
-    |> run "docker" dockerDir.Name
-
-let pushImage (tag : string) =
-    let tag = dockerOrg + "/" + tag.ToLower()
-    sprintf "push %s" tag
-    |> run "docker" dockerDir.Name
-
-let appTargets = 
-    apps
-    |> List.map(fun (app : App,_) ->
-        let name,_ = app.NameAndType         
-        name,(name.ToLower())
-    ) |> Map.ofList
-
-let buildApp (app : App) workingDir =
-    let name,appType = app.NameAndType
     let tag = name.ToLower()
     
-
     let build _ = 
         let buildArg = sprintf "%s_NAME=%s" (appType.ToUpper()) name
         let tags =
@@ -266,7 +193,6 @@ let buildApp (app : App) workingDir =
 
 Target.create "All" ignore
 Target.create "Build" ignore
-Target.create "BuildCommon" ignore
 
 Target.create "PreApps" ignore
 Target.create "PostApps" ignore
@@ -306,7 +232,9 @@ Target.create "Dependencies" (fun _ ->
 
 apps
 |> Seq.iter(fun (app,dir) ->
-    buildApp app dir
+    let name,appType = app.NameAndType
+    buildApp name appType dir
+    "PreApps" ==> name ==> "PostApps" |> ignore
 ) 
 
 commons |> List.iter(fun common ->
@@ -324,26 +252,20 @@ Target.create "Sdk" (fun _ ->
     //we do it this way because we want a debug version locally but want to push a release version to docker hub
     sprintf "build -f %s -t %s ." file tag
     |> run "docker" dockerDir.Name
-    pushImage "sdk:app"
+
+    sprintf "push %s" tag
+        |> run "docker" dockerDir.Name
 
     //build the debug version for local use
     sprintf "build -f %s -t %s --build-arg CONFIGURATION=%s ." file tag buildConfigurationName
     |> run "docker" dockerDir.Name  
 )
 
-services 
-|> Seq.append workers
-|> Seq.iter(fun (name,_) ->
-    let target = appTargets.[serviceName]
-    "PreApps" ==> target ==> "PostApps" |> ignore
-)
-
 "CleanCommon" 
     ==> "Dependencies"
-    ==> "BuildCommonHelpers" 
-    ==> "BuildCommonWeb"
-    ==> "BuildCommonMessaging"
-    ==> "BuildCommon" 
+    ==> "Helpers" 
+    ==> "Web"
+    ==> "Messaging"
     ==> "Sdk"
     ?=> "PreApps"
     ==> "PostApps" 

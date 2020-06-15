@@ -144,7 +144,7 @@ module Data =
                     |> Seq.tryFind(fun (n,_) -> n = "data") 
                     |> Option.isSome
                 hasData && hasSource
-                && (doc.Source |> keyFromSource) = configSearchKey
+                && (doc.Source.JsonValue.ToString() |> keyFromSourceDoc) = configSearchKey
             )
         Log.debugf "Project data found by source %A" res
         res

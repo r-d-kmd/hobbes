@@ -6,12 +6,12 @@ module State =
 
   let projects = 
        [
-          Project.Flowerpot 
-          Project.Gandalf 
-          Project.Delta 
-          Project.Momentum
-          Project.Nexus
-          Project.UVskole
+          //Project.Flowerpot 
+          //Project.Gandalf 
+          //Project.Delta 
+          //Project.Momentum
+          //Project.Nexus
+          //Project.UVskole
        ]
   let uniformingTransformations = 
       [

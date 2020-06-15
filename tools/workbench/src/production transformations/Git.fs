@@ -9,8 +9,9 @@ module Git =
 
     let commitFrequency =
         [
+            create (column "Date") (date format "Time" AST.Date)
             //group by the tuple sprint name and workitem id
-            group by ([date format "Time" AST.Date]) => 
+            group by ["Date"] => 
                  //keep the row in each group where the ChangedDate is the highest 
                  //Ie keep the latest change of the work item in that particular sprint
                 Count 

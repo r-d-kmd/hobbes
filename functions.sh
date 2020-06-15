@@ -1,4 +1,21 @@
 eval $(minikube -p minikube docker-env)
+VOLUMES=(db)
+function get_script_dir () {
+     SOURCE="${BASH_SOURCE[0]}"
+     # While $SOURCE is a symlink, resolve it
+     while [ -h "$SOURCE" ]; do
+          DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+          SOURCE="$( readlink "$SOURCE" )"
+          # If $SOURCE was a relative symlink (so no "/" as prefix, need to resolve it relative to the symlink base directory
+          [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+     done
+     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+     echo "$DIR"
+}
+
+SCRIPT_DIR=$(get_script_dir)
+KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
+
 if [ $(uname -s) = "Darwin" ]
 then
     declare -a APPS=(db)
@@ -19,28 +36,10 @@ then
              APPS+=($APP_NAME)
          done 
     }
-    
     services
 else
     declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "sync" "uniformdata")
 fi
-VOLUMES=(db)
-function get_script_dir () {
-     SOURCE="${BASH_SOURCE[0]}"
-     # While $SOURCE is a symlink, resolve it
-     while [ -h "$SOURCE" ]; do
-          DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-          SOURCE="$( readlink "$SOURCE" )"
-          # If $SOURCE was a relative symlink (so no "/" as prefix, need to resolve it relative to the symlink base directory
-          [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-     done
-     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-     echo "$DIR"
-}
-
-SCRIPT_DIR=$(get_script_dir)
-KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
-
 
 function getPodName(){
     local POD_NAME=$(kubectl get all | grep -e pod/$1 -e pod/collectors-$1 | cut -d ' ' -f 1 )
@@ -115,11 +114,16 @@ function clean(){
 function build(){    
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
-    if [ -z "$2" ]
-    then
-        fake build --target "$1"
-    else
-        fake build --target "$1" --parallel $2
+    if [ -z "$1" ]
+    then 
+        fake build
+    else 
+        if [ -z "$2" ]
+        then
+            fake build --target "$1"
+        else
+            fake build --target "$1" --parallel $2
+        fi
     fi
 
     cd $CURRENT_DIR

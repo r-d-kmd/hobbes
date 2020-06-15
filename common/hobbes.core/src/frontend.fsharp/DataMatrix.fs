@@ -46,20 +46,30 @@ module Clustering =
                 | a -> [a]
             ))
 
+        let existingColumns = 
+            grouped.ColumnKeys
+            |> Set.ofSeq
+
         columnNames
         |> List.indexed
+        |> List.filter(fun (_,c) -> c |> existingColumns.Contains |> not)
         |> List.fold(fun frame (i,columnName) ->
+            
             let groupSeries =
                 keys
                 |> Seq.map(fun ks ->
                        ks |> List.item i
                 ) |> Seq.zip grouped.RowKeys
                 |> series
-            frame
-            |> Frame.addCol
-                columnName
-                groupSeries
-                
+            try
+                frame
+                |> Frame.addCol
+                    columnName
+                    groupSeries
+            with _ ->
+                eprintfn "Problems adding %s to frame [%A]. All group columns [%A]" columnName (frame.ColumnKeys) columnNames
+                assert(false)
+                frame
         ) grouped
         |> Frame.denseCols
         |> Frame.ofColumns

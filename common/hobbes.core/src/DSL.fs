@@ -142,8 +142,8 @@ type Selector =
             sprintf "%s %s" s (e.ToString())
 
 type  Grouping = 
-    Simple of expressionList: Expression list * reduction : AST.Reduction
-    | RowSelection of expressionList: Expression list * selector : Selector
+    Simple of columnNames: string list * reduction : AST.Reduction
+    | RowSelection of columnNames: string list * selector : Selector
 
 type ColumnsOrRows =
      Rows
@@ -205,7 +205,7 @@ let inline (<!>) (regexLiteral : string) =
     AST.RegExResultString regexLiteral
 
 type GroupBy = 
-    GroupByWithExpressions of Expression list
+    GroupByWithExpressions of string list
     with static member (=>) (grouping:GroupBy,r : AST.Reduction) = 
              Simple(grouping.Expressions, r)  |> GroupStatement
          static member (=>) (grouping:GroupBy,r : Selector) = 

@@ -48,6 +48,7 @@ let version =
         match buildConfiguration with
         DotNet.BuildConfiguration.Release -> "latest"
         | DotNet.BuildConfiguration.Debug -> "debug"
+        | _ -> failwithf "configuration has no specific version. %A" buildConfiguration
 
 let commonLibDir = "./docker/.lib/"
 
@@ -281,8 +282,7 @@ Target.create "Sdk" (fun _ ->
     [
         "latest",""
         "debug","debug"
-    ]
-    |> List.iter(fun (vesion,postFix) -> 
+    ] |> List.iter(fun (version,postFix) -> 
         sprintf "build -f Dockerfile.sdk-app -t %s/sdk:app%s --build-arg CONFIGURATION=%s --build-arg VERSION=%s ." 
                 dockerOrg 
                 postFix 

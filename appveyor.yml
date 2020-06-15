@@ -61,7 +61,7 @@ for:
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
     build_script:  
-      - fake build --parallel 16 --target PushAllApps
+      - fake build --parallel 16 --target PushApps
     deploy_script:
       - echo "Deploying"
       #should run kustomize for production and apply the configuration
@@ -97,7 +97,7 @@ for:
       
     build_script:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-      - fake build --parallel 32 --target build
+      - fake build --parallel 16 --target all
       
     test_script:
       #- dotnet test

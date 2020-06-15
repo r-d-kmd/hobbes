@@ -18,12 +18,12 @@ let synchronize (source : GitSource.Root) token =
                     |> Seq.distinct
                     |> Seq.map(fun c ->
                          [|
-                             c.Id |> Value.Text
-                             c.Date |> Value.Date
-                             c.Project |> Value.Text
-                             c.RepositoryName |> Value.Text
-                             c.BranchName |> Value.Text
-                             c.Author |> Value.Text
+                             c.Id |> Value.Create
+                             c.Date |> Value.Create
+                             c.Project |> Value.Create
+                             c.RepositoryName |> Value.Create
+                             c.BranchName |> Value.Create
+                             c.Author |> Value.Create
                          |]
                     ) |> Array.ofSeq
                 columnNames, values, (commits |> Seq.length)

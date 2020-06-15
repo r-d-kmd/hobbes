@@ -1,5 +1,6 @@
-bin/
-obj/
+
+src/bin/
+src/obj/
 deploy/
 **/.fake/
 **/.lib/

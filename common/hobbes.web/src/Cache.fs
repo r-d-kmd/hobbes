@@ -13,6 +13,27 @@ module Cache =
        | Text of string
        | Boolean of bool
        | Null
+       with static member Create v =
+                match v :> obj with        
+                null -> Value.Null
+                | :? System.DateTime as d -> 
+                    d |> Value.Date
+                | :? System.DateTimeOffset as d -> 
+                    d.ToLocalTime().DateTime |> Value.Date
+                | :? int as i  -> i |> Value.Int
+                | :? float as f -> f |> Value.Float
+                | :? decimal as d -> d |> float |> Value.Float
+                | :? string as s  -> s |> Value.Text
+                | s ->
+                    Log.errorf "Didn't recognise value (%A)" s
+                    assert(false)
+                    s |> string |> Value.Text
+            static member Bind v = 
+                match v with
+                Some v -> 
+                    Value.Create v
+                | None -> 
+                    Value.Create null
 
     type DataResult = 
         {

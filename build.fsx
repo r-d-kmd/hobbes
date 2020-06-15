@@ -154,63 +154,6 @@ let changes =
                 File file
     ) |> Seq.distinct
 
-let commonChanges = 
-    changes
-    |> Seq.fold(fun lst c ->
-        match c with
-        Common com -> com::lst 
-        | _ -> lst
-    ) []
-
-let hasCommonChanged change =
-    match change with
-    CommonLib.Any -> commonChanges |> List.isEmpty |> not
-    | c -> commonChanges |> List.tryFind(fun c' -> c = c') |> Option.isSome
-
-let hasChanged change =
-    true 
-    //force || changes |> Seq.tryFind (fun c -> c = change) |> Option.isSome
-     
-let rec shouldRebuildCommon = 
-    function
-       CommonLib.Web ->
-           shouldRebuildCommon CommonLib.Helpers 
-           || (CommonLib.Web |> hasCommonChanged)
-       | CommonLib.Messaging -> 
-           shouldRebuildCommon CommonLib.Web 
-           || (CommonLib.Messaging |> hasCommonChanged)
-       | common ->
-            common
-            |> hasCommonChanged
-
-let skipSdkBuilds =
-    (Environment.environVarOrDefault "BUILD_ENV" "local") = "AppVeyor"
-
-let hasDockerStageChanged ds = 
-    (not skipSdkBuilds) &&  
-    (Docker ds |> hasChanged)
-
-let shouldRebuildDependencies = 
-    (not skipSdkBuilds) &&  
-    hasChanged PaketDependencies
-
-let shouldRebuildAppSdk =
-    (not skipSdkBuilds) &&
-     (hasDockerStageChanged DockerStage.AppSdk
-      || ((not skipSdkBuilds) && (hasChanged (Common CommonLib.Any))
-         )
-     )
-
-let shouldRebuildService name = 
-    shouldRebuildCommon CommonLib.Any
-    || shouldRebuildAppSdk 
-    || hasChanged (name |> Service |> App)
-
-let shouldRebuildWorker name = 
-    shouldRebuildCommon CommonLib.Any
-    || shouldRebuildAppSdk 
-    || hasChanged (name |> Worker |> App)
-
 //Set to 'Normal' to have more information when trouble shooting 
 let verbosity = Quiet
     
@@ -237,26 +180,28 @@ let commons =
         CommonLib.Core
         CommonLib.Messaging
     ]
+let apps = 
+    let services = 
+        serviceDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
+        |> Seq.map(fun file ->
+            let workingDir = 
+                file.Directory.Parent.FullName
+            
+            let n = Path.GetFileNameWithoutExtension file.Name
+            let name = 
+                if n.StartsWith "hobbes." then n.Remove(0,"hobbes.".Length) else n
+            Service name, workingDir
+        )
 
-let services = 
-    serviceDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
-    |> Seq.map(fun file ->
-        let workingDir = 
-            file.Directory.Parent.FullName
-        
-        let n = Path.GetFileNameWithoutExtension file.Name
-        if n.StartsWith "hobbes." then n.Remove(0,"hobbes.".Length) else n
-        , workingDir
-    )
-
-let workers = 
-    workerDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
-    |> Seq.map(fun file ->
-        let workingDir = 
-            file.Directory.Parent.FullName
-        
-        Path.GetFileNameWithoutExtension (file.Name.Split('.') |> Array.head), workingDir
-    )
+    let workers = 
+        workerDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
+        |> Seq.map(fun file ->
+            let workingDir = 
+                file.Directory.Parent.FullName
+            
+            Path.GetFileNameWithoutExtension (file.Name.Split('.') |> Array.head) |> Worker, workingDir
+        )
+    services |> Seq.append
 
 let buildImage path (tag : string) =
     let tag = dockerOrg + "/" + tag.ToLower()
@@ -269,33 +214,12 @@ let pushImage (tag : string) =
     sprintf "push %s" tag
     |> run "docker" dockerDir.Name
 
-let appTargets : seq<_> -> _ = 
-    Seq.map(fun (app : App) ->
+let appTargets = 
+    apps
+    |> List.map(fun (app : App) ->
         let name,_ = app.NameAndType         
         name,(name.ToLower())
-    ) >> Map.ofSeq
-
-let serviceTargets = 
-    services
-    |> Seq.map(fun (serviceName,_) ->
-        Service serviceName
-    ) |> appTargets
-
-let workerTargets = 
-    workers
-    |> Seq.map(fun (workerName,_) ->
-        Worker workerName
-    ) |> appTargets
-
-let setupServiceTarget serviceName = 
-    let shouldRebuild = shouldRebuildService serviceName
-    let target = serviceTargets.[serviceName]
-    target ==> "BuildServices" |> ignore
-
-let setupWorkerTarget workerName = 
-    let shouldRebuild = shouldRebuildWorker workerName
-    let target = workerTargets.[workerName]
-    target ==> "BuildWorkers" |> ignore
+    ) |> Map.ofList
 
 let buildApp (app : App) workingDir =
     let name,appType = app.NameAndType
@@ -344,8 +268,8 @@ Target.create "All" ignore
 Target.create "Build" ignore
 Target.create "BuildCommon" ignore
 
-Target.create "BuildServices" ignore
-Target.create "BuildWorkers" ignore
+Target.create "PreApps" ignore
+Target.create "PostApps" ignore
 
 Target.create "CleanCommon" (fun _ ->
     let deleteFiles lib =
@@ -360,7 +284,6 @@ Target.create "CleanCommon" (fun _ ->
         )
         
     commons
-    |> List.filter shouldRebuildCommon
     |> List.iter (string >> deleteFiles)
 )
 
@@ -381,29 +304,19 @@ Target.create "Dependencies" (fun _ ->
   |> Shell.copy paketDir
 )
 
-services
-|> Seq.iter(fun (name,dir) ->
-    buildApp (Service name) dir
+apps
+|> Seq.iter(fun (app,dir) ->
+    buildApp app dir
 ) 
-workers
-|> Seq.iter(fun (name,dir) ->
-    buildApp (Worker name) dir
-) 
-
-let commonTargetName common =
-    common.ToString() 
-    |> sprintf "BuildCommon%s"
 
 commons |> List.iter(fun common ->
     let commonName = common.ToString()
-    let targetName = commonTargetName common
+    let targetName = commonName
     Target.create targetName (fun _ ->
         let projectFile = commonPath commonName
         package buildConfiguration commonLibDir projectFile
     )
 ) 
-
-
 
 Target.create "Sdk" (fun _ ->   
     let tag = dockerOrg + "/sdk:app"
@@ -418,14 +331,11 @@ Target.create "Sdk" (fun _ ->
     |> run "docker" dockerDir.Name  
 )
 
-services
-|> Seq.iter(fun (serviceName,_) ->
-        setupServiceTarget serviceName
-)
-
-workers
-|> Seq.iter(fun (workerName,_) ->
-        setupWorkerTarget workerName
+services 
+|> Seq.append workers
+|> Seq.iter(fun (name,_) ->
+    let target = appTargets.[serviceName]
+    "PreApps" ==> target ==> "PostApps" |> ignore
 )
 
 "CleanCommon" 
@@ -435,13 +345,12 @@ workers
     ==> "BuildCommonMessaging"
     ==> "BuildCommon" 
     ==> "Sdk"
-
-"BuildServices" ==> "Build"
-"BuildWorkers" ==> "Build"
+    ?=> "PreApps"
+    ==> "PostApps" 
+    ==> "Build"
+    ==> "All"
 
 "Sdk" 
-    ?=> "Build"
     ==> "All"
-"Sdk" ==> "All"
 
 Target.runOrDefaultWithArguments "Build"

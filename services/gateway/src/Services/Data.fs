@@ -25,7 +25,8 @@ module Data =
         debugf "Getting json for '%A'" configuration
         match Http.get (configuration |> Some |> Http.Configuration |> Http.Configurations) RawdataTypes.Config.Parse with
         Http.Success config -> 
-            match Http.get (config |> RawdataTypes.keyFromConfig |> Http.CacheService.Read |> Http.UniformData) id with
+            let key = config |> RawdataTypes.keyFromConfig
+            match Http.get (key |> Http.CacheService.Read |> Http.UniformData) id with
             Http.Success json ->
                 let record = Json.deserialize<Cache.CacheRecord> json
                 let names = record.Data.ColumnNames

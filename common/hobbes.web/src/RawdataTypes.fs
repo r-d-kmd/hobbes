@@ -32,7 +32,8 @@ module RawdataTypes =
     
     let keyFromConfig (config : Config.Root) =
         try 
-            config.Source |> keyFromSource
+            let id = config.Source |> keyFromSource
+            System.String.Join(":",id::(config.Transformations |> List.ofSeq))
         with e ->
            failwithf "Failed to get key from (%s). Message: %s. Trace: %s" (config.JsonValue.ToString()) e.Message e.StackTrace
     

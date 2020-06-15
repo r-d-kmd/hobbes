@@ -773,7 +773,12 @@ module DataStructures =
             let f = 
                 match filter with
                 AST.SliceColumns cols ->
-                    Frame.sliceCols cols
+                    fun frame ->
+                        let res = 
+                            frame
+                            |> Frame.sliceCols cols
+                        assert(res.ColumnCount = (cols |> Seq.length))
+                        res
                 | AST.IndexBy exp ->
                     fun frame ->
                         let columnName = 
@@ -994,7 +999,7 @@ module DataStructures =
                             |> Array.ofSeq
                         ) |> Array.ofSeq
                         |> Array.transpose
-                        
+
                     let result = 
                         {
                             ColumnNames = columnNames

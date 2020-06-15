@@ -68,7 +68,7 @@ let dependingTransformations (cacheKey : string) =
                     |> List.fold(fun (lst : (string * Transformation) list) t ->
                         let prevKey, prevT = lst |> List.head
                         (prevKey + ":" + prevT.Name,t) :: lst
-                    ) [keyFromConfig configuration,h]
+                    ) [keyFromSource configuration.Source,h]
             ) |> Seq.groupBy fst
             |> Seq.map(fun (key,deps) ->
                 key,

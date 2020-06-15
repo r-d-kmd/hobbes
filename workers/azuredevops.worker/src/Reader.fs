@@ -7,13 +7,6 @@ open Hobbes.Web.RawdataTypes
 open Hobbes.Web
 open Hobbes.Web.Cache
 module Reader =
-    //Helper method for optional properties of the data record
-    let inline private asObj v =
-        match v with
-        Some v -> 
-            v |> box
-        | None -> 
-            null
 
     //looks whether it's the last record or there's a odatanextlink porperty 
     //which signals that the data has been paged and that we're not at the last page yet
@@ -31,23 +24,23 @@ module Reader =
         data.Value |> Array.isEmpty
     
     //TODO: Why are these fields commented out??
-    let private azureFields : (string * (AzureDevOpsAnalyticsRecord.Value -> obj) ) list= 
+    let private azureFields : (string * (AzureDevOpsAnalyticsRecord.Value -> Value) ) list= 
         [
-             "WorkItemId",  fun row -> box row.WorkItemId
-             "ChangedDate", fun row -> asObj row.ChangedDate 
-             "WorkItemType",  fun row -> box row.WorkItemType 
-             "CreatedDate", fun row -> asObj row.CreatedDate
-             "ClosedDate", fun row -> asObj row.ClosedDate
-             "State", fun row -> asObj row.State 
-             "StateCategory",fun row -> asObj row.StateCategory 
-             "LeadTimeDays", fun row -> asObj row.LeadTimeDays 
-             "CycleTimeDays", fun row -> asObj row.CycleTimeDays
-             "StoryPoints", fun row -> asObj row.StoryPoints
-             //"RevisedDate", fun row -> asObj row.RevisedDate       
-             //"Priority", fun row -> asObj row.Priority 
-             //"IsLastRevisionOfDay" , fun row -> asObj row.IsLastRevisionOfDay
-             //"Title",  fun row -> box row.Title    
-             //"WorkItemRevisionSK", fun row -> box row.WorkItemRevisionSk
+             "WorkItemId",  fun row -> row.WorkItemId |> Value.Create
+             "ChangedDate", fun row -> row.ChangedDate |> Value.Bind
+             "WorkItemType",  fun row -> row.WorkItemType |> Value.Create
+             "CreatedDate", fun row -> row.CreatedDate |> Value.Bind
+             "ClosedDate", fun row -> row.ClosedDate |> Value.Bind
+             "State", fun row -> row.State |> Value.Bind
+             "StateCategory",fun row -> row.StateCategory |> Value.Bind
+             "LeadTimeDays", fun row -> row.LeadTimeDays |> Value.Bind
+             "CycleTimeDays", fun row -> row.CycleTimeDays |> Value.Bind
+             "StoryPoints", fun row -> row.StoryPoints |> Value.Bind
+             //"RevisedDate", fun row -> row.RevisedDate |> Value.Bind
+             //"Priority", fun row -> row.Priority |> Value.Bind
+             //"IsLastRevisionOfDay" , fun row -> row.IsLastRevisionOfDay |> Value.Bind
+             //"Title",  fun row -> row.Title |> Value.Create
+             //"WorkItemRevisionSK", fun row -> row.WorkItemRevisionSk |> Value.Create
         ]    
     //The first url to start with, if there's already some stored data
     let private getInitialUrl (source : AzureDevOpsSource.Root)=
@@ -108,11 +101,7 @@ module Reader =
 
     let formatRawdataCache key (timeStamp : string ) rawdataCache =
         assert((System.String.IsNullOrWhiteSpace key) |> not)
-        let jsonString (s : string) = 
-            "\"" +
-             s.Replace("\\","\\\\")
-              .Replace("\"","\\\"") 
-            + "\""
+        
         let columnNames = 
             [
                 "TimeStamp"
@@ -127,48 +116,37 @@ module Reader =
                 "Iteration.Number"
             ] @ (azureFields |> List.map fst)
             |> Array.ofList
-        let rows = 
+        let rows : Value [] [] = 
             rawdataCache
             |> Seq.map(fun (row : AzureDevOpsAnalyticsRecord.Value) ->
                 let iterationProperties =
                     match (row.Iteration) with
                     Some iteration ->
                         [
-                           box iteration.IterationPath
-                           asObj iteration.IterationLevel1 
-                           asObj iteration.IterationLevel2 
-                           asObj iteration.IterationLevel3 
-                           asObj iteration.IterationLevel4
-                           asObj iteration.StartDate
-                           asObj iteration.EndDate
-                           iteration.Number |> box
+                           iteration.IterationPath |> Value.Create
+                           iteration.IterationLevel1 |> Value.Bind
+                           iteration.IterationLevel2 |> Value.Bind
+                           iteration.IterationLevel3 |> Value.Bind
+                           iteration.IterationLevel4 |> Value.Bind
+                           iteration.StartDate |> Value.Bind
+                           iteration.EndDate |> Value.Bind
+                           iteration.Number |> Value.Create
                         ]
                     | None -> []
                 let areaProperty =
                     match row.Area with
-                    Some area -> box area.AreaPath
-                    | None -> null
+                    Some area -> area.AreaPath |> Value.Create
+                    | None -> Value.Null
                 let properties = 
                     azureFields
                     |> List.map(fun (name, getter) ->
                         getter row
                     )
-                let timeStamp =
-                    box timeStamp
                 
-                (timeStamp::areaProperty::iterationProperties@properties)
-                |> List.map(fun v -> 
-                    match v with 
-                    null -> Value.Null
-                    | :? System.DateTime as d -> 
-                        d |> Value.Date
-                    | :? System.DateTimeOffset as d -> 
-                        d.ToLocalTime().DateTime |> Value.Date
-                    | :? int as i  -> i |> Value.Int
-                    | :? float as f -> f |> Value.Float
-                    | s -> s |> string |> Value.Text
-                ) |> Array.ofList
-            ) |> Array.ofSeq    
+                (Value.Create(timeStamp)::areaProperty::iterationProperties@properties)
+                |> Array.ofList
+                
+            ) |> Array.ofSeq
         let data = 
             {
                ColumnNames = columnNames

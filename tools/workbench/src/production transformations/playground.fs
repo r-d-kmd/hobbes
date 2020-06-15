@@ -10,15 +10,17 @@ module Playground =
 
     let foldBySprint = 
         [
-            group by ([SprintName.Expression; WorkItemId.Expression]) => 
+            group by ([SprintName.Name; WorkItemId.Name]) => 
                 ( maxby ChangedDate.Expression)
         ] |> createTransformation "foldBySprint"
 
     let foldByMonth = 
         [
             only (!> "SimpleState" == "Done")
+            create (column "Year") (date format ChangedDate.Name AST.Year)
+            create (column "Month") (date format ChangedDate.Name AST.Month) 
             //group by the tuple sprint name and workitem id
-            group by ([date format ChangedDate.Name AST.Year; date format ChangedDate.Name AST.Month;WorkItemId.Expression]) => 
+            group by (["Year";"Month";WorkItemId.Name]) => 
                  //keep the row in each group where the ChangedDate is the highest 
                  //Ie keep the latest change of the work item in that particular sprint
                 ( maxby ChangedDate.Expression)

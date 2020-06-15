@@ -162,7 +162,7 @@ module Reader =
 
         assert(System.String.IsNullOrWhiteSpace key |> not)
 
-        let timeStamp = System.DateTime.Now.ToString("dd/MM/yyyy H:mm").Replace(":", ";")
+        let timeStamp = System.DateTime.Now.ToString("dd/MM/yyyy H:mm")
 
         let raw = 
             source

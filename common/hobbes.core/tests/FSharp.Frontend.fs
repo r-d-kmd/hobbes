@@ -346,7 +346,7 @@ module Frontend =
 
     [<Fact>]
     let groupByMaxBy() =
-        let statement = group by [!> "State"] => maxby !> "Sprint" |> parse
+        let statement = group by ["State"] => maxby !> "Sprint" |> parse
         let execute =  Compile.parsedExpressions [statement]
         let actual =
             testDataset() 
@@ -386,7 +386,7 @@ module Frontend =
 
     [<Fact>]
     let groupByMinBy() =
-        let statement = group by [!> "State"] => minby !> "Sprint" |> parse
+        let statement = group by ["State"] => minby !> "Sprint" |> parse
         let execute =  Compile.parsedExpressions [statement]
         let actual =
             testDataset() 

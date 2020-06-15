@@ -1,4 +1,5 @@
-FROM kmdrd/sdk:app AS build
+ARG VERSION
+FROM kmdrd/sdk:app${VERSION} AS build
 
 # final stage/image
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1

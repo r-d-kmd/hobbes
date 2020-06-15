@@ -43,6 +43,12 @@ let buildConfiguration =
     "release" -> 
         DotNet.BuildConfiguration.Release
     | _ -> DotNet.BuildConfiguration.Debug
+
+let version =
+        match buildConfiguration with
+        DotNet.BuildConfiguration.Release -> "latest"
+        | DotNet.BuildConfiguration.Debug -> "debug"
+
 let commonLibDir = "./docker/.lib/"
 
 let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "2.0.default"
@@ -162,7 +168,7 @@ let buildApp (name : string) (appType : string) workingDir =
                t + ":" + "latest"
            ]
 
-        sprintf "build -f %s/Dockerfile.%s --build-arg %s -t %s ." dockerDir.FullName appType buildArg (tag.ToLower()) 
+        sprintf "build -f %s/Dockerfile.%s --build-arg %s --build-arg VERSION=%s -t %s ." dockerDir.FullName appType buildArg version (tag.ToLower()) 
         |> run "docker" workingDir
         tags
         |> List.iter(fun t -> 
@@ -189,8 +195,10 @@ let buildApp (name : string) (appType : string) workingDir =
     
     Target.create buildTargetName build
     Target.create pushTargetName push
-    buildTargetName ==> pushTargetName |> ignore
+    buildTargetName ==> pushTargetName ==> "PushApps" |> ignore
 
+Target.create "Complete" ignore
+Target.create "PushApps" ignore
 Target.create "All" ignore
 Target.create "Build" ignore
 
@@ -246,22 +254,49 @@ commons |> List.iter(fun common ->
     )
 ) 
 
-Target.create "Sdk" (fun _ ->   
-    let tag = dockerOrg + "/sdk:app"
-    let file = "Dockerfile.sdk-app"
-    //we do it this way because we want a debug version locally but want to push a release version to docker hub
-    sprintf "build -f %s -t %s ." file tag
+
+
+Target.create "GenericSdk" (fun _ ->   
+    [
+        "release",""
+        "debug","-debug"
+    ]
+    |> List.iter(fun (version,postFix) ->
+        let tag = sprintf "%s/sdk:%s" dockerOrg version        
+        let file = "Dockerfile.sdk" + postFix
+        //we do it this way because we want a debug version locally but want to push a release version to docker hub
+        sprintf "build -f %s -t %s ." file tag
+        |> run "docker" dockerDir.Name
+    )
+    //push release to repository
+    sprintf "tag %s/sdk:release %s/sdk:latest" dockerOrg dockerOrg
     |> run "docker" dockerDir.Name
 
-    sprintf "push %s" tag
-        |> run "docker" dockerDir.Name
-
-    //build the debug version for local use
-    sprintf "build -f %s -t %s --build-arg CONFIGURATION=%s ." file tag buildConfigurationName
-    |> run "docker" dockerDir.Name  
+    sprintf "push %s/sdk:latest" dockerOrg
+    |> run "docker" dockerDir.Name
 )
 
-"CleanCommon" 
+Target.create "Sdk" (fun _ ->   
+    
+    [
+        "latest",""
+        "debug","debug"
+    ]
+    |> List.iter(fun (vesion,postFix) -> 
+        sprintf "build -f Dockerfile.sdk-app -t %s/sdk:app%s --build-arg CONFIGURATION=%s --build-arg VERSION=%s ." 
+                dockerOrg 
+                postFix 
+                buildConfigurationName
+                version
+        |> run "docker" dockerDir.Name 
+    )
+
+    sprintf "push %s/sdk:app" dockerOrg
+    |> run "docker" dockerDir.Name
+)
+
+"GenericSdk" 
+    ?=> "CleanCommon" 
     ==> "Dependencies"
     ==> "Helpers" 
     ==> "Web"
@@ -274,5 +309,9 @@ Target.create "Sdk" (fun _ ->
 
 "Sdk" 
     ==> "All"
+
+"GenericSdk"
+    ?=> "All"
+    ==> "Complete"
 
 Target.runOrDefaultWithArguments "Build"

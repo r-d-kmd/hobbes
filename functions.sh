@@ -113,24 +113,11 @@ function clean(){
 }
 
 function build(){    
-    ECHO "Starting Build"
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
-    if [ -z "$1" ]
-    then
-        fake build
-    else
-        if ["$1" = "target"]
-        then
-            fake build --target $1
-        else
-            for var in "$@"
-            do
-                fake build --target "hobbes.$var"
-            done
-            restart $1
-        fi
-    fi
+
+    fake build --target "$1"
+    
     cd $CURRENT_DIR
     echo "Done building"
 }
@@ -166,11 +153,6 @@ function start() {
     kubectl apply -k ./
     
     cd $CURRENT_DIR
-}
-
-function buildAndStart() {
-    build
-    start
 }
 
 function startkube(){

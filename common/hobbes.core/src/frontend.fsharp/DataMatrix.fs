@@ -46,13 +46,8 @@ module Clustering =
                 | a -> [a]
             ))
 
-        let existingColumns = 
-            grouped.ColumnKeys
-            |> Set.ofSeq
-
         columnNames
         |> List.indexed
-        |> List.filter(fun (_,c) -> c |> existingColumns.Contains |> not)
         |> List.fold(fun frame (i,columnName) ->
             
             let groupSeries =
@@ -85,30 +80,29 @@ module Clustering =
               |> List.tryFind(fun c -> c = columnName)
               |> Option.isNone
            )
-        let red =
+        let getCols,red =
             match reduction with
-            AST.Sum-> 
-                Stats.levelSum fst
+            AST.Sum->
+                Frame.getNumericCols,Stats.levelSum fst
             | AST.Count  -> 
-                (Stats.levelCount fst)
+                Frame.getCols,(Stats.levelCount fst)
                 >> (Series.mapValues float)
             | AST.Median -> 
-                Stats.levelMedian fst
+                Frame.getNumericCols,Stats.levelMedian fst
             | AST.Mean-> 
-                Stats.levelMean fst
+                Frame.getNumericCols,Stats.levelMean fst
             | AST.StdDev-> 
-                Stats.levelStdDev fst
+                Frame.getNumericCols,Stats.levelStdDev fst
             | AST.Variance-> 
-                Stats.levelVariance fst
+                Frame.getNumericCols,Stats.levelVariance fst
             | AST.Max-> 
-                Series.applyLevel fst (Stats.max)
+                Frame.getNumericCols,Series.applyLevel fst (Stats.max)
             | AST.Min-> 
-                Series.applyLevel fst (Stats.min)
-           
+                Frame.getNumericCols,Series.applyLevel fst (Stats.min)
 
         frame
         |> Frame.sliceCols allOther
-        |> Frame.getNumericCols
+        |> getCols
         |> Series.mapValues red
         |> Frame.ofColumns
         |> reattachGroupedColumns columnNames

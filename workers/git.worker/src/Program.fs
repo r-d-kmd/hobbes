@@ -86,7 +86,6 @@ let handleMessage message =
 [<EntryPoint>]
 let main _ =
     Database.awaitDbServer()
-    Database.initDatabases ["azure_devops_rawdata"]
     
     async{    
         do! awaitQueue()

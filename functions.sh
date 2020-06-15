@@ -115,9 +115,13 @@ function clean(){
 function build(){    
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
+    if [ -z "$2" ]
+    then
+        fake build --target "$1"
+    else
+        fake build --target "$1" --parallel $2
+    fi
 
-    fake build --target "$1"
-    
     cd $CURRENT_DIR
     echo "Done building"
 }

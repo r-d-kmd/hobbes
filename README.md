@@ -1,7 +1,7 @@
 
 ## Builds
 
-start by running `source functions.sh` from the root of the project. This file includes a number of utility functions. One of them being build. It takes one or two arguments. The first being the name of the build and the second (optinal) argument os the maximum number of concurrent builds. Usually it's a good idea to set a number larger than 8 (if the machine building supports that many concurrent threads). If however there's a build error omit the number, since the build log is pretty much unsuable when build in parallel
+start by running `source functions.sh` from the root of the project. This file includes a number of utility functions. One of them being build. It takes one or two arguments. The first being the name of the build and the second (optinal) argument os the maximum number of concurrent builds. Usually it's a good idea to set a number larger than the number of apps (if the machine building supports that many concurrent threads). If however there's a build error omit the number, since the build log is pretty much unsuable when build in parallel
 
 ### Complete
 When building for the first time or after removing all docker images or similar use the **Complete** target. THis will create a debug version of the sdk image. Failing to do so it's still possible to compile the solution but it will run in release configuration

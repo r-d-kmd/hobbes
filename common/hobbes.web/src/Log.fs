@@ -108,9 +108,10 @@ module Log =
     
     let excf (e:System.Exception) format = 
 #if DEBUG
-       ksprintf ((fun msg -> 
-                    eprintfn "%s Message: %s " msg e.Messag
-                    eassert(fale)) format
+       ksprintf (fun msg -> 
+                    eprintfn "%s Message: %s " msg e.Message
+                    assert(fale)
+                 ) format
 #else
        ksprintf (fun msg -> msg + " Message: " + e.Message |> writeLogMessage Error e.StackTrace) format
 

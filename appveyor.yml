@@ -31,7 +31,7 @@ environment:
   # Disable prompts for CI
   MINIKUBE_WANTUPDATENOTIFICATION: "false"
   MINIKUBE_WANTREPORTERRORPROMPT: "false"
-  CONFIGURATION: Debug
+  CONFIGURATION: Release
 
 services:
   - docker
@@ -97,7 +97,7 @@ for:
       
     build_script:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-      - build all
+      - build all 16
       
     test_script:
       #- dotnet test

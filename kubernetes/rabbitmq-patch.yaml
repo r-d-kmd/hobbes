@@ -1,3 +1,0 @@
-dnsConfig:
-    searches:
-      - test-rabbitmq-0.default.svc.cluster-domain.example

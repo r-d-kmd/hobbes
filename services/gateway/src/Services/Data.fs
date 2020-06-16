@@ -16,7 +16,7 @@ module Data =
         | Cache.Value.Float f -> sprintf "%f" f
         | Cache.Value.Date d -> sprintf "\"%A\"" d
         | Cache.Value.Text s -> s |> Json.serialize
-                                |> sprintf "%A"
+                                |> sprintf "%s"
         | Cache.Value.Null -> "null"
         | Cache.Value.Boolean b -> sprintf "%b" b
 

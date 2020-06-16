@@ -107,6 +107,7 @@ for:
       - awaitRunningState
       - cd tools/workbench/src && dotnet run -- --publish development
       - cd ../../..
+      - sync
       - sleep 60
       - ip=$(minikube ip)
       - curl http://${ip}:30080/ping

@@ -96,7 +96,7 @@ for:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}"
       - docker pull kmdrd/couchdb
       - docker pull kmdrd/app
-      - fake build
+      - fake build --parallel 8
       
     test_script:
       #- dotnet test

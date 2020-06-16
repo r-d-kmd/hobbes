@@ -106,7 +106,7 @@ for:
       - start
       - awaitRunningState
       - sync
-      - sleep 5000
+      - sleep 60
       - ip=$(minikube ip)
       - curl http://${ip}:30080/ping
       - NAME=$(kubectl get pods -l app=gateway -o name) 

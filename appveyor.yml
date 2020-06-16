@@ -105,7 +105,6 @@ for:
       - source functions.sh
       - start
       - awaitRunningState
-      - sync
       - sleep 60
       - ip=$(minikube ip)
       - curl http://${ip}:30080/ping

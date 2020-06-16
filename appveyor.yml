@@ -77,9 +77,9 @@ for:
     install:
       #setup ingress dns
       - sudo mkdir -p /etc/resolvconf/resolv.conf.d/
-      - echo "search test" >> /etc/resolvconf/resolv.conf.d/base
-      - echo "nameserver $(minikube ip)" >> /etc/resolvconf/resolv.conf.d/base
-      - echo "timeout 5" >> /etc/resolvconf/resolv.conf.d/base
+      - sudo echo "search test" >> /etc/resolvconf/resolv.conf.d/base
+      - sudo echo "nameserver $(minikube ip)" >> /etc/resolvconf/resolv.conf.d/base
+      - sudo echo "timeout 5" >> /etc/resolvconf/resolv.conf.d/base
       - sudo resolvconf -u
       - systemctl disable --now resolvconf.service
       #verify docker

@@ -88,7 +88,9 @@ for:
       - sudo apt install conntrack
 
     before_build:
-      - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --driver=none --extra-config=kubelet.resolv-conf=/run/systemd/resolve/resolv.conf
+      - CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} 
+      - sudo minikube --driver=docker start \
+             --extra-config=kubelet.resolv-conf=/run/systemd/resolve/resolv.conf
       - eval $(minikube docker-env) 
       - echo ${ENV_FILE} | kubectl apply -f -
       

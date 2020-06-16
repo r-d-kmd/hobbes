@@ -86,9 +86,6 @@ for:
       - chmod +x minikube
       - sudo mv minikube /usr/local/bin/
       - sudo apt install conntrack
-      - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
-      - chmod 700 get_helm.sh
-      - ./get_helm.sh
 
     before_build:
       - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --vm-driver=none
@@ -98,7 +95,7 @@ for:
       
     build_script:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-      - fake build --target all 8
+      - fake build 8
       
     test_script:
       #- dotnet test
@@ -108,7 +105,8 @@ for:
       - ip=$(minikube ip)
       - front_url="http://${ip}:30080"
       - curl ${front_url}/ping
-      - docker build -t workbench tools/workbench && docker run -t workbench development --host "${front_url}" --masterkey Rno8hcqr9rXXs
+      - docker build -t workbench tools/workbench && docker run -dt workbench development --host "${front_url}" --masterkey Rno8hcqr9rXXs
+      - logs gateway -f
       - sync
       - sleep 60
       

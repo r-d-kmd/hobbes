@@ -145,9 +145,9 @@ function installRabbitMQ(){
     #helm repo add stable https://kubernetes-charts.storage.googleapis.com
     #helm install test --set rabbitmq.username=guest,rabbitmq.password=guest bitnami/rabbitmq
     
-    kubectl create -f https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.3/examples/celery-rabbitmq/rabbitmq-service.yaml
+    #kubectl create -f https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.3/examples/celery-rabbitmq/rabbitmq-service.yaml
     
-    kubectl create -f https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.3/examples/celery-rabbitmq/rabbitmq-controller.yaml
+    #kubectl create -f https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.3/examples/celery-rabbitmq/rabbitmq-controller.yaml
 }
 
 function start() {
@@ -157,7 +157,7 @@ function start() {
 
     kubectl apply -f env.JSON;
 
-    installRabbitMQ
+    #installRabbitMQ
     
     kubectl apply -k ./
     

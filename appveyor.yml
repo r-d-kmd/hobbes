@@ -95,7 +95,7 @@ for:
       - sudo apt -y install virtualbox-6.0
 
     before_build:
-      - sudo CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --driver=virtualbox
+      - CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} minikube start --driver=virtualbox
       - eval $(minikube docker-env) 
       - echo ${ENV_FILE} | kubectl apply -f -
       

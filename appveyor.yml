@@ -105,6 +105,7 @@ for:
       - ip=$(minikube ip)
       - front_url="http://${ip}:30080"
       - curl ${front_url}/ping
+      - curl "http://${ip}:30084"
       - docker build -t workbench tools/workbench && docker run -dt workbench development --host "${front_url}" --masterkey Rno8hcqr9rXXs
       - logs gateway -f
       - sync

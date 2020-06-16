@@ -106,7 +106,7 @@ let main args =
                             "host" : "%s"
                         }, 
                         "production": {}
-                    }""" host masterKey
+                    }""" masterKey host
                     |> WorkbenchSettings.Parse).Development
                  | _ -> 
                     if System.IO.File.Exists settingsFile then 

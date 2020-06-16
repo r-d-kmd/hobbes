@@ -228,10 +228,6 @@ function awaitRunningState(){
             if [[ $(isRunning $NAME) != "True" ]]
             then
                 echo "$(echo "$NAME" | cut -d '-' -f1)"
-                echo "$(kubectl get events --all-namespaces)"
-                echo "$(kubectl get all)"
-                echo "$(logs azu)"
-                echo "$(logs conf)"
             fi
         done
         sleep 1
@@ -251,7 +247,7 @@ function restartApp(){
 function sync(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    echo $(kubectl delete -f sync-job.yaml)
+    echo $(kubectl delete job)
     kubectl apply -f sync-job.yaml
     cd $CURRENT_DIR
 }

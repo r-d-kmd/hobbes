@@ -89,7 +89,7 @@ for:
 
     before_build:
       - CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} 
-      - minikube --driver=docker start 
+      - sudo minikube --driver=none start 
       - minikube addons enable ingress-dns
       #setup ingress dns
       - echo "search test" >> /etc/resolvconf/resolv.conf.d/base

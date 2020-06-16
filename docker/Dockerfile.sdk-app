@@ -1,4 +1,4 @@
-ARG VERSION=release
+ARG VERSION=latest
 FROM kmdrd/sdk:${VERSION}
 WORKDIR /source
 ARG CONFIGURATION=release

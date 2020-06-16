@@ -95,6 +95,7 @@ for:
       - sudo -E minikube --driver=none start --extra-config=kubelet.resolv-conf=/run/systemd/resolve/resolv.conf
       - eval $(minikube docker-env) 
       - echo ${ENV_FILE} | kubectl apply -f -
+      - kubectl apply -f kubernetes/coredns.yaml
       
     build_script:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}"

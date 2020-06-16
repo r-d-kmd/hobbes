@@ -93,6 +93,13 @@ for:
     before_build:
       - CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} 
       - sudo -E minikube --driver=none start
+      - ip=$(minikube ip)
+      - sudo echo "${ip} configurations-svc" >> /etc/hosts 
+      - sudo echo "${ip} db-svc" >> /etc/hosts
+      - sudo echo "${ip} gateway-svc" >> /etc/hosts
+      - sudo echo "${ip} kubernetes" >> /etc/hosts       
+      - sudo echo "${ip} rabbitmq-service" >> /etc/hosts
+      - sudo echo "${ip} uniformdata-svc" >> /etc/hosts
       - eval $(minikube docker-env) 
       - echo ${ENV_FILE} | kubectl apply -f -
       
@@ -106,10 +113,9 @@ for:
     test_script:
       #- dotnet test
       - source functions.sh
-      - kubectl apply -f kubernetes/coredns.yaml
+      - ip=$(minikube ip)
       - start
       - awaitRunningState
-      - ip=$(minikube ip)
       - front_url="http://${ip}:30080"
       - curl ${front_url}/ping
       - curl "http://${ip}:30084"

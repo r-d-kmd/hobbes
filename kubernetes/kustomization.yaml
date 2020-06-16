@@ -15,7 +15,8 @@ resources:
   - uniformdata-deployment.yaml
   - uniformdata-svc.yaml
   - sync-job.yaml
-
+  - rabbitmq-controller.yaml
+  - rabbitmq-service.yaml
 patchesJson6902:
   - target:
       version: v1

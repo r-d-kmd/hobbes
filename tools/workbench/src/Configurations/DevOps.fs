@@ -21,7 +21,7 @@ module DevOps =
                 Workbench.Transformations.Git.commitFrequency
             ] |> addConfiguration (Source.Git(Commits,p)) "commitFrequency" 
 
-            [
+            (*[
                 Workbench.Transformations.Git.allCommits
-            ] |> addConfiguration (Source.Git(Commits,p)) "allCommits" 
+            ] |> addConfiguration (Source.Git(Commits,p)) "allCommits"*)
         )

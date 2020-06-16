@@ -105,7 +105,7 @@ for:
       - source functions.sh
       - start
       - awaitRunningState
-      - docker build -t workbench tools/workbench && docker run -it workbench development --host "$(minikube ip)" --masterkey Rno8hcqr9rXXs
+      - docker build -t workbench tools/workbench && docker run -t workbench development --host "$(minikube ip)" --masterkey Rno8hcqr9rXXs
       - sync
       - sleep 60
       - ip=$(minikube ip)

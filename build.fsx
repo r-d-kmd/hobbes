@@ -36,6 +36,7 @@ let buildConfigurationName = (Environment.environVarOrDefault "CONFIGURATION" "D
 let buildConfiguration = 
     match buildConfigurationName with
     "release" -> 
+        printfn "Using release configuration"
         DotNet.BuildConfiguration.Release
     | _ -> DotNet.BuildConfiguration.Debug
 
@@ -251,51 +252,35 @@ commons |> List.iter(fun common ->
     )
 ) 
 
-
-
 Target.create "GenericSdk" (fun _ ->   
-    [
-        "release",""
-        "debug","-debug"
-    ]
-    |> List.iter(fun (version,postFix) ->
-        let tag = sprintf "%s/sdk:%s" dockerOrg version        
-        let file = "Dockerfile.sdk" + postFix
-        //we do it this way because we want a debug version locally but want to push a release version to docker hub
-        sprintf "build -f %s -t %s ." file tag
-        |> run "docker" dockerDir.Name
-    )
-    //push release to repository
-    sprintf "tag %s/sdk:release %s/sdk:latest" dockerOrg dockerOrg
+    
+    let tag = sprintf "%s/sdk" dockerOrg
+    
+    sprintf "build -f Dockerfile.sdk -t %s/sdk ." dockerOrg
     |> run "docker" dockerDir.Name
 
-    sprintf "push %s/sdk:latest" dockerOrg
+    sprintf "push %s/sdk" dockerOrg
     |> run "docker" dockerDir.Name
+
+    //build the debug version for local use if required
+    if buildConfiguration = DotNet.BuildConfiguration.Debug then
+        sprintf "build -f Dockerfile.sdk-debug -t %s/sdk ." dockerOrg
+        |> run "docker" dockerDir.Name
 )
 
 Target.create "Sdk" (fun _ ->   
-    let configurations = 
-        match buildConfiguration with
-        DotNet.BuildConfiguration.Release ->
-            ["latest",""]
-        | _ -> 
-            [
-                "latest",""
-                "debug","debug"
-            ] 
-    configurations
-    |> List.iter(fun (version,postFix) -> 
-        //sprintf "build -f Dockerfile.sdk-app -t %s/sdk:app%s --build-arg CONFIGURATION=%s --build-arg VERSION=%s ." 
-        sprintf "build -f Dockerfile.sdk-app -t %s/sdk:app%s --build-arg CONFIGURATION=%s ." 
-                dockerOrg 
-                postFix 
-                buildConfigurationName
-                (*version*)
-        |> run "docker" dockerDir.Name 
-    )
-
-    sprintf "push %s/sdk:app" dockerOrg
+    sprintf "build -f Dockerfile.app -t %s/app --build-arg CONFIGURATION=Release ." 
+            dockerOrg 
+    |> run "docker" dockerDir.Name 
+    
+    sprintf "push %s/app" dockerOrg
     |> run "docker" dockerDir.Name
+
+    //build the debug version for local use if required
+    if buildConfiguration = DotNet.BuildConfiguration.Debug then
+        sprintf "build -f Dockerfile.app -t %s/app --build-arg CONFIGURATION=Debug ." 
+                dockerOrg 
+        |> run "docker" dockerDir.Name 
 )
 
 "GenericSdk" 

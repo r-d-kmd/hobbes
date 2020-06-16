@@ -73,7 +73,7 @@ for:
       GIT_ACCESS_TOKEN:
         secure: bYL40RWEXYSqfLLEOipwrMfkLLotoTB8T5B0QSPheafq7p9jbqdHVaa9SUn+GYff
       BUILD_ENV: AppVeyor
-      CONFIGURATION: Release
+      CONFIGURATION: Debug
     install:
       - docker version
       - dotnet tool install --global fake-cli
@@ -98,7 +98,7 @@ for:
       
     build_script:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-      - fake build --target complete --parallel 16
+      - fake build --target all
       
     test_script:
       #- dotnet test

@@ -91,7 +91,7 @@ for:
       - CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} 
       - minikube --driver=docker start 
       - minikube addons enable ingress-dns
-      - sudo rm /etc/resolvconf/resolv.conf.d/base
+      #setup ingress dns
       - echo "search test" >> /etc/resolvconf/resolv.conf.d/base
       - echo "nameserver $(minikube ip)" >> /etc/resolvconf/resolv.conf.d/base
       - echo "timeout 5" >> /etc/resolvconf/resolv.conf.d/base

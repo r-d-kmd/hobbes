@@ -141,19 +141,6 @@ function listServices(){
     minikube service list 
 }
 
-<<<<<<< HEAD
-#function installRabbitMQ(){
-    #helm repo add bitnami https://charts.bitnami.com/bitnami
-    #helm repo add stable https://kubernetes-charts.storage.googleapis.com
-    #helm install test --set rabbitmq.username=guest,rabbitmq.password=guest bitnami/rabbitmq
-    
-    #kubectl create -f https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.3/examples/celery-rabbitmq/rabbitmq-service.yaml
-    
-    #kubectl create -f https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.3/examples/celery-rabbitmq/rabbitmq-controller.yaml
-#}
-
-=======
->>>>>>> d2c9592bf9c5c4f69b608957e092d5e322fa9cdb
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR

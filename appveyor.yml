@@ -75,13 +75,6 @@ for:
       BUILD_ENV: AppVeyor
       CONFIGURATION: Debug
     install:
-      #setup ingress dns
-      - sudo mkdir -p /etc/resolvconf/resolv.conf.d/
-      - sudo echo "search test" >> /etc/resolvconf/resolv.conf.d/base
-      - sudo echo "nameserver $(minikube ip)" >> /etc/resolvconf/resolv.conf.d/base
-      - sudo echo "timeout 5" >> /etc/resolvconf/resolv.conf.d/base
-      - sudo resolvconf -u
-      - systemctl disable --now resolvconf.service
       #verify docker
       - docker version
       #install dotnet tools
@@ -99,9 +92,7 @@ for:
 
     before_build:
       - CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} 
-      - sudo minikube --driver=none start 
-      - minikube addons enable ingress-dns
-      
+      - sudo -E minikube --driver=none start
       - eval $(minikube docker-env) 
       - echo ${ENV_FILE} | kubectl apply -f -
       

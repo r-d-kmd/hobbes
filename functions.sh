@@ -143,12 +143,11 @@ function listServices(){
 function installRabbitMQ(){
     #helm repo add bitnami https://charts.bitnami.com/bitnami
     #helm repo add stable https://kubernetes-charts.storage.googleapis.com
-
     #helm install test --set rabbitmq.username=guest,rabbitmq.password=guest bitnami/rabbitmq
+    
     kubectl create -f https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.3/examples/celery-rabbitmq/rabbitmq-service.yaml
     
     kubectl create -f https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.3/examples/celery-rabbitmq/rabbitmq-controller.yaml
-
 }
 
 function start() {
@@ -160,8 +159,6 @@ function start() {
 
     installRabbitMQ
     
-    kubectl patch statefulset test-rabbitmq --patch "$(cat rabbitmq-patch.yaml)"
-
     kubectl apply -k ./
     
     cd $CURRENT_DIR

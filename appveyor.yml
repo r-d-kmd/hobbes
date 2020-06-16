@@ -76,7 +76,7 @@ for:
       CONFIGURATION: Debug
     install:
       #setup ingress dns
-      - mkdir -p /etc/resolvconf/resolv.conf.d/
+      - sudo mkdir -p /etc/resolvconf/resolv.conf.d/
       - echo "search test" >> /etc/resolvconf/resolv.conf.d/base
       - echo "nameserver $(minikube ip)" >> /etc/resolvconf/resolv.conf.d/base
       - echo "timeout 5" >> /etc/resolvconf/resolv.conf.d/base

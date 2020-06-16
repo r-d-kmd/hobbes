@@ -31,36 +31,14 @@ module Data =
                 let record = Json.deserialize<Cache.CacheRecord> json
                 let names = record.Data.ColumnNames
                 let rows = record.Data.Values
-                let threads = 8
-                let rowCount = record.Data.RowCount
-                let stepSize = 
-                    if rowCount % threads = 0 then
-                       threads 
-                    else 
-                       threads - 1
-                let join delim (s : seq<string>) = System.String.Join(delim,s)
                 let formatted = 
-                    seq { for i in stepSize .. rowCount .. stepSize ->
-                            rows 
-                            |> Seq.skip(i - stepSize)
-                            |> Seq.take(min (stepSize + rowCount - i) stepSize) 
-                    } |> Seq.map (fun rowSection -> 
-                        async{
-                            return 
-                                rowSection
-                                |> Seq.map(
-                                    Array.map2 (fun n v -> 
-                                        sprintf "\"%s\" : %s" (Json.serialize n) (rowToString v)
-                                    ) names
-                                    >> join ","
-                                    >> sprintf "{%s}"
-                                ) |> join ","
-                        }
+                    rows
+                    |> Array.map (fun vals -> 
+                        vals |> Array.map2 (fun n v -> sprintf "\"%s\" : %s" n (rowToString v)) names
+                        |> String.concat ","
                     )
-                    |> Async.Parallel
-                    |> Async.RunSynchronously
-                    |> join ","
-                    |> sprintf "[%s]"
+                    |> String.concat "},{"
+                    |> sprintf "[{%s}]"
 
                 200, formatted
             | Http.Error(sc,m) -> sc,sprintf "Data for configuration %s not found. Message: %s" configuration m

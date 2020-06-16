@@ -236,7 +236,7 @@ function restartApp(){
 function sync(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    echo $(kubectl delete job)
+    echo $(kubectl delete job.batch/sync)
     kubectl apply -f sync-job.yaml
     cd $CURRENT_DIR
 }

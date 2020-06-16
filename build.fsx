@@ -20,11 +20,6 @@ open Fake.Core
 open Fake.DotNet
 open Fake.IO
 
-
-let force = (Environment.environVarOrDefault "force" "false").ToLower() = "true"
-if force then
-    printfn "Running full dependency chain since 'force' was specified"
-
 let dockerOrg = "kmdrd"
 let run command workingDir args = 
     let arguments = 
@@ -169,7 +164,8 @@ let buildApp (name : string) (appType : string) workingDir =
                t + ":" + "latest"
            ]
 
-        sprintf "build -f %s/Dockerfile.%s --build-arg %s --build-arg VERSION=%s -t %s ." dockerDir.FullName appType buildArg version (tag.ToLower()) 
+        //sprintf "build -f %s/Dockerfile.%s --build-arg %s --build-arg VERSION=%s -t %s ." dockerDir.FullName appType buildArg version (tag.ToLower()) 
+        sprintf "build -f %s/Dockerfile.%s --build-arg %s -t %s ." dockerDir.FullName appType buildArg (tag.ToLower()) 
         |> run "docker" workingDir
         tags
         |> List.iter(fun t -> 
@@ -278,16 +274,23 @@ Target.create "GenericSdk" (fun _ ->
 )
 
 Target.create "Sdk" (fun _ ->   
-    
-    [
-        "latest",""
-        "debug",""
-    ] |> List.iter(fun (version,postFix) -> 
-        sprintf "build -f Dockerfile.sdk-app -t %s/sdk:app%s --build-arg CONFIGURATION=%s --build-arg VERSION=%s ." 
+    let configurations = 
+        match buildConfiguration with
+        DotNet.BuildConfiguration.Release ->
+            ["latest",""]
+        | _ -> 
+            [
+                "latest",""
+                "debug","debug"
+            ] 
+    configurations
+    |> List.iter(fun (version,postFix) -> 
+        //sprintf "build -f Dockerfile.sdk-app -t %s/sdk:app%s --build-arg CONFIGURATION=%s --build-arg VERSION=%s ." 
+        sprintf "build -f Dockerfile.sdk-app -t %s/sdk:app%s --build-arg CONFIGURATION=%s ." 
                 dockerOrg 
                 postFix 
                 buildConfigurationName
-                version
+                (*version*)
         |> run "docker" dockerDir.Name 
     )
 

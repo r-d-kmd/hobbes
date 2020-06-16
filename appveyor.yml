@@ -6,7 +6,6 @@ branches:
   only:
     - development
 environment:
-  BUILD_ENV: AppVeyor
   ENV_FILE:
     secure: 1EY0PW6l+4E/ZiuaRlC8WHb8v2J6o+YWksH852D5wIVfRnWBC6Ih6bPQMSwQ1Smm71oEOrsd8WJsabgdIkZIxinJ4chtLNBEjx2Wm32JuQziI+jvxc+Q+9YUtwrijB6xP2jHPA0n5wLEE1yHiicn6FFTFcXMJnOpizKcVkU9CgAywwJC+hXp17Vmp96jkfoDem7ZnOpSfUplJti7Vw55aHz4IkkP/G60d+9ak2cks3SHXE80y4ouOnULCZbr2JwekIbxOCJjgOBGeUu7X2hGNMd1u9z00M3iqyS6cwIwnlea5x8cGJrO2XYQ00PCUkzlmGjdeGN5S5In5e7T7VB2aSMJCZMcBS/zw4trIpgWtriFds2AZMPo2zdTk6A+16TL1tNKJJ17bs6IWtev2wP1uIKFSw5OIoIOocnzKdafhhHP5WFKXHpLeXSW8gqL9KRtv876UvF6mFvP/3vGQUIhlirPePvTk1LdWGi7cigm/m0d1AhOkkNFccD3EfofM5v12EYlTA3vwGtDHrmuBewyZnTvS2YriKkYf9V2+LuXV4qUQOf5qwiYlK0yjrF8qa/TVAjzL2sX4oi38wS95S1ncU9kqdiU4a8RKhpCv3CKYH8a2zFdjGaTLP4I0PALDhlmpLlWF+dw5hX6NgCf8MfE2u/zgMG25K115mlZfF2H2KvV17HjpqXH5ItcRTCROGCGds1fqIbgvYlFYH3K8EHX3xbxGMgUVxDqatcOyb7dbj0AIR9IjEMftoT+NlkXJoWEorLRatsVm+9MIVfY/d8+dzK0mR1kQxq8jM4QmnXN1d+RhhgEPKFteiom4uhjUTIF2wdVlAeNmn1oHdn24o0zAF3yc3Yqigk19ZKWi0eXEK8ylShA0+Xt3ysKVRQRSLjNfmaEasurSdCGw/8Khiif2eb+HOS+HaAjxaVsRjVce70MAgIoCPkK3LM0sXnsxkdDKmD6kw2CGqVglikW4m8U9CeX2NqM4kyk3KIseR9eXc6UXYQ71k817FmWMeUfzh/HEzm447aOWdJJhfQ4DEOyFq7zrrkNNIpMI0zEmw6CGKigDmU6eDAdGzREjhdZk3mWeCFiaJYSbwzRckkYQmaPYw==
   DOCKER_USER:
@@ -31,7 +30,6 @@ environment:
   # Disable prompts for CI
   MINIKUBE_WANTUPDATENOTIFICATION: "false"
   MINIKUBE_WANTREPORTERRORPROMPT: "false"
-  CONFIGURATION: Release
 
 services:
   - docker
@@ -43,6 +41,7 @@ for:
         - master
     environment: 
       CONFIGURATION: Release
+      BUILD_ENV: AppVeyor
     dotnet_csproj:
       patch: true
       file: '**\*.fsproj'
@@ -73,6 +72,8 @@ for:
     environment:
       GIT_ACCESS_TOKEN:
         secure: bYL40RWEXYSqfLLEOipwrMfkLLotoTB8T5B0QSPheafq7p9jbqdHVaa9SUn+GYff
+      BUILD_ENV: AppVeyor
+      CONFIGURATION: Release
     install:
       - docker version
       - dotnet tool install --global fake-cli

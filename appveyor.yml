@@ -105,8 +105,7 @@ for:
       - source functions.sh
       - start
       - awaitRunningState
-      - cd tools/workbench/src && dotnet run -- --publish development
-      - cd ../../..
+      - - docker build -t workbench tools/workbench && docker run -it workbench development
       - sync
       - sleep 60
       - ip=$(minikube ip)

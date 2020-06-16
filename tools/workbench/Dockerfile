@@ -7,6 +7,6 @@ ARG WORKER_NAME
 
 WORKDIR /app
 COPY --from=build /app .
-COPY ./src/workbench.json .
+#COPY ./src/workbench.json .
 
 ENTRYPOINT ["dotnet","hobbes.workbench.dll","--publish"]

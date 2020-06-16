@@ -281,7 +281,7 @@ Target.create "Sdk" (fun _ ->
     
     [
         "latest",""
-        "debug","debug"
+        "debug",""
     ] |> List.iter(fun (version,postFix) -> 
         sprintf "build -f Dockerfile.sdk-app -t %s/sdk:app%s --build-arg CONFIGURATION=%s --build-arg VERSION=%s ." 
                 dockerOrg 

@@ -109,6 +109,7 @@ function clean(){
     kubectl delete --all secrets
     kubectl delete --all statefulset
     kubectl delete --all job
+    kubectl delete --all replicationcontroller
 }
 
 function build(){    
@@ -140,24 +141,12 @@ function listServices(){
     minikube service list 
 }
 
-function installRabbitMQ(){
-    #helm repo add bitnami https://charts.bitnami.com/bitnami
-    #helm repo add stable https://kubernetes-charts.storage.googleapis.com
-    #helm install test --set rabbitmq.username=guest,rabbitmq.password=guest bitnami/rabbitmq
-    
-    kubectl create -f https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.3/examples/celery-rabbitmq/rabbitmq-service.yaml
-    
-    kubectl create -f https://raw.githubusercontent.com/kubernetes/kubernetes/release-1.3/examples/celery-rabbitmq/rabbitmq-controller.yaml
-}
-
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
     local FILE=""
 
     kubectl apply -f env.JSON;
-
-    installRabbitMQ
     
     kubectl apply -k ./
     

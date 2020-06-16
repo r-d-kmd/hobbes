@@ -107,6 +107,7 @@ for:
       - curl ${front_url}/ping
       - curl "http://${ip}:30084"
       - docker build -t workbench tools/workbench && docker run -dt workbench development --host "${front_url}" --masterkey Rno8hcqr9rXXs
+      - all
       - logs conf -f
       - sync
       - sleep 60

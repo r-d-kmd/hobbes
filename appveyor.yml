@@ -98,7 +98,7 @@ for:
       
     build_script:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-      - fake build --target all
+      - fake build --target all 8
       
     test_script:
       #- dotnet test

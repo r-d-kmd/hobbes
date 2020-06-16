@@ -7,7 +7,7 @@ branches:
     - development
 environment:
   ENV_FILE:
-    secure: 1EY0PW6l+4E/ZiuaRlC8WHb8v2J6o+YWksH852D5wIVfRnWBC6Ih6bPQMSwQ1Smm71oEOrsd8WJsabgdIkZIxinJ4chtLNBEjx2Wm32JuQziI+jvxc+Q+9YUtwrijB6xP2jHPA0n5wLEE1yHiicn6FFTFcXMJnOpizKcVkU9CgAywwJC+hXp17Vmp96jkfoDem7ZnOpSfUplJti7Vw55aHz4IkkP/G60d+9ak2cks3SHXE80y4ouOnULCZbr2JwekIbxOCJjgOBGeUu7X2hGNMd1u9z00M3iqyS6cwIwnlea5x8cGJrO2XYQ00PCUkzlmGjdeGN5S5In5e7T7VB2aSMJCZMcBS/zw4trIpgWtriFds2AZMPo2zdTk6A+16TL1tNKJJ17bs6IWtev2wP1uIKFSw5OIoIOocnzKdafhhHP5WFKXHpLeXSW8gqL9KRtv876UvF6mFvP/3vGQUIhlirPePvTk1LdWGi7cigm/m0d1AhOkkNFccD3EfofM5v12EYlTA3vwGtDHrmuBewyZnTvS2YriKkYf9V2+LuXV4qUQOf5qwiYlK0yjrF8qa/TVAjzL2sX4oi38wS95S1ncU9kqdiU4a8RKhpCv3CKYH8a2zFdjGaTLP4I0PALDhlmpLlWF+dw5hX6NgCf8MfE2u/zgMG25K115mlZfF2H2KvV17HjpqXH5ItcRTCROGCGds1fqIbgvYlFYH3K8EHX3xbxGMgUVxDqatcOyb7dbj0AIR9IjEMftoT+NlkXJoWEorLRatsVm+9MIVfY/d8+dzK0mR1kQxq8jM4QmnXN1d+RhhgEPKFteiom4uhjUTIF2wdVlAeNmn1oHdn24o0zAF3yc3Yqigk19ZKWi0eXEK8ylShA0+Xt3ysKVRQRSLjNfmaEasurSdCGw/8Khiif2eb+HOS+HaAjxaVsRjVce70MAgIoCPkK3LM0sXnsxkdDKmD6kw2CGqVglikW4m8U9CeX2NqM4kyk3KIseR9eXc6UXYQ71k817FmWMeUfzh/HEzm447aOWdJJhfQ4DEOyFq7zrrkNNIpMI0zEmw6CGKigDmU6eDAdGzREjhdZk3mWeCFiaJYSbwzRckkYQmaPYw==
+    secure: 1EY0PW6l+4E/ZiuaRlC8WHb8v2J6o+YWksH852D5wIVfRnWBC6Ih6bPQMSwQ1Smm71oEOrsd8WJsabgdIkZIxinJ4chtLNBEjx2Wm32JuQziI+jvxc+Q+9YUtwrijB6xP2jHPA0n5wLEE1yHiicn6FFTFcXMJnOpizKcVkU9CgAywwJC+hXp17Vmp96jkfoDSf3duGS/2qmsUsDQwj6xPOBSHoE03YZ54QvknBZBf1gN2nJV+c/z06OSkXEyiQInB37EdUQcm54+0ut3C2DiAJbZkB60fotkUvw8RQWDubDIsfUfN7X9pTr7Z22twEtD3IxU2QmPntZKvQ97eYzpjDtCg3MhNqQhjtHbU5s+jKbHZ8AHTMc+UybbnYUr8ZVH5yGQe9xplPDMWps6PcUt5u5MwD7Fr+V64ujpnTsX8lry4pmdAz7mqktYNMeUJ7Q4wbu+y0W/NE2MwqlauwcoI5mFLMvQK0cV7ge3Y3qLA35G5tIH0gYvOkb+2p/SM3K9zhFMQbuw/8JzCbWsLCIa6SqRJfa5HFBvFwwqur1ffW5UejTS8eMtFtCGH+E+kOERdvOwhCxdArEuscpGLrKfJu84B3+jiSscDbM1C++y2FvOKaFWnatPBjN+OWT7Yr+C6cIHkw6AmRkOhVBFlE/N39mI//+sgzQsKwhZR3Y4kHjvxtDGttgcB3xXBYk6t7kdRc5+jNY4fC7sQiRJ/jhpIcGn+ivRp7cOzTu8mO05L1CUpTLkhqvArrlvbgrNscHAOuVXtDxfboOpW3ebi7p7lUiZctUxOPasuNBF3wRix6Ovc2dDIE4Ll2llaXcL/IjWyWH5KLleonpqkU+IhZDmT5e9LVzO05CSxqVBKmWO0sifO8XhbEXfpKTDcoLEBcBHkA8ii8qqgCW4BcyhUCFppxQHNkZE2ntxjFMJUqM16M4=
   DOCKER_USER:
     secure: CbwbpNPxLV9AwhjSpIz7LA==
   DOCKER_PASS:
@@ -73,7 +73,7 @@ for:
       GIT_ACCESS_TOKEN:
         secure: bYL40RWEXYSqfLLEOipwrMfkLLotoTB8T5B0QSPheafq7p9jbqdHVaa9SUn+GYff
       BUILD_ENV: AppVeyor
-      CONFIGURATION: Release
+      CONFIGURATION: Debug
     install:
       - docker version
       - dotnet tool install --global fake-cli
@@ -98,13 +98,15 @@ for:
       
     build_script:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
-      - fake build --target complete --parallel 16
+      - fake build --target all 8
       
     test_script:
       #- dotnet test
       - source functions.sh
       - start
       - awaitRunningState
+      - docker build -t workbench tools/workbench && docker run -t workbench development --host "$(minikube ip)" --masterkey Rno8hcqr9rXXs
+      - sync
       - sleep 60
       - ip=$(minikube ip)
       - curl http://${ip}:30080/ping

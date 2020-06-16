@@ -105,7 +105,8 @@ for:
       - source functions.sh
       - start
       - awaitRunningState
-      - kubectl port-forward service/rabbitmq-service 15672:15672 &
+      - sync
+      - sleep 5000
       - ip=$(minikube ip)
       - curl http://${ip}:30080/ping
       - NAME=$(kubectl get pods -l app=gateway -o name) 

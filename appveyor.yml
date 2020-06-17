@@ -64,6 +64,7 @@ for:
       - export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
       - source ~/.profile
       - go get sigs.k8s.io/kustomize/kustomize/v3
+      - kustomize version
       before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
     build_script:  

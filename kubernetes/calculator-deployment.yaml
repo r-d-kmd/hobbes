@@ -19,5 +19,9 @@ spec:
         imagePullPolicy: Never
         image: calculator
         name: hobbes-calculator
+        resources:
+          requests:
+            cpu: 300m
+            memory: 300Mi
       restartPolicy: Always
 status: {}

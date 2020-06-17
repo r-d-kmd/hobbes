@@ -1,6 +1,6 @@
 eval $(minikube -p minikube docker-env)
 VOLUMES=(db)
-function get_script_dir () {
+function get_script_dir(){
      SOURCE="${BASH_SOURCE[0]}"
      # While $SOURCE is a symlink, resolve it
      while [ -h "$SOURCE" ]; do
@@ -110,6 +110,7 @@ function clean(){
     kubectl delete --all statefulset
     kubectl delete --all job
     kubectl delete --all replicationcontroller
+    kubectl delete --all hpa
 }
 
 function build(){    
@@ -238,6 +239,31 @@ function sync(){
     cd $KUBERNETES_DIR
     echo $(kubectl delete job.batch/sync)
     kubectl apply -f sync-job.yaml
+    cd $CURRENT_DIR
+}
+
+function test(){
+    local CURRENT_DIR=$(pwd)
+    cd $SCRIPT_DIR
+    dotnet test
+    source functions.sh
+    ip=$(minikube ip)
+    start
+    awaitRunningState
+    front_url="http://${ip}:30080"
+    #test the gateway is functioning
+    curl ${front_url}/ping
+    #test the db is responding
+    curl "http://${ip}:30084"
+    #wait for queue to be ready
+    sleep 10
+    #publish transformations and configurations
+    docker build -t workbench tools/workbench && docker run -dt workbench development --host "${front_url}" --masterkey Rno8hcqr9rXXs
+    all
+    sync
+    sleep 60
+    NAME=$(kubectl get pods -l app=gateway -o name) 
+    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=${ip} --env-var "master_key"=${MASTER_KEY}
     cd $CURRENT_DIR
 }
 

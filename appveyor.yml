@@ -56,8 +56,9 @@ for:
       - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
       - chmod +x kubectl
       - sudo mv kubectl /usr/local/bin/
-      - curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-      - kubectl apply -k ./ -o jens.yaml
+      - cd kubernetes && curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+      - sudo mv pord_patches/kustomization.yaml /kubernetes/ && cd ..
+      - kustomize build -o prod.yaml
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
     build_script:  

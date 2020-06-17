@@ -57,7 +57,7 @@ for:
       - chmod +x kubectl
       - sudo mv kubectl /usr/local/bin/
       - cd kubernetes && curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-      - sudo mv pord_patches/kustomization.yaml /kubernetes/ && cd ..
+      - sudo mv prod_patches/kustomization.yaml /kubernetes/ && cd ..
       - kustomize build -o prod.yaml
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 

@@ -57,7 +57,7 @@ for:
       - source functions.sh
       - docker version
       - sudo apt-get install azure-cli
-      - az version
+      - az login -u $AZURE_LOGIN -p $AZURE_PASS
       - dotnet tool install --global fake-cli
       - dotnet tool install --global paket
       - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl

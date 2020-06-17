@@ -266,7 +266,7 @@ function test(){
     logs publish
     all
     sync
-    sleep 60
+    sleep 300
     cd $CURRENT_DIR
 }
 

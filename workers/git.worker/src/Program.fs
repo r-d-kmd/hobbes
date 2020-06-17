@@ -4,32 +4,34 @@ open Hobbes.Web
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
 open Hobbes.Helpers
+open Hobbes.Web.Cache
 
 let synchronize (source : GitSource.Root) token =
     try
         let columnNames,values,rowCount = 
             match source.Dataset.ToLower() with
-            _ ->
+            "commits" ->
                 let commits = commits source.Account source.Project
-                let columnNames = [|"id";"Time";"Author";"Repository Name";"Branch Name"|]
+                let columnNames = [|"id";"Time";"Project";"Repository Name";"Branch Name";"Author"|]
                 let values =
                     commits
                     |> Seq.distinct
                     |> Seq.map(fun c ->
                          [|
-                             c.Id :> obj
-                             c.Date :> obj
-                             c.Author :> obj
-                             c.RepositoryName :> obj
-                             c.BranchName :> obj
+                             c.Id |> Value.Create
+                             c.Date |> Value.Create
+                             c.Project |> Value.Create
+                             c.RepositoryName |> Value.Create
+                             c.BranchName |> Value.Create
+                             c.Author |> Value.Create
                          |]
                     ) |> Array.ofSeq
                 columnNames, values, (commits |> Seq.length)
-            //| ds -> failwithf "Datsaet (%s) not known" ds
+            | ds -> failwithf "Datsaet (%s) not known" ds
         
         {
             ColumnNames = columnNames
-            Rows = values
+            Values = values
             RowCount = rowCount
         } : Cache.DataResult
         |> Some
@@ -84,7 +86,6 @@ let handleMessage message =
 [<EntryPoint>]
 let main _ =
     Database.awaitDbServer()
-    Database.initDatabases ["azure_devops_rawdata"]
     
     async{    
         do! awaitQueue()

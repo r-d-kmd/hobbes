@@ -15,7 +15,7 @@ module Expressions =
     
 
     let formatDate = 
-        pipe2 (kwFormat .>>? kwDate >>. columnName .>> spaces1) dateFormat (fun columnName format -> AST.FormatDate(columnName,format))
+        pipe2 (kwFormat .>>? kwDate >>. spaces1 >>. columnName .>> spaces1) dateFormat (fun columnName format -> AST.FormatDate(columnName,format))
     
 
     let private opp = new OperatorPrecedenceParser<AST.ComputationExpression,unit,unit>()

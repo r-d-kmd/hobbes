@@ -6,9 +6,9 @@ open Hobbes.Web.Routing
 open Hobbes.Helpers.Environment
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
+open Hobbes.Web.RawdataTypes
 
-let private port = env "PORT" "8085"
-                   |> int
+let private port = 8085
 
 let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "The requested ressource does not exist")
@@ -16,7 +16,6 @@ let private appRouter = router {
     fetch <@ ping @>
     withArg <@ configuration @>
     withArg <@ transformation @>
-    withArg <@ dependingTransformations @>
     withArg <@ sources @>
     fetch <@ collectors @>
     withBody <@ storeConfiguration @>
@@ -24,7 +23,7 @@ let private appRouter = router {
 } 
 
 let private app = application {
-    url (sprintf "http://0.0.0.0:%d/" port)
+    url "http://0.0.0.0:8085/"
     use_router appRouter
     memory_cache
     use_gzip
@@ -36,39 +35,73 @@ type DependingTransformationList = FSharp.Data.JsonProvider<"""[
         "lines" : ["lkjlkj", "lkjlkj","o9uulkj"]
     }
 ]""">
+let mutable (time,dependencies : Map<string,seq<Transformation>>) = (System.DateTime.MinValue,Map.empty)
+    
+let dependingTransformations (cacheKey : string) =
+    assert(not(cacheKey.EndsWith(":") || System.String.IsNullOrWhiteSpace cacheKey))
+#if DEBUG    
+    let isCacheStale = true
+#else
+    let isCacheStale = time < System.DateTime.Now.AddHours -1. 
+#endif    
+    if isCacheStale then
+        time <- System.DateTime.Now
+        dependencies <-
+            configurations.List()
+            |> Seq.collect(fun configuration ->
+                let transformations = 
+                    configuration.Transformations
+                    |> Array.map(fun transformationName ->
+                        match transformations.TryGet transformationName with
+                        None -> 
+                            Log.errorf  "Transformation (%s) not found" transformationName
+                            None
+                        | t -> t
+                    ) |> Array.filter Option.isSome
+                    |> Array.map Option.get
+                    |> Array.toList
+
+                match transformations with
+                [] -> []
+                | h::tail ->
+                    tail
+                    |> List.fold(fun (lst : (string * Transformation) list) t ->
+                        let prevKey, prevT = lst |> List.head
+                        (prevKey + ":" + prevT.Name,t) :: lst
+                    ) [keyFromSource configuration.Source,h]
+            ) |> Seq.groupBy fst
+            |> Seq.map(fun (key,deps) ->
+                key,
+                    deps 
+                    |> Seq.map snd 
+                    |> Seq.distinctBy(fun t -> t.Name)
+            ) |> Map.ofSeq
+    match dependencies |> Map.tryFind cacheKey with
+    None -> 
+        Log.debugf "No dependencies found for key (%s)" cacheKey
+        Seq.empty
+    | Some dependencies ->
+        dependencies
+        
 let getDependingTransformations (cacheMsg : CacheMessage) = 
     try
          match cacheMsg with
          CacheMessage.Empty -> Success
          | Updated cacheKey -> 
-            match cache.Get cacheKey with
-            None -> 
-                Log.logf "No data for that key (%s)" cacheKey
-                Success
-            | Some cacheRecord -> 
-                let service = cacheKey |> Http.DependingTransformations |> Http.Configurations
-                match Http.get service DependingTransformationList.Parse  with
-                Http.Success transformations ->
-                    transformations
-                    |> Seq.iter(fun transformation ->    
+            dependingTransformations cacheKey
+            |> Seq.iter(fun transformation ->    
+                {
+                    Transformation = 
                         {
-                            Transformation = 
-                                {
-                                    Name = transformation.Id
-                                    Statements = transformation.Lines
-                                }
-                            CacheKey = cacheKey
+                            Name = transformation.Name
+                            Statements = transformation.Statements
                         }
-                        |> Transform
-                        |> Broker.Calculation
-                    )
-                    Success
-                | Http.Error(404,_) ->
-                    Log.debug "No depending transformations found."
-                    Success
-                | Http.Error(sc,m) ->
-                    sprintf "Failed to get list of depending transformations data (%s) %d %s" cacheKey sc m
-                    |> Failure 
+                    CacheKey = cacheKey
+                }
+                |> Transform
+                |> Broker.Calculation
+            )
+            Success
     with e ->
         Log.excf e "Failed to perform calculation."
         Excep e
@@ -76,7 +109,7 @@ let getDependingTransformations (cacheMsg : CacheMessage) =
 [
    "configurations"
    "transformations"
-] |> Hobbes.Web.Database.initDatabases
+] |> Database.initDatabases
 
 async {    
     do! awaitQueue()

@@ -35,11 +35,11 @@ module State =
       )
   
   let initialise() = 
-    [
+    (* [
       General.foldBySprint
     ] |> add "foldBySprint"
        
-    (*[
+    [
       General.foldBySprint
       Metrics.stateCountBySprint
     ] |> add "stateCountBySprint"
@@ -74,8 +74,8 @@ module State =
       Metrics.bugCountBySprint
       Metrics.bugsPerSprint
     ] |> add "bugsPerSprint"
-
+*)
     [
       Metrics.martin
-    ]  |> add "martin"*)
+    ]  |> add "martin"
 

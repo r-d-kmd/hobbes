@@ -29,7 +29,6 @@ let main _ =
                 source.JsonValue.ToString()
                 |> Sync
                 |> Json.serialize
-            printfn "Syncing generic (%s)" message
             Broker.Generic queueName message
         )
         0

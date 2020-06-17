@@ -28,3 +28,5 @@ temp.*
 docker/tmp
 **/src/Properties/
 docker/build
+kubernetes/all.yaml
+kubernetes/temp.yaml

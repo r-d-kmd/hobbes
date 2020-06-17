@@ -101,14 +101,6 @@ module Data =
              "value": 90060205
     }""">
 
-    
-    type Value =
-       Object of string
-       | Int of int 
-       | Float of float
-       | String of string
-       | Array of seq<Value>
-
     let createDataRecord key (data : Cache.DataResult) =
         let timeStamp = System.DateTime.Now
         let record : Cache.CacheRecord= 
@@ -152,7 +144,7 @@ module Data =
                     |> Seq.tryFind(fun (n,_) -> n = "data") 
                     |> Option.isSome
                 hasData && hasSource
-                && (doc.JsonValue.ToString() |> keyFromConfigDoc) = configSearchKey
+                && (doc.Source.JsonValue.ToString() |> keyFromSourceDoc) = configSearchKey
             )
         Log.debugf "Project data found by source %A" res
         res

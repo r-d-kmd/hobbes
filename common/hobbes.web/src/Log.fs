@@ -86,7 +86,7 @@ module Log =
  
     let error msg = 
         writeLogMessage Error null msg
- 
+
     let debug msg  =
         writeLogMessage Debug null msg
  
@@ -98,7 +98,6 @@ module Log =
     
     let excf (e:System.Exception) format = 
        ksprintf (fun msg -> msg + " Message: " + e.Message |> writeLogMessage Error e.StackTrace) format
-
     let exc (e:System.Exception) message = excf e "%s" message
 
     let debugf format =

@@ -152,6 +152,7 @@ module Reader =
         Author : string
         RepositoryName : string
         BranchName : string
+        Project : string
     }
 
     let private commitsForBranch account project (repo : Repository) (branchName : string) =
@@ -182,6 +183,7 @@ module Reader =
                         Author = commit.Author.Email
                         RepositoryName = repo.Name
                         BranchName = branchName
+                        Project = project
                     }
                 ) |> Seq.sortBy (fun c -> c.Date)
             assert(commits |> Seq.length = parsedCommits.Count)

@@ -20,11 +20,6 @@ open Fake.Core
 open Fake.DotNet
 open Fake.IO
 
-
-let force = (Environment.environVarOrDefault "force" "false").ToLower() = "true"
-if force then
-    printfn "Running full dependency chain since 'force' was specified"
-
 let dockerOrg = "kmdrd"
 let run command workingDir args = 
     let arguments = 
@@ -41,8 +36,16 @@ let buildConfigurationName = (Environment.environVarOrDefault "CONFIGURATION" "D
 let buildConfiguration = 
     match buildConfigurationName with
     "release" -> 
+        printfn "Using release configuration"
         DotNet.BuildConfiguration.Release
     | _ -> DotNet.BuildConfiguration.Debug
+
+let version =
+        match buildConfiguration with
+        DotNet.BuildConfiguration.Release -> "latest"
+        | DotNet.BuildConfiguration.Debug -> "debug"
+        | _ -> failwithf "configuration has no specific version. %A" buildConfiguration
+
 let commonLibDir = "./docker/.lib/"
 
 let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "2.0.default"
@@ -87,9 +90,7 @@ type App =
                     name, "service"
 [<RequireQualifiedAccess>]
 type DockerStage =
-     Generic
-     | BaseSdk
-     | AppSdk
+     AppSdk
      | Other
 
 type Change =
@@ -102,125 +103,6 @@ type Change =
 let dockerDir = DirectoryInfo "./docker"
 let serviceDir = DirectoryInfo "./services"
 let workerDir = DirectoryInfo "./workers"
-
-let changes =
-    let commonDir = DirectoryInfo "./common"
-    let coreDir = DirectoryInfo "./common/hobbes.core"
-    let helpersDir = DirectoryInfo "./common/hobbes.helpers"
-    let webDir = DirectoryInfo "./common/hobbes.web"
-    let messagingDir = DirectoryInfo "./common/hobbes.messaging"
-    
-    Fake.Tools.Git.FileStatus.getChangedFilesInWorkingCopy "." "HEAD@{1}"
-    |> Seq.map(fun (_,(file : string)) ->
-        let info = FileInfo file
-        match info.Name with
-        "paket.dependencies" | "paket.references" -> PaketDependencies
-        | _ ->
-            let dir = info.Directory
-            let isBelow = isBelow dir
-            let getName (p : string) =
-                p.Split([|'/';'\\'|], System.StringSplitOptions.RemoveEmptyEntries)
-                |> Array.head 
-            if isBelow dockerDir then
-                let dockerStage = 
-                    match file.Replace("Dockerfile.","") with
-                    "aspnet" | "couchdb" | "sdk" -> DockerStage.Generic
-                    | "sdk-hobbes" -> DockerStage.BaseSdk
-                    | "sdk-app" | "hobbes.properties.targets" -> DockerStage.AppSdk
-                    | _ -> DockerStage.Other
-                Docker dockerStage
-            elif isBelow commonDir then
-                let cm = 
-                    if isBelow coreDir then
-                        CommonLib.Core
-                    elif isBelow helpersDir then
-                        CommonLib.Helpers
-                    elif isBelow webDir then
-                        CommonLib.Web
-                    elif isBelow messagingDir then
-                        CommonLib.Messaging
-                    else
-                        CommonLib.Any //failwithf "Common not known %s" file
-                Common cm
-            elif isBelow serviceDir then
-                info.DirectoryName
-                    .Substring(serviceDir.FullName.Length)
-                |> getName
-                |> Service
-                |> App
-            elif isBelow workerDir then
-                info.DirectoryName
-                    .Substring(workerDir.FullName.Length)
-                |> getName
-                |> Worker
-                |> App
-            else
-                File file
-    ) |> Seq.distinct
-
-let commonChanges = 
-    changes
-    |> Seq.fold(fun lst c ->
-        match c with
-        Common com -> com::lst 
-        | _ -> lst
-    ) []
-
-let hasCommonChanged change =
-    match change with
-    CommonLib.Any -> commonChanges |> List.isEmpty |> not
-    | c -> commonChanges |> List.tryFind(fun c' -> c = c') |> Option.isSome
-
-let hasChanged change = 
-    force || changes |> Seq.tryFind (fun c -> c = change) |> Option.isSome
-     
-let rec shouldRebuildCommon = 
-    function
-       CommonLib.Web ->
-           shouldRebuildCommon CommonLib.Helpers 
-           || (CommonLib.Web |> hasCommonChanged)
-       | CommonLib.Messaging -> 
-           shouldRebuildCommon CommonLib.Web 
-           || (CommonLib.Messaging |> hasCommonChanged)
-       | common ->
-            common
-            |> hasCommonChanged
-
-let skipSdkBuilds =
-    (Environment.environVarOrDefault "BUILD_ENV" "local") = "AppVeyor"
-
-let hasDockerStageChanged ds = 
-    (not skipSdkBuilds) &&  
-    (Docker ds |> hasChanged)
-
-let shouldRebuildGenericDockerImages =
-    hasDockerStageChanged DockerStage.Generic
-
-let shouldRebuildDependencies = 
-    (not skipSdkBuilds) &&  
-    hasChanged PaketDependencies
-
-let shouldRebuildHobbesSdk =
-     (not skipSdkBuilds) &&
-     (shouldRebuildGenericDockerImages 
-      || hasDockerStageChanged DockerStage.BaseSdk
-      || shouldRebuildDependencies)
-
-let shouldRebuildAppSdk =
-    (not skipSdkBuilds) &&
-    (shouldRebuildHobbesSdk 
-     || hasDockerStageChanged DockerStage.AppSdk
-     || ((not skipSdkBuilds) && (hasChanged (Common CommonLib.Any))))
-
-let shouldRebuildService name = 
-    shouldRebuildCommon CommonLib.Any
-    || shouldRebuildAppSdk 
-    || hasChanged (name |> Service |> App)
-
-let shouldRebuildWorker name = 
-    shouldRebuildCommon CommonLib.Any
-    || shouldRebuildAppSdk 
-    || hasChanged (name |> Worker |> App)
 
 //Set to 'Normal' to have more information when trouble shooting 
 let verbosity = Quiet
@@ -237,7 +119,6 @@ let package conf outputDir projectFile =
                         }
                    ) projectFile
 
-printfn "Changes: %s" (System.String.Join("\n",changes |> Seq.map (sprintf "%A")))
 
 let commonPath name = 
     sprintf "./common/hobbes.%s/src/hobbes.%s.fsproj" name name
@@ -248,80 +129,33 @@ let commons =
         CommonLib.Core
         CommonLib.Messaging
     ]
+let apps : seq<App*string> = 
+    let services = 
+        serviceDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
+        |> Seq.map(fun file ->
+            let workingDir = 
+                file.Directory.Parent.FullName
+            
+            let n = Path.GetFileNameWithoutExtension file.Name
+            let name = 
+                if n.StartsWith "hobbes." then n.Remove(0,"hobbes.".Length) else n
+            Service name, workingDir
+        )
 
-let services = 
-    serviceDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
-    |> Seq.map(fun file ->
-        let workingDir = 
-            file.Directory.Parent.FullName
-        
-        let n = Path.GetFileNameWithoutExtension file.Name
-        if n.StartsWith "hobbes." then n.Remove(0,"hobbes.".Length) else n
-        , workingDir
-    )
+    let workers = 
+        workerDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
+        |> Seq.map(fun file ->
+            let workingDir = 
+                file.Directory.Parent.FullName
+            
+            Path.GetFileNameWithoutExtension (file.Name.Split('.') |> Array.head) |> Worker, workingDir
+        )
+    services |> Seq.append workers
 
-let workers = 
-    workerDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
-    |> Seq.map(fun file ->
-        let workingDir = 
-            file.Directory.Parent.FullName
-        
-        Path.GetFileNameWithoutExtension (file.Name.Split('.') |> Array.head), workingDir
-    )
-
-let buildImage path (tag : string) =
-    let tag = dockerOrg + "/" + tag.ToLower()
+let buildApp (name : string) (appType : string) workingDir =
     
-    sprintf "build -f %s -t %s ." path tag
-    |> run "docker" dockerDir.Name
-
-let pushImage (tag : string) =
-    let tag = dockerOrg + "/" + tag.ToLower()
-    sprintf "push %s" tag
-    |> run "docker" dockerDir.Name
-
-let genricImages = 
-    [
-        "couchdb"
-        "aspnet"
-        "sdk"
-    ]
-
-let appTargets : seq<_> -> _ = 
-    Seq.map(fun (app : App) ->
-        let name,_ = app.NameAndType         
-        name,(name.ToLower())
-    ) >> Map.ofSeq
-
-let serviceTargets = 
-    services
-    |> Seq.map(fun (serviceName,_) ->
-        Service serviceName
-    ) |> appTargets
-
-let workerTargets = 
-    workers
-    |> Seq.map(fun (workerName,_) ->
-        Worker workerName
-    ) |> appTargets
-
-let setupServiceTarget serviceName = 
-    let shouldRebuild = shouldRebuildService serviceName
-    let target = serviceTargets.[serviceName]
-    "PreBuildServices" ==> target |> ignore
-    target =?> ("BuildServices" , shouldRebuild) |> ignore
-
-let setupWorkerTarget workerName = 
-    let shouldRebuild = shouldRebuildWorker workerName
-    let target = workerTargets.[workerName]
-    "PreBuildWorkers" ==> target |> ignore
-    target =?> ("BuildWorkers" , shouldRebuild) |> ignore
-
-let buildApp (app : App) workingDir =
-    let name,appType = app.NameAndType
     let tag = name.ToLower()
     
-
     let build _ = 
         let buildArg = sprintf "%s_NAME=%s" (appType.ToUpper()) name
         let tags =
@@ -331,6 +165,7 @@ let buildApp (app : App) workingDir =
                t + ":" + "latest"
            ]
 
+        //sprintf "build -f %s/Dockerfile.%s --build-arg %s --build-arg VERSION=%s -t %s ." dockerDir.FullName appType buildArg version (tag.ToLower()) 
         sprintf "build -f %s/Dockerfile.%s --build-arg %s -t %s ." dockerDir.FullName appType buildArg (tag.ToLower()) 
         |> run "docker" workingDir
         tags
@@ -358,21 +193,15 @@ let buildApp (app : App) workingDir =
     
     Target.create buildTargetName build
     Target.create pushTargetName push
-    "PreBuild" + appType + "s" ==> buildTargetName |> ignore
-    buildTargetName ==> pushTargetName ==> "PushAllApps" |> ignore
+    buildTargetName ==> pushTargetName ==> "PushApps" |> ignore
 
-Target.create "ForceBuildServices" ignore
-Target.create "ForceBuildWorkers" ignore
-Target.create "Rebuild" ignore
+Target.create "Complete" ignore
+Target.create "PushApps" ignore
+Target.create "All" ignore
 Target.create "Build" ignore
-Target.create "BuildCommon" ignore
-Target.create "BuildGenericImages" ignore
-Target.create "PushGenericImages" ignore
-Target.create "BuildServices" ignore
-Target.create "BuildWorkers" ignore
-Target.create "PreBuildServices" ignore
-Target.create "PreBuildWorkers" ignore
-Target.create "PushAllApps" ignore
+
+Target.create "PreApps" ignore
+Target.create "PostApps" ignore
 
 Target.create "CleanCommon" (fun _ ->
     let deleteFiles lib =
@@ -387,7 +216,6 @@ Target.create "CleanCommon" (fun _ ->
         )
         
     commons
-    |> List.filter shouldRebuildCommon
     |> List.iter (string >> deleteFiles)
 )
 
@@ -408,113 +236,70 @@ Target.create "Dependencies" (fun _ ->
   |> Shell.copy paketDir
 )
 
-services
-|> Seq.iter(fun (name,dir) ->
-    buildApp (Service name) dir
+apps
+|> Seq.iter(fun (app,dir) ->
+    let name,appType = app.NameAndType
+    buildApp name appType dir
+    "PreApps" ==> name ==> "PostApps" |> ignore
 ) 
-workers
-|> Seq.iter(fun (name,dir) ->
-    buildApp (Worker name) dir
-) 
-
-//Generic images
-genricImages
-|> List.iter(fun name ->
-    let buildTargetName = "BuildGeneric" + name
-    let pushTargetName = "PushGeneric" + name
-    
-    Target.create buildTargetName (fun _ ->  buildImage (sprintf "Dockerfile.%s" name) name)
-    Target.create pushTargetName (fun _ ->  pushImage name)
-    buildTargetName  ==> pushTargetName ==> "PushGenericImages" |> ignore
-)
-
-let commonTargetName common =
-    common.ToString() 
-    |> sprintf "BuildCommon%s"
 
 commons |> List.iter(fun common ->
     let commonName = common.ToString()
-    let targetName = commonTargetName common
+    let targetName = commonName
     Target.create targetName (fun _ ->
         let projectFile = commonPath commonName
         package buildConfiguration commonLibDir projectFile
     )
-    targetName ==> "Build" |> ignore
 ) 
 
-Target.create "PushHobbesSdk" (fun _ ->  
-    pushImage "sdk:hobbes"
-)
-
-
-Target.create "BuildAppSdk" (fun _ ->   
-    let tag = dockerOrg + "/sdk:app"
-    let file = "Dockerfile.sdk-app"
-    //we do it this way because we want a debug version locally but want to push a release version to docker hub
-    sprintf "build -f %s -t %s ." file tag
+Target.create "GenericSdk" (fun _ ->   
+    
+    let tag = sprintf "%s/sdk" dockerOrg
+    
+    sprintf "build -f Dockerfile.sdk -t %s/sdk ." dockerOrg
     |> run "docker" dockerDir.Name
-    pushImage "sdk:app"
 
-    //build the debug version for local use
-    sprintf "build -f %s -t %s --build-arg CONFIGURATION=%s ." file tag buildConfigurationName
-    |> run "docker" dockerDir.Name  
+    sprintf "push %s/sdk" dockerOrg
+    |> run "docker" dockerDir.Name
+
+    //build the debug version for local use if required
+    if buildConfiguration = DotNet.BuildConfiguration.Debug then
+        sprintf "build -f Dockerfile.sdk-debug -t %s/sdk ." dockerOrg
+        |> run "docker" dockerDir.Name
 )
 
-Target.create "BuildHobbesSdk" (fun _ ->   
-        buildImage "Dockerfile.sdk-hobbes" "sdk:hobbes"
+Target.create "Sdk" (fun _ ->   
+    sprintf "build -f Dockerfile.app -t %s/app --build-arg CONFIGURATION=Release ." 
+            dockerOrg 
+    |> run "docker" dockerDir.Name 
+    
+    sprintf "push %s/app" dockerOrg
+    |> run "docker" dockerDir.Name
+
+    //build the debug version for local use if required
+    if buildConfiguration = DotNet.BuildConfiguration.Debug then
+        sprintf "build -f Dockerfile.app -t %s/app --build-arg CONFIGURATION=Debug ." 
+                dockerOrg 
+        |> run "docker" dockerDir.Name 
 )
 
-commons |> List.iter(fun common ->
-        let targetName = commonTargetName common
-        "CleanCommon" =?> (targetName, shouldRebuildCommon common) |> ignore
-        targetName =?> ("BuildCommon" , shouldRebuildCommon common) |> ignore
-)
+"GenericSdk" 
+    ?=> "CleanCommon" 
+    ==> "Dependencies"
+    ==> "Helpers" 
+    ==> "Web"
+    ==> "Messaging"
+    ==> "Sdk"
+    ?=> "PreApps"
+    ==> "PostApps" 
+    ==> "Build"
+    ==> "All"
 
-services
-|> Seq.iter(fun (serviceName,_) ->
-        setupServiceTarget serviceName
-)
+"Sdk" 
+    ==> "All"
 
-workers
-|> Seq.iter(fun (workerName,_) ->
-        setupWorkerTarget workerName
-)
-
-services
-|> Seq.iter(fun (serviceName, _) ->
-     serviceTargets.[serviceName]
-         ==> "ForceBuildServices" |> ignore
-)
-
-workers
-|> Seq.iter(fun (workerName, _) ->
-     workerTargets.[workerName]
-         ==> "ForceBuildWorkers" |> ignore
-)
-
-
-"PushGenericImages" =?> ("Dependencies",shouldRebuildGenericDockerImages)
-"Dependencies" =?> ("BuildHobbesSdk", shouldRebuildDependencies)
-
-"BuildHobbesSdk" =?> ("BuildCommonHelpers", shouldRebuildHobbesSdk)
-"BuildCommonHelpers" =?> ("BuildCommonWeb", shouldRebuildCommon CommonLib.Helpers)
-"BuildCommonHelpers" =?> ("BuildCommonMessaging", shouldRebuildCommon CommonLib.Helpers)
-"BuildCommonWeb" =?> ("BuildCommonMessaging", shouldRebuildCommon CommonLib.Web)
-
-"BuildCommonHelpers" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Helpers)
-"BuildCommonMessaging" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Messaging)
-"BuildCommonWeb" =?> ("BuildCommon", shouldRebuildCommon CommonLib.Web)    
-
-"BuildCommon" =?> ("BuildAppSdk", shouldRebuildCommon CommonLib.Any)
-"BuildAppSdk" =?> ("PreBuildServices", shouldRebuildAppSdk)
-
-"buildcommonMessaging" =?> ("PreBuildWorkers",shouldRebuildCommon CommonLib.Messaging)
-"BuildAppSdk" =?> ("PreBuildWorkers", shouldRebuildAppSdk)
-
-"BuildGenericImages" ==> "PushGenericImages"
-"BuildServices" ==> "Build"
-"BuildHobbesSdk" ==> "PushHobbesSdk" ==> "BuildAppSdk"
-"ForceBuildServices" ==> "Rebuild"
-"ForceBuildWorkers" ==> "Rebuild"
+"GenericSdk"
+    ?=> "All"
+    ==> "Complete"
 
 Target.runOrDefaultWithArguments "Build"

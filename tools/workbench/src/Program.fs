@@ -12,6 +12,8 @@ type CLIArguments =
     | Publish of string
     | Sync of string
     | Environment of Environment
+    | Host of string
+    | MasterKey of string
 with
     interface IArgParserTemplate with
         member s.Usage =
@@ -20,6 +22,8 @@ with
             | Publish _ -> "Publish the transformations to either development or production (set by environment or given as arg (prod/dev) if using workbench.json)"
             | Sync _ -> "When sync-ing a project from azure"
             | Environment _ -> "Environment to publish transformations to"
+            | Host _ -> "The host to publish transformation and configurations to"
+            | MasterKey _ -> "Master key or PAT to hobbes gateway"
 
 let parse stmt =
     let stmt = stmt |> string
@@ -76,36 +80,42 @@ open Workbench.Types
 [<EntryPoint>]
 let main args =
    
-    let results = 
+    let arguments = 
         try
             let parser = ArgumentParser.Create<CLIArguments>(programName = "workbench")
-            let results = parser.Parse args
-            Some results
+            let arguments = parser.Parse args
+            Some arguments
         with e -> 
             Log.excf e "Failed"
             None
 
-    match results with
+    match arguments with
     None -> 0
-    | Some results ->
-        let publish = results.TryGetResult Publish
+    | Some arguments ->
+        let publish = arguments.TryGetResult Publish
         let settingsFile = "workbench.json"
         let settings = 
-            match results.TryGetResult Environment with
+            match arguments.TryGetResult Environment with
             None -> 
-                
-                if System.IO.File.Exists settingsFile then 
-                    match publish with 
-                    | Some v when v.ToLower() = "prod" -> (settingsFile |> WorkbenchSettings.Load).Production
-                    | Some v when v.ToLower() = "dev"  -> (settingsFile |> WorkbenchSettings.Load).Development
-                    | _                                -> (settingsFile |> WorkbenchSettings.Load).Development
-                    
-                else
-                     match env "WORKBENCH_ENVIRONMENT" null with
-                     null -> failwith "No settings file and no env var"
-                     | s -> 
-                         (s 
-                         |> WorkbenchSettings.Parse).Production
+                 match arguments.TryGetResult Host, arguments.TryGetResult MasterKey with
+                 | Some host,Some masterKey ->
+                    (sprintf """{
+                        "development" : {
+                            "azure" : {},
+                            "hobbes" : "%s",
+                            "host" : "%s"
+                        }, 
+                        "production": {}
+                    }""" masterKey host
+                    |> WorkbenchSettings.Parse).Development
+                 | _ -> 
+                    if System.IO.File.Exists settingsFile then 
+                        match publish with 
+                        | Some v when v.ToLower() = "prod" -> (settingsFile |> WorkbenchSettings.Load).Production
+                        | Some v when v.ToLower() = "dev"  -> (settingsFile |> WorkbenchSettings.Load).Development
+                        | _                                -> (settingsFile |> WorkbenchSettings.Load).Development
+                    else
+                        failwith "Host or master key or settings file must be provided"
             | Some e -> 
                let settings = (settingsFile |> WorkbenchSettings.Load)
                match e with
@@ -114,8 +124,8 @@ let main args =
                | Production -> 
                    settings.Production
             
-        let test = results.TryGetResult Tests 
-        let sync = results.TryGetResult Sync
+        let test = arguments.TryGetResult Tests 
+        let sync = arguments.TryGetResult Sync
         if  test.IsSome || (sync.IsNone && publish.IsNone) then
             settings.Azure.TimePayrollKmddk |> Workbench.Tests.test|> ignore
             printfn "Press enter to exit..."

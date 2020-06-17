@@ -13,8 +13,6 @@ resources:
   - configurations-svc.yaml
   - gateway-deployment.yaml
   - gateway-svc.yaml
-  - rabbitmq-svc.yaml
-  - rabbitmq-headless-svc.yaml
   - uniformdata-deployment.yaml
   - uniformdata-svc.yaml
 

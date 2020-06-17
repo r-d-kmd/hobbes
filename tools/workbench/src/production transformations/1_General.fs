@@ -51,7 +51,7 @@ module General =
     let foldBySprint = 
         [
             //group by the tuple sprint name and workitem id
-            group by ([SprintName.Expression; WorkItemId.Expression]) => 
+            group by ([SprintName.Name; WorkItemId.Name]) => 
                  //keep the row in each group where the ChangedDate is the highest 
                  //Ie keep the latest change of the work item in that particular sprint
                 ( maxby ChangedDate.Expression)
@@ -64,5 +64,5 @@ module General =
 
     let all = 
         [
-            only (SprintNumber.Expression == SprintNumber.Expression)
+            only True
         ] |> createTransformation "AllWorkItems"

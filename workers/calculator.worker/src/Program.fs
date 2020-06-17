@@ -17,18 +17,24 @@ let transformData (message : CalculationMessage) =
             try
                 let columnNames = cacheRecord.Data.ColumnNames
                 let data = 
-                    cacheRecord.Data.Rows
+                    cacheRecord.Data.Rows()
                     |> Seq.mapi(fun index row ->
                         index,row
                               |> Seq.zip columnNames
                     )
                 let key = cacheKey + ":" + transformation.Name
-                let transformedData = 
+                let dataJson = 
                     data
                     |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
                     |> Hobbes.FSharp.Compile.expressions transformation.Statements 
-                    |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows 
-                    |> Json.deserialize<Cache.DataResult> 
+                    |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows                 
+                let transformedData = 
+                    try
+                        dataJson
+                        |> Json.deserialize<Cache.DataResult> 
+                    with e ->
+                        Log.excf e "Couldn't deserialize (%s)" dataJson
+                        reraise()
                 try
                     transformedData
                     |> cache.InsertOrUpdate key

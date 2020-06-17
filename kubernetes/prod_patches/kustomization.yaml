@@ -15,6 +15,7 @@ resources:
   - gateway-svc.yaml
   - uniformdata-deployment.yaml
   - uniformdata-svc.yaml
+  - git-hpa.yaml
 
 patchesJson6902:
   - target:

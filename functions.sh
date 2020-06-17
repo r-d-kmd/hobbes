@@ -218,7 +218,7 @@ function awaitRunningState(){
     echo "Still waiting for: ${#PODS[@]}"
     for NAME in ${PODS_[@]}
     do 
-        kubectl wait --for=condition=complete "pod/$NAME"
+        kubectl wait --for=condition=ready "pod/$NAME"
     done
     all
 }

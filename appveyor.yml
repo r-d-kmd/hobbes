@@ -64,7 +64,7 @@ for:
       - export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
       - source ~/.profile
       - GO111MODULE=on go get sigs.k8s.io/kustomize/kustomize/v3
-      - cd kubernetes && sudo mv prod_patches/kustomization.yaml ./ && kustomize build && cd ..
+      - cd ../kubernetes && sudo mv prod_patches/kustomization.yaml ./ && kustomize build && cd ..
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
     build_script:  

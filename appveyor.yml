@@ -50,6 +50,7 @@ for:
       file_version: '{version}'
       informational_version: '{version}'
     install:
+      - source functions.sh
       - docker version
       - dotnet tool install --global fake-cli
       - dotnet tool install --global paket
@@ -65,7 +66,7 @@ for:
       - source ~/.profile
       - GO111MODULE=on go get sigs.k8s.io/kustomize/kustomize/v3
       - cd $KUBERNETES_DIR
-      - ls
+      - kustomize build
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
     build_script:  

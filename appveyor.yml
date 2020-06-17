@@ -105,28 +105,9 @@ for:
       - fake build --target buildfortest --parallel 8
       
     test_script:
-      #- dotnet test
       - source functions.sh
-      - ip=$(minikube ip)
-      - start
-      - awaitRunningState
-      - kubectl port-forward service/gateway-svc 8080:80 &
-      - kubectl port-forward service/db-svc 5984:5984 &
-      - SERVER="http://${minikube ip}"
-      - curl "${SERVER}:5984"
-      - front_url="${SERVER}:8080"
-      - curl ${front_url}/ping
+      - test
       
-      - docker build -t workbench tools/workbench && docker run -dt workbench development --host "${front_url}" --masterkey Rno8hcqr9rXXs
-      - all
-      #- logs conf -f
-      - sync
-      - sleep 60
-      
-      - NAME=$(kubectl get pods -l app=gateway -o name) 
-        #- newman run https://api.getpostman.com/collections/4127812-d535bce5-ad9a-4346-acb4-311c8443c478?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url} --env-var "collectordburl"=${db_url}
-      - newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=${ip} --env-var "master_key"=${MASTER_KEY}
-    
     deploy_script:
       - git config --global credential.helper store
       - git config --global user.email "hobbes_buildserver@kmd.dk"

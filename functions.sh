@@ -252,7 +252,7 @@ function test(){
     awaitRunningState
     kubectl port-forward service/gateway-svc 8080:80 &
     kubectl port-forward service/db-svc 5984:5984 &
-    SERVER="http://$(minikube ip)"
+    SERVER="http://127.0.0.1"
     curl "${SERVER}:5984"
     front_url="${SERVER}:8080"
     curl ${front_url}/ping

@@ -173,7 +173,12 @@ function isRunning(){
     then 
         echo "True"
     else
-        echo $(kubectl get pod/$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
+        if [ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "publish" ]
+        then
+            echo "True"
+        else
+            echo $(kubectl get pod/$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
+        fi
     fi
 }
 
@@ -208,20 +213,12 @@ function awaitRunningState(){
         done
         PODS=$(kubectl get pods | grep - )
     done
-    pods    
-    while (( ${#PODS[@]} ))
-    do
-        PODS_=$(kubectl get pods | grep - | cut -d ' ' -f 1 )
-        echo "Still waiting for: ${#PODS[@]}"
-        for NAME in ${PODS_[@]}
-        do 
-            if [[ $(isRunning $NAME) != "True" ]]
-            then
-                echo "$(echo "$NAME" | cut -d '-' -f1)"
-            fi
-        done
-        sleep 1
-        pods
+    
+    PODS_=$(kubectl get pods | grep - | cut -d ' ' -f 1 )
+    echo "Still waiting for: ${#PODS[@]}"
+    for NAME in ${PODS_[@]}
+    do 
+        kubectl wait --for=condition=complete "pod/$NAME"
     done
     all
 }
@@ -242,6 +239,15 @@ function sync(){
     cd $CURRENT_DIR
 }
 
+function publish(){
+    local CURRENT_DIR=$(pwd)
+    cd $KUBERNETES_DIR
+    echo $(kubectl delete job.batch/publish)
+    kubectl apply -f publish-job.yaml
+    kubectl wait --for=condition=complete job/publish
+    cd $CURRENT_DIR
+}
+
 function test(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
@@ -257,13 +263,10 @@ function test(){
     front_url="${SERVER}:8080"
     curl ${front_url}/ping
     #publish transformations and configurations
-    docker build -t workbench tools/workbench
-    docker run -t workbench development --host "${front_url}" --masterkey Rno8hcqr9rXXs
+    publish
     all
     sync
     sleep 60
-    logs calculator -f &
-    logs calculator -f &
     NAME=$(kubectl get pods -l app=gateway -o name) 
     newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=${ip} --env-var "master_key"=${MASTER_KEY}
     cd $CURRENT_DIR

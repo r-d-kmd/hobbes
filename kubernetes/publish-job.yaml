@@ -13,6 +13,6 @@ spec:
           - name: MASTER_KEY
             value: "Rno8hcqr9rXXs"
           - name: HOST
-            value: "http://gateway-svc:8085"
+            value: "http://gateway-svc"
         restartPolicy: Never
   backoffLimit: 4

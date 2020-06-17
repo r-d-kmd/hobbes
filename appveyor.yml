@@ -63,12 +63,8 @@ for:
       - export GOPATH=$HOME/go
       - export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
       - source ~/.profile
-      - go version
-      #- cd kubernetes && curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-      #- ./install_kustomize.sh
-      #- sudo mv prod_patches/kustomization.yaml ./ && cd ..
-      - kustomize build -o prod.yaml
-    before_build:
+      - go get sigs.k8s.io/kustomize/kustomize/v3
+      before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
     build_script:  
       - fake build --parallel 16 --target PushApps

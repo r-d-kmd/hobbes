@@ -245,18 +245,17 @@ function sync(){
 function test(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
-    dotnet test
+    #dotnet test
     source functions.sh
     ip=$(minikube ip)
     start
     awaitRunningState
-    front_url="http://${ip}:30080"
-    #test the gateway is functioning
+    kubectl port-forward service/gateway-svc 8080:80 &
+    kubectl port-forward service/db-svc 5984:5984 &
+    SERVER="http://$(minikube ip)"
+    curl "${SERVER}:5984"
+    front_url="${SERVER}:8080"
     curl ${front_url}/ping
-    #test the db is responding
-    curl "http://${ip}:30084"
-    #wait for queue to be ready
-    sleep 10
     #publish transformations and configurations
     docker build -t workbench tools/workbench && docker run -dt workbench development --host "${front_url}" --masterkey Rno8hcqr9rXXs
     all

@@ -64,20 +64,7 @@ for:
       - export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
       - source ~/.profile
       - GO111MODULE=on go get sigs.k8s.io/kustomize/kustomize/v3
-      - ls
-      - cd ..
-      - ls
-      - cd ..
-      - ls
-      - cd ..
-      - ls
-      - cd ..
-      - ls
-      - cd ..
-      - ls
-      - cd ..
-      - ls
-      - cd ..
+      - cd $KUBERNETES_DIR
       - ls
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 

@@ -1,0 +1,12 @@
+FSharp.Core
+Newtonsoft.Json
+
+group core
+    Deedle
+    
+group web
+    FSharp.Data
+
+group collectors
+    RabbitMQ.Client
+    

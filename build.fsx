@@ -7,7 +7,7 @@ nuget Fake.DotNet.AssemblyInfoFile //
 nuget Fake.DotNet.Cli //
 nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
-nuget Fake.Tools.Git //"
+nuget Fake.Tools.Git ~> 5 //"
 #load "./.fake/build.fsx/intellisense.fsx"
 
 
@@ -19,6 +19,7 @@ nuget Fake.Tools.Git //"
 open Fake.Core
 open Fake.DotNet
 open Fake.IO
+
 let dockerOrg = "kmdrd"
 let run command workingDir args = 
     let arguments = 
@@ -31,226 +32,82 @@ let run command workingDir args =
     |> CreateProcess.ensureExitCode
     |> Proc.run
     |> ignore
+let buildConfigurationName = (Environment.environVarOrDefault "CONFIGURATION" "Debug").ToLower()
+let buildConfiguration = 
+    match buildConfigurationName with
+    "release" -> 
+        printfn "Using release configuration"
+        DotNet.BuildConfiguration.Release
+    | _ -> DotNet.BuildConfiguration.Debug
 
+let version =
+        match buildConfiguration with
+        DotNet.BuildConfiguration.Release -> "latest"
+        | DotNet.BuildConfiguration.Debug -> "debug"
+        | _ -> failwithf "configuration has no specific version. %A" buildConfiguration
 
-let dockerFiles = 
-    System.IO.Directory.EnumerateFiles("./","Dockerfile",System.IO.SearchOption.AllDirectories)
-    |> Seq.filter(fun file ->
-        let dockerFolder = 
-            "./docker"
-            |> System.IO.Path.GetFullPath
-            |> System.IO.Path.GetDirectoryName
-        let fileFolder =
-            file
-            |> System.IO.Path.GetFullPath
-            |> System.IO.Path.GetDirectoryName
-        fileFolder <> dockerFolder
-    )
+let commonLibDir = "./docker/.lib/"
 
-let build configuration workingDir =
-    let args = sprintf "--output ./bin/%s --configuration %s" configuration configuration
-
-    DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "tool restore" |> ignore
-    DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "paket restore" |> ignore
-
-    let result =
-        DotNet.exec (DotNet.Options.withWorkingDirectory workingDir) "build" args 
-    if result.ExitCode <> 0 then failwithf "'dotnet %s' failed in %s" "build" workingDir
-
-let fake workdir = 
-    run "fake" workdir "build"
-
-let deploy workdir =
-    run "fake" workdir "build --target Redeploy"
-
-Target.create "RedeployServer" (fun _ ->
-    deploy "./hobbes.server/src"
-)
-
-Target.create "RedeployAzure" (fun _ ->
-    deploy "./collectors/collectors.azuredevops/src"
-)
-
-Target.create "Redeploy" ignore
-
-Target.create "BuildServer" (fun _ ->
-    fake "./hobbes.server/src" 
-)
-
-Target.create "BuildWorkbench" (fun _ ->
-    build "Release" "./workbench/src"
-)
-
-Target.create "BuildAzureDevOpsCollector" (fun _ ->
-    fake "./collectors/collectors.azuredevops/src"
-)
-
-Target.create "Build" ignore
-
-Target.create "Test" (fun _ ->
-
-    let envIsRunning() = 
-        let output = 
-            RawCommand ("docker", ["ps"] |> Arguments.OfArgs)
-            |> CreateProcess.fromCommand
-            |> CreateProcess.redirectOutput
-            |> Proc.run
-    
-        let containers = 
-            output.Result.Output.Split([|"\n"|], System.StringSplitOptions.RemoveEmptyEntries)
-            |> Seq.map(fun row -> 
-                row.Split([|"\t";" "|], System.StringSplitOptions.RemoveEmptyEntries)
-                |> Array.last
-            ) |> Seq.tail
-        
-        if containers |> Seq.filter(fun image -> image = "hobbes" || image = "db") |> Seq.length = 2 then
-            true
-        else
-            printfn "Containers currently running %A" (containers |> Seq.map (sprintf "%A"))
-            false
-
-    let test = 
-        let rec retry count = 
-            if count > 0 && (envIsRunning() |> not) then
-                async {
-                    do! Async.Sleep 5000
-                    return! retry (count - 1)
-                }
-            else
-                async {
-                    do! Async.Sleep 20000 //the container has started but wait until it's ready
-                    printfn "Starting testing"
-                    System.IO.Directory.EnumerateFiles("./","*.fsproj",System.IO.SearchOption.AllDirectories)
-                    |> Seq.filter(fun f ->
-                        f.Contains("tests")
-                    ) |> Seq.iter(fun projectFile ->
-                        let workingDir = 
-                            projectFile
-                            |> Path.getFullName
-                            |> Path.getDirectory
-                        if workingDir.TrimEnd('/','\\').EndsWith("tests") then
-                            DotNet.test (DotNet.Options.withWorkingDirectory workingDir) ""
-                    )
-                }
-        retry 24
-
-    let startEnvironment = async {
-        let workDir = "./hobbes.server"
-        run "docker-compose" workDir "kill"
-        run "docker-compose" workDir "up -d"
-    }
-
-    let tasks =
-        [ 
-          startEnvironment
-          test
-        ]
-
-    tasks
-    |> Async.Parallel
-    |> Async.RunSynchronously
-    |> ignore
-    
-)
-
-let inline (@@) p1 p2 = 
-    System.IO.Path.Combine(p1,p2)
-
-let commonLibDir = "./.lib/"
-
-let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "1.2.default"
+let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "2.0.default"
 
 let createDockerTag dockerOrg (tag : string) = sprintf "%s/hobbes-%s" dockerOrg (tag.ToLower())
 
-Target.create "BuildDocker" (fun _ -> 
-    let run = run "docker"
-     
-    printfn "Found docker files: (%A)" dockerFiles
-    dockerFiles
-    |> Seq.iter(fun path ->
-        let workingDir = System.IO.Path.GetDirectoryName path
-        
-        let build (tag : string) = 
-            let tag = tag.ToLower()
-            let tags =
-               let t = createDockerTag dockerOrg tag
-               [
-                   t + ":" + assemblyVersion
-                   t + ":" + "latest"
-               ]
+open Fake.Core.TargetOperators
+open System.IO
 
-            sprintf "build -t %s ." (tag.ToLower())
-            |> run workingDir
-            tags
-            |> List.iter(fun t -> 
-                sprintf "tag %s %s" tag t
-                |> run workingDir
-            )
+let isBelow info (dir: DirectoryInfo) = 
+    let rec inner (info : DirectoryInfo) = 
+        if info.Parent |> isNull then false
+        elif info.FullName = dir.FullName then true
+        else
+           inner info.Parent
+    inner info
 
-        let tag = (workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last).ToLower()
-        build tag
-    ) 
-)
+[<RequireQualifiedAccess>]
+type CommonLib = 
+    Core
+    | Helpers
+    | Web
+    | Messaging
+    | Any
+    with override x.ToString() = 
+          match x with
+          Core -> "core"
+          | Helpers -> "helpers"
+          | Web -> "web"
+          | Messaging -> "messaging"
+          | Any -> "core|helpers|web"
 
-let genericDockerFiles =
-    ("./docker/couchdb/","Dockerfile", "couchdb")::
-    ([
-        "aspnet"
-        "sdk"
-    ] |> List.map(fun name ->
-           ".","./docker/Dockerfile." + name, name
-        )
-      
-    )
+type App = 
+    Worker of name:string 
+    | Service of name:string
+    with member app.NameAndType 
+           with get() = 
+                match app with
+                Worker name ->
+                    name, "worker"
+                | Service name ->
+                    name, "service"
+[<RequireQualifiedAccess>]
+type DockerStage =
+     AppSdk
+     | Other
 
-let baseDockerFiles = 
-    [
-        ".","./docker/Dockerfile.sdk-hobbes", "sdk:hobbes"
-        ".","./docker/stretch/Dockerfile.sdk-hobbes", "sdk:hobbes-stretch"
-    ]
+type Change =
+   App of App
+   | PaketDependencies
+   | Docker of DockerStage
+   | Common of CommonLib
+   | File of string
 
-let buildImages = 
-    Seq.iter(fun (context,path,(tag : string)) ->
-        if File.exists path then
-            let tag = dockerOrg + "/" + tag.ToLower()
-            
-            sprintf "build -f %s -t %s ." path tag
-            |> run "docker" context
-    ) 
-
-Target.create "BuildGenericImages" (fun _ -> 
-    genericDockerFiles
-    |> buildImages
-)
-
-Target.create "BuildSdkImages" (fun _ -> 
-    baseDockerFiles
-    |> buildImages
-)
-
-let pushImages = 
-    Seq.iter(fun (_,path,(tag : string)) ->
-        if File.exists path then
-            let tag = dockerOrg + "/" + tag.ToLower()
-            sprintf "push %s" tag
-            |> run "docker" "."
-    ) 
-
-Target.create "PushSdkImages" (fun _ -> 
-    baseDockerFiles |> pushImages
-)
-
-Target.create "PushGenericImages" (fun _ -> 
-    genericDockerFiles 
-    |> pushImages
-)
+let dockerDir = DirectoryInfo "./docker"
+let serviceDir = DirectoryInfo "./services"
+let workerDir = DirectoryInfo "./workers"
 
 //Set to 'Normal' to have more information when trouble shooting 
-let verbosity = 
-    Quiet
+let verbosity = Quiet
     
-
-let package conf outputDir projectFile  _ =
+let package conf outputDir projectFile =
     DotNet.publish (fun opts -> 
                         { opts with 
                                OutputPath = Some outputDir
@@ -262,102 +119,187 @@ let package conf outputDir projectFile  _ =
                         }
                    ) projectFile
 
-let commonLibs =
+
+let commonPath name = 
+    sprintf "./common/hobbes.%s/src/hobbes.%s.fsproj" name name
+let commons = 
     [
-        "core"
-        "helpers"
-        "web"
+        CommonLib.Web
+        CommonLib.Helpers
+        CommonLib.Core
+        CommonLib.Messaging
     ]
+let apps : seq<App*string> = 
+    let services = 
+        serviceDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
+        |> Seq.map(fun file ->
+            let workingDir = 
+                file.Directory.Parent.FullName
+            
+            let n = Path.GetFileNameWithoutExtension file.Name
+            let name = 
+                if n.StartsWith "hobbes." then n.Remove(0,"hobbes.".Length) else n
+            Service name, workingDir
+        )
 
-Target.create "BuildCommon" ignore
-Target.create "DebugCommon" ignore
-Target.create "StartCommon" ignore
+    let workers = 
+        workerDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
+        |> Seq.map(fun file ->
+            let workingDir = 
+                file.Directory.Parent.FullName
+            
+            Path.GetFileNameWithoutExtension (file.Name.Split('.') |> Array.head) |> Worker, workingDir
+        )
+    services |> Seq.append workers
 
-open Fake.Core.TargetOperators
-
-let buildCommon conf =
-    let commonPack = package conf commonLibDir
-    commonLibs
-    |> List.fold (fun prev name -> 
-        let projectName = sprintf "hobbes.%s" name 
-        let targetName =
-            projectName +
-                match conf with
-                DotNet.BuildConfiguration.Release -> ""
-                | DotNet.BuildConfiguration.Debug -> "Debug"
-                | DotNet.BuildConfiguration.Custom n -> n
-
-        let projectFile = sprintf "./%s/src/%s.fsproj" projectName projectName
+let buildApp (name : string) (appType : string) workingDir =
     
-        Target.create targetName (commonPack projectFile )
-        prev
-            ==> targetName 
-    ) "StartCommon"
-
-buildCommon DotNet.BuildConfiguration.Release ==> "BuildCommon"
-buildCommon DotNet.BuildConfiguration.Debug ==> "DebugCommon"
-
-let tools = 
-    [
-        """workbench/src/hobbes.workbench.fsproj""", package DotNet.BuildConfiguration.Release commonLibDir
-    ]
-
-tools
-|> List.fold(fun prev (projectFile, pack) ->     
-    let targetName = 
-        System.IO.Path.GetFileNameWithoutExtension(projectFile)
-           .Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries)
-        |> Array.last
-    Target.create targetName (pack projectFile)
-    prev
-       ==> targetName
- ) "BuildCommon"
-
-Target.create "Publish" (fun _ -> 
-    run "dotnet" "./workbench/src" "run -- --publish" 
-)
-
-Target.create "PushToDocker" (fun _ ->
-    let run = run "docker"
+    let tag = name.ToLower()
     
-    dockerFiles
-    |> Seq.iter(fun path ->
-        let path = System.IO.Path.GetFullPath path
-        let workingDir = System.IO.Path.GetDirectoryName path
+    let build _ = 
+        let buildArg = sprintf "%s_NAME=%s" (appType.ToUpper()) name
+        let tags =
+           let t = createDockerTag dockerOrg tag
+           [
+               t + ":" + assemblyVersion
+               t + ":" + "latest"
+           ]
+
+        //sprintf "build -f %s/Dockerfile.%s --build-arg %s --build-arg VERSION=%s -t %s ." dockerDir.FullName appType buildArg version (tag.ToLower()) 
+        sprintf "build -f %s/Dockerfile.%s --build-arg %s -t %s ." dockerDir.FullName appType buildArg (tag.ToLower()) 
+        |> run "docker" workingDir
+        tags
+        |> List.iter(fun t -> 
+            sprintf "tag %s %s" tag t
+            |> run "docker" workingDir
+        )
+
+    let push _ = 
+        let tags =
+           let t = createDockerTag dockerOrg (tag.ToLower())
+           [
+               t + ":" + assemblyVersion
+               t + ":" + "latest"
+           ]
+        tags
+        |> List.iter(fun tag ->
+            let args = sprintf "push %s" <| (tag.ToLower())
+            printfn "Executing: $ docker %s" args
+            run "docker" workingDir args
+        )
+    
+    let buildTargetName = tag 
+    let pushTargetName = "Push" + tag 
+    
+    Target.create buildTargetName build
+    Target.create pushTargetName push
+    buildTargetName ==> pushTargetName ==> "PushApps" |> ignore
+
+Target.create "Complete" ignore
+Target.create "PushApps" ignore
+Target.create "All" ignore
+Target.create "Build" ignore
+
+Target.create "PreApps" ignore
+Target.create "PostApps" ignore
+
+Target.create "CleanCommon" (fun _ ->
+    let deleteFiles lib =
+        [
+            sprintf "docker/.lib/hobbes.%s.dll"
+            sprintf "docker/.lib/hobbes.%s.deps.json"
+            sprintf "docker/.lib/hobbes.%s.pdb"
+        ] |> List.iter(fun f -> 
+            let file = f lib
+            if File.exists file then
+                File.delete file
+        )
         
-        let push (tag : string) = 
-            let tags =
-               let t = createDockerTag dockerOrg (tag.ToLower())
-               [
-                   t + ":" + assemblyVersion
-                   t + ":" + "latest"
-               ]
-            tags
-            |> List.iter(fun tag ->
-                let args = sprintf "push %s" <| (tag.ToLower())
-                printfn "Executing: $ docker %s" args
-                run workingDir args
-            )
-        let tag = workingDir.Split([|'/';'\\'|],System.StringSplitOptions.RemoveEmptyEntries) |> Array.last
-      
-        push tag
-    ) 
+    commons
+    |> List.iter (string >> deleteFiles)
 )
 
-"RedeployServer"
-    ==> "Redeploy"
+Target.create "Dependencies" (fun _ ->
+  let outputDir = "./docker/build"
+  let paketDir = outputDir + "/.paket"
+  Shell.cleanDirs 
+      [
+          outputDir
+          paketDir
+      ]
+  run "paket" "." "update"
+  [
+      "paket.dependencies"
+      "paket.lock"
+  ] |> Shell.copy outputDir
+  System.IO.Directory.EnumerateFiles ".paket"
+  |> Shell.copy paketDir
+)
 
-"RedeployAzure"
-    ==> "Redeploy"
+apps
+|> Seq.iter(fun (app,dir) ->
+    let name,appType = app.NameAndType
+    buildApp name appType dir
+    "PreApps" ==> name ==> "PostApps" |> ignore
+) 
 
-"BuildDocker"
+commons |> List.iter(fun common ->
+    let commonName = common.ToString()
+    let targetName = commonName
+    Target.create targetName (fun _ ->
+        let projectFile = commonPath commonName
+        package buildConfiguration commonLibDir projectFile
+    )
+) 
+
+Target.create "GenericSdk" (fun _ ->   
+    
+    let tag = sprintf "%s/sdk" dockerOrg
+    
+    sprintf "build -f Dockerfile.sdk -t %s/sdk ." dockerOrg
+    |> run "docker" dockerDir.Name
+
+    sprintf "push %s/sdk" dockerOrg
+    |> run "docker" dockerDir.Name
+
+    //build the debug version for local use if required
+    if buildConfiguration = DotNet.BuildConfiguration.Debug then
+        sprintf "build -f Dockerfile.sdk-debug -t %s/sdk ." dockerOrg
+        |> run "docker" dockerDir.Name
+)
+
+Target.create "Sdk" (fun _ ->   
+    sprintf "build -f Dockerfile.app -t %s/app --build-arg CONFIGURATION=Release ." 
+            dockerOrg 
+    |> run "docker" dockerDir.Name 
+    
+    sprintf "push %s/app" dockerOrg
+    |> run "docker" dockerDir.Name
+
+    //build the debug version for local use if required
+    if buildConfiguration = DotNet.BuildConfiguration.Debug then
+        sprintf "build -f Dockerfile.app -t %s/app --build-arg CONFIGURATION=Debug ." 
+                dockerOrg 
+        |> run "docker" dockerDir.Name 
+)
+
+"GenericSdk" 
+    ?=> "CleanCommon" 
+    ==> "Dependencies"
+    ==> "Helpers" 
+    ==> "Web"
+    ==> "Messaging"
+    ==> "Sdk"
+    ?=> "PreApps"
+    ==> "PostApps" 
     ==> "Build"
+    ==> "All"
 
-"BuildCommon"
-    ==> "BuildSdkImages"
-    ==> "PushSdkImages"
+"Sdk" 
+    ==> "All"
 
-"BuildGenericImages"
-    ==> "PushGenericImages"
+"GenericSdk"
+    ?=> "All"
+    ==> "Complete"
 
 Target.runOrDefaultWithArguments "Build"

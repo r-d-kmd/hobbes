@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calculator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: calculator
+  template:
+    metadata:
+      labels:
+        app: calculator
+    spec:
+      containers:
+      - envFrom:
+        - secretRef:
+            name: env
+        imagePullPolicy: Never
+        image: calculator
+        name: hobbes-calculator
+      restartPolicy: Always
+status: {}

@@ -1,0 +1,6 @@
+Newtonsoft.Json
+
+group core
+    Accord.MachineLearning
+    Deedle
+    FParsec

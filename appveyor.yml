@@ -112,10 +112,11 @@ for:
       - awaitRunningState
       - kubectl port-forward service/gateway-svc 8080:80 &
       - kubectl port-forward service/db-svc 5984:5984 &
-      - SERVER="http://localhost"
+      - SERVER="http://${minikube ip}"
+      - curl "${SERVER}:5984"
       - front_url="${SERVER}:8080"
       - curl ${front_url}/ping
-      - curl "${SERVER}:5984"
+      
       - docker build -t workbench tools/workbench && docker run -dt workbench development --host "${front_url}" --masterkey Rno8hcqr9rXXs
       - all
       #- logs conf -f

@@ -63,7 +63,7 @@ for:
       - export GOPATH=$HOME/go
       - export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
       - source ~/.profile
-      - go install sigs.k8s.io/kustomize/kustomize/v3
+      - GO111MODULE=on GOPATH=$tmpGoPath go install sigs.k8s.io/kustomize/v3/cmd/kustomize
       - kustomize version
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 

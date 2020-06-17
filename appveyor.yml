@@ -94,7 +94,7 @@ for:
 
     before_build:
       - CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} 
-      - sudo -E minikube --driver=none start
+      - minikube --driver=docker start
       - ip=$(minikube ip)
       - eval $(minikube docker-env) 
       - echo ${ENV_FILE} | kubectl apply -f -

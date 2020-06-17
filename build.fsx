@@ -283,6 +283,10 @@ Target.create "Sdk" (fun _ ->
         |> run "docker" dockerDir.Name 
 )
 
+Target.create "TestNoBuild"(fun _ ->
+    run "test" "." "" |> ignore
+)
+
 "GenericSdk" 
     ?=> "CleanCommon" 
     ==> "Dependencies"

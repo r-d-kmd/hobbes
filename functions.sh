@@ -246,21 +246,24 @@ function test(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
     #dotnet test
-    source functions.sh
-    ip=$(minikube ip)
+    ip="127.0.0.1"
     start
     awaitRunningState
     kubectl port-forward service/gateway-svc 8080:80 &
+    kubectl port-forward service/gateway-svc 30080:80 &
     kubectl port-forward service/db-svc 5984:5984 &
     SERVER="http://127.0.0.1"
     curl "${SERVER}:5984"
     front_url="${SERVER}:8080"
     curl ${front_url}/ping
     #publish transformations and configurations
-    docker build -t workbench tools/workbench && docker run -dt workbench development --host "${front_url}" --masterkey Rno8hcqr9rXXs
+    docker build -t workbench tools/workbench
+    docker run -t workbench development --host "${front_url}" --masterkey Rno8hcqr9rXXs
     all
     sync
-    sleep 300
+    sleep 60
+    logs calculator -f &
+    logs calculator -f &
     NAME=$(kubectl get pods -l app=gateway -o name) 
     newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=${ip} --env-var "master_key"=${MASTER_KEY}
     cd $CURRENT_DIR

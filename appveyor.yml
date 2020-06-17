@@ -65,7 +65,7 @@ for:
       - source ~/.profile
       - go get sigs.k8s.io/kustomize/kustomize/v3
       - kustomize version
-      before_build:
+    before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
     build_script:  
       - fake build --parallel 16 --target PushApps

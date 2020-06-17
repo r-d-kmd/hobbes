@@ -6,8 +6,11 @@ resources:
   - db-deployment.yaml
   - db-svc.yaml
   - azuredevops-deployment.yaml
+  - azuredevops-hpa.yaml
   - calculator-deployment.yaml
+  - calculator-hpa.yaml
   - git-deployment.yaml
+  - git-hpa.yaml
   - configurations-deployment.yaml
   - configurations-svc.yaml
   - gateway-deployment.yaml
@@ -17,6 +20,7 @@ resources:
   - sync-job.yaml
   - rabbitmq-controller.yaml
   - rabbitmq-service.yaml
+  - metrics-server.yaml
 patchesJson6902:
   - target:
       version: v1

@@ -21,7 +21,7 @@ spec:
         name: hobbes-azuredevops
         resources:
           requests:
-            cpu: 200m
-            memory: 96Mi
+            cpu: 300m
+            memory: 300Mi
       restartPolicy: Always
 status: {}

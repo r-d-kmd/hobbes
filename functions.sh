@@ -110,6 +110,7 @@ function clean(){
     kubectl delete --all statefulset
     kubectl delete --all job
     kubectl delete --all replicationcontroller
+    kubectl delete --all hpa
 }
 
 function build(){    

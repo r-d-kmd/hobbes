@@ -66,7 +66,7 @@ for:
       - source ~/.profile
       - GO111MODULE=on go get sigs.k8s.io/kustomize/kustomize/v3
       - cd $KUBERNETES_DIR
-      - sudo mv /prod_patches/kustomization.yaml ./
+      - cd prod_patches && sudo mv kustomization.yaml ../
       - kustomize build && cd ..
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 

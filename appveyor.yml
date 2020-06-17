@@ -110,8 +110,8 @@ for:
       - ip=$(minikube ip)
       - start
       - awaitRunningState
-      - kubectl port-forward service/hello-minikube 8080:80 &
-      - kubectl port-forward service/hello-minikube 5984:5984 &
+      - kubectl port-forward service/gateway-svc 8080:80 &
+      - kubectl port-forward service/db-svc 5984:5984 &
       - SERVER="http://localhost"
       - front_url="${SERVER}:8080"
       - curl ${front_url}/ping

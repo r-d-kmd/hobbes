@@ -264,6 +264,7 @@ function test(){
     curl ${front_url}/ping
     #publish transformations and configurations
     publish
+    logs publish
     all
     sync
     sleep 60

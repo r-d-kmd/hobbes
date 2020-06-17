@@ -1,3 +1,2 @@
-db/
-bin/
-deploy/
+src/bin/
+src/obj/

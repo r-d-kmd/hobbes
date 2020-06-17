@@ -69,28 +69,24 @@ module Broker =
         with e ->
             eprintfn "Failed to initialize queue. %s:%d. Message: %s" host port e.Message
             reraise()
-
-    let rec awaitQueue() = 
-        async{
-            try
-                let channel = init()
-                channel.QueueDeclare("logging",
-                                     true,
-                                     false,
-                                     false,
-                                     null) |> ignore
-            with e -> 
-               printfn "Queue not yet ready. Message: %s" e.Message
-               do! Async.Sleep 5000
-               do! awaitQueue()
-        } 
-
+    
     let private declare (channel : IModel) queueName =  
         channel.QueueDeclare(queueName,
                                  true,
                                  false,
                                  false,
                                  null) |> ignore
+    let rec awaitQueue() = 
+        async{
+            try
+                let channel = init()
+                declare channel "dead_letter"
+            with e -> 
+               printfn "Queue not yet ready. Message: %s" e.Message
+               do! Async.Sleep 5000
+               do! awaitQueue()
+        } 
+
     type MessageResult = 
         Success
         | Failure of string
@@ -106,7 +102,7 @@ module Broker =
             properties.Persistent <- true
 
             channel.BasicPublish("",queueName, false,properties,body)
-            printfn "Message published to %s" queueName
+            printfn "Message published to %s:%d/%s" host port queueName
         with e -> 
            eprintfn "Failed to publish to the queue. Message: %s" e.Message
 

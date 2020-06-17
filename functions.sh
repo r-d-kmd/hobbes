@@ -1,8 +1,23 @@
 eval $(minikube -p minikube docker-env)
-OS= uname -s
-if [ ${OS:0:5} != "MINGW" ]
+VOLUMES=(db)
+function get_script_dir () {
+     SOURCE="${BASH_SOURCE[0]}"
+     # While $SOURCE is a symlink, resolve it
+     while [ -h "$SOURCE" ]; do
+          DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+          SOURCE="$( readlink "$SOURCE" )"
+          # If $SOURCE was a relative symlink (so no "/" as prefix, need to resolve it relative to the symlink base directory
+          [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+     done
+     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+     echo "$DIR"
+}
+
+SCRIPT_DIR=$(get_script_dir)
+KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
+
+if [ $(uname -s) = "Darwin" ]
 then
-    echo "Not windows"
     declare -a APPS=(db)
     function services(){
          local APP_NAME=""
@@ -21,29 +36,10 @@ then
              APPS+=($APP_NAME)
          done 
     }
-    
     services
 else
-    echo "Windows"
     declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "sync" "uniformdata")
 fi
-VOLUMES=(db)
-function get_script_dir () {
-     SOURCE="${BASH_SOURCE[0]}"
-     # While $SOURCE is a symlink, resolve it
-     while [ -h "$SOURCE" ]; do
-          DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-          SOURCE="$( readlink "$SOURCE" )"
-          # If $SOURCE was a relative symlink (so no "/" as prefix, need to resolve it relative to the symlink base directory
-          [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-     done
-     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-     echo "$DIR"
-}
-
-SCRIPT_DIR=$(get_script_dir)
-KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
-
 
 function getPodName(){
     local POD_NAME=$(kubectl get all | grep -e pod/$1 -e pod/collectors-$1 | cut -d ' ' -f 1 )
@@ -62,7 +58,7 @@ function getJobWorker(){
 }
 
 function getName(){
-    local NAME=$(kubectl get all | grep -e pod/$1 -e pod/collectors-$1 | cut -d ' ' -f 1 )
+    local NAME=$(kubectl get all | grep -e pod/$1 | cut -d ' ' -f 1 )
     if [ -z "$NAME" ]
     then
        NAME=$(getJobWorker $1)
@@ -111,29 +107,26 @@ function clean(){
     kubectl delete --all pods
     kubectl delete --all pvc
     kubectl delete --all secrets
-    kubectl delete --all jobs
     kubectl delete --all statefulset
+    kubectl delete --all job
+    kubectl delete --all replicationcontroller
 }
 
 function build(){    
-    ECHO "Starting Build"
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
     if [ -z "$1" ]
-    then
+    then 
         fake build
-    else
-        if ["$1" = "target"]
+    else 
+        if [ -z "$2" ]
         then
-            fake build --target $1
+            fake build --target "$1"
         else
-            for var in "$@"
-            do
-                fake build --target "hobbes.$var"
-            done
-            restart $1
+            fake build --target "$1" --parallel $2
         fi
     fi
+
     cd $CURRENT_DIR
     echo "Done building"
 }
@@ -148,41 +141,16 @@ function listServices(){
     minikube service list 
 }
 
-function installRabbitMQ(){
-    helm repo add bitnami https://charts.bitnami.com/bitnami
-    helm install test --set rabbitmq.username=guest,rabbitmq.password=guest bitnami/rabbitmq
-}
-
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
     local FILE=""
+
     kubectl apply -f env.JSON;
     
-    installRabbitMQ
-
-    for i in "${APPS[@]}"; do 
-        if test -f "$i-svc.yaml"
-        then
-            FILE="$i-deployment.yaml,$i-svc.yaml"
-        else
-            if test -f "$i-deployment.yaml"
-            then
-                FILE="$i-deployment.yaml"
-            else
-                FILE="$i-job.yaml"
-            fi
-        fi
-        kubectl apply -f $(echo $FILE)
-    done
-    for i in "${VOLUMES[@]}"; do kubectl apply -f $i-volume.yaml; done
-
+    kubectl apply -k ./
+    
     cd $CURRENT_DIR
-}
-
-function buildAndStart() {
-    build
-    start
 }
 
 function startkube(){
@@ -199,11 +167,12 @@ function update(){
 }
 
 function isRunning(){
-    if [ "$1" == "syncronization" ]
+    local APP_NAME=$(echo "$1")
+    if [ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "sync" ]
     then 
         echo "True"
     else
-        echo $(kubectl get pods -l app=$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
+        echo $(kubectl get pod/$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
     fi
 }
 
@@ -214,36 +183,44 @@ function pingService(){
 function testServiceIsFunctioning(){
     pingService $1 2>/dev/null | grep HTTP | tail -1 | cut -d$' ' -f2
 }
+declare -a PODS=()
+function pods(){
+    PODS=()
+    PODS_=$(kubectl get pods | grep - | cut -d ' ' -f 1)
+    for NAME in ${PODS_[@]}
+    do 
+        if [[ $(isRunning $NAME) != "True" ]]
+        then
+            PODS+="$NAME"
+        fi
+    done
+}
 
 function awaitRunningState(){
-    declare -a APPS_COPY=()
-    for NAME in ${APPS[@]}
+    PODS=$(kubectl get pods | grep - )
+    while [ ${#PODS[@]} -eq 0 ]
     do
-        APPS_COPY+=($NAME)
+        sleep 1
+        for NAME in ${PODS_[@]}
+        do
+            echo "$NAME"
+        done
+        PODS=$(kubectl get pods | grep - )
     done
-    while (( ${#APPS_COPY[@]} ))
+    pods    
+    while (( ${#PODS[@]} ))
     do
-        for NAME in ${APPS_COPY[@]}
+        PODS_=$(kubectl get pods | grep - | cut -d ' ' -f 1 )
+        echo "Still waiting for: ${#PODS[@]}"
+        for NAME in ${PODS_[@]}
         do 
-            if [[ $(isRunning $NAME)  != "True" ]]
+            if [[ $(isRunning $NAME) != "True" ]]
             then
-                echo "waiting for $NAME"
-                logs $NAME
-                sleep 1
-            else
-                for i in "${!APPS_COPY[@]}"
-                do
-                    if [[ ${APPS_COPY[i]} = $NAME ]]
-                    then
-                        unset 'APPS_COPY[i]'
-                    fi
-                done
-                echo "$NAME is running"
+                echo "$(echo "$NAME" | cut -d '-' -f1)"
             fi
         done
-        echo ""
-        echo "Still waiting for:"
-        printf '%s\n' "${APPS_COPY[@]}"
+        sleep 1
+        pods
     done
     all
 }
@@ -256,15 +233,10 @@ function restartApp(){
     delete "$1" && logs "$1" -f
 }
 
-function rebuildApp(){
-    fake build --target "$1"
-    restartApp $1
-}
-
 function sync(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    echo $(kubectl delete -f sync-job.yaml)
+    echo $(kubectl delete job.batch/sync)
     kubectl apply -f sync-job.yaml
     cd $CURRENT_DIR
 }

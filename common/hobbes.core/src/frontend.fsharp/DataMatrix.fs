@@ -49,17 +49,22 @@ module Clustering =
         columnNames
         |> List.indexed
         |> List.fold(fun frame (i,columnName) ->
+            
             let groupSeries =
                 keys
                 |> Seq.map(fun ks ->
                        ks |> List.item i
                 ) |> Seq.zip grouped.RowKeys
                 |> series
-            frame
-            |> Frame.addCol
-                columnName
-                groupSeries
-                
+            try
+                frame
+                |> Frame.addCol
+                    columnName
+                    groupSeries
+            with _ ->
+                eprintfn "Problems adding %s to frame [%A]. All group columns [%A]" columnName (frame.ColumnKeys) columnNames
+                assert(false)
+                frame
         ) grouped
         |> Frame.denseCols
         |> Frame.ofColumns
@@ -75,30 +80,29 @@ module Clustering =
               |> List.tryFind(fun c -> c = columnName)
               |> Option.isNone
            )
-        let red =
+        let getCols,red =
             match reduction with
-            AST.Sum-> 
-                Stats.levelSum fst
+            AST.Sum->
+                Frame.getNumericCols,Stats.levelSum fst
             | AST.Count  -> 
-                (Stats.levelCount fst)
+                Frame.getCols,(Stats.levelCount fst)
                 >> (Series.mapValues float)
             | AST.Median -> 
-                Stats.levelMedian fst
+                Frame.getNumericCols,Stats.levelMedian fst
             | AST.Mean-> 
-                Stats.levelMean fst
+                Frame.getNumericCols,Stats.levelMean fst
             | AST.StdDev-> 
-                Stats.levelStdDev fst
+                Frame.getNumericCols,Stats.levelStdDev fst
             | AST.Variance-> 
-                Stats.levelVariance fst
+                Frame.getNumericCols,Stats.levelVariance fst
             | AST.Max-> 
-                Series.applyLevel fst (Stats.max)
+                Frame.getNumericCols,Series.applyLevel fst (Stats.max)
             | AST.Min-> 
-                Series.applyLevel fst (Stats.min)
-           
+                Frame.getNumericCols,Series.applyLevel fst (Stats.min)
 
         frame
         |> Frame.sliceCols allOther
-        |> Frame.getNumericCols
+        |> getCols
         |> Series.mapValues red
         |> Frame.ofColumns
         |> reattachGroupedColumns columnNames
@@ -176,9 +180,27 @@ module Clustering =
          counting frame.RowCount transformation frame
 
 module DataStructures =
+    [<RequireQualifiedAccess>]
+    type Value = 
+       Int of int
+       | Float of float
+       | Date of System.DateTime
+       | Text of string
+       | Boolean of bool
+       | Null
+
+    type DataResult = 
+        {
+            [<Newtonsoft.Json.JsonProperty("columnNames")>]
+            ColumnNames : string []
+            [<Newtonsoft.Json.JsonProperty("rows")>]
+            Values : Value [][]
+            [<Newtonsoft.Json.JsonProperty("rowCount")>]
+            RowCount : int
+        }
+
     type JsonTableFormat = 
-        Column
-        | Rows
+        Rows
         | Csv
     let inline private jsonString (s : string) = 
         "\"" +
@@ -677,7 +699,9 @@ module DataStructures =
                 compiledExpressionFunc frame keySeries
                 let col = frame.GetColumn columnkey |> Series.observationsAll |> List.ofSeq
                 let row = frame.GetColumn rowkey |> Series.observationsAll |> List.ofSeq
+                
                 assert(col <> row)
+
                 let resultingFrame : Frame<AST.KeyType, string>  = 
                     frame
                     |> Frame.pivotTable 
@@ -753,7 +777,12 @@ module DataStructures =
             let f = 
                 match filter with
                 AST.SliceColumns cols ->
-                    Frame.sliceCols cols
+                    fun frame ->
+                        let res = 
+                            frame
+                            |> Frame.sliceCols cols
+                        assert(res.ColumnCount = (cols |> Seq.length))
+                        res
                 | AST.IndexBy exp ->
                     fun frame ->
                         let columnName = 
@@ -871,19 +900,25 @@ module DataStructures =
                 )
 
             ) |> Seq.filter(fun (_,values) -> values |> Seq.isEmpty |> not)
-
+        
         let serialiseValue (value : obj) = 
             match value with
-            null -> "null"
-            | :? string as s -> jsonString s
+            null -> Value.Null
+            | :? int as value ->  
+                Value.Int value
+            | :? float as value -> 
+                Value.Float value
+            | :? decimal as value -> 
+                value 
+                |> float 
+                |> Value.Float
+            | :? DateTime as value -> 
+                Value.Date value
+            | :? string as value -> 
+                Value.Text value
             | :? bool as b -> 
-                    if b then "true" else "false"
-            | :? int as i -> i |> string
-            | :? float as f -> f |> string
-            | :? decimal as d -> d |> string
-            | :? DateTime as d -> sprintf """ "%s" """ (d.ToString "dd/MM/yyyy")
-            | :? DateTimeOffset as d -> sprintf """ "%s" """ (d.ToString "dd/MM/yyyy")
-            | _ -> sprintf "%A" value
+                Value.Boolean b
+            | value -> failwithf "Don't know how to value %A" value
 
         member private ___.Columns 
             with get() =
@@ -950,63 +985,36 @@ module DataStructures =
                 | AST.NoOp -> 
                     this
                     :> IDataMatrix
-            member __.ToJson format =
+            member this.ToJson format =
                 match format with
-                Column -> 
+                Rows -> 
                     let table = 
                         frame
                         |> toTable
 
                     let columnNames = 
-                        String.Join(",",table |> Seq.map (fst >> sprintf "%A")) |> sprintf "[%s]"
+                        table |> Seq.map fst |> Array.ofSeq
 
                     let values =
-                        (",",table
-                            |> Seq.map(fun (_,values) ->
-                                System.String.Join(",", values 
-                                                        |> Seq.map serialiseValue
-                                ) |> sprintf "[%s]"
-                            )) |> String.Join |> sprintf "[%s]"
+                        table
+                        |> Seq.map(fun (_,values) ->
+                            values
+                            |> Seq.map (fun (_,v) -> v |> serialiseValue) 
+                            |> Array.ofSeq
+                        ) |> Array.ofSeq
+                        |> Array.transpose
 
-                    sprintf """{"columnNames": %s, "values" : %s}""" columnNames values
-                | Rows ->
-                    let columnKeys = 
-                        frame.GetColumns()
-                        |> Series.keys
+                    let result = 
+                        {
+                            ColumnNames = columnNames
+                            Values = values
+                            RowCount = (this :> IDataMatrix).RowCount
+                        } 
 
-                    let columnNames =
-                       (",",columnKeys
-                            |> Seq.map(jsonString))
-                        |> System.String.Join
+                    assert(result.RowCount = result.Values.Length)
 
-                    let columnMap = 
-                        columnKeys
-                        |> Seq.mapi(fun i c -> c,i)
-                        |> Map.ofSeq
-
-                    let rows =
-                        (",",frame
-                            |> Frame.rows
-                            |> Series.observations
-                            |> Seq.map(fun (_,row) ->
-                                (",",
-                                    row
-                                    |> Series.observationsAll
-                                    |> Seq.sortBy(fun (columnName,_) -> columnMap.[columnName])
-                                    |> Seq.map (function
-                                                _,None -> "null"
-                                                | _,Some v -> serialiseValue v))
-                                |> System.String.Join
-                                |> sprintf "[%s]"
-                            )
-                        ) |> System.String.Join
-
-                    sprintf """{
-                        "columnNames" : [%s],
-                        "rows" : [%s],
-                        "rowCount" : %d
-                    }""" columnNames rows (frame.RowCount)
-
+                    result
+                    |> Newtonsoft.Json.JsonConvert.SerializeObject
                 | Csv ->
                     let rows = 
                         frame

@@ -5,15 +5,57 @@ open Hobbes.Helpers
 open Newtonsoft.Json
 
 module Cache =
+    [<RequireQualifiedAccess>]
+    type Value = 
+       Int of int
+       | Float of float
+       | Date of System.DateTime
+       | Text of string
+       | Boolean of bool
+       | Null
+       with static member Create v =
+                match v :> obj with        
+                null -> Value.Null
+                | :? System.DateTime as d -> 
+                    d |> Value.Date
+                | :? System.DateTimeOffset as d -> 
+                    d.ToLocalTime().DateTime |> Value.Date
+                | :? int as i  -> i |> Value.Int
+                | :? float as f -> f |> Value.Float
+                | :? decimal as d -> d |> float |> Value.Float
+                | :? string as s  -> s |> Value.Text
+                | s ->
+                    Log.errorf "Didn't recognise value (%A)" s
+                    assert(false)
+                    s |> string |> Value.Text
+            static member Bind v = 
+                match v with
+                Some v -> 
+                    Value.Create v
+                | None -> 
+                    Value.Create null
+
     type DataResult = 
         {
             [<JsonProperty("columnNames")>]
             ColumnNames : string []
             [<JsonProperty("rows")>]
-            Rows : obj [][]
+            Values : Value [][]
             [<JsonProperty("rowCount")>]
             RowCount : int
-        }
+        } with member x.Rows() =
+                    x.Values
+                    |> Array.map(
+                           Array.map(
+                               function
+                                   Value.Int i -> box i
+                                   | Value.Float f -> box f
+                                   | Value.Date d -> box d
+                                   | Value.Text s -> box s
+                                   | Value.Null -> null
+                                   | Value.Boolean b -> box b
+                           )
+                    )
     
     type CacheRecord = 
         {
@@ -46,7 +88,7 @@ module Cache =
         let data = cacheRecord.Data
         let columnNames = data.ColumnNames
         
-        data.Rows
+        data.Rows()
         |> Seq.mapi(fun index row ->
             index,(row
                    |> Seq.zip columnNames)

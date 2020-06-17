@@ -95,8 +95,8 @@ type Expression =
                     | Some l -> sprintf " %d" l
                  sprintf "%s extrapolation [%s] %d %s" regStr (outputs.ToString()) count l
              | Int e -> sprintf "int (%s)" (e.ToString())
-             | True -> "true"
-             | False -> "false"
+             | True -> "1 = 1"
+             | False -> "1 = 2"
            
          static member private ParseStringOrDate (stringOrDate : string) = 
             match System.DateTime.TryParse(stringOrDate) with
@@ -142,8 +142,8 @@ type Selector =
             sprintf "%s %s" s (e.ToString())
 
 type  Grouping = 
-    Simple of expressionList: Expression list * reduction : AST.Reduction
-    | RowSelection of expressionList: Expression list * selector : Selector
+    Simple of columnNames: string list * reduction : AST.Reduction
+    | RowSelection of columnNames: string list * selector : Selector
 
 type ColumnsOrRows =
      Rows
@@ -205,7 +205,7 @@ let inline (<!>) (regexLiteral : string) =
     AST.RegExResultString regexLiteral
 
 type GroupBy = 
-    GroupByWithExpressions of Expression list
+    GroupByWithExpressions of string list
     with static member (=>) (grouping:GroupBy,r : AST.Reduction) = 
              Simple(grouping.Expressions, r)  |> GroupStatement
          static member (=>) (grouping:GroupBy,r : Selector) = 

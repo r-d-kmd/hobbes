@@ -39,6 +39,24 @@ let buildConfiguration =
         printfn "Using release configuration"
         DotNet.BuildConfiguration.Release
     | _ -> DotNet.BuildConfiguration.Debug
+type DockerCommand = 
+    Push of string
+    | Pull of string
+    | Build of file:string option * tag:string
+    | Tag of original:string * newTag:string
+
+let docker command dir =
+    let arguments = 
+        match command with
+        Push tag -> sprintf "push %s" tag
+        | Pull tag -> sprintf "pull %s" tag
+        | Build(file,tag) -> 
+            tag |>
+            match file with
+            None -> sprintf "build -t %s ."
+            | Some f -> sprintf """build -f "%s" -t %s """ f
+        | Tag(t1,t2) -> sprintf "tag %s %s" t1 t2
+    run "docker" dir arguments
 
 let version =
         match buildConfiguration with
@@ -202,6 +220,7 @@ Target.create "Build" ignore
 
 Target.create "PreApps" ignore
 Target.create "PostApps" ignore
+Target.create "BuildForTest" ignore
 
 Target.create "CleanCommon" (fun _ ->
     let deleteFiles lib =
@@ -287,6 +306,20 @@ Target.create "TestNoBuild"(fun _ ->
     run "test" "." "" |> ignore
 )
 
+Target.create "Pull" ignore
+
+Target.create "PullRuntime" (fun _ ->
+    docker (Pull "mcr.microsoft.com/dotnet/core/aspnet:3.1") "."
+)
+
+Target.create "PullSdk" (fun _ ->
+    docker (Pull "kmdrd/app") "."
+)
+
+Target.create "PullDb" (fun _ ->
+    docker (Pull "kmdrd/couchdb") "."
+)
+
 "GenericSdk" 
     ?=> "CleanCommon" 
     ==> "Dependencies"
@@ -301,6 +334,14 @@ Target.create "TestNoBuild"(fun _ ->
 
 "Sdk" 
     ==> "All"
+
+"PullSdk" ?=> "PreApps"
+"PullRuntime" ?=> "PreApps"
+
+"Build" ==> "BuildForTest" 
+"PullDb" ==> "BuildForTest"
+"PullSdk" ==> "BuildForTest"
+"PullRuntime" ==> "BuildForTest"
 
 "GenericSdk"
     ?=> "All"

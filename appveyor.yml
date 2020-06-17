@@ -110,9 +110,11 @@ for:
       - ip=$(minikube ip)
       - start
       - awaitRunningState
-      - front_url="http://${ip}:30080"
+      - kubectl port-forward service/hello-minikube 30080:8085 &
+      - kubectl port-forward service/hello-minikube 30084:5984 &
+      - front_url="http://localhost:30080"
       - curl ${front_url}/ping
-      - curl "http://${ip}:30084"
+      - curl "http://localhost:30084"
       - docker build -t workbench tools/workbench && docker run -dt workbench development --host "${front_url}" --masterkey Rno8hcqr9rXXs
       - all
       #- logs conf -f

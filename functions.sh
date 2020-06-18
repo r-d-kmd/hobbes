@@ -249,7 +249,7 @@ function run(){
 function sync(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    echo $(kubectl delete job.batch/sync)
+    kubectl delete job.batch/sync &> /dev/null
     kubectl apply -f sync-job.yaml || ( cd $CURRENT_DIR && exit 1)
     cd $CURRENT_DIR
 }
@@ -286,10 +286,10 @@ function setupTest(){
     #publish transformations and configurations
     publish
     
-    logs gateway | tail
-    logs conf | tail
+    logs gateway | tail -1
+    logs conf | tail -1
     #syncronize and wait for it to complete
-    sync || exit 1
+    sync
     sleep 300
 
     cd $CURRENT_DIR

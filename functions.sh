@@ -116,20 +116,20 @@ function clean(){
 function build(){    
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
+    re='^[0-9]+$'
     if [ -z "$1" ]
     then 
         fake build
-    else 
-        if [ -z "$2" ]
-        then
-            fake build --target "$1"
-        else
-            fake build --target "$1" --parallel $2
-        fi
+    elif [[ $1 =~ $re ]]
+    then
+        build "build" $1 
+    elif [ -z "$2" ]
+    then
+        fake build --target "$1"
+    else
+        fake build --target "$1" --parallel $2
     fi
-
     cd $CURRENT_DIR
-    echo "Done building"
 }
 
 function describe(){
@@ -257,16 +257,15 @@ function setupTest(){
     awaitRunningState
     all
     #Forward ports to be able to communicate with the cluster
-    kubectl port-forward service/gateway-svc 8080:80 &
     kubectl port-forward service/gateway-svc 30080:80 &
-    kubectl port-forward service/db-svc 5984:5984 &
     kubectl port-forward service/db-svc 30084:5984 &
     #wait a few second to be sure the port forwarding is in effect
     sleep 3
-    SERVER="http://127.0.0.1"
+    IP="127.0.0.1"
+    SERVER="http://${ip}"
     #test that the server and DB is accessible
-    curl "${SERVER}:5984"
-    front_url="${SERVER}:8080"
+    curl "${SERVER}:30084"
+    front_url="${SERVER}:30080"
     curl ${front_url}/ping
     #publish transformations and configurations
     publish

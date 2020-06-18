@@ -54,7 +54,7 @@ let docker command dir =
             let buildArgs = 
                 System.String.Join(" ", 
                     buildArgs 
-                    |> List.map(fun (n,v) -> sprintf "--build-arg %s=\"%s\"" n v)
+                    |> List.map(fun (n,v) -> sprintf "--build-arg %s=%s" n v)
                 )
             ( match file with
               None -> 
@@ -298,7 +298,7 @@ Target.create "Sdk" (fun _ ->
 )
 
 Target.create "TestNoBuild"(fun _ ->
-    run "test" "." "" |> ignore
+    run "setupTest" "." "" |> ignore
 )
 
 Target.create "Pull" ignore

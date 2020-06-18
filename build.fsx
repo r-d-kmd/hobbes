@@ -54,7 +54,7 @@ let docker command dir =
             let buildArgs = 
                 System.String.Join(" ", 
                     buildArgs 
-                    |> List.map(fun (n,v) -> sprintf """--build-arg %s="%s" """ n v)
+                    |> List.map(fun (n,v) -> sprintf "--build-arg %s=\"%s\"" n v)
                 )
             ( match file with
               None -> 
@@ -188,13 +188,11 @@ let buildApp (name : string) (appType : string) workingDir =
                t + ":" + "latest"
            ]
 
-        //sprintf "build -f %s/Dockerfile.%s --build-arg %s --build-arg VERSION=%s -t %s ." dockerDir.FullName appType buildArg version (tag.ToLower()) 
         let file = sprintf "%s/Dockerfile.%s" dockerDir.FullName appType |> Some
         docker (Build(file,tag,buildArgs)) workingDir
         tags
         |> List.iter(fun t -> 
-            sprintf "tag %s %s" tag t
-            |> run "docker" workingDir
+            docker (Tag(tag,t)) workingDir
         )
 
     let push _ = 
@@ -206,9 +204,7 @@ let buildApp (name : string) (appType : string) workingDir =
            ]
         tags
         |> List.iter(fun tag ->
-            let args = sprintf "push %s" <| (tag.ToLower())
-            printfn "Executing: $ docker %s" args
-            run "docker" workingDir args
+            docker (Push tag) workingDir
         )
     
     let buildTargetName = tag 
@@ -276,34 +272,29 @@ commons |> List.iter(fun common ->
 ) 
 
 Target.create "GenericSdk" (fun _ ->   
-    
     let tag = sprintf "%s/sdk" dockerOrg
-    
-    sprintf "build -f Dockerfile.sdk -t %s/sdk ." dockerOrg
-    |> run "docker" dockerDir.Name
-
-    sprintf "push %s/sdk" dockerOrg
-    |> run "docker" dockerDir.Name
+    let build file = 
+       docker (Build(Some file,tag,[])) dockerDir.Name
+       
+    build "Dockerfile.sdk"
+    docker (Push tag) dockerDir.Name
 
     //build the debug version for local use if required
     if buildConfiguration = DotNet.BuildConfiguration.Debug then
-        sprintf "build -f Dockerfile.sdk-debug -t %s/sdk ." dockerOrg
-        |> run "docker" dockerDir.Name
+        build "Dockerfile.sdk-debug"
 )
 
 Target.create "Sdk" (fun _ ->   
-    sprintf "build -f Dockerfile.app -t %s/app --build-arg CONFIGURATION=Release ." 
-            dockerOrg 
-    |> run "docker" dockerDir.Name 
-    
-    sprintf "push %s/app" dockerOrg
-    |> run "docker" dockerDir.Name
+    let tag = sprintf "%s/app" dockerOrg
+    let file = Some("Dockerfile.app")
+    let build configuration = 
+        docker (Build(file,tag,["CONFIGURATION",configuration])) dockerDir.Name
+    build "Release"
+    docker (Push tag) dockerDir.Name
 
     //build the debug version for local use if required
     if buildConfiguration = DotNet.BuildConfiguration.Debug then
-        sprintf "build -f Dockerfile.app -t %s/app --build-arg CONFIGURATION=Debug ." 
-                dockerOrg 
-        |> run "docker" dockerDir.Name 
+        build "Debug"
 )
 
 Target.create "TestNoBuild"(fun _ ->
@@ -332,7 +323,6 @@ Target.create "PullDb" (fun _ ->
     ==> "Messaging"
     ==> "Sdk"
     ?=> "PreApps"
-    ==> "PostApps" 
     ==> "Build"
     ==> "All"
 

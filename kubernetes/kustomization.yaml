@@ -6,7 +6,9 @@ resources:
   - db-deployment.yaml
   - db-svc.yaml
   - azuredevops-deployment.yaml
+  - azuredevops-hpa.yaml
   - calculator-deployment.yaml
+  - calculator-hpa.yaml
   - git-deployment.yaml
   - configurations-deployment.yaml
   - configurations-svc.yaml

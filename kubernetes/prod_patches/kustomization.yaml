@@ -2,7 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - env.json
+  - metrics-server.yaml
+  - prod_patches/unkustomizable.yaml
   - db-volume.yaml
   - db-deployment.yaml
   - db-svc.yaml
@@ -15,10 +16,12 @@ resources:
   - gateway-svc.yaml
   - uniformdata-deployment.yaml
   - uniformdata-svc.yaml
-  - git-hpa.yaml
-  - azuredevops-hpa.yaml
-  - calculator-hpa.yaml
-
+  - rabbitmq-controller.yaml
+  - rabbitmq-service.yaml
+  - prod_patches/azuredevops-hpa.yaml
+  - prod_patches/calculator-hpa.yaml
+  - prod_patches/git-hpa.yaml
+  
 patchesJson6902:
   - target:
       group: apps
@@ -31,12 +34,12 @@ patchesJson6902:
       kind: Service
       name: gateway-svc
     path: prod_patches/gateway-svc-prod.yaml
-  - target:
-      group: apps
-      version: v1
-      kind: Deployment
-      name: db
-    path: prod_patches/db-prod.yaml
+  #- target:
+  #    group: apps
+  #    version: v1
+  #    kind: Deployment
+  #    name: db
+  #  path: prod_patches/db-prod.yaml
   - target:
       group: apps
       version: v1

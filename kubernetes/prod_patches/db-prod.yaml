@@ -4,5 +4,5 @@
 
 - op: replace
   path: /spec/template/spec/volumes/0/persistentVolumeClaim/claimName
-  value: db-disk
+  value: db-volume
 

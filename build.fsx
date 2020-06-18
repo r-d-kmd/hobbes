@@ -20,6 +20,68 @@ open Fake.Core
 open Fake.DotNet
 open Fake.IO
 
+[<RequireQualifiedAccess>]
+type Targets = 
+   GenericSdk 
+   | CleanCommon
+   | Dependencies
+   | Core
+   | Helpers
+   | Web
+   | Messaging
+   | Sdk
+   | PreApps
+   | Build
+   | All
+   | Complete
+   | PushApps
+   | BuildForTest
+   | PullSdk
+   | PullDb
+   | PullRuntime
+   | TestNoBuild
+   | Generic of string
+
+let targetName = 
+    function
+        Targets.GenericSdk -> "GenericSdk"
+       | Targets.CleanCommon -> "CleanCommon"
+       | Targets.Dependencies -> "Dependencies"
+       | Targets.Helpers -> "Helpers"
+       | Targets.Core -> "Core"
+       | Targets.Web -> "Web"
+       | Targets.Messaging -> "Messaging"
+       | Targets.Sdk -> "Sdk"
+       | Targets.PreApps -> "PreApps"
+       | Targets.Build -> "Build"
+       | Targets.All -> "All"
+       | Targets.Complete -> "Complete"
+       | Targets.PushApps -> "PushApps"
+       | Targets.BuildForTest -> "BuildForTest"
+       | Targets.Generic name -> name
+       | Targets.PullSdk  -> "PullSdk"
+       | Targets.PullDb -> "PullDb"
+       | Targets.PullRuntime  -> "PullRuntime"
+       | Targets.TestNoBuild -> "TestNoBuild"
+
+
+
+open Fake.Core.TargetOperators
+let inline (==>) (lhs : Targets) (rhs : Targets) =
+    Targets.Generic((targetName lhs) ==> (targetName rhs))
+
+let inline (?=>) (lhs : Targets) (rhs : Targets) =
+    Targets.Generic((targetName lhs) ?=> (targetName rhs))
+
+let create target = 
+    target
+    |> targetName
+    |> Target.create
+
+let runOrDefaultWithArguments =
+    targetName
+    >> Target.runOrDefaultWithArguments 
+
 let dockerOrg = "kmdrd"
 let run command workingDir args = 
     let arguments = 
@@ -75,7 +137,7 @@ let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "
 
 let createDockerTag dockerOrg (tag : string) = sprintf "%s/hobbes-%s" dockerOrg (tag.ToLower())
 
-open Fake.Core.TargetOperators
+
 open System.IO
 
 let isBelow info (dir: DirectoryInfo) = 
@@ -85,21 +147,6 @@ let isBelow info (dir: DirectoryInfo) =
         else
            inner info.Parent
     inner info
-
-[<RequireQualifiedAccess>]
-type CommonLib = 
-    Core
-    | Helpers
-    | Web
-    | Messaging
-    | Any
-    with override x.ToString() = 
-          match x with
-          Core -> "core"
-          | Helpers -> "helpers"
-          | Web -> "web"
-          | Messaging -> "messaging"
-          | Any -> "core|helpers|web"
 
 type App = 
     Worker of name:string 
@@ -111,17 +158,6 @@ type App =
                     name, "worker"
                 | Service name ->
                     name, "service"
-[<RequireQualifiedAccess>]
-type DockerStage =
-     AppSdk
-     | Other
-
-type Change =
-   App of App
-   | PaketDependencies
-   | Docker of DockerStage
-   | Common of CommonLib
-   | File of string
 
 let dockerDir = DirectoryInfo "./docker"
 let serviceDir = DirectoryInfo "./services"
@@ -143,14 +179,17 @@ let package conf outputDir projectFile =
                    ) projectFile
 
 
-let commonPath name = 
+let commonPath target =
+    let name =
+        (target
+         |> targetName).ToLower()
     sprintf "./common/hobbes.%s/src/hobbes.%s.fsproj" name name
 let commons = 
     [
-        CommonLib.Web
-        CommonLib.Helpers
-        CommonLib.Core
-        CommonLib.Messaging
+        Targets.Web
+        Targets.Helpers
+        Targets.Core
+        Targets.Messaging
     ]
 let apps : seq<App*string> = 
     let services = 
@@ -207,22 +246,22 @@ let buildApp (name : string) (appType : string) workingDir =
             docker (Push tag) workingDir
         )
     
-    let buildTargetName = tag 
-    let pushTargetName = "Push" + tag 
+    let buildTarget = Targets.Generic tag 
+    let pushTarget = "Push" + tag |> Targets.Generic
     
-    Target.create buildTargetName build
-    Target.create pushTargetName push
-    buildTargetName ==> pushTargetName ==> "PushApps" |> ignore
+    create buildTarget build
+    create pushTarget push
+    buildTarget ==> pushTarget ==> Targets.PushApps |> ignore
 
-Target.create "Complete" ignore
-Target.create "PushApps" ignore
-Target.create "All" ignore
-Target.create "Build" ignore
+create Targets.Complete ignore
+create Targets.PushApps ignore
+create Targets.All ignore
+create Targets.Build ignore
 
-Target.create "PreApps" ignore
-Target.create "BuildForTest" ignore
+create Targets.PreApps ignore
+create Targets.BuildForTest ignore
 
-Target.create "CleanCommon" (fun _ ->
+create Targets.CleanCommon (fun _ ->
     let deleteFiles lib =
         [
             sprintf "docker/.lib/hobbes.%s.dll"
@@ -238,7 +277,7 @@ Target.create "CleanCommon" (fun _ ->
     |> List.iter (string >> deleteFiles)
 )
 
-Target.create "Dependencies" (fun _ ->
+create Targets.Dependencies (fun _ ->
   let outputDir = "./docker/build"
   let paketDir = outputDir + "/.paket"
   Shell.cleanDirs 
@@ -259,19 +298,18 @@ apps
 |> Seq.iter(fun (app,dir) ->
     let name,appType = app.NameAndType
     buildApp name appType dir
-    "PreApps" ==> name ==> "Build" |> ignore
+    Targets.PreApps ==> Targets.Generic(name) ==> Targets.Build |> ignore
 ) 
 
 commons |> List.iter(fun common ->
-    let commonName = common.ToString()
-    let targetName = commonName
-    Target.create targetName (fun _ ->
-        let projectFile = commonPath commonName
+    let targetName = common
+    create targetName (fun _ -> 
+        let projectFile = commonPath common
         package buildConfiguration commonLibDir projectFile
     )
 ) 
 
-Target.create "GenericSdk" (fun _ ->   
+create Targets.GenericSdk (fun _ ->   
     let tag = sprintf "%s/sdk" dockerOrg
     let build file = 
        docker (Build(Some file,tag,[])) dockerDir.Name
@@ -284,7 +322,7 @@ Target.create "GenericSdk" (fun _ ->
         build "Dockerfile.sdk-debug"
 )
 
-Target.create "Sdk" (fun _ ->   
+create Targets.Sdk (fun _ ->   
     let tag = sprintf "%s/app" dockerOrg
     let file = Some("Dockerfile.app")
     let build configuration = 
@@ -297,48 +335,48 @@ Target.create "Sdk" (fun _ ->
         build "Debug"
 )
 
-Target.create "TestNoBuild"(fun _ ->
+create Targets.TestNoBuild (fun _ ->
     run "setupTest" "." "" |> ignore
 )
 
-Target.create "Pull" ignore
 
-Target.create "PullRuntime" (fun _ ->
+create Targets.PullRuntime (fun _ ->
     docker (Pull "mcr.microsoft.com/dotnet/core/aspnet:3.1") "."
 )
 
-Target.create "PullSdk" (fun _ ->
+create Targets.PullSdk (fun _ ->
     docker (Pull "kmdrd/app") "."
 )
 
-Target.create "PullDb" (fun _ ->
+create Targets.PullDb (fun _ ->
     docker (Pull "kmdrd/couchdb") "."
 )
 
-"GenericSdk" 
-    ?=> "CleanCommon" 
-    ==> "Dependencies"
-    ==> "Helpers" 
-    ==> "Web"
-    ==> "Messaging"
-    ==> "Sdk"
-    ?=> "PreApps"
-    ==> "Build"
-    ==> "All"
+Targets.GenericSdk
+    ?=> Targets.CleanCommon
+    ==> Targets.Dependencies
+    ==> Targets.Helpers
+    ==> Targets.Web
+    ==> Targets.Messaging
+    ==> Targets.Sdk
+    ?=> Targets.PreApps
+    ==> Targets.Build
+    ==> Targets.All
 
-"Sdk" 
-    ==> "All"
+Targets.Sdk 
+    ==> Targets.All
 
-"PullSdk" ?=> "PreApps"
-"PullRuntime" ?=> "PreApps"
+Targets.PullSdk ?=> Targets.PreApps
+Targets.PullRuntime ?=> Targets.PreApps
 
-"Build" ==> "BuildForTest" 
-"PullDb" ==> "BuildForTest"
-"PullSdk" ==> "BuildForTest"
-"PullRuntime" ==> "BuildForTest"
+Targets.Build ==> Targets.BuildForTest 
+Targets.PullDb ==> Targets.BuildForTest
+Targets.PullSdk ==> Targets.BuildForTest
+Targets.PullRuntime ==> Targets.BuildForTest
 
-"GenericSdk"
-    ?=> "All"
-    ==> "Complete"
+Targets.GenericSdk
+    ?=> Targets.All
+    ==> Targets.Complete
 
-Target.runOrDefaultWithArguments "Build"
+Targets.Build
+|> runOrDefaultWithArguments 

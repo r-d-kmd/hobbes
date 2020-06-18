@@ -224,6 +224,19 @@ function awaitRunningState(){
             kubectl wait --for=condition=ready "pod/$NAME" --timeout=60s
         fi
     done
+
+    echo "Waiting for DB to be operational"
+    while [ "$(logs gateway | grep DB | tail)" != "DB initialized" ]
+    do
+        sleep 1
+    done
+
+    echo "Waiting for Rabbit-MQ to be operational"
+    while [ "$(logs conf | grep queue | tail)" != "Watching queue: cache" ]
+    do
+        sleep 1
+    done
+
     all
 }
 
@@ -275,8 +288,8 @@ function setupTest(){
     #publish transformations and configurations
     publish
     
-    logs gateway
-    logs conf
+    logs gateway | tail
+    logs conf | tail
     #syncronize and wait for it to complete
     sync
     sleep 300

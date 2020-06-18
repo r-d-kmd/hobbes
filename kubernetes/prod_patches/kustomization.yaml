@@ -16,6 +16,8 @@ resources:
   - uniformdata-deployment.yaml
   - uniformdata-svc.yaml
   - git-hpa.yaml
+  - azuredevops-hpa.yaml
+  - calculator-hpa.yaml
 
 patchesJson6902:
   - target:

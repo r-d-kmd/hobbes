@@ -145,7 +145,6 @@ function listServices(){
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    local FILE=""
 
     kubectl apply -f env.JSON;
     
@@ -156,7 +155,7 @@ function start() {
 
 function startkube(){
     set $PATH=$PATH:/Applications/VirtualBox.app/
-    minikube start --vm-driver virtualbox --disk-size=75GB
+    minikube start --vm-driver docker
 }
 
 function update(){
@@ -189,6 +188,7 @@ function pingService(){
 function testServiceIsFunctioning(){
     pingService $1 2>/dev/null | grep HTTP | tail -1 | cut -d$' ' -f2
 }
+
 declare -a PODS=()
 function pods(){
     PODS=()
@@ -226,17 +226,17 @@ function awaitRunningState(){
     done
 
     echo "Waiting for DB to be operational"
-    while [ "$(logs gateway | grep DB | tail)" != "DB initialized" ]
+    while [ "$(logs gateway | grep DB | tail -1)" != "DB initialized" ]
     do
-        logs gateway | grep DB | tail
-        logs db | tail
+        logs gateway | grep DB | tail -1
+        logs db | tail -1
     done
 
     echo "Waiting for Rabbit-MQ to be operational"
-    while [ "$(logs conf | grep queue | tail)" != "Watching queue: cache" ]
+    while [ "$(logs conf | grep queue | tail -1)" != "Watching queue: cache" ]
     do
-        logs conf | grep queue | tail
-        logs rabbit | tail
+        logs conf | grep queue | tail -1
+        logs rabbit | tail -1
     done
 
     all
@@ -246,15 +246,11 @@ function run(){
     kubectl run -i --tty temp-$1 --image kmdrd/$1 
 }
 
-function restartApp(){
-    delete "$1" && logs "$1" -f
-}
-
 function sync(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
     echo $(kubectl delete job.batch/sync)
-    kubectl apply -f sync-job.yaml
+    kubectl apply -f sync-job.yaml || ( cd $CURRENT_DIR && exit 1)
     cd $CURRENT_DIR
 }
 
@@ -273,9 +269,9 @@ function setupTest(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
     #dotnet test
-    start
-    awaitRunningState
-    all
+    start || \
+    awaitRunningState || \
+    all || exit 1
     #Forward ports to be able to communicate with the cluster
     kubectl port-forward service/gateway-svc 30080:80 &
     kubectl port-forward service/db-svc 30084:5984 &
@@ -293,10 +289,15 @@ function setupTest(){
     logs gateway | tail
     logs conf | tail
     #syncronize and wait for it to complete
-    sync
+    sync || exit 1
     sleep 300
 
     cd $CURRENT_DIR
+}
+
+function test(){
+    NAME=$(kubectl get pods -l app=gateway -o name) 
+    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=${IP} --env-var "master_key"=${MASTER_KEY} || exit 1
 }
 
 echo "Project home folder is: $SCRIPT_DIR"

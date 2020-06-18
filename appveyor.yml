@@ -7,10 +7,6 @@ branches:
 environment:
   ENV_FILE:
     secure: 1EY0PW6l+4E/ZiuaRlC8WHb8v2J6o+YWksH852D5wIVfRnWBC6Ih6bPQMSwQ1Smm71oEOrsd8WJsabgdIkZIxinJ4chtLNBEjx2Wm32JuQziI+jvxc+Q+9YUtwrijB6xP2jHPA0n5wLEE1yHiicn6FFTFcXMJnOpizKcVkU9CgAywwJC+hXp17Vmp96jkfoDSf3duGS/2qmsUsDQwj6xPOBSHoE03YZ54QvknBZBf1gN2nJV+c/z06OSkXEyiQInB37EdUQcm54+0ut3C2DiAJbZkB60fotkUvw8RQWDubDIsfUfN7X9pTr7Z22twEtD3IxU2QmPntZKvQ97eYzpjDtCg3MhNqQhjtHbU5s+jKbHZ8AHTMc+UybbnYUr8ZVH5yGQe9xplPDMWps6PcUt5u5MwD7Fr+V64ujpnTsX8lry4pmdAz7mqktYNMeUJ7Q4wbu+y0W/NE2MwqlauwcoI5mFLMvQK0cV7ge3Y3qLA35G5tIH0gYvOkb+2p/SM3K9zhFMQbuw/8JzCbWsLCIa6SqRJfa5HFBvFwwqur1ffW5UejTS8eMtFtCGH+E+kOERdvOwhCxdArEuscpGLrKfJu84B3+jiSscDbM1C++y2FvOKaFWnatPBjN+OWT7Yr+C6cIHkw6AmRkOhVBFlE/N39mI//+sgzQsKwhZR3Y4kHjvxtDGttgcB3xXBYk6t7kdRc5+jNY4fC7sQiRJ/jhpIcGn+ivRp7cOzTu8mO05L1CUpTLkhqvArrlvbgrNscHAOuVXtDxfboOpW3ebi7p7lUiZctUxOPasuNBF3wRix6Ovc2dDIE4Ll2llaXcL/IjWyWH5KLleonpqkU+IhZDmT5e9LVzO05CSxqVBKmWO0sifO8XhbEXfpKTDcoLEBcBHkA8ii8qqgCW4BcyhUCFppxQHNkZE2ntxjFMJUqM16M4=
-  AZURE_LOGIN:
-    secure: XISZjzDCGGDy5ushmVO+xw==
-  AZURE_PASS:
-    secure: zgNYwx6jAxijYC+9EtHDFQ==
   DOCKER_USER:
     secure: CbwbpNPxLV9AwhjSpIz7LA==
   DOCKER_PASS:
@@ -56,24 +52,22 @@ for:
     install:
       - source functions.sh
       - docker version
-      - sudo apt-get install azure-cli
-      - az login -u $AZURE_LOGIN -p $AZURE_PASS
       - dotnet tool install --global fake-cli
       - dotnet tool install --global paket
-      - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
-      - chmod +x kubectl
-      - sudo mv kubectl /usr/local/bin/
-      - cd /tmp && wget https://dl.google.com/go/go1.11.linux-amd64.tar.gz
-      - sudo tar -xvf go1.11.linux-amd64.tar.gz
-      - sudo mv go /usr/local
-      - export GOROOT=/usr/local/go
-      - export GOPATH=$HOME/go
-      - export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
-      - source ~/.profile
-      - GO111MODULE=on go get sigs.k8s.io/kustomize/kustomize/v3
-      - cd $KUBERNETES_DIR
-      - cd prod_patches && sudo mv kustomization.yaml ../kustomization.yaml && cd ..
-      - kustomize build && cd ..
+      #- curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
+      #- chmod +x kubectl
+      #- sudo mv kubectl /usr/local/bin/
+      #- cd /tmp && wget https://dl.google.com/go/go1.11.linux-amd64.tar.gz
+      #- sudo tar -xvf go1.11.linux-amd64.tar.gz
+      #- sudo mv go /usr/local
+      #- export GOROOT=/usr/local/go
+      #- export GOPATH=$HOME/go
+      #- export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+      #- source ~/.profile
+      #- GO111MODULE=on go get sigs.k8s.io/kustomize/kustomize/v3
+      #- cd $KUBERNETES_DIR
+      #- cd prod_patches && sudo mv kustomization.yaml ../kustomization.yaml && cd ..
+      #- kustomize build && cd ..
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
     build_script:  

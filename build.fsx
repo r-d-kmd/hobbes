@@ -42,7 +42,7 @@ let buildConfiguration =
 type DockerCommand = 
     Push of string
     | Pull of string
-    | Build of file:string option * tag:string
+    | Build of file:string option * tag:string * buildArgs: (string * string) list
     | Tag of original:string * newTag:string
 
 let docker command dir =
@@ -50,11 +50,16 @@ let docker command dir =
         match command with
         Push tag -> sprintf "push %s" tag
         | Pull tag -> sprintf "pull %s" tag
-        | Build(file,tag) -> 
-            tag |>
-            match file with
-            None -> sprintf "build -t %s ."
-            | Some f -> sprintf """build -f "%s" -t %s """ f
+        | Build(file,tag,buildArgs) -> 
+            let buildArgs = 
+                System.String.Join(" ", 
+                    buildArgs 
+                    |> List.map(fun (n,v) -> sprintf """--build-arg %s="%s" """ n v)
+                )
+            ( match file with
+              None -> 
+                  sprintf "build -t %s %s ."  
+              | Some f -> sprintf """build -f "%s" -t %s %s .""" f) (tag.ToLower()) buildArgs
         | Tag(t1,t2) -> sprintf "tag %s %s" t1 t2
     run "docker" dir arguments
 
@@ -175,7 +180,7 @@ let buildApp (name : string) (appType : string) workingDir =
     let tag = name.ToLower()
     
     let build _ = 
-        let buildArg = sprintf "%s_NAME=%s" (appType.ToUpper()) name
+        let buildArgs = [(sprintf "%s_NAME" (appType.ToUpper()), name)]
         let tags =
            let t = createDockerTag dockerOrg tag
            [
@@ -184,8 +189,8 @@ let buildApp (name : string) (appType : string) workingDir =
            ]
 
         //sprintf "build -f %s/Dockerfile.%s --build-arg %s --build-arg VERSION=%s -t %s ." dockerDir.FullName appType buildArg version (tag.ToLower()) 
-        sprintf "build -f %s/Dockerfile.%s --build-arg %s -t %s ." dockerDir.FullName appType buildArg (tag.ToLower()) 
-        |> run "docker" workingDir
+        let file = sprintf "%s/Dockerfile.%s" dockerDir.FullName appType |> Some
+        docker (Build(file,tag,buildArgs)) workingDir
         tags
         |> List.iter(fun t -> 
             sprintf "tag %s %s" tag t
@@ -219,7 +224,6 @@ Target.create "All" ignore
 Target.create "Build" ignore
 
 Target.create "PreApps" ignore
-Target.create "PostApps" ignore
 Target.create "BuildForTest" ignore
 
 Target.create "CleanCommon" (fun _ ->
@@ -259,7 +263,7 @@ apps
 |> Seq.iter(fun (app,dir) ->
     let name,appType = app.NameAndType
     buildApp name appType dir
-    "PreApps" ==> name ==> "PostApps" |> ignore
+    "PreApps" ==> name ==> "Build" |> ignore
 ) 
 
 commons |> List.iter(fun common ->

@@ -244,7 +244,8 @@ function publish(){
     cd $KUBERNETES_DIR
     echo $(kubectl delete job.batch/publish)
     kubectl apply -f publish-job.yaml
-    kubectl wait --for=condition=complete job/publish
+    sleep 1
+    kubectl wait --for=condition=complete job/publish --timeout=120s
     cd $CURRENT_DIR
 }
 

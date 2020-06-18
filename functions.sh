@@ -173,7 +173,7 @@ function isRunning(){
     then 
         echo "True"
     else
-        if [ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "publish" ]
+        if [ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "sync" ][ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "publish" ]
         then
             echo "True"
         else
@@ -218,7 +218,10 @@ function awaitRunningState(){
     echo "Still waiting for: ${#PODS[@]}"
     for NAME in ${PODS_[@]}
     do 
-        kubectl wait --for=condition=ready "pod/$NAME"
+        if [ "$(echo "$APP_NAME" | cut -d '-' -f1)" != "sync" ] && [ "$(echo "$APP_NAME" | cut -d '-' -f1)" != "publish" ]
+        then
+            kubectl wait --for=condition=ready "pod/$NAME" --timeout=60s
+        fi
     done
     all
 }

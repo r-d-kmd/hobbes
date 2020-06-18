@@ -17,6 +17,8 @@ resources:
   - uniformdata-svc.yaml
   - rabbitmq-controller.yaml
   - rabbitmq-service.yaml
+  - coredns.yaml
+  - hpa-v2.yaml
 
 patchesJson6902:
   - target:

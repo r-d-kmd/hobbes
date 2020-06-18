@@ -15,6 +15,7 @@ let adminRouter =
 
         withBody <@ storeTransformations @>
         withBody <@storeConfigurations@>
+        fetch <@getProjects@>
     }
 
 let dataRouter = 

@@ -253,10 +253,11 @@ function test(){
     cd $SCRIPT_DIR
     #dotnet test
     start
-    awaitRunningState
     kubectl port-forward service/gateway-svc 8080:80 &
     kubectl port-forward service/gateway-svc 30080:80 &
     kubectl port-forward service/db-svc 5984:5984 &
+    kubectl port-forward service/db-svc 30084:5984 &
+    awaitRunningState
     SERVER="http://127.0.0.1"
     curl "${SERVER}:5984"
     front_url="${SERVER}:8080"

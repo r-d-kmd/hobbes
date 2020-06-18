@@ -54,6 +54,7 @@ for:
       - docker version
       - dotnet tool install --global fake-cli
       - dotnet tool install --global paket
+<<<<<<< HEAD
       #- curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
       #- chmod +x kubectl
       #- sudo mv kubectl /usr/local/bin/
@@ -68,6 +69,13 @@ for:
       #- cd $KUBERNETES_DIR
       #- cd prod_patches && sudo mv kustomization.yaml ../kustomization.yaml && cd ..
       #- kustomize build && cd ..
+=======
+      - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
+      - chmod +x kubectl
+      - sudo mv kubectl /usr/local/bin/
+      - echo "jens"
+      - kubectl apply -k ./ -o jens.yaml
+>>>>>>> development
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
     build_script:  
@@ -103,7 +111,7 @@ for:
 
     before_build:
       - CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} 
-      - sudo -E minikube --driver=none start
+      - minikube --driver=docker start
       - ip=$(minikube ip)
       - eval $(minikube docker-env) 
       - echo ${ENV_FILE} | kubectl apply -f -
@@ -111,29 +119,12 @@ for:
       
     build_script:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}"
-      - docker pull kmdrd/couchdb
-      - docker pull kmdrd/app
-      - fake build --parallel 8
+      - fake build --target buildfortest --parallel 8
       
     test_script:
-      #- dotnet test
       - source functions.sh
-      - ip=$(minikube ip)
-      - start
-      - awaitRunningState
-      - front_url="http://${ip}:30080"
-      - curl ${front_url}/ping
-      - curl "http://${ip}:30084"
-      - docker build -t workbench tools/workbench && docker run -dt workbench development --host "${front_url}" --masterkey Rno8hcqr9rXXs
-      - all
-      #- logs conf -f
-      - sync
-      - sleep 60
-      
-      - NAME=$(kubectl get pods -l app=gateway -o name) 
-        #- newman run https://api.getpostman.com/collections/4127812-d535bce5-ad9a-4346-acb4-311c8443c478?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/4127812-b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "front"=${front_url} --env-var "dburl"=${db_url} --env-var "collectordburl"=${db_url}
-      - newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=${ip} --env-var "master_key"=${MASTER_KEY}
-    
+      - setupTest
+      - test
     deploy_script:
       - git config --global credential.helper store
       - git config --global user.email "hobbes_buildserver@kmd.dk"

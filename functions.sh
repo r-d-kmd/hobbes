@@ -218,8 +218,9 @@ function awaitRunningState(){
     echo "Still waiting for: ${#PODS[@]}"
     for NAME in ${PODS_[@]}
     do 
-        if [ "$(echo "$APP_NAME" | cut -d '-' -f1)" != "sync" ] && [ "$(echo "$APP_NAME" | cut -d '-' -f1)" != "publish" ]
+        if [ "$(echo "$NAME" | cut -d '-' -f1)" != "sync" ] && [ "$(echo "$NAME" | cut -d '-' -f1)" != "publish" ]
         then
+            echo "Waiting for pod/$NAME"
             kubectl wait --for=condition=ready "pod/$NAME" --timeout=60s
         fi
     done

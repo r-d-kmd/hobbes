@@ -249,7 +249,7 @@ function run(){
 function sync(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    echo $(kubectl delete job.batch/sync)
+    kubectl delete job.batch/sync &> /dev/null
     kubectl apply -f sync-job.yaml || ( cd $CURRENT_DIR && exit 1)
     cd $CURRENT_DIR
 }
@@ -286,10 +286,10 @@ function setupTest(){
     #publish transformations and configurations
     publish
     
-    logs gateway | tail
-    logs conf | tail
+    logs gateway | tail -1
+    logs conf | tail -1
     #syncronize and wait for it to complete
-    sync || exit 1
+    sync
     sleep 300
 
     cd $CURRENT_DIR
@@ -297,7 +297,15 @@ function setupTest(){
 
 function test(){
     NAME=$(kubectl get pods -l app=gateway -o name) 
-    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=${IP} --env-var "master_key"=${MASTER_KEY} || exit 1
+    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=${IP} --env-var "master_key"=${MASTER_KEY} #|| exit 1
+    echo "*********************GATEWAY********************************"
+    echo "*********************GATEWAY********************************"
+    echo "*********************GATEWAY********************************"
+    logs gateway | tail -50
+    echo "*********************UNIFORM********************************"
+    echo "*********************UNIFORM********************************"
+    echo "*********************UNIFORM********************************"
+    logs uniform | tail -50
 }
 
 echo "Project home folder is: $SCRIPT_DIR"

@@ -3,5 +3,5 @@
   value: LoadBalancer
 
 - op: add
-  path: /spec/ports/0/loadBalancerIP
+  path: /spec/loadBalancerIP
   value: 40.127.146.41

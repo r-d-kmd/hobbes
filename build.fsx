@@ -59,7 +59,7 @@ let docker command dir =
             ( match file with
               None -> 
                   sprintf "build -t %s %s ."  
-              | Some f -> sprintf """build -f "%s" -t %s %s .""" f) (tag.ToLower()) buildArgs
+              | Some f -> sprintf "build -f %s -t %s %s ." f) (tag.ToLower()) buildArgs
         | Tag(t1,t2) -> sprintf "tag %s %s" t1 t2
     run "docker" dir arguments
 
@@ -275,7 +275,7 @@ Target.create "GenericSdk" (fun _ ->
     let tag = sprintf "%s/sdk" dockerOrg
     let build file = 
        docker (Build(Some file,tag,[])) dockerDir.Name
-       
+
     build "Dockerfile.sdk"
     docker (Push tag) dockerDir.Name
 

@@ -226,14 +226,14 @@ function awaitRunningState(){
     done
 
     echo "Waiting for DB to be operational"
-    while [ "$(logs gateway | grep DB | tail -1)" != "DB initialized" ]
+    while [ "$(logs gateway | grep DB initialized)" != "DB initialized" ]
     do
         logs gateway | grep DB | tail -1
         logs db | tail -1
     done
 
     echo "Waiting for Rabbit-MQ to be operational"
-    while [ "$(logs conf | grep queue | tail -1)" != "Watching queue: cache" ]
+    while [ "$(logs conf | grep Watching queue)" != "Watching queue: cache" ]
     do
         logs conf | grep queue | tail -1
         logs rabbit | tail -1
@@ -269,9 +269,9 @@ function setupTest(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
     #dotnet test
-    start || \
-    awaitRunningState || \
-    all || exit 1
+    start 
+    awaitRunningState
+    all
     #Forward ports to be able to communicate with the cluster
     kubectl port-forward service/gateway-svc 30080:80 &
     kubectl port-forward service/db-svc 30084:5984 &

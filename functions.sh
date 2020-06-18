@@ -248,27 +248,33 @@ function publish(){
     cd $CURRENT_DIR
 }
 
-function test(){
+function setupTest(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
     #dotnet test
     start
     awaitRunningState
+    all
+    #Forward ports to be able to communicate with the cluster
     kubectl port-forward service/gateway-svc 8080:80 &
     kubectl port-forward service/gateway-svc 30080:80 &
     kubectl port-forward service/db-svc 5984:5984 &
     kubectl port-forward service/db-svc 30084:5984 &
+    #wait a few second to be sure the port forwarding is in effect
     sleep 3
     SERVER="http://127.0.0.1"
+    #test that the server and DB is accessible
     curl "${SERVER}:5984"
     front_url="${SERVER}:8080"
     curl ${front_url}/ping
     #publish transformations and configurations
     publish
     logs publish
-    all
+    
+    #syncronize and wait for it to complete
     sync
     sleep 300
+
     cd $CURRENT_DIR
 }
 

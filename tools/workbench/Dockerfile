@@ -8,4 +8,4 @@ ARG WORKER_NAME
 WORKDIR /app
 COPY --from=build /app .
 
-ENTRYPOINT ["dotnet","hobbes.workbench.dll","--publish"]
+ENTRYPOINT ["dotnet","hobbes.workbench.dll","--publish", "development"]

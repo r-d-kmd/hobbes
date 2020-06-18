@@ -19,5 +19,9 @@ spec:
         imagePullPolicy: Never
         image: azuredevops
         name: hobbes-azuredevops
+        resources:
+          requests:
+            cpu: 300m
+            memory: 300Mi
       restartPolicy: Always
 status: {}

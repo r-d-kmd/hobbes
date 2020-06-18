@@ -109,13 +109,25 @@ let main args =
                     }""" masterKey host
                     |> WorkbenchSettings.Parse).Development
                  | _ -> 
-                    if System.IO.File.Exists settingsFile then 
-                        match publish with 
-                        | Some v when v.ToLower() = "prod" -> (settingsFile |> WorkbenchSettings.Load).Production
-                        | Some v when v.ToLower() = "dev"  -> (settingsFile |> WorkbenchSettings.Load).Development
-                        | _                                -> (settingsFile |> WorkbenchSettings.Load).Development
-                    else
-                        failwith "Host or master key or settings file must be provided"
+                    match env "HOST" null ,env "MASTER_KEY" null with
+                    null,null ->
+                        if System.IO.File.Exists settingsFile then 
+                            match publish with 
+                            | Some v when v.ToLower() = "prod" -> (settingsFile |> WorkbenchSettings.Load).Production
+                            | Some v when v.ToLower() = "dev"  -> (settingsFile |> WorkbenchSettings.Load).Development
+                            | _                                -> (settingsFile |> WorkbenchSettings.Load).Development
+                        else
+                            failwith "Host or master key or settings file must be provided"
+                    | host,masterKey ->
+                        (sprintf """{
+                            "development" : {
+                                "azure" : {},
+                                "hobbes" : "%s",
+                                "host" : "%s"
+                            }, 
+                            "production": {}
+                        }""" masterKey host
+                    |> WorkbenchSettings.Parse).Development
             | Some e -> 
                let settings = (settingsFile |> WorkbenchSettings.Load)
                match e with

@@ -275,6 +275,8 @@ function setupTest(){
     #publish transformations and configurations
     publish
     
+    logs gateway
+    logs conf
     #syncronize and wait for it to complete
     sync
     sleep 300

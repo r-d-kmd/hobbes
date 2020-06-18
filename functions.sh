@@ -246,10 +246,11 @@ function sync(){
 function publish(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    echo $(kubectl delete job.batch/publish)
+    kubectl delete job.batch/publish &> /dev/null
     kubectl apply -f publish-job.yaml
     sleep 1
     kubectl wait --for=condition=complete job/publish --timeout=120s
+    logs publish
     cd $CURRENT_DIR
 }
 
@@ -273,7 +274,6 @@ function setupTest(){
     curl ${front_url}/ping
     #publish transformations and configurations
     publish
-    logs publish
     
     #syncronize and wait for it to complete
     sync

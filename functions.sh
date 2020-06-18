@@ -228,15 +228,15 @@ function awaitRunningState(){
     echo "Waiting for DB to be operational"
     while [ "$(logs gateway | grep DB | tail)" != "DB initialized" ]
     do
-        logs gateway | tail
-        sleep 1
+        logs gateway | grep DB | tail
+        logs db | tail
     done
 
     echo "Waiting for Rabbit-MQ to be operational"
     while [ "$(logs conf | grep queue | tail)" != "Watching queue: cache" ]
     do
-        logs conf | tail
-        sleep 1
+        logs conf | grep queue | tail
+        logs rabbit | tail
     done
 
     all

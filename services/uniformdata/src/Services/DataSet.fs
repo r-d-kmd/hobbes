@@ -6,9 +6,9 @@ open Hobbes.Helpers
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
 
-[<RouteArea ("/data", false)>]
-module Data =
-    let private cache = Cache.Cache("uniform")
+[<RouteArea ("/dataset", false)>]
+module DataSet =
+    let private cache = Cache.GenericCache("uniform")
     [<Get ("/read/%s")>]
     let read key =
         let uniformData =
@@ -27,18 +27,18 @@ module Data =
             let args =
                 try
                     dataAndKey
-                    |> Json.deserialize<Cache.CacheRecord>
+                    |> Cache.DynamicCacheRecord.Parse
                     |> Some
                 with e ->
                     eprintfn "Failed to deserialization (%s). %s %s" dataAndKey e.Message e.StackTrace
                     None
             match args with
             Some args ->
-                let key = args.CacheKey
+                let key = args.Id
                 let data = args.Data
                 Log.logf "updating cache with _id: %s" key
                 try    
-                    data
+                    data.ToString()
                     |> cache.InsertOrUpdate key
                     Broker.Cache (Updated key)
                 with e ->
@@ -50,4 +50,4 @@ module Data =
             500,"Internal server error"
     [<Get "/ping">]
     let ping () =
-        200, "ping - UniformData"
+        200, "ping - DataSet"

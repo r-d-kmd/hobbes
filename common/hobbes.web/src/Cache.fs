@@ -3,6 +3,7 @@ namespace Hobbes.Web
 open Hobbes.Helpers.Environment
 open Hobbes.Helpers
 open Newtonsoft.Json
+open FSharp.Data
 
 module Cache =
     [<RequireQualifiedAccess>]
@@ -56,6 +57,14 @@ module Cache =
                                    | Value.Boolean b -> box b
                            )
                     )
+
+    type DynamicCacheRecord = JsonProvider<"""
+        {
+            "_id" : "Put1DHere",
+            "timestamp" : "this is a time stamp",
+            "Data" : [{"Stuff" : "things"}]
+        }
+    """>
     
     type CacheRecord = 
         {
@@ -83,6 +92,16 @@ module Cache =
             Data = data
         }
 
+    let private createDynamicCacheRecord key data =
+
+        let timeStamp = System.DateTime.Now
+        sprintf """{
+            CacheKey = %s
+            TimeStamp = %A
+            Data = %s
+        }""" key timeStamp data
+        |> DynamicCacheRecord.Parse
+
     let readData (cacheRecordText : string) =
         let cacheRecord = Json.deserialize<CacheRecord> cacheRecordText 
         let data = cacheRecord.Data
@@ -94,17 +113,21 @@ module Cache =
                    |> Seq.zip columnNames)
         )
 
-    type ICacheProvider = 
+    type ICacheProviderDataResult = 
          abstract member InsertOrUpdate : string -> DataResult -> unit
          abstract member Get : string -> CacheRecord option
 
-    type Cache private(provider : ICacheProvider) =
+    type ICacheProviderGeneric = 
+         abstract member InsertOrUpdate : string -> string -> unit
+         abstract member Get : string -> DynamicCacheRecord.Root option
+
+    type DataResultCache private(provider : ICacheProviderDataResult) =
         static let parser = Json.deserialize<CacheRecord>
         new(name) =  
             let db = 
                 Database.Database(name + "cache", parser, Log.loggerInstance)
             
-            Cache {new ICacheProvider with 
+            DataResultCache {new ICacheProviderDataResult with 
                             member __.InsertOrUpdate key data = 
                                     data
                                     |> createCacheRecord key 
@@ -116,7 +139,7 @@ module Cache =
                                 key
                                 |> db.TryGet }
         new(service : Http.CacheService -> Http.Service) =
-            Cache {new ICacheProvider with 
+            DataResultCache {new ICacheProviderDataResult with 
                             member __.InsertOrUpdate key data = 
                                 data
                                 |> createCacheRecord key 
@@ -130,5 +153,42 @@ module Cache =
                                     Log.errorf  "Failed to load from cache. Status: %d. Message: %s" code msg
                                     None}
                                     
+        member __.InsertOrUpdate = provider.InsertOrUpdate
+        member __.Get = provider.Get
+
+    type GenericCache private(provider : ICacheProviderGeneric) =
+        static let parser = DynamicCacheRecord.Parse     
+        new(name) =  
+            let db = 
+                Database.Database(name + "cache", parser, Log.loggerInstance)
+            
+            GenericCache {new ICacheProviderGeneric with 
+                            member __.InsertOrUpdate key data = 
+                                    (data 
+                                    |> createDynamicCacheRecord key)
+                                    |> db.InsertOrUpdate
+                                    |> Log.debugf "Inserted data: %s"
+                            
+                            member __.Get (key : string) = 
+                                Log.logf "trying to retrieve cached %s from database" key
+                                key
+                                |> db.TryGet }
+
+        new(service : Http.CacheService -> Http.Service) =
+            GenericCache {new ICacheProviderGeneric with 
+                            member __.InsertOrUpdate key data =
+                                let record = data 
+                                             |> createDynamicCacheRecord key
+                                record
+                                |> Http.post (Http.Update |> service)
+                                |> ignore
+                                
+                            member __.Get (key : string) = 
+                                match Http.get (key |> Http.CacheService.Read |> service) parser with
+                                Http.Success d -> Some d
+                                | Http.Error (code,msg) ->
+                                    Log.errorf  "Failed to load from cache. Status: %d. Message: %s" code msg
+                                    None}
+
         member __.InsertOrUpdate = provider.InsertOrUpdate
         member __.Get = provider.Get

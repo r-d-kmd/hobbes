@@ -71,6 +71,7 @@ module Http =
            
     type Service = 
          UniformData of CacheService
+         | DataSet of CacheService
          | Db of DbService
          | Calculator of CalculatorService
          | Configurations of ConfigurationService
@@ -78,7 +79,8 @@ module Http =
          with 
              member x.ToParts() = 
                match x with
-               UniformData serv -> "uniformdata", serv.ToPath(),8085
+               UniformData serv -> "uniformdata/uniform", serv.ToPath(),8085
+               | DataSet serv   -> "unifromdata/dataset", serv.ToPath(),8085
                | Calculator serv -> "calculator",serv.ToPath(),8085
                | Configurations serv -> "configurations", serv.ToPath(),8085
                | Db serv -> "db",serv.ToPath(),5984

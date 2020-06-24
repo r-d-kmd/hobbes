@@ -26,12 +26,12 @@ steps:
 
 - script: 'set -e'
 - script: 'export CHANGE_MINIKUBE_NONE_USER=true'
-- script: 'echo "--> Downloading minikube"'
 # Make root mounted as rshared to fix kube-dns issues.
 - script: 'sudo mount --make-rshared /'
     
 # Download minikube.
 - script: 'curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/'
+  displayName: 'Downloading Minikube'
 - script: 'echo "--> Starting minikube"'
 - script: 'sudo minikube start --vm-driver=none'
     

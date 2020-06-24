@@ -10,7 +10,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: echo ${ENV_FILE}
+- script: echo $(ENV_FILE)
 - task: NuGetToolInstaller@1
 
 - task: DockerInstaller@0

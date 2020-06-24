@@ -2,13 +2,13 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+  - metrics-server.yaml
+  - prod_patches/unkustomizable.yaml
   - db-volume.yaml
   - db-deployment.yaml
   - db-svc.yaml
   - azuredevops-deployment.yaml
-  - azuredevops-hpa.yaml
   - calculator-deployment.yaml
-  - calculator-hpa.yaml
   - git-deployment.yaml
   - configurations-deployment.yaml
   - configurations-svc.yaml
@@ -16,28 +16,57 @@ resources:
   - gateway-svc.yaml
   - uniformdata-deployment.yaml
   - uniformdata-svc.yaml
-  - sync-job.yaml
   - rabbitmq-controller.yaml
   - rabbitmq-service.yaml
-  - metrics-server.yaml
+  - prod_patches/azuredevops-hpa.yaml
+  - prod_patches/calculator-hpa.yaml
+  - prod_patches/git-hpa.yaml
+  
 patchesJson6902:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: gateway
+    path: prod_patches/gateway-prod.yaml
   - target:
       version: v1
       kind: Service
       name: gateway-svc
-    path: local_patches/gateway-svc-dev.yaml
+    path: prod_patches/gateway-svc-prod.yaml
+  #- target:
+  #    group: apps
+  #    version: v1
+  #    kind: Deployment
+  #    name: db
+  #  path: prod_patches/db-prod.yaml
   - target:
+      group: apps
       version: v1
-      kind: Service
-      name: db-svc
-    path: local_patches/db-svc-dev.yaml
+      kind: Deployment
+      name: azuredevops
+    path: prod_patches/azuredevops-prod.yaml
   - target:
+      group: apps
       version: v1
-      kind: Service
-      name: uniformdata-svc
-    path: local_patches/uniformdata-svc-dev.yaml
+      kind: Deployment
+      name: git
+    path: prod_patches/git-prod.yaml
   - target:
+      group: apps
       version: v1
-      kind: Service
-      name: configurations-svc
-    path: local_patches/configurations-svc-dev.yaml
+      kind: Deployment
+      name: uniformdata
+    path: prod_patches/uniformdata-prod.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: configurations
+    path: prod_patches/configurations-prod.yaml
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: calculator
+    path: prod_patches/calculator-prod.yaml

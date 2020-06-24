@@ -54,7 +54,7 @@ steps:
   displayName: Save Minikube ip
 - script: eval $(minikube docker-env)
   displayName: Set build environment inside Cluster
-- script: cd kubernetes && echo $ENV_FILE | kubectl apply -f - && cd ..
+- script: echo $ENV_FILE | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
 # Build

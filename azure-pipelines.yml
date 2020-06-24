@@ -31,9 +31,9 @@ steps:
 - script: 'sudo mount --make-rshared /'
     
 # Download minikube.
-- script: 'curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.30.0/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/'
+- script: 'curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/'
 - script: 'echo "--> Starting minikube"'
-- script: 'sudo minikube start --vm-driver=none --bootstrapper=kubeadm --kubernetes-version=v1.12.0'
+- script: 'sudo minikube start --vm-driver=none'
     
 # Fix permissions issue in AzurePipelines
 - script: 'sudo chmod --recursive 777 $HOME/.minikube'

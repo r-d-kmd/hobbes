@@ -63,7 +63,7 @@ module Data =
         assert(System.String.IsNullOrWhiteSpace(conf.Id) |> not)
         assert(System.String.IsNullOrWhiteSpace(conf.Source.Name) |> not)
         assert(conf.Transformations |> Array.isEmpty |> not)
-
+        
         200,configurations.InsertOrUpdate configuration
 
     [<Post ("/transformation", true)>]

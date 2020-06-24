@@ -10,7 +10,6 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: echo $(ENV_FILE)
 - task: NuGetToolInstaller@1
 
 - task: DockerInstaller@0
@@ -55,7 +54,7 @@ steps:
   displayName: Save Minikube ip
 - script: eval $(minikube docker-env)
   displayName: Set build environment inside Cluster
-- script: echo ${ENV_FILE} | kubectl apply -f -
+- script: echo $(ENV_FILE) | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
 # Build

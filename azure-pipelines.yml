@@ -11,7 +11,7 @@ pool:
 
 steps:
 - task: NuGetToolInstaller@1
-- script: ls
+
 - task: DockerInstaller@0
   inputs:
     dockerVersion: '17.09.0-ce'
@@ -51,9 +51,12 @@ steps:
 
 # Set up cluster
 - script: ip=$(minikube ip)
+  displayName: Save Minikube ip
 - script: eval $(minikube docker-env)
-- script: echo $ENV_FILE | kubectl apply -f -
-
+  displayName: Set build environment inside Cluster
+- script: cd kubernetes && echo $ENV_FILE | kubectl apply -f - && cd ..
+  displayName: Apply kubernetes environment file
+  
 # Build
 - script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
 - script: fake build --target buildfortest --parallel 8

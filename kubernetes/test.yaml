@@ -250,7 +250,7 @@ spec:
         name: hobbes-azuredevops
         resources:
           requests:
-            cpu: 300m
+            cpu: 50m
             memory: 300Mi
       restartPolicy: Always
 status: {}
@@ -278,7 +278,7 @@ spec:
         name: hobbes-calculator
         resources:
           requests:
-            cpu: 300m
+            cpu: 50m
             memory: 300Mi
       restartPolicy: Always
 status: {}
@@ -391,7 +391,7 @@ spec:
         name: hobbes-git
         resources:
           requests:
-            cpu: 300m
+            cpu: 50m
             memory: 300Mi
       restartPolicy: Always
 status: {}

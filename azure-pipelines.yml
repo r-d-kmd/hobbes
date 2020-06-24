@@ -16,6 +16,10 @@ steps:
   inputs:
     dockerVersion: '17.09.0-ce'
 
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+
 - task: KubectlInstaller@0
   inputs:
     kubectlVersion: 'latest'
@@ -38,8 +42,10 @@ steps:
 - script: 'sudo minikube start --vm-driver=none --bootstrapper=kubeadm --kubernetes-version=v1.18.0'
     
 # Fix permissions issue in AzurePipelines
-- script: 'sudo chmod --recursive 777 $HOME/.minikube'
-- script: 'sudo chmod --recursive 777 $HOME/.kube'
-    
-# Fix the kubectl context, as it's often stale.
-- script: 'minikube update-context'
+- script: 'sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context'
+  displayName: Fix permissions
+# Install dotnet tools
+- script: dotnet tool install --global fake-cli
+  displayName: Install Fake
+- script: dotnet tool isntall --global paket
+  displayName: Install Paket

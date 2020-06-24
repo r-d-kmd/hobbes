@@ -24,6 +24,8 @@ steps:
   inputs:
     command: 'install'
 
+- script: 'sudo apt-get install conntrack'
+
 - script: 'set -e'
 - script: 'export CHANGE_MINIKUBE_NONE_USER=true'
 # Make root mounted as rshared to fix kube-dns issues.

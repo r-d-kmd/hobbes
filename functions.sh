@@ -308,6 +308,18 @@ function test(){
     logs uniform | tail -50
 }
 
+#This function builds the production yaml configuration in the kubernetes folder.
+function applyProductionYaml() {
+    cd $KUBERNETES_DIR
+    mv kustomization.yaml ./local_patches/kustomization.yaml
+    mv ./prod_patches/kustomization.yaml kustomization.yaml
+    kustomize build -o test.yaml
+    mv kustomization.yaml ./prod_patches/kustomization.yaml
+    mv ./local_patches/kustomization.yaml kustomization.yaml
+    cd ..
+}
+
+
 echo "Project home folder is: $SCRIPT_DIR"
 echo "Apps found:"
 printf '%s\n' "${APPS[@]}"

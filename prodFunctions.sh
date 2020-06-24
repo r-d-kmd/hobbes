@@ -14,6 +14,7 @@ function get_script_dir(){
 SCRIPT_DIR=$(get_script_dir)
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 
+#This function builds the production yaml configuration in the kubernetes folder.
 function applyProductionYaml() {
     cd $KUBERNETES_DIR
     mv kustomization.yaml ./local_patches/kustomization.yaml
@@ -21,8 +22,5 @@ function applyProductionYaml() {
     kustomize build -o test.yaml
     mv kustomization.yaml ./prod_patches/kustomization.yaml
     mv ./local_patches/kustomization.yaml kustomization.yaml
-    az login -u $1 -p $2
-    az aks get-credentials --resource-group hobbes-rg --name hobbes-kub
-    kubectl apply -f test.yaml
     cd ..
 }

@@ -30,15 +30,6 @@ steps:
   inputs:
     command: 'install'
 
-- script: docker build -f /home/vsts/work/1/s/docker/Dockerfile.service -t gateway --build-arg SERVICE_NAME=gateway .
-- task: FAKE5@1
-  inputs:
-    FakeVersion: '5.20.2'
-    FakeScript: 'build.fsx'
-
-- script: source functions.sh
-  displayName: Source functions
-
 # Download Minikube and it's prerequisites
 - script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /
   displayName: Minikube prerequisites  
@@ -66,5 +57,7 @@ steps:
 - script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
 - script: ls
   displayName: ls
-- script: build
-
+- task: FAKE5@1
+  inputs:
+    FakeVersion: '5.20.2'
+    FakeScript: 'build.fsx'

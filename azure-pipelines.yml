@@ -18,14 +18,13 @@ steps:
   inputs:
     dockerVersion: '17.09.0-ce'
 
-- task: FAKERunner@1
-  inputs:
-    FakeScript: 'build.fsx'
-    FakeToolPath: 'packages\fake\tools\FAKE.exe'
-
 - task: DotNetCoreCLI@2
   inputs:
     command: 'build'
+
+- script: dotnet tool install fake-cli --tool-path .
+- script: fake --version
+- script: fake build
 
 - task: KubectlInstaller@0
   inputs:

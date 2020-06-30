@@ -21,7 +21,7 @@ spec:
         name: hobbes-calculator
         resources:
           requests:
-            cpu: 300m
+            cpu: 50m
             memory: 300Mi
       restartPolicy: Always
 status: {}

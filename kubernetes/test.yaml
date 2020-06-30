@@ -1,13 +1,3 @@
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: managed-premium-delete
-parameters:
-  kind: Managed
-  storageaccounttype: Premium_LRS
-provisioner: kubernetes.io/azure-disk
-reclaimPolicy: Delete
----
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -113,10 +103,12 @@ metadata:
   name: configurations-svc
 spec:
   ports:
-  - port: 8085
+  - nodePort: 30093
+    port: 8085
     targetPort: 8085
   selector:
     app: configurations
+  type: NodePort
 ---
 apiVersion: v1
 kind: Service
@@ -125,10 +117,12 @@ metadata:
 spec:
   ports:
   - name: "5984"
+    nodePort: 30084
     port: 5984
     targetPort: 5984
   selector:
     app: db
+  type: NodePort
 status:
   loadBalancer: {}
 ---
@@ -137,13 +131,13 @@ kind: Service
 metadata:
   name: gateway-svc
 spec:
-  loadBalancerIP: 40.127.146.41
   ports:
-  - port: 80
+  - nodePort: 30080
+    port: 80
     targetPort: 8085
   selector:
     app: gateway
-  type: LoadBalancer
+  type: NodePort
 ---
 apiVersion: v1
 kind: Service
@@ -177,10 +171,12 @@ metadata:
   name: uniformdata-svc
 spec:
   ports:
-  - port: 8085
+  - nodePort: 30089
+    port: 8085
     targetPort: 8085
   selector:
     app: uniformdata
+  type: NodePort
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -232,7 +228,7 @@ kind: Deployment
 metadata:
   name: azuredevops
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: azuredevops
@@ -245,12 +241,12 @@ spec:
       - envFrom:
         - secretRef:
             name: env
-        image: kmdrd/hobbes-azuredevops:latest
-        imagePullPolicy: Always
+        image: azuredevops
+        imagePullPolicy: Never
         name: hobbes-azuredevops
         resources:
           requests:
-            cpu: 300m
+            cpu: 50m
             memory: 300Mi
       restartPolicy: Always
 status: {}
@@ -273,12 +269,12 @@ spec:
       - envFrom:
         - secretRef:
             name: env
-        image: kmdrd/hobbes-calculator:latest
-        imagePullPolicy: Always
+        image: calculator
+        imagePullPolicy: Never
         name: hobbes-calculator
         resources:
           requests:
-            cpu: 300m
+            cpu: 50m
             memory: 300Mi
       restartPolicy: Always
 status: {}
@@ -302,8 +298,8 @@ spec:
         envFrom:
         - secretRef:
             name: env
-        image: kmdrd/hobbes-configurations:latest
-        imagePullPolicy: Always
+        image: configurations
+        imagePullPolicy: Never
         name: hobbes-configurations
       restartPolicy: Always
 status: {}
@@ -361,8 +357,8 @@ spec:
       - envFrom:
         - secretRef:
             name: env
-        image: kmdrd/hobbes-gateway:latest
-        imagePullPolicy: Always
+        image: gateway
+        imagePullPolicy: Never
         name: gateway
         resources: {}
       restartPolicy: Always
@@ -386,12 +382,12 @@ spec:
       - envFrom:
         - secretRef:
             name: env
-        image: kmdrd/hobbes-git:latest
-        imagePullPolicy: Always
+        image: git
+        imagePullPolicy: Never
         name: hobbes-git
         resources:
           requests:
-            cpu: 300m
+            cpu: 50m
             memory: 300Mi
       restartPolicy: Always
 status: {}
@@ -415,8 +411,8 @@ spec:
         envFrom:
         - secretRef:
             name: env
-        image: kmdrd/hobbes-uniformdata:latest
-        imagePullPolicy: Always
+        image: uniformdata
+        imagePullPolicy: Never
         name: hobbes-uniformdata
       restartPolicy: Always
 status: {}
@@ -435,81 +431,6 @@ spec:
   version: v1beta1
   versionPriority: 100
 ---
-apiVersion: autoscaling/v2beta2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: azuredevops
-spec:
-  maxReplicas: 10
-  metrics:
-  - resource:
-      name: cpu
-      target:
-        averageUtilization: 50
-        type: Utilization
-    type: Resource
-  - resource:
-      name: memory
-      target:
-        averageUtilization: 50
-        type: Utilization
-    type: Resource
-  minReplicas: 1
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: azuredevops
----
-apiVersion: autoscaling/v2beta2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: calculator
-spec:
-  maxReplicas: 10
-  metrics:
-  - resource:
-      name: cpu
-      target:
-        averageUtilization: 50
-        type: Utilization
-    type: Resource
-  - resource:
-      name: memory
-      target:
-        averageUtilization: 50
-        type: Utilization
-    type: Resource
-  minReplicas: 1
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: calculator
----
-apiVersion: autoscaling/v2beta2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: git
-spec:
-  maxReplicas: 10
-  metrics:
-  - resource:
-      name: cpu
-      target:
-        averageUtilization: 50
-        type: Utilization
-    type: Resource
-  - resource:
-      name: memory
-      target:
-        averageUtilization: 50
-        type: Utilization
-    type: Resource
-  minReplicas: 1
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: git
----
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -522,8 +443,8 @@ spec:
       - envFrom:
         - secretRef:
             name: env
-        image: kmdrd/hobbes-syncronization:latest
-        imagePullPolicy: Always
+        image: syncronization
+        imagePullPolicy: Never
         name: sync
       restartPolicy: Never
 ---
@@ -531,8 +452,8 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   labels:
-    volume: db-volume
-  name: db-volume
+    volume: db-disk
+  name: db-disk
 spec:
   accessModes:
   - ReadWriteMany
@@ -547,25 +468,13 @@ metadata:
   name: db-disk
 spec:
   accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
-  storageClassName: managed-premium-delete
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: db-volume-claim
-spec:
-  accessModes:
   - ReadWriteMany
   resources:
     requests:
       storage: 3Gi
   selector:
     matchLabels:
-      volume: db-volume
+      volume: db-disk
   storageClassName: standard
 ---
 apiVersion: v1

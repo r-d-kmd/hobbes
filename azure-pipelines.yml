@@ -33,8 +33,7 @@ steps:
 # Install dotnet tools
 - script: dotnet tool install --global fake-cli
   displayName: Install Fake
-- script: exec bash
-- script: fake build
+- script: exec bash | fake build
 - script: dotnet tool install --global paket
   displayName: Install Paket
 

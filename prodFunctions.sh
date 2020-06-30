@@ -24,3 +24,22 @@ function applyProductionYaml() {
     mv ./local_patches/kustomization.yaml kustomization.yaml
     cd ..
 }
+
+function build(){    
+    local CURRENT_DIR=$(pwd)
+    cd $SCRIPT_DIR
+    re='^[0-9]+$'
+    if [ -z "$1" ]
+    then 
+        dotnet fake build
+    elif [[ $1 =~ $re ]]
+    then
+        build "build" $1 
+    elif [ -z "$2" ]
+    then
+        dotnet fake build --target "$1"
+    else
+        dotnet fake build --target "$1" --parallel $2
+    fi
+    cd $CURRENT_DIR
+}

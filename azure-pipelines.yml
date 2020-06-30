@@ -22,11 +22,6 @@ steps:
   inputs:
     command: 'build'
 
-- script: export PATH=$PATH:$HOME/.dotnet/tools:/Library/Frameworks/Mono.framework/Versions/Current/Commands
-- script: dotnet tool install fake-cli -g
-- script: fake --version
-- script: fake build
-
 - task: KubectlInstaller@0
   inputs:
     kubectlVersion: 'latest'

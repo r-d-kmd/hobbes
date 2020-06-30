@@ -20,6 +20,22 @@ NoColor='\033[0m'
 eval $(minikube -p minikube docker-env)
 #source <(kubectl completion bash)
 
+function get_script_dir(){
+     SOURCE="${BASH_SOURCE[0]}"
+     # While $SOURCE is a symlink, resolve it
+     while [ -h "$SOURCE" ]; do
+          DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+          SOURCE="$( readlink "$SOURCE" )"
+          # If $SOURCE was a relative symlink (so no "/" as prefix, need to resolve it relative to the symlink base directory
+          [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+     done
+     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+     echo "$DIR"
+}
+
+SCRIPT_DIR=$(get_script_dir)
+KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
+
 declare -a APPS=(db)
 function services(){
     local APP_NAME=""
@@ -50,23 +66,6 @@ else
     source macos.sh
 fi
 
-VOLUMES=(db)
-function get_script_dir(){
-     SOURCE="${BASH_SOURCE[0]}"
-     # While $SOURCE is a symlink, resolve it
-     while [ -h "$SOURCE" ]; do
-          DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-          SOURCE="$( readlink "$SOURCE" )"
-          # If $SOURCE was a relative symlink (so no "/" as prefix, need to resolve it relative to the symlink base directory
-          [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-     done
-     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-     echo "$DIR"
-}
-
-SCRIPT_DIR=$(get_script_dir)
-KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
-
 if [ $(uname -s) = "Darwin" ]
 then
     declare -a APPS=(db)
@@ -92,14 +91,6 @@ else
     declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "sync" "uniformdata")
 fi
 
-function getPodName(){
-    local POD_NAME=$(kubectl get all | grep -e pod/$1 -e pod/collectors-$1 | cut -d ' ' -f 1 )
-    if [[ "$POD_NAME" = pod/* ]]
-    then
-       echo $POD_NAME
-    fi
-}
-
 function getJobWorker(){
     local JOB_NAME=$(kubectl get all | grep job.batch/syncronization-scheduler-.*$1 | cut -d ' ' -f 1)
     if [[ "$JOB_NAME" = job.batch/* ]]
@@ -109,7 +100,7 @@ function getJobWorker(){
 }
 
 function getName(){
-    local NAME=$(kubectl get all | grep -e pod/$1 | cut -d ' ' -f 1 )
+    local NAME=$(kubectl get pods | grep $1 | cut -d ' ' -f 1 )
     if [ -z "$NAME" ]
     then
        NAME=$(getJobWorker $1)
@@ -118,16 +109,16 @@ function getName(){
 }
 
 function getAppName(){
-   local SERVICE_NAME=$(kubectl get all \
-                        | grep service/$1 \
-                        | cut -d ' ' -f 1 \
-                        | cut -d '/' -f 2)
+   local SERVICE_NAME=$(kubectl get services \
+                        | grep $1 \
+                        | cut -d ' ' -f 1)
    local APP_NAME=${SERVICE_NAME::${#SERVICE_NAME}-4}
    echo $APP_NAME
 }
 
 function logs(){
     local NAME=$(getName $1)
+    kubectl wait --for=condition=ready "$NAME" --timeout=60s
     kubectl logs $2 $NAME
 }
 
@@ -297,23 +288,22 @@ function run(){
     kubectl run -i --tty temp-$1 --image kmdrd/$1 
 }
 
-function sync(){
+function startJob(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    kubectl delete job.batch/sync &> /dev/null
-    kubectl apply -f sync-job.yaml || ( cd $CURRENT_DIR && exit 1)
+    kubectl delete job.batch/$1 &> /dev/null
+    kubectl apply -f $1-job.yaml &> /dev/null || exit 1
+    eval $(echo "kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s &> /dev/null")
+    logs $1 -f
     cd $CURRENT_DIR
 }
 
+function sync(){
+    startJob sync
+}
+
 function publish(){
-    local CURRENT_DIR=$(pwd)
-    cd $KUBERNETES_DIR
-    kubectl delete job.batch/publish &> /dev/null
-    kubectl apply -f publish-job.yaml
-    sleep 1
-    kubectl wait --for=condition=complete job/publish --timeout=120s
-    logs publish
-    cd $CURRENT_DIR
+    startJob publish
 }
 
 
@@ -333,4 +323,4 @@ printf "Project home folder is:\n"
 printf " - ${LightBlue}$SCRIPT_DIR\n"
 printf "${NoColor}Apps found:\n${LightBlue}"
 printf ' - %s\n' "${APPS[@]}"
-printf "${NoColor}\n"
+printf "${NoColor}"

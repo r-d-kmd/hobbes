@@ -33,7 +33,8 @@ steps:
 # Install dotnet tools
 - script: dotnet tool install fake-cli
   displayName: Install Fake
-- script: dotnet tool install
+- script: fake build
+- script: dotnet tool install paket
   displayName: Install Paket
 
 # Download Minikube and it's prerequisites

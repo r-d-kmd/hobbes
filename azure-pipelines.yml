@@ -29,6 +29,8 @@ steps:
 - task: Npm@1
   inputs:
     command: 'install'
+
+- script: docker build -f /home/vsts/work/1/s/docker/Dockerfile.service -t gateway --build-arg SERVICE_NAME=gateway .
 - task: FAKE5@1
   inputs:
     FakeVersion: '5.20.2'

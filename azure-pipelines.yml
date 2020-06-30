@@ -34,8 +34,6 @@ steps:
 - script: dotnet tool install fake-cli
   displayName: Install Fake
   
-- script: dotnet tool install paket
-  displayName: Install Paket
 
 # Download Minikube and it's prerequisites
 - script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /

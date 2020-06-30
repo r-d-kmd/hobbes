@@ -34,8 +34,10 @@ steps:
 - task: Npm@1
   inputs:
     command: 'install'
-
-- script: fake build
+- task: FAKE5@1
+  inputs:
+    FakeVersion: '5.20.2'
+    FakeScript: 'build.fsx'
 
 - script: source functions.sh
   displayName: Source functions

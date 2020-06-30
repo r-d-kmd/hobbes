@@ -18,6 +18,11 @@ steps:
   inputs:
     dockerVersion: '17.09.0-ce'
 
+- task: ChocolateyCommand@0
+  inputs:
+    command: 'install'
+    installPackageId: 'fake'
+
 - task: DotNetCoreCLI@2
   inputs:
     command: 'build'
@@ -30,11 +35,8 @@ steps:
   inputs:
     command: 'install'
 
-- task: FAKE5@1
-  inputs:
-    FakeVersion: '5.4.1'
-    FakeScript: 'build.fsx'
-  
+- script: fake build
+
 - script: source functions.sh
   displayName: Source functions
 

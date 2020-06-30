@@ -34,7 +34,6 @@ steps:
   inputs:
     FakeVersion: '5.4.1'
     FakeScript: 'build.fsx'
-    FakeArguments: '--target buildfortest'
   
 - script: source functions.sh
   displayName: Source functions

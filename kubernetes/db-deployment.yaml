@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: db
 spec:
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: db
@@ -11,24 +13,22 @@ spec:
       labels:
         app: db
     spec:
-      volumes:
-      - name: db-storage
-        persistentVolumeClaim:
-          claimName: db-volume-claim
-      containers:
+     containers:
       - env:
         - name: COUCHDB_PASSWORD
           value: password
         - name: COUCHDB_USER
           value: admin
-        imagePullPolicy: Always
         image: kmdrd/couchdb
         name: db
         ports:
         - containerPort: 5984
         volumeMounts:
-        - name: db-storage
-          mountPath: /opt/couchdb/data
-      restartPolicy: Always
+        - mountPath: "/opt/couchdb/data"
+          name: volume
+     volumes:
+     - name: volume
+       persistentVolumeClaim:
+         claimName: db-disk
+     restartPolicy: Always
 status: {}
-

@@ -33,6 +33,7 @@ steps:
 # Install dotnet tools
 - script: export PATH=$PATH:$HOME/.dotnet/tools:/Library/Frameworks/Mono.framework/Versions/Current/Commands && dotnet tool install fake-cli -g
   displayName: Install Fake
+- script: sudo reboot
 - script: fake build
   displayName: Install Paket
 

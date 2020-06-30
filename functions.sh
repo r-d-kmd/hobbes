@@ -1,4 +1,55 @@
+#! /bin/bash
+Black='\033[0;30m'
+DarkGray='\033[1;30m'
+Red='\033[0;31m'
+LightRed='\033[1;31m'
+Green='\033[0;32m'
+LightGreen='\033[1;32m'
+Orange='\033[0;33m'
+Yellow='\033[1;33m'
+Blue='\033[0;34m'
+LightBlue='\033[1;34m'
+Purple='\033[0;35m'
+LightPurple='\033[1;35m'
+Cyan='\033[0;36m'
+LightCyan='\033[1;36m'
+LightGray='\033[0;37m'
+White='\033[1;37m'
+NoColor='\033[0m'
+
 eval $(minikube -p minikube docker-env)
+#source <(kubectl completion bash)
+
+declare -a APPS=(db)
+function services(){
+    local APP_NAME=""
+    for PROJECT_FILE in $(find ${SCRIPT_DIR}/services -name *.fsproj)
+    do
+        local FILE_NAME=`basename $PROJECT_FILE`
+        APP_NAME=$(echo $FILE_NAME | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
+        APPS+=($APP_NAME)
+    done 
+    APP_NAME=""
+    for PROJECT_FILE in $(find ${SCRIPT_DIR}/workers -name *.fsproj)
+    do
+        local FILE_NAME=`basename $PROJECT_FILE`
+        if [[ "$FILE_NAME" = *.worker.* ]] 
+        then
+            APP_NAME=$(echo $FILE_NAME | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
+        fi
+        APPS+=($APP_NAME)
+    done 
+}
+services
+
+if [[ $(uname -s) == MINGW64_NT* ]]
+then
+    printf "${Red}Running on windows${NoColor}\n"
+else
+    printf "${Green}Mac${NoColor}\n"
+    source macos.sh
+fi
+
 VOLUMES=(db)
 function get_script_dir(){
      SOURCE="${BASH_SOURCE[0]}"
@@ -249,7 +300,7 @@ function run(){
 function sync(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    echo $(kubectl delete job.batch/sync)
+    kubectl delete job.batch/sync &> /dev/null
     kubectl apply -f sync-job.yaml || ( cd $CURRENT_DIR && exit 1)
     cd $CURRENT_DIR
 }
@@ -265,41 +316,21 @@ function publish(){
     cd $CURRENT_DIR
 }
 
-function setupTest(){
-    local CURRENT_DIR=$(pwd)
-    cd $SCRIPT_DIR
-    #dotnet test
-    start 
-    awaitRunningState
-    all
-    #Forward ports to be able to communicate with the cluster
-    kubectl port-forward service/gateway-svc 30080:80 &
-    kubectl port-forward service/db-svc 30084:5984 &
-    #wait a few second to be sure the port forwarding is in effect
-    sleep 3
-    IP="127.0.0.1"
-    SERVER="http://${ip}"
-    #test that the server and DB is accessible
-    curl "${SERVER}:30084"
-    front_url="${SERVER}:30080"
-    curl ${front_url}/ping
-    #publish transformations and configurations
-    publish
-    
-    logs gateway | tail
-    logs conf | tail
-    #syncronize and wait for it to complete
-    sync || exit 1
-    sleep 300
 
+#This function builds the production yaml configuration in the kubernetes folder.
+function applyProductionYaml() {
+    local CURRENT_DIR=$(pwd)
+    cd $KUBERNETES_DIR
+    mv kustomization.yaml ./local_patches/kustomization.yaml
+    mv ./prod_patches/kustomization.yaml kustomization.yaml
+    kustomize build -o test.yaml
+    mv kustomization.yaml ./prod_patches/kustomization.yaml
+    mv ./local_patches/kustomization.yaml kustomization.yaml
     cd $CURRENT_DIR
 }
 
-function test(){
-    NAME=$(kubectl get pods -l app=gateway -o name) 
-    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=${IP} --env-var "master_key"=${MASTER_KEY} || exit 1
-}
-
-echo "Project home folder is: $SCRIPT_DIR"
-echo "Apps found:"
-printf '%s\n' "${APPS[@]}"
+printf "Project home folder is:\n"
+printf " - ${LightBlue}$SCRIPT_DIR\n"
+printf "${NoColor}Apps found:\n${LightBlue}"
+printf ' - %s\n' "${APPS[@]}"
+printf "${NoColor}\n"

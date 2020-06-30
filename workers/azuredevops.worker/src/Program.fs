@@ -30,10 +30,16 @@ let handleMessage message =
         try
             let source = sourceDoc |> AzureDevOpsSource.Parse
             let token = 
-                if source.Account.ToString() = "kmddk" then
-                    env "AZURE_TOKEN_KMDDK" null
-                else
-                    env "AZURE_TOKEN_TIME_PAYROLL_KMDDK" null
+                if System.String.IsNullOrWhiteSpace source.Server then 
+                    if source.Account.ToString() = "kmddk" then
+                        env "AZURE_TOKEN_KMDDK" null
+                    else
+                        env "AZURE_TOKEN_TIME_PAYROLL_KMDDK" null
+                else 
+                    if source.Server.ToString().Split("/").[3] = "kmddk" then
+                        env "AZURE_TOKEN_KMDDK" null
+                    else 
+                        env "AZURE_TOKEN_TIME_PAYROLL_KMDDK" null
 
             match synchronize source token with
             None -> 

@@ -7,6 +7,7 @@ module Compile =
     type CompileResult = {
         Filters : string option
         Fields : string option
+        OrderBy : string option
     }
            
     let parsedExpressions (expressions : seq<AST.Expression>) = 
@@ -119,31 +120,35 @@ module Compile =
             {
                 Fields = None
                 Filters = None
+                OrderBy = None
             }
         | lines ->
             let ast = Parser.parse lines
-            let fields = 
+            let fields,orderBy = 
                ast 
-               |> Seq.fold(fun s a ->
+               |> Seq.fold(fun (fields,orderBy) a ->
                   match a with
                   AST.FilterAndSorting fs ->
                       match fs with
-                      AST.Only _ -> s
+                      AST.Only _ ->  (fields,orderBy)
                       | AST.SliceColumns a ->
-                            match s with
-                            None -> a |> List.sort |> Some
+                            match  fields with
+                            None -> (a |> List.sort |> Some,orderBy)
                             | Some f ->
-                                f |> List.sort |> union a |> Some
+                                (f |> List.sort |> union a |> Some,orderBy)
                       | AST.DenseColumns
                       | AST.DenseRows  
                       | AST.NumericColumns
                       | AST.IndexBy _ -> failwith "Not supported"
-                      | AST.SortBy _ -> s
+                      | AST.SortBy name ->  
+                          (fields, match orderBy with
+                                   None -> [name] |> Some
+                                   | Some cols -> name::cols |> Some)
                   | AST.Reduction _
                   | AST.Cluster _ 
                   | AST.Column _ -> failwith "Not implemented"
-                  | AST.NoOp -> s
-               ) None
+                  | AST.NoOp -> (fields,orderBy)
+               ) (None,None)
             let filters =
                 let f =
                     ast
@@ -171,7 +176,12 @@ module Compile =
                 | fs ->
                     System.String.Join(" and ", fs) |> Some
                 
-                
+            let orderBy = 
+                orderBy
+                |> Option.bind(fun fs ->
+                    System.String.Join(",",fs |> List.rev)
+                    |> Some
+                )   
             let fields = 
                 fields
                 |> Option.bind(fun fs ->
@@ -181,4 +191,5 @@ module Compile =
             {
                 Fields = fields
                 Filters = filters
+                OrderBy = orderBy
             }

@@ -166,10 +166,11 @@ module Security =
                         authToken.Substring(Basic.Length)
                         |> fromB64
                         |> (fun s -> 
-                            s.Substring(0,s.Length - 1) //skip the last character ':'
-                        ) 
+                            s.Split(":").[0] //Ignore password part of basic
+                           )
                 else
                     authToken 
+            printfn "%s" key
 
             if (env "MASTER_USER" null) = key then 
                 printfn "Authenticating using master key"

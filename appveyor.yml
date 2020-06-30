@@ -1,7 +1,6 @@
 version: 2.0.{build} 
 image: 
   - Ubuntu
-
 branches:
   only:
     - development
@@ -51,13 +50,13 @@ for:
       file_version: '{version}'
       informational_version: '{version}'
     install:
+      - source functions.sh
       - docker version
       - dotnet tool install --global fake-cli
       - dotnet tool install --global paket
       - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
       - chmod +x kubectl
       - sudo mv kubectl /usr/local/bin/
-      - echo "jens"
       - kubectl apply -k ./ -o jens.yaml
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
@@ -94,7 +93,7 @@ for:
 
     before_build:
       - CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} 
-      - sudo -E minikube --driver=none start
+      - minikube --driver=docker start
       - ip=$(minikube ip)
       - eval $(minikube docker-env) 
       - echo ${ENV_FILE} | kubectl apply -f -
@@ -102,14 +101,12 @@ for:
       
     build_script:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}"
-      - docker pull kmdrd/couchdb
-      - docker pull kmdrd/app
-      - fake build --parallel 8
+      - fake build --target buildfortest --parallel 8
       
     test_script:
       - source functions.sh
-      - build testnobuild
-    
+      - setupTest
+      - test
     deploy_script:
       - git config --global credential.helper store
       - git config --global user.email "hobbes_buildserver@kmd.dk"

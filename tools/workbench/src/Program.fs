@@ -14,6 +14,7 @@ type CLIArguments =
     | Environment of Environment
     | Host of string
     | MasterKey of string
+    | Projects 
 with
     interface IArgParserTemplate with
         member s.Usage =
@@ -24,6 +25,7 @@ with
             | Environment _ -> "Environment to publish transformations to"
             | Host _ -> "The host to publish transformation and configurations to"
             | MasterKey _ -> "Master key or PAT to hobbes gateway"
+            | Projects -> "Get all accessable projects"
 
 let parse stmt =
     let stmt = stmt |> string
@@ -76,6 +78,8 @@ type WorkbenchSettings = FSharp.Data.JsonProvider<"""{
     }
 }""">
 
+type ProjectsRes = FSharp.Data.JsonProvider<"""["sports", "weiner", "dogs"]""">
+
 open Workbench.Types
 [<EntryPoint>]
 let main args =
@@ -109,13 +113,25 @@ let main args =
                     }""" masterKey host
                     |> WorkbenchSettings.Parse).Development
                  | _ -> 
-                    if System.IO.File.Exists settingsFile then 
-                        match publish with 
-                        | Some v when v.ToLower() = "prod" -> (settingsFile |> WorkbenchSettings.Load).Production
-                        | Some v when v.ToLower() = "dev"  -> (settingsFile |> WorkbenchSettings.Load).Development
-                        | _                                -> (settingsFile |> WorkbenchSettings.Load).Development
-                    else
-                        failwith "Host or master key or settings file must be provided"
+                    match env "HOST" null ,env "MASTER_KEY" null with
+                    null,null ->
+                        if System.IO.File.Exists settingsFile then 
+                            match publish with 
+                            | Some v when v.ToLower() = "prod" -> (settingsFile |> WorkbenchSettings.Load).Production
+                            | Some v when v.ToLower() = "dev"  -> (settingsFile |> WorkbenchSettings.Load).Development
+                            | _                                -> (settingsFile |> WorkbenchSettings.Load).Development
+                        else
+                            failwith "Host or master key or settings file must be provided"
+                    | host,masterKey ->
+                        (sprintf """{
+                            "development" : {
+                                "azure" : {},
+                                "hobbes" : "%s",
+                                "host" : "%s"
+                            }, 
+                            "production": {}
+                        }""" masterKey host
+                    |> WorkbenchSettings.Parse).Development
             | Some e -> 
                let settings = (settingsFile |> WorkbenchSettings.Load)
                match e with
@@ -126,11 +142,22 @@ let main args =
             
         let test = arguments.TryGetResult Tests 
         let sync = arguments.TryGetResult Sync
-        if  test.IsSome || (sync.IsNone && publish.IsNone) then
+        let projects = arguments.TryGetResult Projects
+        if  test.IsSome || (sync.IsNone && publish.IsNone && projects.IsNone) then
             settings.Azure.TimePayrollKmddk |> Workbench.Tests.test|> ignore
             printfn "Press enter to exit..."
             System.Console.ReadLine().Length
-        else            
+        else
+            if projects.IsSome then
+                Http.Request(settings.Host + "/admin/projects", 
+                             httpMethod = "GET",
+                             headers = 
+                                [
+                                   HttpRequestHeaders.BasicAuth settings.Hobbes ""
+                                ])
+                |> Http.readBody
+                |> ProjectsRes.Parse
+                |> Array.iter (printfn "%s")      
             match sync with
             None -> 
                 if publish |> Option.isSome then 

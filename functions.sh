@@ -1,4 +1,55 @@
+#! /bin/bash
+Black='\033[0;30m'
+DarkGray='\033[1;30m'
+Red='\033[0;31m'
+LightRed='\033[1;31m'
+Green='\033[0;32m'
+LightGreen='\033[1;32m'
+Orange='\033[0;33m'
+Yellow='\033[1;33m'
+Blue='\033[0;34m'
+LightBlue='\033[1;34m'
+Purple='\033[0;35m'
+LightPurple='\033[1;35m'
+Cyan='\033[0;36m'
+LightCyan='\033[1;36m'
+LightGray='\033[0;37m'
+White='\033[1;37m'
+NoColor='\033[0m'
+
 eval $(minikube -p minikube docker-env)
+#source <(kubectl completion bash)
+
+declare -a APPS=(db)
+function services(){
+    local APP_NAME=""
+    for PROJECT_FILE in $(find ${SCRIPT_DIR}/services -name *.fsproj)
+    do
+        local FILE_NAME=`basename $PROJECT_FILE`
+        APP_NAME=$(echo $FILE_NAME | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
+        APPS+=($APP_NAME)
+    done 
+    APP_NAME=""
+    for PROJECT_FILE in $(find ${SCRIPT_DIR}/workers -name *.fsproj)
+    do
+        local FILE_NAME=`basename $PROJECT_FILE`
+        if [[ "$FILE_NAME" = *.worker.* ]] 
+        then
+            APP_NAME=$(echo $FILE_NAME | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
+        fi
+        APPS+=($APP_NAME)
+    done 
+}
+services
+
+if [ $(uname -s) = "Darwin" ]
+then
+    printf "${Green}Mac${NoColor}\n"
+    source macos.sh
+else
+    printf "${Red}Running on windows${NoColor}\n"
+fi
+
 VOLUMES=(db)
 function get_script_dir(){
      SOURCE="${BASH_SOURCE[0]}"
@@ -110,25 +161,26 @@ function clean(){
     kubectl delete --all statefulset
     kubectl delete --all job
     kubectl delete --all replicationcontroller
+    kubectl delete --all hpa
 }
 
 function build(){    
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
+    re='^[0-9]+$'
     if [ -z "$1" ]
     then 
         fake build
-    else 
-        if [ -z "$2" ]
-        then
-            fake build --target "$1"
-        else
-            fake build --target "$1" --parallel $2
-        fi
+    elif [[ $1 =~ $re ]]
+    then
+        build "build" $1 
+    elif [ -z "$2" ]
+    then
+        fake build --target "$1"
+    else
+        fake build --target "$1" --parallel $2
     fi
-
     cd $CURRENT_DIR
-    echo "Done building"
 }
 
 function describe(){
@@ -144,7 +196,6 @@ function listServices(){
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    local FILE=""
 
     kubectl apply -f env.JSON;
     
@@ -155,7 +206,7 @@ function start() {
 
 function startkube(){
     set $PATH=$PATH:/Applications/VirtualBox.app/
-    minikube start --vm-driver virtualbox --disk-size=75GB
+    minikube start --vm-driver docker
 }
 
 function update(){
@@ -172,7 +223,12 @@ function isRunning(){
     then 
         echo "True"
     else
-        echo $(kubectl get pod/$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
+        if [ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "sync" ][ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "publish" ]
+        then
+            echo "True"
+        else
+            echo $(kubectl get pod/$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
+        fi
     fi
 }
 
@@ -183,6 +239,7 @@ function pingService(){
 function testServiceIsFunctioning(){
     pingService $1 2>/dev/null | grep HTTP | tail -1 | cut -d$' ' -f2
 }
+
 declare -a PODS=()
 function pods(){
     PODS=()
@@ -207,21 +264,32 @@ function awaitRunningState(){
         done
         PODS=$(kubectl get pods | grep - )
     done
-    pods    
-    while (( ${#PODS[@]} ))
-    do
-        PODS_=$(kubectl get pods | grep - | cut -d ' ' -f 1 )
-        echo "Still waiting for: ${#PODS[@]}"
-        for NAME in ${PODS_[@]}
-        do 
-            if [[ $(isRunning $NAME) != "True" ]]
-            then
-                echo "$(echo "$NAME" | cut -d '-' -f1)"
-            fi
-        done
-        sleep 1
-        pods
+    
+    PODS_=$(kubectl get pods | grep - | cut -d ' ' -f 1 )
+    echo "Still waiting for: ${#PODS[@]}"
+    for NAME in ${PODS_[@]}
+    do 
+        if [ "$(echo "$NAME" | cut -d '-' -f1)" != "sync" ] && [ "$(echo "$NAME" | cut -d '-' -f1)" != "publish" ]
+        then
+            echo "Waiting for pod/$NAME"
+            kubectl wait --for=condition=ready "pod/$NAME" --timeout=60s
+        fi
     done
+
+    echo "Waiting for DB to be operational"
+    while [ "$(logs gateway | grep "DB initialized")" != "DB initialized" ]
+    do
+        logs gateway | tail -1
+        logs db | tail -1
+    done
+
+    echo "Waiting for Rabbit-MQ to be operational"
+    while [ "$(logs conf | grep "Watching queue")" != "Watching queue: cache" ]
+    do
+        logs conf | tail -1
+        logs rabbit | tail -1
+    done
+
     all
 }
 
@@ -229,43 +297,40 @@ function run(){
     kubectl run -i --tty temp-$1 --image kmdrd/$1 
 }
 
-function restartApp(){
-    delete "$1" && logs "$1" -f
-}
-
 function sync(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    echo $(kubectl delete job.batch/sync)
-    kubectl apply -f sync-job.yaml
+    kubectl delete job.batch/sync &> /dev/null
+    kubectl apply -f sync-job.yaml || ( cd $CURRENT_DIR && exit 1)
     cd $CURRENT_DIR
 }
 
-function test(){
+function publish(){
     local CURRENT_DIR=$(pwd)
-    cd $SCRIPT_DIR
-    dotnet test
-    source functions.sh
-    ip=$(minikube ip)
-    start
-    awaitRunningState
-    front_url="http://${ip}:30080"
-    #test the gateway is functioning
-    curl ${front_url}/ping
-    #test the db is responding
-    curl "http://${ip}:30084"
-    #wait for queue to be ready
-    sleep 10
-    #publish transformations and configurations
-    docker build -t workbench tools/workbench && docker run -dt workbench development --host "${front_url}" --masterkey Rno8hcqr9rXXs
-    all
-    sync
-    sleep 60
-    NAME=$(kubectl get pods -l app=gateway -o name) 
-    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=${ip} --env-var "master_key"=${MASTER_KEY}
+    cd $KUBERNETES_DIR
+    kubectl delete job.batch/publish &> /dev/null
+    kubectl apply -f publish-job.yaml
+    sleep 1
+    kubectl wait --for=condition=complete job/publish --timeout=120s
+    logs publish
     cd $CURRENT_DIR
 }
 
-echo "Project home folder is: $SCRIPT_DIR"
-echo "Apps found:"
-printf '%s\n' "${APPS[@]}"
+
+#This function builds the production yaml configuration in the kubernetes folder.
+function applyProductionYaml() {
+    local CURRENT_DIR=$(pwd)
+    cd $KUBERNETES_DIR
+    mv kustomization.yaml ./local_patches/kustomization.yaml
+    mv ./prod_patches/kustomization.yaml kustomization.yaml
+    kustomize build -o test.yaml
+    mv kustomization.yaml ./prod_patches/kustomization.yaml
+    mv ./local_patches/kustomization.yaml kustomization.yaml
+    cd $CURRENT_DIR
+}
+
+printf "Project home folder is:\n"
+printf " - ${LightBlue}$SCRIPT_DIR\n"
+printf "${NoColor}Apps found:\n${LightBlue}"
+printf ' - %s\n' "${APPS[@]}"
+printf "${NoColor}\n"

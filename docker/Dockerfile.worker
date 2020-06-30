@@ -10,4 +10,4 @@ ENV EP="dotnet ${WORKER_NAME}.worker.dll"
 WORKDIR /app
 COPY --from=build /app .
 
-ENTRYPOINT echo $EP && $(echo $EP)
+ENTRYPOINT $(echo $EP)

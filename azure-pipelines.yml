@@ -34,7 +34,7 @@ steps:
 - script: dotnet tool install fake-cli
   displayName: Install Fake
   
-- script: source prodFunctions.sh
+- script: source functions.sh
   displayName: Source functions
 
 # Download Minikube and it's prerequisites

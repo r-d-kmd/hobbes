@@ -60,5 +60,5 @@ steps:
   
 # Build
 - script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
-- script: fake build --target buildfortest --parallel 8
+- script: dotnet fake build --target buildfortest --parallel 8
 

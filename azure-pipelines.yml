@@ -17,12 +17,10 @@ steps:
 - task: DockerInstaller@0
   inputs:
     dockerVersion: '17.09.0-ce'
-
-- task: ChocolateyCommand@0
+- task: FAKE5@1
   inputs:
-    command: 'install'
-    installPackageId: 'fake'
-
+    FakeVersion: '5.241.2'
+    FakeScript: 'build.fsx'
 - task: DotNetCoreCLI@2
   inputs:
     command: 'build'

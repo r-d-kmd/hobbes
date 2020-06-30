@@ -42,12 +42,12 @@ function services(){
 }
 services
 
-if [ $(uname -s) = "Darwin" ]
+if [[ $(uname -s) == MINGW64_NT* ]]
 then
+    printf "${Red}Running on windows${NoColor}\n"
+else
     printf "${Green}Mac${NoColor}\n"
     source macos.sh
-else
-    printf "${Red}Running on windows${NoColor}\n"
 fi
 
 VOLUMES=(db)

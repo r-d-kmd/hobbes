@@ -31,10 +31,9 @@ steps:
     command: 'install'
 
 # Install dotnet tools
-- script: export PATH=$PATH:$HOME/.dotnet/tools:/Library/Frameworks/Mono.framework/Versions/Current/Commands && dotnet tool install fake-cli -g
+- script: dotnet tool install fake-cli
   displayName: Install Fake
-- script: sudo reboot
-- script: fake build
+- script: dotnet tool install
   displayName: Install Paket
 
 # Download Minikube and it's prerequisites

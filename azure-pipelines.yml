@@ -34,6 +34,8 @@ steps:
 - script: dotnet tool install fake-cli
   displayName: Install Fake
   
+- script: source functions.sh
+  displayName: Source functions
 
 # Download Minikube and it's prerequisites
 - script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /
@@ -62,5 +64,5 @@ steps:
 - script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
 - script: ls
   displayName: ls
-- script: dotnet fake build --target buildfortest
+- script: build
 

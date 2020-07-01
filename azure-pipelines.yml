@@ -19,11 +19,6 @@ steps:
   inputs:
     dockerVersion: '17.09.0-ce'
 
-- script: wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && sudo dpkg -i packages-microsoft-prod.deb
-  displayName: get microsoft packages
-- script: sudo apt-get install -y apt-transport-https && sudo apt-get update && sudo apt-get install -y dotnet-sdk-3.1
-  displayName: install dotnetcore 3.1
-
 - task: KubectlInstaller@0
   inputs:
     kubectlVersion: 'latest'
@@ -36,8 +31,7 @@ steps:
   displayName: Downloading Minikube
 
 # Start Minikube
-- script: minikube --driver=docker start
-#--vm-driver=none --bootstrapper=kubeadm --kubernetes-version=v1.18.0
+- script: minikube start --vm-driver=none --bootstrapper=kubeadm --kubernetes-version=v1.18.0
   displayName: Start Minikube
 
 # Fix permissions issue in AzurePipelines

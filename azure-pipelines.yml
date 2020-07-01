@@ -31,6 +31,8 @@ steps:
 - script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
   displayName: Docker login
 
+- script: cat ~/TOKEN.txt | docker login https://docker.pkg.github.com -u=$DOCKER_USER -p=$DOCKER_PASS
+
 
 # Start Minikube
 - script: minikube --driver=docker start

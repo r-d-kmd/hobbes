@@ -49,7 +49,7 @@ steps:
 # Set up cluster
 - script: ip=$(minikube ip)
   displayName: Save Minikube ip
-- script: sudo /bin/bash -c "eval $(minikube docker-env)"
+- script: minikube docker-env
   displayName: Set build environment inside Cluster
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file

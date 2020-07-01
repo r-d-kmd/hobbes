@@ -10,9 +10,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-
-- script: export SHELL="/bin/bash"
-- script: echo $SHELL
+- script: fake --version
 - task: NuGetToolInstaller@1
 - script: echo "$(ENV_FILE)"
 
@@ -37,7 +35,6 @@ steps:
 #- script: docker login https://docker.pkg.github.com -u="$GIT_USER" -p="$GIT_PASS"
 - script: docker pull gcr.io/k8s-minikube/kicbase:v0.0.11
 
-
 # Start Minikube
 - script: minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
   displayName: Start Minikube
@@ -59,7 +56,6 @@ steps:
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
-
 - task: FAKE5@1
   inputs:
     FakeVersion: '5.20.2'

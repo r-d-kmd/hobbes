@@ -31,7 +31,7 @@ steps:
 - script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
   displayName: Docker login
 
-- script: echo (docker login https://docker.pkg.github.com -u=$DOCKER_USER -p=$DOCKER_PASS)
+- script: echo $(docker login https://docker.pkg.github.com -u=$DOCKER_USER -p=$DOCKER_PASS)
 
 
 # Start Minikube

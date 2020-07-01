@@ -10,7 +10,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: fake --version
+- script: dotnet tool install fake-cli
 - task: NuGetToolInstaller@1
 - script: echo "$(ENV_FILE)"
 

@@ -11,7 +11,7 @@ pool:
 
 steps:
 - task: NuGetToolInstaller@1
-
+- script: npm --version
 - script: echo "$(ENV_FILE)"
 
 - task: DockerInstaller@0

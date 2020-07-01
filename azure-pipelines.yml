@@ -28,6 +28,10 @@ steps:
 - script: curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
   displayName: Downloading Minikube
 
+- script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
+  displayName: Docker login
+
+
 # Start Minikube
 - script: minikube --driver=docker start
   displayName: Start Minikube
@@ -44,8 +48,6 @@ steps:
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
-- script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
-  displayName: Docker login
 
 - task: FAKE5@1
   inputs:

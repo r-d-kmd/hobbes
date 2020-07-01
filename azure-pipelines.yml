@@ -12,8 +12,8 @@ pool:
 steps:
 - task: Bash@3
   inputs:
-    filePath: './function.sh'
-    arguments: 'start'
+    targetType: 'inline'
+    script: 'sh functions.sh'
 - task: NuGetToolInstaller@1
 - script: echo "$(ENV_FILE)"
 

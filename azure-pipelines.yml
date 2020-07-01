@@ -55,10 +55,10 @@ steps:
     FakeScript: 'build.fsx'
 
 - script: source functions.sh
-  displayName: Source macros.sh
+  displayName: Source functions.sh
 
-- script: source macros.sh
-  displayName: Source macros.sh
+- script: source macos.sh
+  displayName: Source macos.sh
 
 - script: setupTest
   displayName: setupTest

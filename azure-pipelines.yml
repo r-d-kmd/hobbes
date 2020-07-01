@@ -31,8 +31,8 @@ steps:
 - script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
   displayName: Docker login
 
-- script: docker login https://docker.pkg.github.com -u="$GIT_USER" -p="$GIT_PASS"
-
+#- script: docker login https://docker.pkg.github.com -u="$GIT_USER" -p="$GIT_PASS"
+- script: docker pull gcr.io/k8s-minikube/kicbase:v0.0.11
 
 # Start Minikube
 - script: minikube start --driver docker --base-image kic

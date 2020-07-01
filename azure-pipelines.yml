@@ -30,6 +30,9 @@ steps:
   inputs:
     command: 'install'
 
+- script: npm install -s -g --unicode=false newman@4.6.1
+  displayName: install Newman
+
 # Download Minikube and it's prerequisites
 - script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /
   displayName: Minikube prerequisites  
@@ -38,7 +41,8 @@ steps:
   displayName: Downloading Minikube
 
 # Start Minikube
-- script: sudo minikube start --vm-driver=none --bootstrapper=kubeadm --kubernetes-version=v1.18.0
+- script: sudo minikube --driver=docker start
+#--vm-driver=none --bootstrapper=kubeadm --kubernetes-version=v1.18.0
   displayName: Start Minikube
 
 # Fix permissions issue in AzurePipelines
@@ -53,11 +57,20 @@ steps:
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
-# Build
 - script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
-- script: ls
-  displayName: ls
+  displayName: Docker login
+
 - task: FAKE5@1
   inputs:
     FakeVersion: '5.20.2'
     FakeScript: 'build.fsx'
+
+- script: source functions.sh
+  displayName: Source functions.sh
+
+- script: setupTest
+  displayName: setupTest
+
+- script: test
+  displayName: test
+

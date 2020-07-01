@@ -17,7 +17,7 @@ LightGray='\033[0;37m'
 White='\033[1;37m'
 NoColor='\033[0m'
 
-eval $(minikube -p minikube docker-env)
+#eval $(minikube -p minikube docker-env)
 #source <(kubectl completion bash)
 
 function get_script_dir(){

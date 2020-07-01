@@ -108,18 +108,18 @@ function getName(){
     echo $NAME
 }
 
+function logs(){
+    local NAME=$(getName $1)
+    kubectl wait --for=condition=ready "$NAME" --timeout=60s
+    kubectl logs $2 $NAME
+}
+
 function getAppName(){
    local SERVICE_NAME=$(kubectl get services \
                         | grep $1 \
                         | cut -d ' ' -f 1)
    local APP_NAME=${SERVICE_NAME::${#SERVICE_NAME}-4}
    echo $APP_NAME
-}
-
-function logs(){
-    local NAME=$(getName $1)
-    kubectl wait --for=condition=ready "$NAME" --timeout=60s
-    kubectl logs $2 $NAME
 }
 
 function delete(){

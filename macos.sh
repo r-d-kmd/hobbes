@@ -1,4 +1,120 @@
 #! /bin/bash
+SCRIPT_DIR=$(get_script_dir)
+KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
+
+function all(){
+    kubectl get all
+}
+
+function getName(){
+    local NAME=$(kubectl get pods | grep $1 | cut -d ' ' -f 1 )
+    if [ -z "$NAME" ]
+    then
+       NAME=$(getJobWorker $1)
+    fi
+    echo $NAME
+}
+
+function logs(){
+    local NAME=$(getName $1)
+    kubectl wait --for=condition=ready "$NAME" --timeout=60s
+    kubectl logs $2 $NAME
+}
+
+function start() {
+    local CURRENT_DIR=$(pwd)
+    cd $KUBERNETES_DIR
+    
+    kubectl apply -k ./
+    
+    cd $CURRENT_DIR
+}
+
+function isRunning(){
+    local APP_NAME=$(echo "$1")
+    if [ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "sync" ]
+    then 
+        echo "True"
+    else
+        if [ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "sync" ][ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "publish" ]
+        then
+            echo "True"
+        else
+            echo $(kubectl get pod/$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
+        fi
+    fi
+}
+
+function awaitRunningState(){
+    PODS=$(kubectl get pods | grep - )
+    while [ ${#PODS[@]} -eq 0 ]
+    do
+        sleep 1
+        for NAME in ${PODS_[@]}
+        do
+            echo "$NAME"
+        done
+        PODS=$(kubectl get pods | grep - )
+    done
+    
+    PODS_=$(kubectl get pods | grep - | cut -d ' ' -f 1 )
+    echo "Still waiting for: ${#PODS[@]}"
+    for NAME in ${PODS_[@]}
+    do 
+        if [ "$(echo "$NAME" | cut -d '-' -f1)" != "sync" ] && [ "$(echo "$NAME" | cut -d '-' -f1)" != "publish" ]
+        then
+            echo "Waiting for pod/$NAME"
+            kubectl wait --for=condition=ready "pod/$NAME" --timeout=60s
+        fi
+    done
+
+    echo "Waiting for DB to be operational"
+    while [ "$(logs gateway | grep "DB initialized")" != "DB initialized" ]
+    do
+        logs gateway | tail -1
+        logs db | tail -1
+    done
+
+    echo "Waiting for Rabbit-MQ to be operational"
+    while [ "$(logs conf | grep "Watching queue")" != "Watching queue: cache" ]
+    do
+        logs conf | tail -1
+        logs rabbit | tail -1
+    done
+
+    all
+}
+
+function startJob(){
+    local CURRENT_DIR=$(pwd)
+    cd $KUBERNETES_DIR
+    kubectl delete job.batch/$1 &> /dev/null
+    kubectl apply -f $1-job.yaml &> /dev/null || exit 1
+    eval $(echo "kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s &> /dev/null")
+    logs $1 -f
+    cd $CURRENT_DIR
+}
+
+function sync(){
+    startJob sync
+}
+
+function publish(){
+    startJob publish
+}
+
+#This function builds the production yaml configuration in the kubernetes folder.
+function applyProductionYaml() {
+    local CURRENT_DIR=$(pwd)
+    cd $KUBERNETES_DIR
+    mv kustomization.yaml ./local_patches/kustomization.yaml
+    mv ./prod_patches/kustomization.yaml kustomization.yaml
+    kustomize build -o test.yaml
+    mv kustomization.yaml ./prod_patches/kustomization.yaml
+    mv ./local_patches/kustomization.yaml kustomization.yaml
+    cd $CURRENT_DIR
+}
+
 function startJob(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR

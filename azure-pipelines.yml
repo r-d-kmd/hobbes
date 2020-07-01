@@ -46,6 +46,7 @@ steps:
   displayName: Fix permissions
 
 - script: minikube logs
+
 # Set up cluster
 - script: ip=$(minikube ip)
   displayName: Save Minikube ip

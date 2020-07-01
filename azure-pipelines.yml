@@ -50,7 +50,11 @@ steps:
   displayName: Save Minikube ip
 
 - script: docker images
-- script: eval $(minikube -p minikube docker-env --shell bash)
+
+- task: CmdLine@2
+  inputs:
+    script: 'eval $(minikube -p minikube docker-env)'
+
   displayName: Set build environment inside Cluster
 - script: docker images
 - script: echo "$(ENV_FILE)" | kubectl apply -f -

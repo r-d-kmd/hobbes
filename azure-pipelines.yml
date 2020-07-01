@@ -51,7 +51,7 @@ steps:
 
 - script: docker images
 
-- script: source functions.sh
+- script: source eval.sh
 
   displayName: Set build environment inside Cluster
 - script: docker images

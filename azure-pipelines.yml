@@ -31,7 +31,7 @@ steps:
   displayName: Downloading Minikube
 
 # Start Minikube
-- script: minikube start --vm-driver=none --bootstrapper=kubeadm --kubernetes-version=v1.18.0
+- script: sudo minikube start --vm-driver=none --bootstrapper=kubeadm --kubernetes-version=v1.18.0
   displayName: Start Minikube
 
 # Fix permissions issue in AzurePipelines

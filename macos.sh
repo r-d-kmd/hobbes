@@ -1,6 +1,4 @@
 #! /bin/bash
-source functions.sh
-
 function setupTest(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR

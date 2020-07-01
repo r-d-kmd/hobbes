@@ -51,9 +51,7 @@ steps:
 
 - script: docker images
 
-- task: CmdLine@2
-  inputs:
-    script: 'eval $(minikube -p minikube docker-env)'
+- script: source functions.sh
 
   displayName: Set build environment inside Cluster
 - script: docker images

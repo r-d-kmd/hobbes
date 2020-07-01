@@ -165,11 +165,24 @@ function build(){
     elif [[ $1 =~ $re ]]
     then
         build "build" $1 
-    elif [ -z "$2" ]
-    then
-        fake build --target "$1"
     else
-        fake build --target "$1" --parallel $2
+        for LAST in $@; do :; done
+        if [[ $LAST =~ $re ]]
+        then
+            P=$LAST
+            echo "Running with $P parallel builds"
+        else
+            P=1
+        fi
+        for target in "$@"
+        do
+            if [[ $target =~ $re ]]
+            then
+               echo "Done building"
+            else
+                fake build --target "$target" --parallel $P
+            fi
+        done
     fi
     cd $CURRENT_DIR
 }
@@ -189,15 +202,18 @@ function start() {
     cd $KUBERNETES_DIR
 
     kubectl apply -f env.JSON;
-    
     kubectl apply -k ./
-    
+
+    awaitRunningState
+
+    kubectl port-forward service/gateway-svc 30080:80 &
+    kubectl port-forward service/db-svc 30084:5984 &
+
     cd $CURRENT_DIR
 }
 
 function startkube(){
-    set $PATH=$PATH:/Applications/VirtualBox.app/
-    minikube start --vm-driver docker
+    minikube start --driver=docker --memory=4GB
 }
 
 function update(){

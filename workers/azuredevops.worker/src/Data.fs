@@ -64,7 +64,8 @@ module Data =
             "account" : "kmddk",
             "project" : "gandalf",
             "dataset" : "commits",
-            "server" : "https://analytics.dev.azure.com/kmddk/flowerpot"
+            "server" : "https://analytics.dev.azure.com/kmddk/flowerpot",
+            "query" : ["slice columns WorkItemType", "only 1 = 1", "only IsCurrent"]
         }"""
 
     [<Literal>]

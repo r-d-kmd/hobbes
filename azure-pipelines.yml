@@ -34,8 +34,10 @@ steps:
 #- script: docker login https://docker.pkg.github.com -u="$GIT_USER" -p="$GIT_PASS"
 - script: docker pull gcr.io/k8s-minikube/kicbase:v0.0.11
 
+- script: docker images
+
 # Start Minikube
-- script: minikube start --driver docker --base-image kic
+- script: minikube start --driver docker --base-image kic:v0.0.11
   displayName: Start Minikube
 
 # Fix permissions issue in AzurePipelines

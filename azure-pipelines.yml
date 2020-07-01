@@ -50,7 +50,6 @@ steps:
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
-- script: eval $(SHELL=/bin/bash minikube -p minikube docker-env) && dotnet fake build --parallel 8
-- script: docker images
+- script: eval $(SHELL=/bin/bash minikube -p minikube docker-env) && dotnet fake build --parallel 8 && docker images
 - script: source macos.sh
   displayName: Source macos.sh

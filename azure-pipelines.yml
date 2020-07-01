@@ -35,7 +35,7 @@ steps:
 
 
 # Start Minikube
-- script: minikube start --driver=docker alsologstderr
+- script: minikube start --driver docker --base-image kic
   displayName: Start Minikube
 
 # Fix permissions issue in AzurePipelines

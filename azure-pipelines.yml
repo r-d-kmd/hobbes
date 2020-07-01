@@ -1,4 +1,4 @@
-# ASP.NET
+  # ASP.NET
 # Build and test ASP.NET projects.
 # Add steps that publish symbols, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
@@ -10,25 +10,20 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
+- task: Bash@3
+  inputs:
+    filePath: 'functions.sh'
+    arguments: 'start'
 - task: NuGetToolInstaller@1
-
 - script: echo "$(ENV_FILE)"
 
 - task: DockerInstaller@0
   inputs:
     dockerVersion: '17.09.0-ce'
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'build'
-
 - task: KubectlInstaller@0
   inputs:
     kubectlVersion: 'latest'
-
-- task: Npm@1
-  inputs:
-    command: 'install'
 
 # Download Minikube and it's prerequisites
 - script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /
@@ -53,11 +48,23 @@ steps:
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
-# Build
 - script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
-- script: ls
-  displayName: ls
+  displayName: Docker login
+
 - task: FAKE5@1
   inputs:
     FakeVersion: '5.20.2'
     FakeScript: 'build.fsx'
+
+- script: source functions.sh
+  displayName: Source functions.sh
+
+- script: source macos.sh
+  displayName: Source macos.sh
+
+- script: setupTest
+  displayName: setupTest
+
+- script: test
+  displayName: test
+

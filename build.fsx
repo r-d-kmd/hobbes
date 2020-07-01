@@ -228,11 +228,13 @@ let buildApp (name : string) (appType : string) workingDir =
            ]
 
         let file = sprintf "%s/Dockerfile.%s" dockerDir.FullName appType |> Some
-        docker (Build(file,tag,buildArgs)) workingDir
+        System.IO.File.Copy(file.Value, sprintf "%s/Dockerfile" workingDir)
+        docker (Build(None,tag,buildArgs)) workingDir
         tags
         |> List.iter(fun t -> 
             docker (Tag(tag,t)) workingDir
         )
+        System.IO.File.Delete(sprintf "%s/Dockerfile" workingDir)
 
     let push _ = 
         let tags =

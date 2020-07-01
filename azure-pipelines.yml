@@ -11,6 +11,7 @@ pool:
 
 steps:
 - script: dotnet tool install fake-cli
+  displayName: Install Fake
 - task: NuGetToolInstaller@1
 - script: echo "$(ENV_FILE)"
 
@@ -21,7 +22,6 @@ steps:
 - task: KubectlInstaller@0
   inputs:
     kubectlVersion: 'latest'
-- script: dotnet fake build
 
 # Download Minikube and it's prerequisites
 - script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /
@@ -44,24 +44,13 @@ steps:
 - script: sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context
   displayName: Fix permissions
 
-- script: minikube logs
-
 # Set up cluster
 - script: ip=$(minikube ip)
   displayName: Save Minikube ip
-
-- script: docker images
-- script: eval $(SHELL=/bin/bash minikube -p minikube docker-env) && docker images
-  displayName: Set build environment inside Cluster
-- script: docker images
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
-- task: FAKE5@1
-  inputs:
-    FakeVersion: '5.20.2'
-    FakeScript: 'build.fsx'
-
+- script: eval $(SHELL=/bin/bash minikube -p minikube docker-env) && dotnet fake build --parallel 8
 - script: docker images
 - script: source macos.sh
   displayName: Source macos.sh

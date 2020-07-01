@@ -1,4 +1,23 @@
 #! /bin/bash
+function startJob(){
+    local CURRENT_DIR=$(pwd)
+    cd $KUBERNETES_DIR
+    kubectl delete job.batch/$1 &> /dev/null
+    kubectl apply -f $1-job.yaml &> /dev/null || exit 1
+    eval $(echo "kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s &> /dev/null")
+    logs $1 -f
+    cd $CURRENT_DIR
+}
+
+function publish(){
+    startJob publish
+}
+
+
+function sync(){
+    startJob sync
+}
+
 
 function setupTest(){
     local CURRENT_DIR=$(pwd)
@@ -42,3 +61,6 @@ function test(){
     echo "*********************UNIFORM********************************"
     logs uniform | tail -50
 }
+
+setupTest
+test

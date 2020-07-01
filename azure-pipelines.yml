@@ -10,8 +10,10 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: dotnet --version
-
+- task: Bash@3
+  inputs:
+    filePath: './function.sh'
+    arguments: 'start'
 - task: NuGetToolInstaller@1
 - script: echo "$(ENV_FILE)"
 

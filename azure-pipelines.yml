@@ -10,8 +10,9 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
+- script: dotnet --version
+
 - task: NuGetToolInstaller@1
-- script: npm --version
 - script: echo "$(ENV_FILE)"
 
 - task: DockerInstaller@0
@@ -35,7 +36,7 @@ steps:
   displayName: Downloading Minikube
 
 # Start Minikube
-- script: sudo minikube --driver=docker start
+- script: minikube --driver=docker start
 #--vm-driver=none --bootstrapper=kubeadm --kubernetes-version=v1.18.0
   displayName: Start Minikube
 

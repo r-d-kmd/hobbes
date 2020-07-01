@@ -51,9 +51,8 @@ steps:
 
 - script: docker images
 - script: eval $(minikube -p minikube docker-env --shell /bin/bash)
-- script: eval $(minikube -p minikube docker-env)
-- script: docker images
   displayName: Set build environment inside Cluster
+- script: docker images
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
   

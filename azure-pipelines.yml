@@ -63,5 +63,7 @@ steps:
     FakeScript: 'build.fsx'
 
 - script: docker images
+- script: bash -c "eval $(minikube -p minikube docker-env)"
+- script: docker images
 - script: source macos.sh
   displayName: Source macos.sh

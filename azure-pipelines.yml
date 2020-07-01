@@ -50,7 +50,7 @@ steps:
   displayName: Save Minikube ip
 
 - script: docker images
-- script: eval $(minikube -p minikube docker-env --shell /bin/bash)
+- script: eval $(minikube -p minikube docker-env --shell bash)
   displayName: Set build environment inside Cluster
 - script: docker images
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
@@ -62,8 +62,6 @@ steps:
     FakeVersion: '5.20.2'
     FakeScript: 'build.fsx'
 
-- script: docker images
-- script: bash -c "eval $(minikube -p minikube docker-env)"
 - script: docker images
 - script: source macos.sh
   displayName: Source macos.sh

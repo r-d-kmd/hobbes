@@ -11,6 +11,8 @@ pool:
 
 steps:
 
+- script: export SHELL=/bin/bash
+- script: echo $SHELL
 - task: NuGetToolInstaller@1
 - script: echo "$(ENV_FILE)"
 
@@ -51,7 +53,6 @@ steps:
   displayName: Save Minikube ip
 
 - script: docker images
-- script: export SHELL=bash
 - script: source eval.sh
 
   displayName: Set build environment inside Cluster

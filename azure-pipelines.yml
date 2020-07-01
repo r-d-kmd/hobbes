@@ -36,7 +36,6 @@ steps:
 #- script: docker login https://docker.pkg.github.com -u="$GIT_USER" -p="$GIT_PASS"
 - script: docker pull gcr.io/k8s-minikube/kicbase:v0.0.11
 
-- script: docker images
 
 # Start Minikube
 - script: minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
@@ -49,8 +48,13 @@ steps:
 # Set up cluster
 - script: ip=$(minikube ip)
   displayName: Save Minikube ip
-- script: eval $(minikube -p minikube docker-env --shell /bin/bash)
+
+- script: docker images
+
+- script: source functions.sh
+
   displayName: Set build environment inside Cluster
+- script: docker images
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
@@ -60,5 +64,6 @@ steps:
     FakeVersion: '5.20.2'
     FakeScript: 'build.fsx'
 
-- script: source functions.sh
-  displayName: Source functions.sh
+- script: docker images
+- script: source macos.sh
+  displayName: Source macos.sh

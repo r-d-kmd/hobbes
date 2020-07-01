@@ -19,18 +19,13 @@ steps:
     dockerVersion: '17.09.0-ce'
 
 - script: wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && sudo dpkg -i packages-microsoft-prod.deb
-- script: sudo apt-get update
+  displayName: get microsoft packages
 - script: sudo apt-get install -y apt-transport-https && sudo apt-get update && sudo apt-get install -y dotnet-sdk-3.1
+  displayName: install dotnetcore 3.1
+
 - task: KubectlInstaller@0
   inputs:
     kubectlVersion: 'latest'
-
-- task: Npm@1
-  inputs:
-    command: 'install'
-
-- script: npm install -s -g --unicode=false newman@4.6.1
-  displayName: install Newman
 
 # Download Minikube and it's prerequisites
 - script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /

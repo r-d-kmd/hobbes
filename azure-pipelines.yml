@@ -18,13 +18,10 @@ steps:
   inputs:
     dockerVersion: '17.09.0-ce'
 
-- script: wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-  displayName: Get microsoft package
-- script: sudo dpkg -i packages-microsoft-prod.deb
-  displayName: dpkg package
-- script: sudo apt-get update; \ sudo apt-get install  -y apt-transport-https && sudo apt-get update && sudo apt-get install -y dotnet-sdk-3.1
+- task: DotNetCoreCLI@1
+  inputs:
+    command: 'build'
 
-- script: sudo apt-get update; \ sudo apt-get install  -y apt-transport-https && sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-3.1
 - task: KubectlInstaller@0
   inputs:
     kubectlVersion: 'latest'

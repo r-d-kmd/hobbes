@@ -60,5 +60,5 @@ steps:
     FakeVersion: '5.20.2'
     FakeScript: 'build.fsx'
 
-- script: source macos.sh
-  displayName: Source macos.sh
+- script: source functions.sh
+  displayName: Source functions.sh

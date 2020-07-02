@@ -1,7 +1,6 @@
 version: 2.0.{build} 
 image: 
   - Ubuntu
-
 branches:
   only:
     - development
@@ -51,12 +50,14 @@ for:
       file_version: '{version}'
       informational_version: '{version}'
     install:
+      - source functions.sh
       - docker version
       - dotnet tool install --global fake-cli
       - dotnet tool install --global paket
       - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
       - chmod +x kubectl
       - sudo mv kubectl /usr/local/bin/
+      - kubectl apply -k ./ -o jens.yaml
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
     build_script:  

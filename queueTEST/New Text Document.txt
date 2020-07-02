@@ -1,6 +1,0 @@
-kubectl annotate deployment/your-deployment -n namespace \
-    k8s-rmq-autoscaler/enable=true \ 
-    k8s-rmq-autoscaler/max-workers=20 \ 
-    k8s-rmq-autoscaler/min-workers=4 \ 
-    k8s-rmq-autoscaler/queue=worker-queue \ 
-    k8s-rmq-autoscaler/vhost=vhost

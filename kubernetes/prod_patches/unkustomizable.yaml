@@ -23,16 +23,16 @@ parameters:
 apiVersion: batch/v1
 kind: Job
 metadata:
-    name: sync
+  name: sync
 spec:
-    template:
+  template:
     spec:
         containers:
         - envFrom:
-            - secretRef:
-                name: env
-            name: sync
-            imagePullPolicy: Always
-            image: kmdrd/hobbes-syncronization:latest
+          - secretRef:
+              name: env
+          name: sync
+          imagePullPolicy: Always
+          image: kmdrd/hobbes-syncronization:latest
         restartPolicy: Never
-    backoffLimit: 4
+  backoffLimit: 4

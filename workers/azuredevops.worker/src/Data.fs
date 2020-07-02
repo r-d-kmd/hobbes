@@ -63,7 +63,8 @@ module Data =
             "name": "azuredevops",
             "account" : "kmddk",
             "project" : "gandalf",
-            "dataset" : "commits"
+            "dataset" : "commits",
+            "server" : "https://analytics.dev.azure.com/kmddk/flowerpot"
         }"""
 
     [<Literal>]
@@ -86,8 +87,9 @@ module Data =
        let config = Config.Parse doc
        let source = config.Source |> source2AzureSource
        
-       if System.String.IsNullOrWhiteSpace source.Project then failwithf "Didn't supply a project %s" doc
-       if System.String.IsNullOrWhiteSpace source.Account then failwithf "Account can't be empty %s" doc
+       if System.String.IsNullOrWhiteSpace source.Server then
+          if System.String.IsNullOrWhiteSpace source.Project then failwithf "Didn't supply a project %s" doc
+          if System.String.IsNullOrWhiteSpace source.Account then failwithf "Account can't be empty %s" doc
        
        config
 
@@ -119,7 +121,6 @@ module Data =
     let insertOrUpdate (doc : string) = 
         db.InsertOrUpdate doc
         |> Log.debugf "Inserted data: %s"
-        
         
     let get key = 
         db.TryGet key

@@ -10,11 +10,10 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-
 - task: UseDotNet@2
   inputs:
     packageType: 'sdk'
-    version: 3.1
+    version: '2.x'
 - script: dotnet tool install fake-cli
   displayName: Install Fake
 - task: NuGetToolInstaller@1

@@ -17,8 +17,6 @@ steps:
 - script: sudo npm install -s -g --unicode=false newman@4.6.1
 
 - script: newman --version
-- script: newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(IP) --env-var "master_key"=$(MASTER_KEY)
-
 
 - script: dotnet tool install fake-cli
   displayName: Install Fake
@@ -64,13 +62,5 @@ steps:
 - script: source functions.sh && setupTest
   displayName: Setup tests
 
-- task: NewmanPostman@4
-  inputs:
-    collectionSourceType: 'url'
-    collectionURL: 'https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY)'
-    environmentSourceType: 'url'
-    environmentUrl: 'https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY)'
-    envVars: |
-      ip=$(IP)
-      master_key=$(MASTER_KEY)
-    unicodeDisabled: true
+- script: newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(IP) --env-var "master_key"=$(MASTER_KEY)
+

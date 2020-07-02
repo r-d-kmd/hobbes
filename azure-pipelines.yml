@@ -72,4 +72,4 @@ steps:
     envVars: |
       ip=$(IP)
       master_key=$(MASTER_KEY)
-    unicodeDisabled: true
+    unicodeDisabled: false

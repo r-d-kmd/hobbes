@@ -187,10 +187,9 @@ function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
 
-    kubectl apply -f env.JSON;
-    
+    kubectl apply -f env.JSON
     kubectl apply -k ./
-    
+    sleep 5
     cd $CURRENT_DIR
 }
 
@@ -292,6 +291,7 @@ function startJob(){
     cd $KUBERNETES_DIR
     kubectl delete job.batch/$1 &> /dev/null
     kubectl apply -f $1-job.yaml &> /dev/null || exit 1
+    sleep 5
     eval $(echo "kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s &> /dev/null")
     logs $1 -f
     cd $CURRENT_DIR

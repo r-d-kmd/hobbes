@@ -45,7 +45,7 @@ module Clustering =
                 :? (obj list) as l -> l
                 | a -> [a]
             ))
-
+        
         columnNames
         |> List.indexed
         |> List.fold(fun frame (i,columnName) ->

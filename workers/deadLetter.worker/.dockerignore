@@ -1,0 +1,9 @@
+
+src/bin/
+src/obj/
+deploy/
+**/.fake/
+**/.lib/
+**/.bin/
+**/.deploy/
+**/.obj/

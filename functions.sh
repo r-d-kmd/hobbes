@@ -154,24 +154,21 @@ function clean(){
     kubectl delete --all replicationcontroller
     kubectl delete --all hpa
 }
-
-alias fake='dotnet fake'
-
 function build(){    
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
     re='^[0-9]+$'
     if [ -z "$1" ]
     then 
-        fake build
+        dotnet fake build
     elif [[ $1 =~ $re ]]
     then
         build "build" $1 
     elif [ -z "$2" ]
     then
-        fake build --target "$1"
+        dotnet fake build --target "$1"
     else
-        fake build --target "$1" --parallel $2
+        dotnet fake build --target "$1" --parallel $2
     fi
     cd $CURRENT_DIR
 }

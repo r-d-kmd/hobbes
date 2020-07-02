@@ -10,7 +10,8 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: paket --version
+- script: dotnet tool install paket
+- script: alias paket='dotnet paket'
 - script: dotnet tool install fake-cli
   displayName: Install Fake
 - task: NuGetToolInstaller@1

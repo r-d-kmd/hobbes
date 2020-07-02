@@ -1,0 +1,69 @@
+apiVersion: skaffold/v2beta4
+kind: Config
+metadata:
+  name: hobbes
+build:
+  tagPolicy:
+    sha256: {}
+  artifacts:
+    - image: azuredevops
+      context: workers/azuredevops.worker/
+      docker:
+        dockerfile: ../../docker/Dockerfile.worker
+        buildArgs:
+          VERSION : Debug
+          WORKER_NAME : azuredevops
+        cacheFrom: 
+          - kmdrd/app
+    - image: calculator
+      context: workers/calculator.worker/
+      docker:
+        dockerfile: ../../docker/Dockerfile.worker
+        buildArgs:
+          VERSION : Debug
+          WORKER_NAME : calculator
+    - image: git
+      context: workers/git.worker/
+      docker:
+        dockerfile: ../../docker/Dockerfile.worker
+        buildArgs:
+          VERSION : Debug
+          WORKER_NAME : git
+    - image: syncronization
+      context: workers/syncronization.worker/
+      docker:
+        dockerfile: ../../docker/Dockerfile.worker
+        buildArgs:
+          VERSION : Debug
+          WORKER_NAME : syncronization
+    - image: configurations
+      context: services/configurations
+      docker:
+        dockerfile: ../../docker/Dockerfile.service
+        buildArgs:
+          VERSION : Debug
+          WORKER_NAME : configurations
+    - image: gateway
+      context: services/gateway
+      docker:
+        dockerfile: ../../docker/Dockerfile.service
+        buildArgs:
+          VERSION : Debug
+          WORKER_NAME : gateway
+    - image: uniformdata
+      context: services/uniformdata
+      docker:
+        dockerfile: ../../docker/Dockerfile.service
+        buildArgs:
+          VERSION : Debug
+          WORKER_NAME : uniformdata
+    - image: kmdrd/couchdb
+      context: docker
+      docker:
+        dockerfile: Dockerfile.couchdb
+deploy:
+  kustomize:
+    paths:
+      - kubernetes
+      - kubernetes/prod_patches
+      - kubernetes/production

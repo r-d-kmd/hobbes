@@ -229,14 +229,12 @@ function awaitRunningState(){
     while [ "$(logs gateway | grep "DB initialized")" != "DB initialized" ]
     do
         logs gateway | tail -1
-        logs db | tail -1
     done
 
     echo "Waiting for Rabbit-MQ to be operational"
     while [ "$(logs conf | grep "Watching queue")" != "Watching queue: cache" ]
     do
         logs conf | tail -1
-        logs rabbit | tail -1
     done
 
     all
@@ -286,8 +284,8 @@ function setupTest(){
     #publish transformations and configurations
     publish
     
-    logs gateway | tail -1
-    logs conf | tail -1
+    echo $(logs gateway) | tail -1
+    echo $(logs conf) | tail -1
     #syncronize and wait for it to complete
     sync
     sleep 300
@@ -301,11 +299,11 @@ function test(){
     echo "*********************GATEWAY********************************"
     echo "*********************GATEWAY********************************"
     echo "*********************GATEWAY********************************"
-    logs gateway | tail -50
+    echo $(logs gateway) | tail -50
     echo "*********************UNIFORM********************************"
     echo "*********************UNIFORM********************************"
     echo "*********************UNIFORM********************************"
-    logs uniform | tail -50
+    echo $(logs uniform) | tail -50
 }
 
 echo "Project home folder is: $SCRIPT_DIR"

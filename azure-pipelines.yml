@@ -14,11 +14,6 @@ steps:
   inputs:
     command: 'install'
 
-- script: npm install -s -g --unicode=false newman@4.6.1
-  displayName: Install npm
-  
-- script: dotnet tool install fake-cli
-  displayName: Install Fake
 - task: NuGetToolInstaller@1
 - script: echo "$(ENV_FILE)"
 

@@ -14,7 +14,7 @@ steps:
   inputs:
     command: 'install'
 
-- script: npm install -g newman
+- script: sudo npm install -g newman
 
 - script: newman --version
 - script: dotnet tool install fake-cli

@@ -8,7 +8,7 @@ open Hobbes.Messaging
 
 [<RouteArea ("/data", false)>]
 module Data =
-    let private cache = Cache.Cache("uniform")
+    let private cache : Cache.ICacheProvider = Cache.Cache("uniform") :> Cache.ICacheProvider
     [<Get ("/read/%s")>]
     let read key =
         let uniformData =
@@ -21,6 +21,13 @@ module Data =
         | None -> 
             404,"No data found"
 
+    [<Delete ("/clear/%s")>]
+    let clear key =
+        try
+            cache.Delete key
+            200, "Deleted"
+        with e ->
+            500, e.Message
     [<Post ("/update", true)>]
     let update dataAndKey =
         try
@@ -39,7 +46,7 @@ module Data =
                 Log.logf "updating cache with _id: %s" key
                 try    
                     data
-                    |> cache.InsertOrUpdate key
+                    |> cache.InsertOrUpdate key args.DependsOn
                     Broker.Cache (Updated key)
                 with e ->
                     Log.excf e "Failed to insert %s" (dataAndKey.Substring(0,min 500 dataAndKey.Length))

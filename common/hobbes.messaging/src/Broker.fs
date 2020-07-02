@@ -33,11 +33,27 @@ module Broker =
     type TransformMessage = 
         {
             Transformation : TransformationMessageBody
+            DependsOn : string
+        }
+
+    type MergeMessage =
+        {
             CacheKey : string
+            Datasets : string []
+        }
+     
+    type JoinMessage = 
+        {
+            CacheKey : string
+            Left : string
+            Right : string
+            Field : string
         }
 
     type CalculationMessage = 
         Transform of TransformMessage
+        | Merge of MergeMessage
+        | Join of JoinMessage
 
     type Message<'a> = 
         Bark

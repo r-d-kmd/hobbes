@@ -18,6 +18,7 @@ resources:
   - rabbitmq-controller.yaml
   - rabbitmq-service.yaml
   - metrics-server.yaml
+  
 patchesJson6902:
   - target:
       version: v1

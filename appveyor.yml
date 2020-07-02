@@ -54,28 +54,10 @@ for:
       - docker version
       - dotnet tool install --global fake-cli
       - dotnet tool install --global paket
-<<<<<<< HEAD
-      #- curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
-      #- chmod +x kubectl
-      #- sudo mv kubectl /usr/local/bin/
-      #- cd /tmp && wget https://dl.google.com/go/go1.11.linux-amd64.tar.gz
-      #- sudo tar -xvf go1.11.linux-amd64.tar.gz
-      #- sudo mv go /usr/local
-      #- export GOROOT=/usr/local/go
-      #- export GOPATH=$HOME/go
-      #- export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
-      #- source ~/.profile
-      #- GO111MODULE=on go get sigs.k8s.io/kustomize/kustomize/v3
-      #- cd $KUBERNETES_DIR
-      #- cd prod_patches && sudo mv kustomization.yaml ../kustomization.yaml && cd ..
-      #- kustomize build && cd ..
-=======
       - curl -sL https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o kubectl
       - chmod +x kubectl
       - sudo mv kubectl /usr/local/bin/
-      - echo "jens"
       - kubectl apply -k ./ -o jens.yaml
->>>>>>> development
     before_build:
       - docker login -u="${DOCKER_USER}" -p="${DOCKER_PASS}" 
     build_script:  

@@ -44,38 +44,40 @@ module Reader =
         ]    
     //The first url to start with, if there's already some stored data
     let private getInitialUrl (source : AzureDevOpsSource.Root)=
-        let account = 
-            let acc = source.Account.Replace("_", "-")
-            if System.String.IsNullOrWhiteSpace(acc) then "kmddk"
-            else acc
+        if System.String.IsNullOrWhiteSpace source.Server then 
+            let account = 
+                let acc = source.Account.Replace("_", "-")
+                if System.String.IsNullOrWhiteSpace(acc) then "kmddk"
+                else acc
 
-        let filters = 
-            System.String.Join(" and ",
-                [
-                    "IsLastRevisionOfDay", "eq", "true"
-                    "WorkItemType", "ne", "'Task'"
-                    "IsCurrent", "eq", "true"
-                ] |> List.map(fun (a,b,c) -> sprintf "%s %s %s" a b c)
-            ).Replace(" ", "%20")
-            
-        let initialUrl = 
-            let selectedFields = 
-               (",", azureFields |> List.map fst) |> System.String.Join
-            let path = 
-                (sprintf "/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&$select=%s,Iteration&$filter=%s and WorkItemRevisionSK gt " selectedFields filters).Replace(" ", "%20")
+            let filters = 
+                System.String.Join(" and ",
+                    [
+                        "IsLastRevisionOfDay", "eq", "true"
+                        "WorkItemType", "ne", "'Task'"
+                        "IsCurrent", "eq", "true"
+                    ] |> List.map(fun (a,b,c) -> sprintf "%s %s %s" a b c)
+                ).Replace(" ", "%20")
+                
+            let initialUrl = 
+                let selectedFields = 
+                   (",", azureFields |> List.map fst) |> System.String.Join
+                let path = 
+                    (sprintf "/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&$select=%s,Iteration&$filter=%s and WorkItemRevisionSK gt " selectedFields filters).Replace(" ", "%20")
 
-            sprintf "https://analytics.dev.azure.com/%s/%s%s%d" account source.Project path
-        let key = source.JsonValue.ToString() |> keyFromSourceDoc 
-        try
-            match key |> Data.tryLatestId with
-            Some workItemRevisionId -> 
-                initialUrl workItemRevisionId
-            | None -> 
-                Log.debugf "Didn't get a work item revision id for %s" key
+                sprintf "https://analytics.dev.azure.com/%s/%s%s%d" account source.Project path
+            let key = source.JsonValue.ToString() |> keyFromSourceDoc 
+            try
+                match key |> Data.tryLatestId with
+                Some workItemRevisionId -> 
+                    initialUrl workItemRevisionId
+                | None -> 
+                    Log.debugf "Didn't get a work item revision id for %s" key
+                    initialUrl 0L
+            with e -> 
+                Log.excf e "Failed to get latest for (%s)" key 
                 initialUrl 0L
-        with e -> 
-            Log.excf e "Failed to get latest for (%s)" key 
-            initialUrl 0L
+        else source.Server + "/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&$select=WorkItemId,ChangedDate,WorkItemType,CreatedDate,ClosedDate,State,StateCategory,LeadTimeDays,CycleTimeDays,StoryPoints,Iteration&$filter=IsLastRevisionOfDay%20eq%20true%20and%20WorkItemType%20ne%20'Task'%20and%20WorkItemRevisionSK%20gt%200"
 
     //sends a http request   
     let private request user pwd httpMethod body url  =

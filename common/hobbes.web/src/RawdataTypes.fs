@@ -16,7 +16,8 @@ module RawdataTypes =
             "source" : {
                 "name" : "azuredevops",
                 "project" : "gandalf",
-                "dataset" : "commits"
+                "dataset" : "commits",
+                "server" : "https://analytics.dev.azure.com/kmddk/flowerpot"
             },
             "transformations" : ["jlk","lkjlk"],
             "subconfigs" : ["jlk","lkjlk"]

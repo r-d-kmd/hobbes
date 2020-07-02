@@ -10,6 +10,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
+- script: dotnet tool restore
 - script: dotnet paket --version && alias paket='dotnet paket'
 - script: dotnet tool install fake-cli && alias fake='dotnet fake'
   displayName: Install Fake

@@ -1,5 +1,25 @@
+#! /bin/bash
+Black='\033[0;30m'
+DarkGray='\033[1;30m'
+Red='\033[0;31m'
+LightRed='\033[1;31m'
+Green='\033[0;32m'
+LightGreen='\033[1;32m'
+Orange='\033[0;33m'
+Yellow='\033[1;33m'
+Blue='\033[0;34m'
+LightBlue='\033[1;34m'
+Purple='\033[0;35m'
+LightPurple='\033[1;35m'
+Cyan='\033[0;36m'
+LightCyan='\033[1;36m'
+LightGray='\033[0;37m'
+White='\033[1;37m'
+NoColor='\033[0m'
+
 eval $(minikube -p minikube docker-env)
-VOLUMES=(db)
+#source <(kubectl completion bash)
+
 function get_script_dir(){
      SOURCE="${BASH_SOURCE[0]}"
      # While $SOURCE is a symlink, resolve it
@@ -15,6 +35,36 @@ function get_script_dir(){
 
 SCRIPT_DIR=$(get_script_dir)
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
+
+declare -a APPS=(db)
+function services(){
+    local APP_NAME=""
+    for PROJECT_FILE in $(find ${SCRIPT_DIR}/services -name *.fsproj)
+    do
+        local FILE_NAME=`basename $PROJECT_FILE`
+        APP_NAME=$(echo $FILE_NAME | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
+        APPS+=($APP_NAME)
+    done 
+    APP_NAME=""
+    for PROJECT_FILE in $(find ${SCRIPT_DIR}/workers -name *.fsproj)
+    do
+        local FILE_NAME=`basename $PROJECT_FILE`
+        if [[ "$FILE_NAME" = *.worker.* ]] 
+        then
+            APP_NAME=$(echo $FILE_NAME | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
+        fi
+        APPS+=($APP_NAME)
+    done 
+}
+services
+
+if [[ $(uname -s) == MINGW64_NT* ]]
+then
+    printf "${Red}Running on windows${NoColor}\n"
+else
+    printf "${Green}Mac${NoColor}\n"
+    source macos.sh
+fi
 
 if [ $(uname -s) = "Darwin" ]
 then
@@ -41,14 +91,6 @@ else
     declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "sync" "uniformdata")
 fi
 
-function getPodName(){
-    local POD_NAME=$(kubectl get all | grep -e pod/$1 -e pod/collectors-$1 | cut -d ' ' -f 1 )
-    if [[ "$POD_NAME" = pod/* ]]
-    then
-       echo $POD_NAME
-    fi
-}
-
 function getJobWorker(){
     local JOB_NAME=$(kubectl get all | grep job.batch/syncronization-scheduler-.*$1 | cut -d ' ' -f 1)
     if [[ "$JOB_NAME" = job.batch/* ]]
@@ -58,7 +100,7 @@ function getJobWorker(){
 }
 
 function getName(){
-    local NAME=$(kubectl get all | grep -e pod/$1 | cut -d ' ' -f 1 )
+    local NAME=$(kubectl get pods | grep $1 | cut -d ' ' -f 1 )
     if [ -z "$NAME" ]
     then
        NAME=$(getJobWorker $1)
@@ -67,16 +109,16 @@ function getName(){
 }
 
 function getAppName(){
-   local SERVICE_NAME=$(kubectl get all \
-                        | grep service/$1 \
-                        | cut -d ' ' -f 1 \
-                        | cut -d '/' -f 2)
+   local SERVICE_NAME=$(kubectl get services \
+                        | grep $1 \
+                        | cut -d ' ' -f 1)
    local APP_NAME=${SERVICE_NAME::${#SERVICE_NAME}-4}
    echo $APP_NAME
 }
 
 function logs(){
     local NAME=$(getName $1)
+    kubectl wait --for=condition=ready "$NAME" --timeout=60s
     kubectl logs $2 $NAME
 }
 
@@ -229,12 +271,14 @@ function awaitRunningState(){
     while [ "$(logs gateway | grep "DB initialized")" != "DB initialized" ]
     do
         logs gateway | tail -1
+        logs db | tail -1
     done
 
     echo "Waiting for Rabbit-MQ to be operational"
     while [ "$(logs conf | grep "Watching queue")" != "Watching queue: cache" ]
     do
         logs conf | tail -1
+        logs rabbit | tail -1
     done
 
     all
@@ -244,68 +288,39 @@ function run(){
     kubectl run -i --tty temp-$1 --image kmdrd/$1 
 }
 
-function sync(){
+function startJob(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    kubectl delete job.batch/sync &> /dev/null
-    kubectl apply -f sync-job.yaml || ( cd $CURRENT_DIR && exit 1)
+    kubectl delete job.batch/$1 &> /dev/null
+    kubectl apply -f $1-job.yaml &> /dev/null || exit 1
+    eval $(echo "kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s &> /dev/null")
+    logs $1 -f
     cd $CURRENT_DIR
+}
+
+function sync(){
+    startJob sync
 }
 
 function publish(){
+    startJob publish
+}
+
+
+#This function builds the production yaml configuration in the kubernetes folder.
+function applyProductionYaml() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    kubectl delete job.batch/publish &> /dev/null
-    kubectl apply -f publish-job.yaml
-    sleep 1
-    kubectl wait --for=condition=complete job/publish --timeout=120s
-    logs publish
+    mv kustomization.yaml ./local_patches/kustomization.yaml
+    mv ./prod_patches/kustomization.yaml kustomization.yaml
+    kustomize build -o test.yaml
+    mv kustomization.yaml ./prod_patches/kustomization.yaml
+    mv ./local_patches/kustomization.yaml kustomization.yaml
     cd $CURRENT_DIR
 }
 
-function setupTest(){
-    local CURRENT_DIR=$(pwd)
-    cd $SCRIPT_DIR
-    #dotnet test
-    start 
-    awaitRunningState
-    all
-    #Forward ports to be able to communicate with the cluster
-    kubectl port-forward service/gateway-svc 30080:80 &
-    kubectl port-forward service/db-svc 30084:5984 &
-    #wait a few second to be sure the port forwarding is in effect
-    sleep 3
-    IP="127.0.0.1"
-    SERVER="http://${ip}"
-    #test that the server and DB is accessible
-    curl "${SERVER}:30084"
-    front_url="${SERVER}:30080"
-    curl ${front_url}/ping
-    #publish transformations and configurations
-    publish
-    
-    echo $(logs gateway) | tail -1
-    echo $(logs conf) | tail -1
-    #syncronize and wait for it to complete
-    sync
-    sleep 300
-
-    cd $CURRENT_DIR
-}
-
-function test(){
-    NAME=$(kubectl get pods -l app=gateway -o name) 
-    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=${IP} --env-var "master_key"=${MASTER_KEY} #|| exit 1
-    echo "*********************GATEWAY********************************"
-    echo "*********************GATEWAY********************************"
-    echo "*********************GATEWAY********************************"
-    echo $(logs gateway) | tail -50
-    echo "*********************UNIFORM********************************"
-    echo "*********************UNIFORM********************************"
-    echo "*********************UNIFORM********************************"
-    echo $(logs uniform) | tail -50
-}
-
-echo "Project home folder is: $SCRIPT_DIR"
-echo "Apps found:"
-printf '%s\n' "${APPS[@]}"
+printf "Project home folder is:\n"
+printf " - ${LightBlue}$SCRIPT_DIR\n"
+printf "${NoColor}Apps found:\n${LightBlue}"
+printf ' - %s\n' "${APPS[@]}"
+printf "${NoColor}"

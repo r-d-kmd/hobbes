@@ -12,7 +12,6 @@ RUN mono /.paket/paket.exe restore
 COPY .lib/ /.lib/
 COPY hobbes.properties.targets ./
 
-RUN cd /.lib/ && ls
 RUN cat hobbes.properties.targets 
 
 ONBUILD COPY ./src/ .

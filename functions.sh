@@ -155,6 +155,8 @@ function clean(){
     kubectl delete --all hpa
 }
 
+alias fake='dotnet fake'
+
 function build(){    
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR

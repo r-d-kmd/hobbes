@@ -18,17 +18,6 @@ steps:
 
 - script: newman --version
 
-- task: NewmanPostman@4
-  inputs:
-    collectionSourceType: 'url'
-    collectionURL: 'https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY)'
-    environmentSourceType: 'url'
-    environmentUrl: 'https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY)'
-    envVars: |
-      ip=$(IP)
-      master_key=$(MASTER_KEY)
-    unicodeDisabled: true
-
 
 - script: dotnet tool install fake-cli
   displayName: Install Fake

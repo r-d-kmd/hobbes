@@ -10,10 +10,6 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- task: Npm@1
-  inputs:
-    command: 'install'
-
 - task: NuGetToolInstaller@1
 - script: echo "$(ENV_FILE)"
 

@@ -13,6 +13,7 @@ let private appRouter = router {
     fetch <@ ping @>
     withArg <@ read @>
     withBody <@ update @>
+    withBody <@ clear @>
 } 
 
 let private app = application {
@@ -21,7 +22,6 @@ let private app = application {
     memory_cache
     use_gzip
 }
-
 
 Hobbes.Web.Database.initDatabases ["uniformcache"]
 run app

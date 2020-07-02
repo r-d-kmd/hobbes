@@ -63,6 +63,7 @@ module Cache =
             CacheKey : string
             [<JsonProperty("timestamp")>]
             TimeStamp : System.DateTime option
+            DependsOn : string list
             [<JsonProperty("data")>]
             Data : DataResult
         }
@@ -74,12 +75,13 @@ module Cache =
         |> hash
     
       
-    let private createCacheRecord key (data : DataResult) =
+    let inline createCacheRecord key dependsOn (data : DataResult)  =
 
         let timeStamp = System.DateTime.Now
         {
             CacheKey =  key
             TimeStamp = Some timeStamp
+            DependsOn = dependsOn
             Data = data
         }
 
@@ -95,8 +97,10 @@ module Cache =
         )
 
     type ICacheProvider = 
-         abstract member InsertOrUpdate : string -> DataResult -> unit
+         abstract member InsertOrUpdate : string -> string list -> DataResult -> unit
          abstract member Get : string -> CacheRecord option
+         abstract member Delete : string -> unit
+         abstract member Peek : string -> bool
 
     type Cache private(provider : ICacheProvider) =
         static let parser = Json.deserialize<CacheRecord>
@@ -105,30 +109,53 @@ module Cache =
                 Database.Database(name + "cache", parser, Log.loggerInstance)
             
             Cache {new ICacheProvider with 
-                            member __.InsertOrUpdate key data = 
+                            member __.InsertOrUpdate key dependsOn data = 
                                     data
-                                    |> createCacheRecord key 
+                                    |> createCacheRecord key dependsOn
                                     |> db.InsertOrUpdate 
                                     |> Log.debugf "Inserted data: %s"
                             
                             member __.Get (key : string) = 
                                 Log.logf "trying to retrieve cached %s from database" key
                                 key
-                                |> db.TryGet }
+                                |> db.TryGet 
+                            member __.Peek (key : string) =
+                                db.TryGetRev key |> Option.isSome
+                            member cache.Delete (key : string) = 
+                                Log.logf "Deleting %s" key
+                                let sc,body= 
+                                    key
+                                    |> db.Delete
+                                db.List()
+                                |> Seq.filter(fun doc ->
+                                    doc.DependsOn |> List.contains key
+                                ) |> Seq.iter(fun doc -> cache.Delete doc.CacheKey)
+                                if sc <> 200 then
+                                    failwithf "Status code %d - %s" sc body
+                            }
         new(service : Http.CacheService -> Http.Service) =
             Cache {new ICacheProvider with 
-                            member __.InsertOrUpdate key data = 
+                            member __.InsertOrUpdate key dependsOn data = 
                                 data
-                                |> createCacheRecord key 
+                                |> createCacheRecord key dependsOn
                                 |> Http.post (Http.Update |> service)
                                 |> ignore
-                                
                             member __.Get (key : string) = 
                                 match Http.get (key |> Http.CacheService.Read |> service) parser with
                                 Http.Success d -> Some d
                                 | Http.Error (code,msg) ->
                                     Log.errorf  "Failed to load from cache. Status: %d. Message: %s" code msg
-                                    None}
-                                    
-        member __.InsertOrUpdate = provider.InsertOrUpdate
-        member __.Get = provider.Get
+                                    None
+                            member this.Peek (key : string) = this.Get key |> Option.isSome
+                            member __.Delete (key : string) = 
+                                match Http.get (key |> Http.CacheService.Delete |> service) parser with
+                                Http.Success _ -> ()
+                                | Http.Error (code,msg) ->
+                                    failwithf  "Failed to delete from cache. Status: %d. Message: %s" code msg
+                            }
+                            
+        interface ICacheProvider with                         
+            member __.InsertOrUpdate key dependsOn data = provider.InsertOrUpdate key dependsOn data
+            member __.Get key = provider.Get key
+            member __.Delete key = provider.Delete key
+            member __.Peek key = provider.Peek key

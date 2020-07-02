@@ -51,12 +51,18 @@ module Http =
                     ]
     type CacheService = 
         Read of string
+        | Delete of string
         | Update
         with member x.ToPath() =
               match x with
               Read key -> 
                   [
                       "read"
+                      key
+                  ]
+              | Delete key -> 
+                  [
+                      "delete"
                       key
                   ]
               | Update -> ["update"]
@@ -120,6 +126,14 @@ module Http =
         printfn "Getting %s" url
         Http.Request(url,
                      httpMethod = "GET",
+                     silentHttpErrors = true
+        ) |> readResponse parser
+
+    let delete (service : Service) parser  = 
+        let url = service.ServiceUrl
+        printfn "Deleting %s" url
+        Http.Request(url,
+                     httpMethod = "DELETE",
                      silentHttpErrors = true
         ) |> readResponse parser
 

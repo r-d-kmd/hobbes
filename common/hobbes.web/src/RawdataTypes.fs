@@ -10,18 +10,30 @@ module RawdataTypes =
             Statements : string list
             Description : string
         }
-
-    type Config = JsonProvider<"""{
+    
+    type Config = JsonProvider<"""[{
             "_id" : "name",
             "source" : {
-                "name" : "azuredevops",
+                "provider" : "azuredevops",
+                "id" : "lkjlkj", 
                 "project" : "gandalf",
                 "dataset" : "commits",
                 "server" : "https://analytics.dev.azure.com/kmddk/flowerpot"
             },
-            "transformations" : ["jlk","lkjlk"],
-            "subconfigs" : ["jlk","lkjlk"]
-        }""">
+            "transformations" : ["jlk","lkjlk"]
+        }, {
+            "_id" : "name",
+            "datasets" : ["cache key for a data set","lkjlkjlk"]
+        }, {
+            "_id" : "name",
+            "join" : 
+                {
+                    "left": "cache key for a data set",
+                    "right" : "cache key for a data set",
+                    "field" : "name of field to join on "
+                },
+            "transformations" : ["jlk","lkjlk"]
+        }]""", SampleIsList = true>
         
     let keyFromSourceDoc (source : string) = 
         source
@@ -33,8 +45,20 @@ module RawdataTypes =
     
     let keyFromConfig (config : Config.Root) =
         try 
-            let id = config.Source |> keyFromSource
-            System.String.Join(":",id::(config.Transformations |> List.ofSeq))
+                config.Source
+                |> Option.bind(fun source -> 
+                    let id = source |> keyFromSource
+                    System.String.Join(":",id::(config.Transformations |> List.ofSeq))
+                    |> Some
+                ) |> Option.orElse(
+                    config.Join
+                    |> Option.bind(fun join ->
+                        System.String.Join(":",(join.Left::join.Right::join.Field::(config.Transformations |> Array.toList))) |> Some
+                    )
+                ) |> Option.orElse(
+                    config.Datasets
+                    |> (System.String.Concat >> Hobbes.Helpers.Environment.hash >> Some)
+                ) |> Option.get
         with e ->
            failwithf "Failed to get key from (%s). Message: %s. Trace: %s" (config.JsonValue.ToString()) e.Message e.StackTrace
     

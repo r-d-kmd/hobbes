@@ -22,9 +22,10 @@ module Data =
 
     [<Get ("/collectors")>]
     let collectors () =
-        200,(",",listConfigurations() 
+        200,(",",listConfigurations()
+                  |> Seq.filter(fun config -> config.Source |> Option.isSome) 
                   |> Seq.map(fun config ->
-                    config.Source.Name 
+                    config.Source.Value.Provider 
                   ) |> Seq.distinct
                   |> Seq.filter(System.String.IsNullOrWhiteSpace >> not)
                   |> Seq.map (sprintf "%A")
@@ -35,9 +36,11 @@ module Data =
     let sources (systemName:string) =
         200,(",\n",listConfigurations()
                   |> Seq.filter(fun config ->
-                        config.Source.Name = systemName
+                        match config.Source with
+                        Some source -> source.Provider = systemName
+                        | None -> false
                   ) |> Seq.map(fun config ->
-                     config.Source.JsonValue.ToString()
+                     config.Source.Value.JsonValue.ToString()
                   ) |> Seq.distinct
             ) |> System.String.Join
             |> sprintf "[%s]"
@@ -61,7 +64,7 @@ module Data =
         let conf = Config.Parse configuration
         Log.logf "Configuration %s" configuration
         assert(System.String.IsNullOrWhiteSpace(conf.Id) |> not)
-        assert(System.String.IsNullOrWhiteSpace(conf.Source.Name) |> not)
+        assert(conf.Source |> Option.isNone || System.String.IsNullOrWhiteSpace(conf.Source.Value.Provider) |> not)
         assert(conf.Transformations |> Array.isEmpty |> not)
         
         200,configurations.InsertOrUpdate configuration

@@ -3,49 +3,72 @@ open Hobbes.Messaging.Broker
 open Hobbes.Messaging
 open Hobbes.Helpers
 
-let cache = Cache.Cache(Http.UniformData)
+let cache = Cache.Cache(Http.UniformData) :> Cache.ICacheProvider
+let fromCache cacheKey =
+    let cacheRecord = 
+        cacheKey
+        |> cache.Get
+        |> Option.get
+
+    let columnNames = cacheRecord.Data.ColumnNames
+    cacheRecord.Data.Rows()
+    |> Seq.mapi(fun index row ->
+        index,row
+              |> Seq.zip columnNames
+    ) |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
+
 let transformData (message : CalculationMessage) =
-    match message with
-    Transform message -> 
-        let cacheKey = message.CacheKey
-        let transformation = message.Transformation
-        match cache.Get message.CacheKey with
-        None -> 
-            Log.logf "No data for that key (%s)" cacheKey
-            Success
-        | Some cacheRecord -> 
-            try
-                let columnNames = cacheRecord.Data.ColumnNames
+    try
+        let key,dependsOn,data = 
+            match message with
+            Merge message ->
+                let cacheKey = message.CacheKey
+                let dependsOn = message.Datasets |> Array.toList
                 let data = 
-                    cacheRecord.Data.Rows()
-                    |> Seq.mapi(fun index row ->
-                        index,row
-                              |> Seq.zip columnNames
+                    message.Datasets
+                    |> Array.map fromCache
+                    |> Array.reduce(fun res matrix ->
+                        res.Combine matrix
                     )
-                let key = cacheKey + ":" + transformation.Name
-                let dataJson = 
-                    data
-                    |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
-                    |> Hobbes.FSharp.Compile.expressions transformation.Statements 
-                    |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows                 
-                let transformedData = 
-                    try
-                        dataJson
-                        |> Json.deserialize<Cache.DataResult> 
-                    with e ->
-                        Log.excf e "Couldn't deserialize (%s)" dataJson
-                        reraise()
-                try
-                    transformedData
-                    |> cache.InsertOrUpdate key
-                    Log.logf "Transformation of [%s] using [%s] resulting in [%s] completed" cacheKey transformation.Name key
-                    Success
-                with e ->
-                   sprintf "Couldn't insert data (key: %s)." key
-                   |> Failure 
+                cacheKey,dependsOn,data
+            | Join message ->
+                let cacheKey = message.CacheKey
+                let dependsOn = [message.Left;message.Right]
+                let left = 
+                    message.Left
+                    |> fromCache
+                let right = 
+                    message.Right
+                    |> fromCache
+                let data = 
+                    right |> left.Join message.Field 
+                cacheKey,dependsOn,data
+            | Transform message -> 
+                let dependsOn = message.DependsOn
+                let transformation = message.Transformation
+                let key = dependsOn + ":" + transformation.Name
+                key,[dependsOn], 
+                   dependsOn
+                   |> fromCache
+                   |> Hobbes.FSharp.Compile.expressions transformation.Statements     
+                   
+        let dataJson = 
+            data
+            |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows                 
+        let transformedData = 
+            try
+                dataJson
+                |> Json.deserialize<Cache.DataResult> 
             with e ->
-                Log.excf e "Failed to transform data using [%s] on [%s]" transformation.Name cacheKey
-                Excep e    
+                Log.excf e "Couldn't deserialize (%s)" dataJson
+                reraise()
+        transformedData
+        |> cache.InsertOrUpdate key dependsOn
+        Log.logf "Transformation of [%A] using [%A] resulting in [%s] completed" dependsOn message key
+        Success
+    with e ->
+       Log.errorf "Couldn't insert data (%A)." message
+       Excep e 
 
 [<EntryPoint>]
 let main _ =

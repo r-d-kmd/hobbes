@@ -10,9 +10,8 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: dotnet tool restore
-- script: dotnet paket --version && alias paket='dotnet paket'
-- script: dotnet tool install fake-cli && alias fake='dotnet fake'
+
+- script: dotnet tool install fake-cli
   displayName: Install Fake
 - task: NuGetToolInstaller@1
 - script: echo "$(ENV_FILE)"
@@ -52,7 +51,7 @@ steps:
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
-- script: source functions.sh && build buildfortest && docker images
+- script: eval $(SHELL=/bin/bash minikube -p minikube docker-env) && dotnet fake build && docker images
 - script: source functions.sh && setupTest
   displayName: Setup tests
 

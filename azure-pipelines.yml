@@ -19,7 +19,7 @@ steps:
 - script: dotnet tool install fake-cli
   displayName: Install Fake
 
-- script: GOBIN=$(pwd)/ GO111MODULE=on go get sigs.k8s.io/kustomize/kustomize/v3
+- script: GOBIN=$(pwd)/ GO111MODULE=on go get sigs.k8s.io/kustomize
 # Need go 1.13 or higher
 - script: unset GOPATH
 # see https://golang.org/doc/go1.13#modules

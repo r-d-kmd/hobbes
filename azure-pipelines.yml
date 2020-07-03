@@ -52,8 +52,8 @@ steps:
 - script: eval $(SHELL=/bin/bash minikube -p minikube docker-env) && dotnet fake build && docker images
   displayName: Build the world
 
-- script: source functions.sh && applyProductionYaml && awaitRunningState
-  displayName: Setup production yaml and awaitRunningstate
+- script: source functions.sh && applyProductionYaml
+  displayName: Setup production yaml
 
 - task: Kubernetes@1
   inputs:

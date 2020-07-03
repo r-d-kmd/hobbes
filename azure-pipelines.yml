@@ -55,6 +55,8 @@ steps:
 - script: source functions.sh && applyProductionYaml
   displayName: Setup production yaml
 
+- script: echo $(System.DefaultWorkingDirectory)
+
 - task: Kubernetes@1
   inputs:
     connectionType: 'Kubernetes Service Connection'

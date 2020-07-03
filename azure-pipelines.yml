@@ -75,7 +75,10 @@ steps:
 
 - script: source functions.sh && applyProductionYaml
   displayName: Setup production yaml
-
+ 
+- script: source functions.sh && kubectl apply -f test.yaml
+  displayName: Apply production yaml to minikube
+  
 - task: AzureCLI@2
   inputs:
     azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'

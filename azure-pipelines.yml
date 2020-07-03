@@ -43,6 +43,7 @@ steps:
 
 #- script: docker login https://docker.pkg.github.com -u="$GIT_USER" -p="$GIT_PASS"
 - script: docker pull gcr.io/k8s-minikube/kicbase:v0.0.11
+  displayName: Pull minikube image
 
 # Start Minikube
 - script: minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
@@ -57,8 +58,10 @@ steps:
   displayName: Apply kubernetes environment file
   
 - script: eval $(SHELL=/bin/bash minikube -p minikube docker-env) && dotnet fake build && docker images
+  displayName: Build the world
+
 - script: source functions.sh && setupTest
   displayName: Setup tests
 
 - script: newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY)
-
+  displayName: Run postman tests

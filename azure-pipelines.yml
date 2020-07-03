@@ -74,5 +74,5 @@ steps:
           git config --global user.name "Build server" &&
           git remote add pseudo https://$(GIT_ACCESS_TOKEN):x-oauth-basic@github.com/r-d-kmd/hobbes.git &&
           git checkout master &&
-          git merge development &&
+          git merge origin/development &&
           git push pseudo master

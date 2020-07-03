@@ -19,7 +19,7 @@ steps:
 
 - script: unset GOPATH &&
           unset GO111MODULES &&
-          git clone git@github.com:kubernetes-sigs/kustomize.git &&
+          git clone https://github.com:kubernetes-sigs/kustomize.git &&
           cd kustomize &&
           git checkout kustomize/v3.2.3 &&
           (cd kustomize; go install .) &&

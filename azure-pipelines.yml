@@ -13,7 +13,7 @@ pool:
 steps:
 - task: GoTool@0
   inputs:
-    version: '1.10'
+    version: '1.12.4'
 - script: GO111MODULE=on GOPATH=$tmpGoPath go install sigs.k8s.io/kustomize/v3/cmd/kustomize
 - task: NuGetToolInstaller@1
 - script: echo "$(ENV_FILE)"

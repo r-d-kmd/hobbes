@@ -54,10 +54,8 @@ steps:
 
 - script: source functions.sh && applyProductionYaml
   displayName: Setup production yaml
-- task: Kubernetes@1
+
+- task: kubectlapply@3
   inputs:
-    connectionType: 'Kubernetes Service Connection'
-    kubernetesServiceEndpoint: 'Kubernetes Connection'
-    command: 'apply'
-    arguments: '--v=5 -f - < test.yaml'
-    workingDirectory: '$(System.DefaultWorkingDirectory)/kubernetes'
+    k8sService: 'Kubernetes Connection'
+    yamlfile: '/kubernetes/test.yaml'

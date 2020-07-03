@@ -10,11 +10,6 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: git config --global credential.helper store &&
-          git config --global user.email "hobbes_buildserver@kmd.dk" &&
-          git config --global user.name "Build server" &&
- 
-
 - task: Npm@1
   inputs:
     command: 'install'

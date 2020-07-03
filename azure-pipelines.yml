@@ -10,11 +10,6 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: echo $(System.DefaultWorkingDirectory)
-- script: ls
-- script: echo $(System.DefaultWorkingDirectory)/kubernetes
-
-
 - script: dotnet tool install fake-cli
   displayName: Install Fake
   
@@ -59,11 +54,10 @@ steps:
 
 - script: source functions.sh && applyProductionYaml
   displayName: Setup production yaml
-
-
 - task: Kubernetes@1
   inputs:
     connectionType: 'Kubernetes Service Connection'
     kubernetesServiceEndpoint: 'Kubernetes Connection'
     command: 'apply'
     arguments: '-f test.yaml'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/kubernetes'

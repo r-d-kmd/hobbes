@@ -91,5 +91,6 @@ steps:
                    kubectl get all &&
                    cd kubernetes &&
                    ls &&
+                   kubectl update &&
                    kubectl apply -f test.yaml'
 

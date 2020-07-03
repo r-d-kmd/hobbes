@@ -1,0 +1,14 @@
+FROM kmdrd/app AS build
+
+# final stage/image
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
+
+ARG SERVICE_NAME
+
+ENV EP="dotnet ${SERVICE_NAME}.dll"
+ENV port 8085
+
+WORKDIR /app
+COPY --from=build /app .
+
+ENTRYPOINT $(echo $EP)

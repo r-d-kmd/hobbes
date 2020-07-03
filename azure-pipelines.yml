@@ -60,6 +60,6 @@ steps:
     connectionType: 'Kubernetes Service Connection'
     kubernetesServiceEndpoint: 'Kubernetes Connection'
     command: 'apply'
-    arguments: '-f test.yaml'
+    arguments: '-f kubernetes/test.yaml'
     secretType: 'dockerRegistry'
     containerRegistryType: 'Azure Container Registry'

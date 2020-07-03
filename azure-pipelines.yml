@@ -49,8 +49,8 @@ steps:
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
-- script: eval $(SHELL=/bin/bash minikube -p minikube docker-env) && dotnet fake build && docker images
-  displayName: Build the world
+#- script: eval $(SHELL=/bin/bash minikube -p minikube docker-env) && dotnet fake build && docker images
+#  displayName: Build the world
 
 - script: source functions.sh && applyProductionYaml
   displayName: Setup production yaml
@@ -61,5 +61,3 @@ steps:
     kubernetesServiceEndpoint: 'Kubernetes Connection'
     command: 'apply'
     arguments: '-f kubernetes/test.yaml'
-    secretType: 'dockerRegistry'
-    containerRegistryType: 'Azure Container Registry'

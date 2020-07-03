@@ -33,20 +33,3 @@ reclaimPolicy: Delete
 parameters:
   storageaccounttype: Premium_LRS
   kind: Managed
----
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: sync
-spec:
-  template:
-    spec:
-        containers:
-        - envFrom:
-          - secretRef:
-              name: env
-          name: sync
-          imagePullPolicy: Always
-          image: kmdrd/hobbes-syncronization:latest
-        restartPolicy: Never
-  backoffLimit: 4

@@ -24,46 +24,12 @@ steps:
           git checkout kustomize/v3.2.3 &&
           (cd kustomize; go install .) &&
           ~/go/bin/kustomize version
-- task: NuGetToolInstaller@1
-- script: echo "$(ENV_FILE)"
-
-- task: DockerInstaller@0
-  inputs:
-    dockerVersion: '17.09.0-ce'
-
+  displayName: Install Kustomize
 - task: KubectlInstaller@0
   inputs:
     kubectlVersion: 'latest'
 
-# Download Minikube and it's prerequisites
-- script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /
-  displayName: Minikube prerequisites  
-
-- script: curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
-  displayName: Downloading Minikube
-
-- script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
-  displayName: Docker login
-
-- script: docker pull gcr.io/k8s-minikube/kicbase:v0.0.11
-  displayName: Pull minikube image
-
-# Start Minikube
-- script: minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
-  displayName: Start Minikube
-
-# Fix permissions issue in AzurePipelines
-- script: sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context
-  displayName: Fix permissions
-
-# Set up cluster
-- script: echo "$(ENV_FILE)" | kubectl apply -f -
-  displayName: Apply kubernetes environment file
-  
-#- script: eval $(SHELL=/bin/bash minikube -p minikube docker-env) && dotnet fake build && docker images
-#  displayName: Build the world
-
-- script: source functions.sh && applyProductionYaml
+- script: source prodFunctions.sh && applyProductionYaml
   displayName: Setup production yaml
 
 - task: AzureCLI@2
@@ -75,5 +41,6 @@ steps:
                    kubectl get all &&
                    cd kubernetes &&
                    ls &&
+                   echo "$(ENV_FILE)" | kubectl apply -f - &&
                    kubectl apply -f test.yaml'
 

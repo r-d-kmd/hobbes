@@ -66,5 +66,5 @@ steps:
                    kubectl get all &&
                    cd kubernetes &&
                    ls &&
-                   kubectl apply -f sync-job.yaml'
+                   kubectl apply -f test.yaml'
 

@@ -16,7 +16,7 @@ steps:
     azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
-    inlineScript: 'az aks get-credentials --name hobbes-kub --resource-group hobbes-rg'
+    inlineScript: 'az aks get-credentials --name hobbes-kub --resource-group hobbes-rg && kubectl get all'
 
     
 - script: dotnet tool install fake-cli

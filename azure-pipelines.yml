@@ -15,7 +15,7 @@ steps:
 - script: dotnet tool install fake-cli
   displayName: Install Fake
 
-- script: curl -s "https://raw.githubusercontent.com/\
+- script: curl -s "https://raw.githubusercontent.com/ &&
           kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
 
   

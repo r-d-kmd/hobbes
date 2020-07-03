@@ -10,16 +10,6 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- task: Npm@1
-  inputs:
-    command: 'install'
-
-- script: sudo npm install -s -g --unicode=false newman@4.6.1
-  displayName: Install newman
-
-- script: newman --version
-  displayName: Verify newman version
-
 - script: dotnet tool install fake-cli
   displayName: Install Fake
   
@@ -44,7 +34,6 @@ steps:
 - script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
   displayName: Docker login
 
-#- script: docker login https://docker.pkg.github.com -u="$GIT_USER" -p="$GIT_PASS"
 - script: docker pull gcr.io/k8s-minikube/kicbase:v0.0.11
   displayName: Pull minikube image
 
@@ -63,8 +52,5 @@ steps:
 - script: eval $(SHELL=/bin/bash minikube -p minikube docker-env) && dotnet fake build && docker images
   displayName: Build the world
 
-- script: source functions.sh && setupTest
-  displayName: Setup tests
-
-- script: newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY)
-  displayName: Run postman tests
+- script: source functions.sh && applyProductionYaml && awaitRunningState
+  displayName: Setup production yaml and awaitRunningstate

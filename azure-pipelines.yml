@@ -7,9 +7,17 @@ trigger:
 - master
 
 pool:
+
   vmImage: 'ubuntu-latest'
 
 steps:
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: 'az kubectl get all'
+    
 - script: dotnet tool install fake-cli
   displayName: Install Fake
   
@@ -54,8 +62,3 @@ steps:
 
 - script: source functions.sh && applyProductionYaml
   displayName: Setup production yaml
-
-- task: kubectlapply@3
-  inputs:
-    k8sService: 'Kubernetes Connection'
-    yamlfile: '/kubernetes/test.yaml'

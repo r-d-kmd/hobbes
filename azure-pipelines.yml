@@ -60,4 +60,4 @@ steps:
     connectionType: 'Kubernetes Service Connection'
     kubernetesServiceEndpoint: 'Kubernetes Connection'
     command: 'apply'
-    arguments: '-f kubernetes/test.yaml'
+    arguments: '-f test.yaml'

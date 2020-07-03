@@ -23,7 +23,7 @@ steps:
           cd kustomize &&
           git checkout kustomize/v3.2.3 &&
           (cd kustomize; go install .) &&
-          ~/go/bin/kustomize version &&
+          ~/go/bin/kustomize version
 - task: NuGetToolInstaller@1
 - script: echo "$(ENV_FILE)"
 

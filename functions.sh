@@ -312,7 +312,7 @@ function applyProductionYaml() {
     cd $KUBERNETES_DIR
     mv kustomization.yaml ./local_patches/kustomization.yaml
     mv ./prod_patches/kustomization.yaml kustomization.yaml
-    kubectl apply -k . -o yaml > test.yaml
+    kustomize build -o test.yaml
     mv kustomization.yaml ./prod_patches/kustomization.yaml
     mv ./local_patches/kustomization.yaml kustomization.yaml
     cd $CURRENT_DIR

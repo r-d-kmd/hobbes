@@ -54,3 +54,12 @@ steps:
 
 - script: source functions.sh && applyProductionYaml && awaitRunningState
   displayName: Setup production yaml and awaitRunningstate
+
+- task: Kubernetes@1
+  inputs:
+    connectionType: 'Kubernetes Service Connection'
+    kubernetesServiceEndpoint: 'Kubernetes Connection'
+    command: 'apply'
+    arguments: '-f test.yaml'
+    secretType: 'dockerRegistry'
+    containerRegistryType: 'Azure Container Registry'

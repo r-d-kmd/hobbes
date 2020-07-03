@@ -76,7 +76,7 @@ steps:
 - script: source functions.sh && applyProductionYaml
   displayName: Setup production yaml
  
-- script: source functions.sh && kubectl apply -f test.yaml
+- script: source functions.sh && cd kubernetes && kubectl apply -f test.yaml
   displayName: Apply production yaml to minikube
   
 - task: AzureCLI@2

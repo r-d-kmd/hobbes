@@ -14,7 +14,7 @@ steps:
 - task: GoTool@0
   inputs:
     version: '1.12.4'
-- script: GO111MODULE=on GOPATH=$tmpGoPath go install sigs.k8s.io/kustomize/v3/cmd/kustomize
+- script: GO111MODULE=on GOPATH=$tmpGoPath go install sigs.k8s.io/kustomize/releases/tag/kustomize/3.6.1
 - task: NuGetToolInstaller@1
 - script: echo "$(ENV_FILE)"
 

@@ -24,7 +24,6 @@ steps:
   displayName: Install Fake
   
 - task: NuGetToolInstaller@1
-- script: echo "$(ENV_FILE)"
 
 - task: DockerInstaller@0
   inputs:
@@ -77,3 +76,4 @@ steps:
           git checkout master &&
           git merge origin/development &&
           git push pseudo master
+  displayName: Push to master

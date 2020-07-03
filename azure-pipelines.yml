@@ -16,24 +16,14 @@ steps:
     version: '1.13'
 - script: GO111MODULE=on GOPATH=$tmpGoPath go get sigs.k8s.io/kustomize/kustomize/v3
 # Need go 1.13 or higher
-- script: unset GOPATH
-# see https://golang.org/doc/go1.13#modules
-- script: unset GO111MODULES
 
-# clone the repo
-- script: git clone git@github.com:kubernetes-sigs/kustomize.git
-# get into the repo root
-- script: cd kustomize
-
-# Optionally checkout a particular tag if you don't
-# want to build at head
-- script: git checkout kustomize/v3.2.3
-
-# build the binary
-- script: (cd kustomize; go install .)
-
-# run it
-- script: ~/go/bin/kustomize version
+- script: unset GOPATH &&
+          unset GO111MODULES &&
+          git clone git@github.com:kubernetes-sigs/kustomize.git &&
+          cd kustomize &&
+          git checkout kustomize/v3.2.3 &&
+          (cd kustomize; go install .) &&
+          ~/go/bin/kustomize version &&
 - task: NuGetToolInstaller@1
 - script: echo "$(ENV_FILE)"
 

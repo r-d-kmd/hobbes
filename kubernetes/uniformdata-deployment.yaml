@@ -20,5 +20,9 @@ spec:
         envFrom:
         - secretRef:
             name: env
+        resources:
+          requests:
+            cpu: 50m
+            memory: 2000Mi
       restartPolicy: Always
 status: {}

@@ -3,7 +3,6 @@ open Giraffe
 open Hobbes.Calculator.Services.Data
 open Hobbes.Web
 open Hobbes.Web.Routing
-open Hobbes.Helpers.Environment
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
 open Hobbes.Web.RawdataTypes
@@ -28,7 +27,6 @@ let private app = application {
     memory_cache
     use_gzip
 }
-let cache = Cache.DataResultCache(Http.UniformData)
 type DependingTransformationList = FSharp.Data.JsonProvider<"""[
     {
         "_id" : "lkjlkj",

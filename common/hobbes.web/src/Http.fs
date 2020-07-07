@@ -52,14 +52,15 @@ module Http =
     type CacheService = 
         Read of string
         | Update
-        with member x.ToPath() =
+        with member x.ToPath(kind) =
               match x with
               Read key -> 
                   [
+                      kind
                       "read"
                       key
                   ]
-              | Update -> ["update"]
+              | Update -> [kind; "update"]
 
     type DbService =
        Root
@@ -79,8 +80,8 @@ module Http =
          with 
              member x.ToParts() = 
                match x with
-               UniformData serv -> "uniformdata/uniform", serv.ToPath(),8085
-               | DataSet serv   -> "unifromdata/dataset", serv.ToPath(),8085
+               UniformData serv -> "uniformdata", serv.ToPath("uniform"),8085
+               | DataSet serv   -> "uniformdata", serv.ToPath("dataset"),8085
                | Calculator serv -> "calculator",serv.ToPath(),8085
                | Configurations serv -> "configurations", serv.ToPath(),8085
                | Db serv -> "db",serv.ToPath(),5984

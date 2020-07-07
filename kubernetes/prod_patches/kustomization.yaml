@@ -4,7 +4,6 @@ kind: Kustomization
 resources:
   - metrics-server.yaml
   - prod_patches/unkustomizable.yaml
-  - db-volume.yaml
   - db-deployment.yaml
   - db-svc.yaml
   - azuredevops-deployment.yaml

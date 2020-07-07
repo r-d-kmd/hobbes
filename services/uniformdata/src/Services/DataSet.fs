@@ -2,9 +2,9 @@ namespace Hobbes.UniformData.Services
 
 open Hobbes.Web.Routing
 open Hobbes.Web
-open Hobbes.Helpers
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
+open FSharp.Data
 
 [<RouteArea ("/dataset", false)>]
 module DataSet =
@@ -17,7 +17,7 @@ module DataSet =
             
         match uniformData with
         Some uniformData ->
-            200, (uniformData |> Json.serialize)
+            200, uniformData.JsonValue.ToString()
         | None -> 
             404,"No data found"
 
@@ -37,10 +37,11 @@ module DataSet =
                 let key = args.Id
                 let data = args.Data
                 Log.logf "updating cache with _id: %s" key
-                try    
-                    data.ToString()
+                try
+                    Array.map (fun (d : Runtime.BaseTypes.IJsonDocument) -> d.JsonValue.ToString()) data
+                    |> String.concat ","
+                    |> sprintf "[%s]"
                     |> cache.InsertOrUpdate key
-                    Broker.Cache (Updated key)
                 with e ->
                     Log.excf e "Failed to insert %s" (dataAndKey.Substring(0,min 500 dataAndKey.Length))
                 200, "updated"

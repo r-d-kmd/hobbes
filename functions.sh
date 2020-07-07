@@ -88,7 +88,7 @@ then
     }
     services
 else
-    declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "sync" "uniformdata")
+    declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "uniformdata")
 fi
 
 function getJobWorker(){
@@ -146,12 +146,12 @@ function all(){
 function clean(){
     kubectl delete --all deployment
     kubectl delete --all service
+    kubectl delete --all replicationcontroller
+    kubectl delete --all statefulset
     kubectl delete --all pods
     kubectl delete --all pvc
     kubectl delete --all secrets
-    kubectl delete --all statefulset
     kubectl delete --all job
-    kubectl delete --all replicationcontroller
     kubectl delete --all hpa
 }
 
@@ -304,6 +304,11 @@ function sync(){
 
 function publish(){
     startJob publish
+}
+
+function forward(){
+    local NAME=$(getAppName $1)
+    kubectl port-forward service/$NAME-svc $2:$3 &>/dev/null &
 }
 
 

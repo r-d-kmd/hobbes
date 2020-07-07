@@ -62,7 +62,7 @@ module Cache =
         {
             "_id" : "Put1DHere",
             "timestamp" : "this is a time stamp",
-            "Data" : [{"Stuff" : "things"}]
+            "data" : []
         }
     """>
     
@@ -96,11 +96,10 @@ module Cache =
 
         let timeStamp = System.DateTime.Now
         sprintf """{
-            CacheKey = %s
-            TimeStamp = %A
-            Data = %s
-        }""" key timeStamp data
-        |> DynamicCacheRecord.Parse
+                    "_id": "%s",
+                    "timestamp": "%A",
+                    "data": %s
+                }""" key timeStamp data
 
     let readData (cacheRecordText : string) =
         let cacheRecord = Json.deserialize<CacheRecord> cacheRecordText 
@@ -164,8 +163,8 @@ module Cache =
             
             GenericCache {new ICacheProviderGeneric with 
                             member __.InsertOrUpdate key data = 
-                                    (data 
-                                    |> createDynamicCacheRecord key)
+                                    data 
+                                    |> createDynamicCacheRecord key
                                     |> db.InsertOrUpdate
                                     |> Log.debugf "Inserted data: %s"
                             
@@ -177,9 +176,8 @@ module Cache =
         new(service : Http.CacheService -> Http.Service) =
             GenericCache {new ICacheProviderGeneric with 
                             member __.InsertOrUpdate key data =
-                                let record = data 
-                                             |> createDynamicCacheRecord key
-                                record
+                                data 
+                                |> createDynamicCacheRecord key
                                 |> Http.post (Http.Update |> service)
                                 |> ignore
                                 

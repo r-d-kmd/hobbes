@@ -1,5 +1,4 @@
 #! /bin/bash
-
 function setupTest(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
@@ -41,4 +40,4 @@ function test(){
     echo "*********************UNIFORM********************************"
     echo "*********************UNIFORM********************************"
     logs uniform | tail -50
-}
+} 

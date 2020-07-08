@@ -9,15 +9,21 @@ open FSharp.Data
 [<RouteArea ("/dataset", false)>]
 module DataSet =
     let private cache = Cache.GenericCache("uniform")
+
+    let private dataToString data =
+        Array.map (fun (d : Runtime.BaseTypes.IJsonDocument) -> d.JsonValue.ToString()) data
+        |> String.concat ","
+        |> sprintf "[%s]"
+
     [<Get ("/read/%s")>]
     let read key =
-        let uniformData =
+        let dataSet =
            key
            |> cache.Get 
             
-        match uniformData with
-        Some uniformData ->
-            200, uniformData.JsonValue.ToString()
+        match dataSet with
+        Some dataSet ->
+            200, dataToString dataSet.Data
         | None -> 
             404,"No data found"
 
@@ -38,9 +44,7 @@ module DataSet =
                 let data = args.Data
                 Log.logf "updating cache with _id: %s" key
                 try
-                    Array.map (fun (d : Runtime.BaseTypes.IJsonDocument) -> d.JsonValue.ToString()) data
-                    |> String.concat ","
-                    |> sprintf "[%s]"
+                    dataToString data
                     |> cache.InsertOrUpdate key
                 with e ->
                     Log.excf e "Failed to insert %s" (dataAndKey.Substring(0,min 500 dataAndKey.Length))

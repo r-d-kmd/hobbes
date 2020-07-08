@@ -2,22 +2,28 @@ namespace Hobbes.UniformData.Services
 
 open Hobbes.Web.Routing
 open Hobbes.Web
-open Hobbes.Helpers
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
+open FSharp.Data
 
-[<RouteArea ("/data", false)>]
-module Data =
-    let private cache = Cache.Cache("uniform")
+[<RouteArea ("/dataset", false)>]
+module DataSet =
+    let private cache = Cache.GenericCache("uniform")
+
+    let private dataToString data =
+        Array.map (fun (d : Runtime.BaseTypes.IJsonDocument) -> d.JsonValue.ToString()) data
+        |> String.concat ","
+        |> sprintf "[%s]"
+
     [<Get ("/read/%s")>]
     let read key =
-        let uniformData =
+        let dataSet =
            key
            |> cache.Get 
             
-        match uniformData with
-        Some uniformData ->
-            200, (uniformData |> Json.serialize)
+        match dataSet with
+        Some dataSet ->
+            200, dataToString dataSet.Data
         | None -> 
             404,"No data found"
 
@@ -27,20 +33,19 @@ module Data =
             let args =
                 try
                     dataAndKey
-                    |> Json.deserialize<Cache.CacheRecord>
+                    |> Cache.DynamicCacheRecord.Parse
                     |> Some
                 with e ->
                     eprintfn "Failed to deserialization (%s). %s %s" dataAndKey e.Message e.StackTrace
                     None
             match args with
             Some args ->
-                let key = args.CacheKey
+                let key = args.Id
                 let data = args.Data
                 Log.logf "updating cache with _id: %s" key
-                try    
-                    data
+                try
+                    dataToString data
                     |> cache.InsertOrUpdate key
-                    Broker.Cache (Updated key)
                 with e ->
                     Log.excf e "Failed to insert %s" (dataAndKey.Substring(0,min 500 dataAndKey.Length))
                 200, "updated"
@@ -50,4 +55,4 @@ module Data =
             500,"Internal server error"
     [<Get "/ping">]
     let ping () =
-        200, "ping - UniformData"
+        200, "ping - DataSet"

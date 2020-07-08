@@ -1,18 +1,31 @@
 open Saturn
 open Giraffe
-open Hobbes.UniformData.Services.Data
+open Hobbes.UniformData.Services
 open Hobbes.Web.Routing
 open Hobbes.Helpers.Environment
 
 let private port = env "PORT" "8085"
                    |> int
 
+let uniformDataRouter = 
+    router {
+        fetch <@ UniformData.ping @>
+        withArg <@ UniformData.read @>
+        withBody <@ UniformData.update @>
+    }
+
+let dataSetRouter = 
+    router {
+        fetch <@ DataSet.ping @>
+        withArg <@ DataSet.read @>
+        withBody <@ DataSet.update @>
+    }
+
 let private appRouter = router {
     not_found_handler (setStatusCode 404 >=> text "The requested ressource does not exist")
     
-    fetch <@ ping @>
-    withArg <@ read @>
-    withBody <@ update @>
+    forward "/uniform" uniformDataRouter
+    forward "/dataset" dataSetRouter
 } 
 
 let private app = application {

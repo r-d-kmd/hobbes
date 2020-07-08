@@ -3,7 +3,6 @@ open Giraffe
 open Hobbes.Calculator.Services.Data
 open Hobbes.Web
 open Hobbes.Web.Routing
-open Hobbes.Helpers.Environment
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
 open Hobbes.Web.RawdataTypes
@@ -28,7 +27,6 @@ let private app = application {
     memory_cache
     use_gzip
 }
-let cache = Cache.Cache(Http.UniformData)
 type DependingTransformationList = FSharp.Data.JsonProvider<"""[
     {
         "_id" : "lkjlkj",
@@ -86,21 +84,31 @@ let dependingTransformations (cacheKey : string) =
 let getDependingTransformations (cacheMsg : CacheMessage) = 
     try
          match cacheMsg with
-         CacheMessage.Empty -> Success
+         CacheMessage.Empty -> 
+            Success
          | Updated cacheKey -> 
-            dependingTransformations cacheKey
-            |> Seq.iter(fun transformation ->    
+            let depending = dependingTransformations cacheKey
+            if Seq.isEmpty depending then
                 {
-                    Transformation = 
-                        {
-                            Name = transformation.Name
-                            Statements = transformation.Statements
-                        }
+                    Format = Json
                     CacheKey = cacheKey
                 }
-                |> Transform
+                |> Format
                 |> Broker.Calculation
-            )
+            else
+                depending
+                |> Seq.iter(fun transformation ->    
+                    {
+                        Transformation = 
+                            {
+                                Name = transformation.Name
+                                Statements = transformation.Statements
+                            }
+                        CacheKey = cacheKey
+                    }
+                    |> Transform
+                    |> Broker.Calculation
+                )       
             Success
     with e ->
         Log.excf e "Failed to perform calculation."

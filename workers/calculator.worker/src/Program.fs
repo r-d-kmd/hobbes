@@ -22,18 +22,16 @@ let formatToJson rows names =
         |> String.concat "},{"
         |> sprintf "[{%s}]"
 
-let cache = Cache.DataResultCache(Http.UniformData)
-let dataSet = Cache.GenericCache(Http.DataSet)
 let transformData (message : CalculationMessage) =
     match message with
     Transform message -> 
         let cacheKey = message.CacheKey
         let transformation = message.Transformation
-        match cache.Get message.CacheKey with
-        None -> 
+        match Http.get (message.CacheKey |> Http.CacheService.Read |> Http.UniformData) Json.deserialize<Cache.CacheRecord> with
+        Http.Error -> 
             Log.logf "No data for that key (%s)" cacheKey
             Success
-        | Some cacheRecord -> 
+        | Http.Success cacheRecord -> 
             try
                 let columnNames = cacheRecord.Data.ColumnNames
                 let data = 
@@ -57,7 +55,9 @@ let transformData (message : CalculationMessage) =
                         reraise()
                 try
                     transformedData
-                    |> cache.InsertOrUpdate key
+                    |> Cache.createCacheRecord key
+                    |> Http.post (Http.Update |> Http.UniformData)
+                    |> ignore
                     Log.logf "Transformation of [%s] using [%s] resulting in [%s] completed" cacheKey transformation.Name key
                     Success
                 with e ->
@@ -69,25 +69,27 @@ let transformData (message : CalculationMessage) =
     | Format message ->
         let cacheKey = message.CacheKey
         let format = message.Format
-        match cache.Get cacheKey with
-        None -> 
+        match Http.get (message.CacheKey |> Http.CacheService.Read |> Http.UniformData) Json.deserialize<Cache.CacheRecord> with
+        Http.Error -> 
             Log.logf "No data for that key (%s)" cacheKey
             Success
-        | Some record -> 
-                let names = record.Data.ColumnNames
-                let rows = record.Data.Values
-                let key = sprintf "%s:%A" cacheKey format
-                let formatted =
-                    match format with
-                    | Json -> formatToJson rows names
-                try
-                    formatted
-                    |> dataSet.InsertOrUpdate key
-                    Log.logf "Formatting of [%s] to [%A] resulting in [%s] completed" cacheKey format key
-                    Success
-                with e ->
-                   sprintf "Couldn't insert data (key: %s)." key
-                   |> Failure 
+        | Http.Success record -> 
+            let names = record.Data.ColumnNames
+            let rows = record.Data.Values
+            let key = sprintf "%s:%A" cacheKey format
+            let formatted =
+                match format with
+                | Json -> formatToJson rows names
+            try
+                formatted
+                |> Cache.createDynamicCacheRecord key
+                |> Http.post (Http.Update |> Http.DataSet)
+                |> ignore
+                Log.logf "Formatting of [%s] to [%A] resulting in [%s] completed" cacheKey format key
+                Success
+            with e ->
+               sprintf "Couldn't insert data (key: %s)." key
+               |> Failure 
 
 
 [<EntryPoint>]

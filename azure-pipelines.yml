@@ -1,4 +1,5 @@
   # ASP.NET
+
 # Build and test ASP.NET projects.
 # Add steps that publish symbols, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
@@ -11,8 +12,27 @@ pool:
 
 steps:
 
+# Need go 1.13 or higher
+- task: GoTool@0
+  inputs:
+    version: '1.13'
+- script: GO111MODULE=on GOPATH=$tmpGoPath go get sigs.k8s.io/kustomize/kustomize/v3
+  displayName: Go get kustomize
+
+- script: unset GOPATH &&
+          unset GO111MODULES &&
+          git clone https://github.com/kubernetes-sigs/kustomize &&
+          cd kustomize &&
+          git checkout kustomize/v3.2.3 &&
+          (cd kustomize; go install .) &&
+          ~/go/bin/kustomize version
+  displayName: Install Kustomize
+- task: KubectlInstaller@0
+  inputs:
+    kubectlVersion: 'latest'
 - script: dotnet tool install fake-cli
   displayName: Install Fake
+  
 - task: NuGetToolInstaller@1
 - script: echo "$(ENV_FILE)"
 
@@ -36,6 +56,7 @@ steps:
 
 #- script: docker login https://docker.pkg.github.com -u="$GIT_USER" -p="$GIT_PASS"
 - script: docker pull gcr.io/k8s-minikube/kicbase:v0.0.11
+  displayName: Pull minikube image
 
 # Start Minikube
 - script: minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
@@ -46,22 +67,26 @@ steps:
   displayName: Fix permissions
 
 # Set up cluster
-- script: ip=$(minikube ip)
-  displayName: Save Minikube ip
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
-- script: eval $(SHELL=/bin/bash minikube -p minikube docker-env) && dotnet fake build && docker images
-- script: source functions.sh && setupTest
-  displayName: Setup tests
+- script: source functions.sh && build PushApps 8 && docker images
+  displayName: Build the world
 
-- task: NewmanPostman@4
+- script: source functions.sh && applyProductionYaml
+  displayName: Setup production yaml
+ 
+- script: source functions.sh && cd kubernetes && kubectl apply -f test.yaml
+  displayName: Apply production yaml to minikube
+  
+- task: AzureCLI@2
   inputs:
-    collectionSourceType: 'url'
-    collectionURL: 'https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY}'
-    environmentSourceType: 'url'
-    environmentUrl: 'https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY}'
-    envVars: |
-      ip=$(IP)
-      master_key=$(MASTER_KEY)
-    unicodeDisabled: true
+    azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: 'az aks get-credentials --name hobbes-kub --resource-group hobbes-rg && 
+                   kubectl get all &&
+                   cd kubernetes &&
+                   ls &&
+                   echo "$(ENV_FILE)" | kubectl apply -f - &&
+                   kubectl apply -f test.yaml'

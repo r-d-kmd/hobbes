@@ -10,6 +10,17 @@ module Types =
                   match this with
                   Branches -> "branches"
                   | Commits -> "commits"
+    type Collection = 
+        Test
+        | Development
+        | Production
+        | All
+        with override x.ToString() = 
+                match x with
+                Test -> "Test"
+                | Development -> "Development"
+                | Production -> "Production"
+                | All -> "All"
 
     [<RequireQualifiedAccess>]
     type Project =
@@ -94,25 +105,53 @@ module Types =
                             Source = Source.None
                         }
                
-    let mutable private configurations : Map<string,Configuration> = Map.empty
-    let addConfiguration (source : Source ) name transformations =
-      configurations <- 
-              let name = source.Name + "." + name
-              match configurations |> Map.tryFind name with
-              Some _ -> failwithf "There's already a configuration called %s" name
-              | None ->
-                configurations |> Map.add name {
-                                                    Name = name
-                                                    Source = source
-                                                    Transformations = 
-                                                        transformations
-                                               }
-    let allConfigurations() = 
-        configurations
-        |> Map.toSeq
-        |> Seq.map snd 
+    let mutable private configurations : Map<Collection,Map<string,Configuration>> = Map.empty
+    let rec addConfiguration (collection : Collection) (source : Source ) name transformations =
+        match collection with
+        All ->
+            [
+                Test
+                Development
+                Production
+            ] |> List.iter(fun col ->
+                  addConfiguration col (source : Source ) name transformations
+            )
+        | _ ->
+            configurations <- 
+                let collectionConfigurations = 
+                    match configurations |> Map.tryFind collection with
+                    None -> Map.empty
+                    | Some c -> c
+                let name = source.Name + "." + name
+                match collectionConfigurations |> Map.tryFind name with
+                Some _ -> failwithf "There's already a configuration called %s" name
+                | None ->
+                    configurations.Add(collection,
+                                       collectionConfigurations 
+                                       |> Map.add name {
+                                              Name = name
+                                              Source = source
+                                              Transformations = 
+                                                  transformations
+                                         })
+                
+    let rec allConfigurations collection =
+        match collection with
+        All ->
+            [
+                Test
+                Development
+                Production
+            ] |> Seq.collect allConfigurations
+        | c -> 
+            match configurations |> Map.tryFind c with
+            None -> failwithf "Couldn't find %s in %A" (string c) (configurations |> Map.toList |> List.map fst)
+            | Some c ->
+                c
+                |> Map.toSeq
+                |> Seq.map snd 
     
-    let allTransformations() = 
-        allConfigurations()
-        |> Seq.collect(fun c -> c.Transformations)
-        |> Seq.distinctBy(fun t -> t.Name)
+    let allTransformations = 
+        allConfigurations
+        >> Seq.collect(fun c -> c.Transformations)
+        >> Seq.distinctBy(fun t -> t.Name)

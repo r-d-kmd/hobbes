@@ -1,14 +1,13 @@
 #! /bin/bash
 function setupTest(){
-    local CURRENT_DIR=$(pwd)
-    cd $SCRIPT_DIR
-    #dotnet test
-    start 
+    start && exit 1
+    sleep 5
     awaitRunningState
     all
     #Forward ports to be able to communicate with the cluster
     kubectl port-forward service/gateway-svc 30080:80 &
     kubectl port-forward service/db-svc 30084:5984 &
+    kubectl port-forward service/rabbitmq-service 31567:15672 &
     #wait a few second to be sure the port forwarding is in effect
     sleep 3
     IP="127.0.0.1"
@@ -16,14 +15,14 @@ function setupTest(){
     #test that the server and DB is accessible
     curl "${SERVER}:30084"
     front_url="${SERVER}:30080"
-    curl ${front_url}/ping
+    curl ${front_url}/ping && exit 1
     #publish transformations and configurations
-    publish
+    publish && exit 1
     
     logs gateway | tail -1
     logs conf | tail -1
     #syncronize and wait for it to complete
-    sync
+    sync && exit 1
     sleep 300
 
     cd $CURRENT_DIR

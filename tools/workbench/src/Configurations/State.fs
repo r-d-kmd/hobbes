@@ -31,11 +31,11 @@ module State =
             project |> Source.AzureDevOps
         let transformations = 
             uniformingTransformations.[project]@transformations
-        Types.addConfiguration source name transformations
+        Types.addConfiguration Production source name transformations
       )
   
   let initialise() = 
-    (* [
+    [
       General.foldBySprint
     ] |> add "foldBySprint"
        
@@ -74,7 +74,7 @@ module State =
       Metrics.bugCountBySprint
       Metrics.bugsPerSprint
     ] |> add "bugsPerSprint"
-*)
+
     [
       Metrics.martin
     ]  |> add "martin"

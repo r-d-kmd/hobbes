@@ -133,8 +133,8 @@ function restart(){
     for var in "$@"
     do
         local FILE_NAME=$(ls *$var*-deployment.yaml)
-        kubectl scale --replicas=0 -f $FILE_NAME
-        kubectl scale --replicas=1 -f $FILE_NAME
+        kubectl scale --replicas=0 -f $FILE_NAME && cd $CURRENT_DIR && exit 1
+        kubectl scale --replicas=1 -f $FILE_NAME && cd $CURRENT_DIR && exit 1
     done
     cd $CURRENT_DIR
 }
@@ -187,9 +187,9 @@ function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
 
-    kubectl apply -f env.JSON
-    kubectl apply -k ./
-    sleep 5
+    kubectl apply -f env.JSON && cd $CURRENT_DIR && exit 1
+    kubectl apply -k ./ && cd $CURRENT_DIR && exit 1
+    
     cd $CURRENT_DIR
 }
 
@@ -227,19 +227,6 @@ function pingService(){
 
 function testServiceIsFunctioning(){
     pingService $1 2>/dev/null | grep HTTP | tail -1 | cut -d$' ' -f2
-}
-
-declare -a PODS=()
-function pods(){
-    PODS=()
-    PODS_=$(kubectl get pods | grep - | cut -d ' ' -f 1)
-    for NAME in ${PODS_[@]}
-    do 
-        if [[ $(isRunning $NAME) != "True" ]]
-        then
-            PODS+="$NAME"
-        fi
-    done
 }
 
 function awaitRunningState(){

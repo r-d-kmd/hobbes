@@ -36,8 +36,19 @@ module Broker =
             CacheKey : string
         }
 
+    type Format =
+        Json
+
+    type FormatMessage =
+        {
+            Format : Format
+            CacheKey : string
+        }
+        
+
     type CalculationMessage = 
         Transform of TransformMessage
+        | Format of FormatMessage
 
     let private user = 
         match env "RABBIT_USER" null with

@@ -37,6 +37,7 @@ type Targets =
    | PushApps
    | BuildForTest
    | PullSdk
+   | PullApp
    | PullDb
    | PullRuntime
    | TestNoBuild
@@ -63,6 +64,7 @@ let targetName =
        | Targets.PullDb -> "PullDb"
        | Targets.PullRuntime  -> "PullRuntime"
        | Targets.TestNoBuild -> "TestNoBuild"
+       | Targets.PullApp -> "PullApp"
 
 
 
@@ -228,11 +230,13 @@ let buildApp (name : string) (appType : string) workingDir =
            ]
 
         let file = sprintf "%s/Dockerfile.%s" dockerDir.FullName appType |> Some
-        docker (Build(file,tag,buildArgs)) workingDir
+        System.IO.File.Copy(file.Value, sprintf "%s/Dockerfile" workingDir,true)
+        docker (Build(None,tag,buildArgs)) workingDir
         tags
         |> List.iter(fun t -> 
             docker (Tag(tag,t)) workingDir
         )
+        System.IO.File.Delete(sprintf "%s/Dockerfile" workingDir)
 
     let push _ = 
         let tags =
@@ -345,6 +349,10 @@ create Targets.PullRuntime (fun _ ->
 )
 
 create Targets.PullSdk (fun _ ->
+    docker (Pull "kmdrd/sdk") "."
+)
+
+create Targets.PullApp (fun _ ->
     docker (Pull "kmdrd/app") "."
 )
 
@@ -369,7 +377,8 @@ Targets.Sdk
 Targets.PullSdk ?=> Targets.PreApps
 Targets.PullRuntime ?=> Targets.PreApps
 
-Targets.Build ==> Targets.BuildForTest 
+Targets.Build ==> Targets.BuildForTest
+Targets.PullApp ==> Targets.BuildForTest 
 Targets.PullDb ==> Targets.BuildForTest
 Targets.PullSdk ==> Targets.BuildForTest
 Targets.PullRuntime ==> Targets.BuildForTest

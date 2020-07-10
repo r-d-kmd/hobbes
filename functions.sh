@@ -17,7 +17,7 @@ LightGray='\033[0;37m'
 White='\033[1;37m'
 NoColor='\033[0m'
 
-eval $(minikube -p minikube docker-env)
+eval $(SHELL=/bin/bash minikube -p minikube docker-env)
 #source <(kubectl completion bash)
 
 function get_script_dir(){
@@ -88,7 +88,7 @@ then
     }
     services
 else
-    declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "sync" "uniformdata")
+    declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "uniformdata")
 fi
 
 function getJobWorker(){
@@ -108,18 +108,18 @@ function getName(){
     echo $NAME
 }
 
+function logs(){
+    local NAME=$(getName $1)
+    kubectl wait --for=condition=ready "$NAME" --timeout=60s
+    kubectl logs $2 $NAME
+}
+
 function getAppName(){
    local SERVICE_NAME=$(kubectl get services \
                         | grep $1 \
                         | cut -d ' ' -f 1)
    local APP_NAME=${SERVICE_NAME::${#SERVICE_NAME}-4}
    echo $APP_NAME
-}
-
-function logs(){
-    local NAME=$(getName $1)
-    kubectl wait --for=condition=ready "$NAME" --timeout=60s
-    kubectl logs $2 $NAME
 }
 
 function delete(){
@@ -146,22 +146,21 @@ function all(){
 function clean(){
     kubectl delete --all deployment
     kubectl delete --all service
+    kubectl delete --all replicationcontroller
+    kubectl delete --all statefulset
     kubectl delete --all pods
     kubectl delete --all pvc
     kubectl delete --all secrets
-    kubectl delete --all statefulset
     kubectl delete --all job
-    kubectl delete --all replicationcontroller
     kubectl delete --all hpa
 }
-
 function build(){    
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
     re='^[0-9]+$'
     if [ -z "$1" ]
     then 
-        fake build
+        dotnet fake build
     elif [[ $1 =~ $re ]]
     then
         build "build" $1 
@@ -180,7 +179,7 @@ function build(){
             then
                echo "Done building"
             else
-                fake build --target "$target" --parallel $P
+                dotnet fake build --target "$target" --parallel $P
             fi
         done
     fi
@@ -309,6 +308,7 @@ function startJob(){
     cd $KUBERNETES_DIR
     kubectl delete job.batch/$1 &> /dev/null
     kubectl apply -f $1-job.yaml &> /dev/null || exit 1
+    sleep 5
     eval $(echo "kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s &> /dev/null")
     logs $1 -f
     cd $CURRENT_DIR
@@ -322,6 +322,11 @@ function publish(){
     startJob publish
 }
 
+function forward(){
+    local NAME=$(getAppName $1)
+    kubectl port-forward service/$NAME-svc $2:$3 &>/dev/null &
+}
+
 
 #This function builds the production yaml configuration in the kubernetes folder.
 function applyProductionYaml() {
@@ -329,7 +334,7 @@ function applyProductionYaml() {
     cd $KUBERNETES_DIR
     mv kustomization.yaml ./local_patches/kustomization.yaml
     mv ./prod_patches/kustomization.yaml kustomization.yaml
-    kustomize build -o test.yaml
+    ~/go/bin/kustomize build -o test.yaml
     mv kustomization.yaml ./prod_patches/kustomization.yaml
     mv ./local_patches/kustomization.yaml kustomization.yaml
     cd $CURRENT_DIR

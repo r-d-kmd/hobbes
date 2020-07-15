@@ -14,19 +14,28 @@ function setupTest(){
     sleep 3
     IP="127.0.0.1"
     SERVER="http://${ip}"
-    #test that the server and DB is accessible
+
+    echo "test that the server and DB is accessible"
     curl "${SERVER}:30084"
+    echo "DB is running"
+
     front_url="${SERVER}:30080"
     curl ${front_url}/ping
-    #publish transformations and configurations
-    publish
-    
-    logs gateway | tail -1
-    logs conf | tail -1
-    #syncronize and wait for it to complete
-    sync
-    sleep 300
+    echo "gateway is running"
 
+    echo "publish transformations and configurations"
+    publish
+
+    str=$(logs gateway) && echo ${str##*$'\n'}
+    str=$(logs conf) && echo ${str##*$'\n'}
+    
+    echo "syncronize and wait for it to complete"
+
+    sync
+    wait=300
+    echo "Waiting for sync to complete ${wait}s"
+    sleep $wait
+    
     cd $CURRENT_DIR
 }
 

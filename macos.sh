@@ -24,7 +24,7 @@ function setupTest(){
     echo "gateway is running"
 
     echo "publish transformations and configurations"
-    publish
+    publish || exit 1
 
     str=$(logs gateway) && echo ${str##*$'\n'}
     str=$(logs conf) && echo ${str##*$'\n'}

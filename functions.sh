@@ -292,9 +292,11 @@ function startJob(){
     cd $KUBERNETES_DIR
     kubectl delete job.batch/$1 &> /dev/null
     kubectl apply -f $1-job.yaml &> /dev/null || exit 1
+    printf "${LightRed}Publishing started\n"
     sleep 5
     eval $(echo "kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s &> /dev/null")
     logs $1 -f
+    printf "${NoColor}\n"
     cd $CURRENT_DIR
 }
 
@@ -306,7 +308,8 @@ function publish(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
     cd tools/workbench
-    docker build -t kmdrd/workbench .
+    docker build -t kmdrd/workbench . || exit 1
+    printf "${Green}Publisher build${NoColor}\n"
     startJob publish
     cd $CURRENT_DIR
 }

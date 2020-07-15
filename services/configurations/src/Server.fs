@@ -28,7 +28,13 @@ let private app = application {
     memory_cache
     use_gzip
 }
-let cache = Cache.Cache(Http.UniformData) :> Cache.ICacheProvider
+let peek cacheKey =
+    match Http.get (cacheKey |> Http.UniformDataService.Read |> Http.UniformData) Hobbes.Helpers.Json.deserialize<Cache.CacheRecord> with
+    Http.Error(sc,msg) -> 
+        false
+    | Http.Success cacheRecord -> 
+        true
+
 type DependingTransformationList = FSharp.Data.JsonProvider<"""[
     {
         "_id" : "lkjlkj",
@@ -109,7 +115,7 @@ let handleMerges cacheKey =
     | Some configuration ->
         let allUpdated = 
             configuration.Datasets
-            |> Array.exists(cache.Peek)
+            |> Array.exists(peek)
             |> not
         if allUpdated then
             {

@@ -7,7 +7,7 @@ spec:
     spec:
         containers:
         - name: publish
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           image: kmdrd/workbench
           env:
           - name: MASTER_KEY

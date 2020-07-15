@@ -302,7 +302,12 @@ function sync(){
 }
 
 function publish(){
+    local CURRENT_DIR=$(pwd)
+    cd $SCRIPT_DIR
+    cd tools/workbench
+    docker build -t kmdrd/workbench .
     startJob publish
+    cd $CURRENT_DIR
 }
 
 function forward(){

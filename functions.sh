@@ -258,7 +258,7 @@ function awaitRunningState(){
     echo "Still waiting for: ${#PODS[@]}"
     for NAME in ${PODS_[@]}
     do 
-        if [ "$(echo "$NAME" | cut -d '-' -f1)" != "sync" ] && [ "$(echo "$NAME" | cut -d '-' -f1)" != "publish" ]
+        if [[ $NAME != sync* ]] && [[ $NAME != publish* ]]
         then
             echo "Waiting for pod/$NAME"
             kubectl wait --for=condition=ready "pod/$NAME" --timeout=60s
@@ -268,15 +268,16 @@ function awaitRunningState(){
     echo "Waiting for DB to be operational"
     while [ "$(logs gateway | grep "DB initialized")" != "DB initialized" ]
     do
-        logs gateway | tail -1
-        logs db | tail -1
+        
+        str=$(logs gateway) && ${str##*$'\n'}
+        str=$(logs db) && ${str##*$'\n'}
     done
 
     echo "Waiting for Rabbit-MQ to be operational"
     while [ "$(logs conf | grep "Watching queue")" != "Watching queue: cache" ]
     do
-        logs conf | tail -1
-        logs rabbit | tail -1
+        str=$(logs conf) && ${str##*$'\n'}
+        str=$(logs rabbit) && ${str##*$'\n'}
     done
 
     all

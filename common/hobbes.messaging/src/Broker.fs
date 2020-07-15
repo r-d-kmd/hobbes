@@ -58,7 +58,7 @@ module Broker =
             CacheKey : string
             Format : Format
         }
-        
+
     type CalculationMessage = 
         Transform of TransformMessage
         | Merge of MergeMessage
@@ -66,7 +66,6 @@ module Broker =
         | Format of FormatMessage
 
     type Message<'a> = 
-        Bark
         | Message of 'a
 
     let private user = 
@@ -155,17 +154,17 @@ module Broker =
         //}
         ()
 
-    type private Dog(intervalInSeconds : int) = 
+    (*type private Dog(intervalInSeconds : int) = 
         let mutable resetAt = DateTime.Now
         member __.IsAlive 
                  with get() = 
                      (DateTime.Now - resetAt).TotalSeconds |> int < (intervalInSeconds * 2)
         member __.Reset() = 
-            resetAt <- DateTime.Now
+            resetAt <- DateTime.Now*)
 
     let private watch<'a> queueName (handler : 'a -> MessageResult) =
         let mutable keepAlive = true
-        let dog = Dog(watchDogInterval)
+        //let dog = Dog(watchDogInterval)
         try
             let channel = init()
             declare channel queueName
@@ -188,7 +187,7 @@ module Broker =
                             msgText 
                             |> Json.deserialize<Message<'a>>
                         match msg with
-                        Bark -> dog.Reset()
+                        //Bark -> dog.Reset()
                         | Message msg ->
                             match msg |> handler with
                             Success ->
@@ -208,7 +207,7 @@ module Broker =
             
             channel.BasicConsume(queueName,false,consumer) |> ignore
             printfn "Watching queue: %s" queueName
-            while dog.IsAlive do
+            while true (*dog.IsAlive*) do
                 System.Threading.Thread.Sleep(watchDogInterval / 2)
          with e ->
            eprintfn "Failed to subscribe to the queue. %s:%d. Message: %s" host port e.Message

@@ -119,13 +119,17 @@ let docker command dir =
                 System.String.Join(" ", 
                     buildArgs 
                     |> List.map(fun (n,v) -> sprintf "--build-arg %s=%s" n v)
-                )
+                ).Trim()
             ( match file with
               None -> 
                   sprintf "build -t %s %s ."  
               | Some f -> sprintf "build -f %s -t %s %s ." f) (tag.ToLower()) buildArgs
         | Tag(t1,t2) -> sprintf "tag %s %s" t1 t2
-    run "docker" dir arguments
+    let arguments = 
+        //replace multiple spaces with just one space
+        let args = arguments.Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries)
+        System.String.Join(" ",args) 
+    run "docker" dir (arguments.Replace("  "," ").Trim())
 
 let version =
         match buildConfiguration with
@@ -289,7 +293,7 @@ create Targets.Dependencies (fun _ ->
           outputDir
           paketDir
       ]
-  run "paket" "." "update"
+  
   [
       "paket.dependencies"
       "paket.lock"

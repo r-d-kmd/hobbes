@@ -8,7 +8,7 @@ open Hobbes.Messaging
 
 [<RouteArea ("/data", false)>]
 module Data =
-    let private cache : Cache.ICacheProvider = Cache.Cache("uniform") :> Cache.ICacheProvider
+    let private cache = Cache.cache("uniform") 
     [<Get ("/read/%s")>]
     let read key =
         let uniformData =

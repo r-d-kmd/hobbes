@@ -50,10 +50,20 @@ module Broker =
             Field : string
         }
 
+    type Format = 
+        Json    
+
+    type FormatMessage = 
+        {
+            CacheKey : string
+            Format : Format
+        }
+        
     type CalculationMessage = 
         Transform of TransformMessage
         | Merge of MergeMessage
         | Join of JoinMessage
+        | Format of FormatMessage
 
     type Message<'a> = 
         Bark

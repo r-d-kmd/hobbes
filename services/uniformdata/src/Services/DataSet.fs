@@ -8,26 +8,32 @@ open FSharp.Data
 
 [<RouteArea ("/dataset", false)>]
 module DataSet =
-    let private cache = Cache.GenericCache("uniform")
+    let private cache = Cache.dynamicCache("uniform")
+
+    let private dataToString data =
+        Array.map (fun (d : Cache.DynamicRecord.Datum) -> d.JsonValue.ToString()) data
+        |> String.concat ","
+        |> sprintf "[%s]"
+
     [<Get ("/read/%s")>]
     let read key =
-        let uniformData =
+        let dataSet =
            key
            |> cache.Get 
             
-        match uniformData with
-        Some uniformData ->
-            200, uniformData.JsonValue.ToString()
+        match dataSet with
+        Some dataSet ->
+            200, dataToString dataSet.Data
         | None -> 
             404,"No data found"
 
-    [<Post ("/update", true)>]
+    [<Put ("/update", true)>]
     let update dataAndKey =
         try
             let args =
                 try
                     dataAndKey
-                    |> Cache.DynamicCacheRecord.Parse
+                    |> Cache.DynamicRecord.Parse
                     |> Some
                 with e ->
                     eprintfn "Failed to deserialization (%s). %s %s" dataAndKey e.Message e.StackTrace
@@ -36,12 +42,12 @@ module DataSet =
             Some args ->
                 let key = args.Id
                 let data = args.Data
+                let dependsOn = args.DependsOn |> Array.toList
                 Log.logf "updating cache with _id: %s" key
                 try
-                    Array.map (fun (d : Runtime.BaseTypes.IJsonDocument) -> d.JsonValue.ToString()) data
-                    |> String.concat ","
-                    |> sprintf "[%s]"
-                    |> cache.InsertOrUpdate key
+                    data
+                    |> Array.map(fun d -> d.JsonValue)
+                    |> cache.InsertOrUpdate key dependsOn
                 with e ->
                     Log.excf e "Failed to insert %s" (dataAndKey.Substring(0,min 500 dataAndKey.Length))
                 200, "updated"

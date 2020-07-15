@@ -182,13 +182,13 @@ let main args =
                                     match conf.Source with
                                     Source.AzureDevOps p ->
                                         sprintf """{
-                                            "name" : "azure devops",
+                                            "provider" : "azure devops",
                                             "project" : "%s",
                                             "account" : "%s"
                                         }""" (string p) p.Account
                                     | Source.Git(ds,p) ->
                                         sprintf """{
-                                            "name" : "git",
+                                            "provider" : "git",
                                             "project" : "%s",
                                             "account" : "%s",
                                             "dataset" : "%s"

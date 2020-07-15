@@ -62,11 +62,14 @@ module Data =
     [<Post ("/configuration", true)>]
     let storeConfiguration (configuration : string) =
         let conf = Config.Parse configuration
-        Log.logf "Configuration %s" configuration
+#if DEBUG
+        let datasets = conf.Datasets
+        let transformations = conf.Transformations
+        Log.logf "Configuration %s. Transformations: %A Datasets: %A" configuration transformations datasets
         assert(System.String.IsNullOrWhiteSpace(conf.Id) |> not)
         assert(conf.Source |> Option.isNone || System.String.IsNullOrWhiteSpace(conf.Source.Value.Provider) |> not)
-        assert(conf.Transformations |> Array.isEmpty |> not)
-        
+        assert(datasets.Length + transformations.Length > 0)
+#endif
         200,configurations.InsertOrUpdate configuration
 
     [<Post ("/transformation", true)>]

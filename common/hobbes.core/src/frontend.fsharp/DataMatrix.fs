@@ -45,7 +45,7 @@ module Clustering =
                 :? (obj list) as l -> l
                 | a -> [a]
             ))
-
+        
         columnNames
         |> List.indexed
         |> List.fold(fun frame (i,columnName) ->
@@ -210,6 +210,7 @@ module DataStructures =
     type IDataMatrix = 
         abstract Transform : AST.Expression -> IDataMatrix
         abstract Combine : IDataMatrix -> IDataMatrix
+        abstract Join : string -> IDataMatrix -> IDataMatrix
         abstract ToJson : JsonTableFormat -> string
         abstract RowCount : int with get
     
@@ -947,6 +948,14 @@ module DataStructures =
 
         interface IDataMatrix with
             member ___.RowCount = frame.RowCount
+            member ___.Join fieldName other = 
+                frame
+                |> Frame.indexRows fieldName
+                |> Frame.join JoinKind.Outer <| 
+                    (other :?> DataMatrix).Frame
+                    |> Frame.indexRows fieldName
+                |> DataMatrix
+                :> IDataMatrix
             member ___.Combine other =
                 let matrix1 = 
                     frame |> toTable

@@ -47,12 +47,7 @@ let handleMessage message =
                 sprintf "Conldn't syncronize. %s %s" sourceDoc token
                 |> Failure 
             | Some (key,data) -> 
-                let data = 
-                    {
-                        CacheKey = key
-                        TimeStamp = None 
-                        Data = data
-                    } : Cache.CacheRecord
+                let data = Cache.createCacheRecord key [] data
                 match Http.post (Http.UniformData Http.Update) data with
                 Http.Success _ -> 
                    Log.logf "Data uploaded to cache"

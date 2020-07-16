@@ -3,7 +3,6 @@ namespace Hobbes.Web
 open Hobbes.Helpers.Environment
 open Hobbes.Helpers
 open Newtonsoft.Json
-open FSharp.Data
 
 module Cache =
     [<RequireQualifiedAccess>]
@@ -57,14 +56,6 @@ module Cache =
                                    | Value.Boolean b -> box b
                            )
                     )
-
-    type DynamicCacheRecord = JsonProvider<"""
-        {
-            "_id" : "Put1DHere",
-            "timestamp" : "this is a time stamp",
-            "data" : []
-        }
-    """>
     
     type CacheRecord = 
         {
@@ -72,9 +63,21 @@ module Cache =
             CacheKey : string
             [<JsonProperty("timestamp")>]
             TimeStamp : System.DateTime option
+            DependsOn : string list
             [<JsonProperty("data")>]
             Data : DataResult
         }
+    type DynamicRecord = FSharp.Data.JsonProvider<"""{
+        "_id" : "khjkjhkjh",
+        "timestamp" : "13/07/2020 11:55:21",
+        "dependsOn" : ["lkjlk","lhkjh"],
+        "data" : [{"columnName1":"value","columnName2" : 1},{"columnName1":"value","columnName2" : 1}]
+    }""">
+    
+    type BaseRecord = FSharp.Data.JsonProvider<"""{
+        "_id" : "khjkjhkjh",
+        "dependsOn" : ["lkjlk","lhkjh"]
+    }""">
 
     let key (source : string) = 
         let whitespaceToRemove = [|' ';'\t';'\n';'\r'|]
@@ -82,24 +85,27 @@ module Cache =
         |> System.String.Concat
         |> hash
     
-      
-    let createCacheRecord key (data : DataResult) =
-
+    let inline createCacheRecord key dependsOn (data : DataResult)  =
         let timeStamp = System.DateTime.Now
         {
             CacheKey =  key
             TimeStamp = Some timeStamp
+            DependsOn = dependsOn
             Data = data
         }
 
-    let createDynamicCacheRecord key data =
-
+    let createDynamicCacheRecord key (dependsOn : string list) (data : FSharp.Data.JsonValue []) =
+        let dependsOn = System.String.Join(",", dependsOn)
+        let data = 
+            System.String.Join(",", data |> Array.map(fun d -> d.ToString()))
         let timeStamp = System.DateTime.Now
         sprintf """{
                     "_id": "%s",
                     "timestamp": "%A",
-                    "data": %s
-                }""" key timeStamp data
+                    "dependsOn" : "[%s]",
+                    "data": [%s]
+                }""" key timeStamp dependsOn data
+        |> DynamicRecord.Parse
 
     let readData (cacheRecordText : string) =
         let cacheRecord = Json.deserialize<CacheRecord> cacheRecordText 
@@ -112,32 +118,49 @@ module Cache =
                    |> Seq.zip columnNames)
         )
 
-    type DataResultCache(name) =
-        static let parser = Json.deserialize<CacheRecord>
-        let db = Database.Database(name + "cache", parser, Log.loggerInstance)
-
-        member __.InsertOrUpdate key data = 
+    type Cache<'recordType,'dataType> (name : string, deserializer : string -> 'recordType,serializer : 'recordType -> string , recordCreator : string -> string list -> 'dataType -> 'recordType) =
+        let dbName = name + "cache"
+        let db = 
+            Database.Database(dbName, deserializer, Log.loggerInstance)
+        let list = 
+            Database.Database(dbName, BaseRecord.Parse, Log.loggerInstance)
+            
+        member __.InsertOrUpdate key dependsOn data = 
+            let serialized = 
                 data
-                |> createCacheRecord key 
-                |> db.InsertOrUpdate 
-                |> Log.debugf "Inserted data: %s"
+                |> recordCreator key dependsOn
+                |> serializer
+            assert(try serialized |> deserializer |> ignore; true with _ -> false)
+            serialized
+            |> db.InsertOrUpdate 
+            |> Log.debugf "Inserted data: %s"
         
         member __.Get (key : string) = 
             Log.logf "trying to retrieve cached %s from database" key
             key
-            |> db.TryGet
-
-    type GenericCache(name) =
-        static let parser = DynamicCacheRecord.Parse
-        let db = Database.Database(name + "cache", parser, Log.loggerInstance)
-
-        member __.InsertOrUpdate key data = 
-                data
-                |> createDynamicCacheRecord key 
-                |> db.InsertOrUpdate 
-                |> Log.debugf "Inserted data: %s"
-        
-        member __.Get (key : string) = 
-            Log.logf "trying to retrieve cached %s from database" key
-            key
-            |> db.TryGet
+            |> db.TryGet 
+        member __.Peek (key : string) =
+            db.TryGetRev key |> Option.isSome
+        member cache.Delete (key : string) = 
+            Log.logf "Deleting %s" key
+            let sc,body= 
+                key
+                |> db.Delete
+            list.List()
+            |> Seq.filter(fun doc ->
+                doc.DependsOn |> Array.contains key
+            ) |> Seq.iter(fun doc -> cache.Delete doc.Id)
+            if sc <> 200 then
+                failwithf "Status code %d - %s" sc body
+    let cache name = 
+        Cache(name,
+              Json.deserialize<CacheRecord>,
+              Json.serialize,
+              createCacheRecord)
+    let dynamicCache name = 
+        Cache(
+            name,
+            DynamicRecord.Parse,
+            (fun dynRec -> dynRec.JsonValue.ToString()),
+            createDynamicCacheRecord
+        )

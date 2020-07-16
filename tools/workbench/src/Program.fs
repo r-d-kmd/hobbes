@@ -3,19 +3,29 @@ open FSharp.Data
 open Hobbes.Web 
 open Hobbes.Helpers
 
-
+type Environment = 
+    Development
+    | Production
 
 type CLIArguments =
-    Collection of Workbench.Types.Collection
+    Tests
+    | Publish of string
+    | Sync of string
+    | Environment of Environment
     | Host of string
-    | PAT of string
+    | MasterKey of string
+    | Projects 
 with
     interface IArgParserTemplate with
         member s.Usage =
             match s with
-            Collection _ -> "indicates what collection of configuration should be published"
+            | Tests -> "Flags that the tests should be run"
+            | Publish _ -> "Publish the transformations to either development or production (set by environment or given as arg (prod/dev) if using workbench.json)"
+            | Sync _ -> "When sync-ing a project from azure"
+            | Environment _ -> "Environment to publish transformations to"
             | Host _ -> "The host to publish transformation and configurations to"
-            | PAT _ -> "Master key or PAT to hobbes gateway"
+            | MasterKey _ -> "Master key or PAT to hobbes gateway"
+            | Projects -> "Get all accessable projects"
 
 let parse stmt =
     let stmt = stmt |> string
@@ -49,6 +59,27 @@ let executeProcess (exe,cmdline) =
     p.WaitForExit()
     { exitCode = p.ExitCode; stdout = output.ToString(); stderr = error.ToString() }
 
+type WorkbenchSettings = FSharp.Data.JsonProvider<"""{
+    "development" : {
+        "azure" : {
+            "kmddk" : "y3",
+            "time-payroll-kmddk" : "g"
+        },
+        "hobbes" : "V",
+        "host" : "http://"
+    }, 
+    "production": {
+        "azure": {
+            "kmddk": "4b",
+            "time-payroll-kmddk": "gvr"
+        }, 
+        "hobbes": "VR",
+        "host" : "https://"
+    }
+}""">
+
+type ProjectsRes = FSharp.Data.JsonProvider<"""["sports", "weiner", "dogs"]""">
+
 open Workbench.Types
 [<EntryPoint>]
 let main args =
@@ -65,102 +96,153 @@ let main args =
     match arguments with
     None -> 0
     | Some arguments ->
-        
-        let collection = 
-            match arguments.TryGetResult Collection with
+        let publish = arguments.TryGetResult Publish
+        let settingsFile = "workbench.json"
+        let settings = 
+            match arguments.TryGetResult Environment with
             None -> 
-                match (env "COLLECTION" "test").ToLower() with
-                "production" -> Production
-                | "development" -> Development
-                | "all" -> All
-                | "test" -> Test
-                | e -> failwithf "Don't know collection %s" e
-            | Some t -> t
-
-        let host = 
-            arguments.TryGetResult Host
-            |> Option.orElse(
-               match env "HOST" null with
-               null -> failwith "personal access token must be provided"
-               | host ->
-                   host |> Some
-            ) |> Option.get
-
-        let pat = 
-            arguments.TryGetResult PAT
-            |> Option.orElse(
-               match env "PAT" null with
-               null -> failwith "personal access token must be provided"
-               | masterKey ->
-                   masterKey |> Some
-            ) |> Option.get
+                 match arguments.TryGetResult Host, arguments.TryGetResult MasterKey with
+                 | Some host,Some masterKey ->
+                    (sprintf """{
+                        "development" : {
+                            "azure" : {},
+                            "hobbes" : "%s",
+                            "host" : "%s"
+                        }, 
+                        "production": {}
+                    }""" masterKey host
+                    |> WorkbenchSettings.Parse).Development
+                 | _ -> 
+                    match env "HOST" null ,env "MASTER_KEY" null with
+                    null,null ->
+                        if System.IO.File.Exists settingsFile then 
+                            match publish with 
+                            | Some v when v.ToLower() = "prod" -> (settingsFile |> WorkbenchSettings.Load).Production
+                            | Some v when v.ToLower() = "dev"  -> (settingsFile |> WorkbenchSettings.Load).Development
+                            | _                                -> (settingsFile |> WorkbenchSettings.Load).Development
+                        else
+                            failwith "Host or master key or settings file must be provided"
+                    | host,masterKey ->
+                        (sprintf """{
+                            "development" : {
+                                "azure" : {},
+                                "hobbes" : "%s",
+                                "host" : "%s"
+                            }, 
+                            "production": {}
+                        }""" masterKey host
+                    |> WorkbenchSettings.Parse).Development
+            | Some e -> 
+               let settings = (settingsFile |> WorkbenchSettings.Load)
+               match e with
+               Development -> 
+                   settings.Development
+               | Production -> 
+                   settings.Production
             
-            
-        Log.logf "Using host: %s" host
-        let urlTransformations = host + "/admin/transformation"
-        let urlConfigurations = host + "/admin/configuration"
-
-        Workbench.Configurations.State.initialise()
-        Workbench.Configurations.DevOps.initialise()
-        Workbench.Configurations.Test.initialise()
-
-        let transformations = 
-            allTransformations collection
-            |> Seq.map Json.serialize
-
-        let configurations = 
-            printfn "Publishing %s-collection" (string collection)
-            allConfigurations collection
-            |> Seq.map (fun conf ->
-                let trans = 
-                   let ts = conf.Transformations |> List.map(fun t -> sprintf "%A" t.Name)
-                   System.String.Join(",", ts)
-                let source = 
-                        match conf.Source with
-                        Source.AzureDevOps p ->
-                            sprintf """{
-                                "name" : "azure devops",
-                                "project" : "%s",
-                                "account" : "%s"
-                            }""" (string p) p.Account
-                        | Source.Git(ds,p) ->
-                            sprintf """{
-                                "name" : "git",
-                                "project" : "%s",
-                                "account" : "%s",
-                                "dataset" : "%s"
-                            }""" (string p) p.Account (string ds)
-                        | s -> failwithf "not supported yet. %A" s
-                sprintf """{
-                        "_id" : "%s",
-                        "transformations" : [%s],
-                        "source" : %s
-                    }""" conf.Name trans source
-            )
-        let put url doc =
-            Http.Request(url, 
-                             httpMethod = "PUT",
-                             body = TextRequest doc,
+        let test = arguments.TryGetResult Tests 
+        let sync = arguments.TryGetResult Sync
+        let projects = arguments.TryGetResult Projects
+        if  test.IsSome || (sync.IsNone && publish.IsNone && projects.IsNone) then
+            settings.Azure.TimePayrollKmddk |> Workbench.Tests.test|> ignore
+            printfn "Press enter to exit..."
+            System.Console.ReadLine().Length
+        else
+            if projects.IsSome then
+                Http.Request(settings.Host + "/admin/projects", 
+                             httpMethod = "GET",
                              headers = 
                                 [
-                                   HttpRequestHeaders.BasicAuth pat ""
-                                   HttpRequestHeaders.ContentType HttpContentTypes.Json
-                                ]
-                            ) |> ignore 
-        transformations 
-        |> Seq.iter(fun doc ->
-            Log.logf "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
-            
-            try
-                put urlTransformations doc
-            with e ->
-               Log.logf "Failed to publish transformations. URL: %s Msg: %s" urlTransformations e.Message
-               reraise()
-        )
+                                   HttpRequestHeaders.BasicAuth settings.Hobbes ""
+                                ])
+                |> Http.readBody
+                |> ProjectsRes.Parse
+                |> Array.iter (printfn "%s")      
+            match sync with
+            None -> 
+                if publish |> Option.isSome then 
+                    Log.logf "Using host: %s" settings.Host
+                    let urlTransformations = settings.Host + "/admin/transformation"
+                    let urlConfigurations = settings.Host + "/admin/configuration"
 
-        configurations
-        |> Seq.iter(fun doc ->
-            Log.logf "Creating configurations: %s" (Database.CouchDoc.Parse doc).Id
-            put urlConfigurations doc
-        )
-        0
+                    let pat = settings.Hobbes
+                    Workbench.Configurations.State.initialise()
+                    Workbench.Configurations.DevOps.initialise()
+                    let transformations = 
+                        Workbench.Types.allTransformations()
+                        |> Seq.map Json.serialize
+
+                    let configurations = 
+                        Workbench.Types.allConfigurations()
+                        |> Seq.map (fun conf ->
+                            let trans = 
+                               let ts = conf.Transformations |> List.map(fun t -> sprintf "%A" t.Name)
+                               System.String.Join(",", ts)
+                            let source = 
+                                    match conf.Source with
+                                    Source.AzureDevOps p ->
+                                        sprintf """{
+                                            "provider" : "azure devops",
+                                            "project" : "%s",
+                                            "account" : "%s"
+                                        }""" (string p) p.Account
+                                    | Source.Git(ds,p) ->
+                                        sprintf """{
+                                            "provider" : "git",
+                                            "project" : "%s",
+                                            "account" : "%s",
+                                            "dataset" : "%s"
+                                        }""" (string p) p.Account (string ds)
+                                    | s -> failwithf "not supported yet. %A" s
+                            sprintf """{
+                                    "_id" : "%s",
+                                    "transformations" : [%s],
+                                    "source" : %s
+                                }""" conf.Name trans source
+                        )
+                    
+                    transformations 
+                    |> Seq.iter(fun doc ->
+                        Log.logf "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
+                        
+                        try
+                            Http.Request(urlTransformations, 
+                                         httpMethod = "PUT",
+                                         body = TextRequest doc,
+                                         headers = 
+                                            [
+                                               HttpRequestHeaders.BasicAuth pat ""
+                                               HttpRequestHeaders.ContentType HttpContentTypes.Json
+                                            ]
+                                        ) |> ignore
+                        with e ->
+                           Log.logf "Failed to publish transformations. URL: %s Msg: %s" urlTransformations e.Message
+                           reraise()
+                    )
+
+                    configurations
+                    |> Seq.iter(fun doc ->
+                        Log.logf "Creating configurations: %s" (Database.CouchDoc.Parse doc).Id
+                        Http.Request(urlConfigurations, 
+                                     httpMethod = "PUT",
+                                     body = TextRequest doc,
+                                     headers = 
+                                        [
+                                           HttpRequestHeaders.BasicAuth pat ""
+                                           HttpRequestHeaders.ContentType HttpContentTypes.Json
+                                        ]
+                                    ) |> ignore
+                    )
+                0
+             | Some configurationName ->
+                let pat = settings.Hobbes
+                let url = settings.Host + "/data/sync/" + configurationName
+                Http.Request(url, 
+                                 httpMethod = "GET",
+                                 headers = 
+                                    [
+                                       HttpRequestHeaders.BasicAuth pat ""
+                                       HttpRequestHeaders.ContentType HttpContentTypes.Json
+                                    ]
+                                ) |> ignore
+                0

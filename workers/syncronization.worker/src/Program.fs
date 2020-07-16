@@ -22,6 +22,8 @@ let main _ =
                     failwithf "Failed retrievining sources. %d - %s" sc m
             ) 
         Log.debugf "Syncronizing %d sources" (sources |> Seq.length)
+        let keys = 
+            sources
         sources
         |> Array.iter(fun source ->
             let queueName = source.Name.ToLower().Replace(" ","")

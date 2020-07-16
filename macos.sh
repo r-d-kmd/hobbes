@@ -15,7 +15,7 @@ function setupTest(){
     IP="127.0.0.1"
     SERVER="http://${ip}"
 
-    echo "test that the server and DB is accessible"
+    printf "${Cyan}Test that the server and DB is accessible\n"
     curl "${SERVER}:30084"
     echo "DB is running"
 
@@ -23,17 +23,15 @@ function setupTest(){
     curl ${front_url}/ping
     echo "gateway is running"
 
-    echo "publish transformations and configurations"
+    printf "${Purple}Publishing transformations and configurations\n" 
     publish || exit 1
-
-    LOGS=$(logs gateway) && echo ${LOGS##*$'\n'}
-    LOGS=$(logs conf) && echo ${LOGS##*$'\n'}
+    echo "transformations and configurations were published successfully"
     
     echo "syncronize and wait for it to complete"
 
     sync
     WAIT=300
-    echo "Waiting ${WAIT}s for sync to complete"
+    printf "${Yellow}Waiting ${WAIT}s for sync to complete\n${NoColor}"
     sleep $WAIT
     
     cd $CURRENT_DIR
@@ -45,9 +43,10 @@ function test(){
     echo "*********************GATEWAY********************************"
     echo "*********************GATEWAY********************************"
     echo "*********************GATEWAY********************************"
-    logs gateway | tail -50
+    logs gateway | printf "${Green}%s\n" &
+    logs uniform | printf "${Purple}%s\n" &
     echo "*********************UNIFORM********************************"
     echo "*********************UNIFORM********************************"
     echo "*********************UNIFORM********************************"
-    logs uniform | tail -50
+    
 } 

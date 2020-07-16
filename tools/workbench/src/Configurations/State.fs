@@ -12,6 +12,7 @@ module State =
           Project.Momentum
           Project.Nexus
           Project.UVskole
+          Project.Logic
        ]
   let uniformingTransformations = 
       [

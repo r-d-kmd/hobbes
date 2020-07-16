@@ -56,7 +56,6 @@ let dependingTransformations (cacheKey : string) =
         time <- System.DateTime.Now
         dependencies <-
             configurations.List()
-            |> Seq.filter(fun configuration -> configuration.Source |> Option.isSome || configuration.Join |> Option.isSome )
             |> Seq.collect(fun configuration ->
                 let transformations = 
                     configuration.Transformations
@@ -77,7 +76,7 @@ let dependingTransformations (cacheKey : string) =
                     |> List.fold(fun (lst : (string * Transformation) list) t ->
                         let prevKey, prevT = lst |> List.head
                         (prevKey + ":" + prevT.Name,t) :: lst
-                    ) [keyFromSource configuration.Source.Value,h]
+                    ) [keyFromSource configuration.Source,h]
             ) |> Seq.groupBy fst
             |> Seq.map(fun (key,deps) ->
                 key,
@@ -88,19 +87,19 @@ let dependingTransformations (cacheKey : string) =
         merges <-
             configurations.List()
             |> Seq.filter(fun configuration ->
-                configuration.Datasets.Length > 0
+                configuration.Source.Provider = "merge"
             ) |> Seq.collect(fun configuration ->
-                configuration.Datasets
+                configuration.Source.Datasets
                 |> Array.map(fun ds -> ds,configuration)
             ) |> Map.ofSeq
         joins  <-
             configurations.List()
             |> Seq.filter(fun configuration ->
-                configuration.Join |> Option.isSome
+                configuration.Source.Provider = "join"
             ) |> Seq.collect(fun configuration ->
                 [
-                    configuration.Join.Value.Left,configuration
-                    configuration.Join.Value.Right,configuration
+                    configuration.Source.Left.Value,configuration
+                    configuration.Source.Right.Value,configuration
                 ]
             ) |> Map.ofSeq
     match dependencies |> Map.tryFind cacheKey with
@@ -114,13 +113,13 @@ let handleMerges cacheKey =
     None -> ()
     | Some configuration ->
         let allUpdated = 
-            configuration.Datasets
+            configuration.Source.Datasets
             |> Array.exists(peek)
             |> not
         if allUpdated then
             {
                 CacheKey = configuration |> keyFromConfig
-                Datasets = configuration.Datasets
+                Datasets = configuration.Source.Datasets
             } |> Merge
             |> Broker.Calculation
 
@@ -130,9 +129,9 @@ let handleJoins cacheKey =
     | Some configuration ->
         {
             CacheKey = configuration |> keyFromConfig
-            Left = configuration.Join.Value.Left
-            Right = configuration.Join.Value.Right
-            Field = configuration.Join.Value.Field
+            Left = configuration.Source.Left.Value
+            Right = configuration.Source.Right.Value
+            Field = configuration.Source.Field.Value
         } |> Join
         |> Broker.Calculation
 let getDependingTransformations (cacheMsg : CacheMessage) = 

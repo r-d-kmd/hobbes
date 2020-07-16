@@ -86,8 +86,8 @@ module Data =
 
     let parseConfiguration doc = 
        let config = Config.Parse doc
-       assert(config.Source |> Option.isSome)
-       let source = config.Source.Value |> source2AzureSource
+       assert(config.Source.Provider = "azure devops")
+       let source = config.Source |> source2AzureSource
        
        if System.String.IsNullOrWhiteSpace source.Server then
           if System.String.IsNullOrWhiteSpace source.Project then failwithf "Didn't supply a project %s" doc

@@ -23,11 +23,18 @@ module RawdataTypes =
             "transformations" : ["jlk","lkjlk"]
         }, {
             "_id" : "name",
-            "datasets" : ["cache key for a data set","lkjlkjlk"]
+            "source" : {
+                "id" : "lkjlkj",
+                "provider": "merge",
+                "datasets" : ["cache key for a data set","lkjlkjlk"]
+            },
+            "transformations" : ["jlk","lkjlk"]
         }, {
             "_id" : "name",
-            "join" : 
+            "source" : 
                 {
+                    "provider" : "join",
+                    "id" : "kjlkj",
                     "left": "cache key for a data set",
                     "right" : "cache key for a data set",
                     "field" : "name of field to join on "
@@ -45,20 +52,10 @@ module RawdataTypes =
     
     let keyFromConfig (config : Config.Root) =
         try 
-                config.Source
-                |> Option.bind(fun source -> 
-                    let id = source |> keyFromSource
-                    System.String.Join(":",id::(config.Transformations |> List.ofSeq))
-                    |> Some
-                ) |> Option.orElse(
-                    config.Join
-                    |> Option.bind(fun join ->
-                        System.String.Join(":",(join.Left::join.Right::join.Field::(config.Transformations |> Array.toList))) |> Some
-                    )
-                ) |> Option.orElse(
-                    config.Datasets
-                    |> (System.String.Concat >> Hobbes.Helpers.Environment.hash >> Some)
-                ) |> Option.get
+                let source = config.Source
+                let sourceId =  source |> keyFromSource
+                System.String.Join(":",sourceId::(config.Transformations |> List.ofSeq))
+                
         with e ->
            failwithf "Failed to get key from (%s). Message: %s. Trace: %s" (config.JsonValue.ToString()) e.Message e.StackTrace
     

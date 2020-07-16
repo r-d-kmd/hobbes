@@ -26,15 +26,15 @@ function setupTest(){
     echo "publish transformations and configurations"
     publish || exit 1
 
-    str=$(logs gateway) && echo ${str##*$'\n'}
-    str=$(logs conf) && echo ${str##*$'\n'}
+    LOGS=$(logs gateway) && echo ${LOGS##*$'\n'}
+    LOGS=$(logs conf) && echo ${LOGS##*$'\n'}
     
     echo "syncronize and wait for it to complete"
 
     sync
-    wait=300
-    echo "Waiting for sync to complete ${wait}s"
-    sleep $wait
+    WAIT=300
+    echo "Waiting ${WAIT}s for sync to complete"
+    sleep $WAIT
     
     cd $CURRENT_DIR
 }

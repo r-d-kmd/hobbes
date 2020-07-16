@@ -49,18 +49,42 @@ module Http =
                         "calculate"
                         key
                     ]
-    type CacheService = 
+    type UniformDataService = 
         Read of string
+        | ReadFormatted of string
+        | Delete of string
         | Update
-        with member x.ToPath(kind) =
-              match x with
-              Read key -> 
-                  [
-                      kind
-                      "read"
-                      key
-                  ]
-              | Update -> [kind; "update"]
+        | UpdateFormatted
+        with member x.ToPath() =
+                match x with
+                Read key -> 
+                    [
+                        "data"
+                        "read"
+                        key
+                    ]
+                | ReadFormatted key -> 
+                    [
+                        "dataset"
+                        "read"
+                        key
+                    ]
+                | Delete key -> 
+                    [
+                        "data"
+                        "delete"
+                        key
+                    ]
+                | Update -> 
+                    [
+                        "data"
+                        "update"
+                    ]
+                | UpdateFormatted -> 
+                    [
+                        "dataset"
+                        "update"
+                    ]
 
     type DbService =
        Root
@@ -71,8 +95,7 @@ module Http =
               | Database s -> [s]
            
     type Service = 
-         UniformData of CacheService
-         | DataSet of CacheService
+         UniformData of UniformDataService
          | Db of DbService
          | Calculator of CalculatorService
          | Configurations of ConfigurationService
@@ -80,8 +103,7 @@ module Http =
          with 
              member x.ToParts() = 
                match x with
-               UniformData serv -> "uniformdata", serv.ToPath("uniform"),8085
-               | DataSet serv   -> "uniformdata", serv.ToPath("dataset"),8085
+               UniformData serv -> "uniformdata", serv.ToPath(),8085
                | Calculator serv -> "calculator",serv.ToPath(),8085
                | Configurations serv -> "configurations", serv.ToPath(),8085
                | Db serv -> "db",serv.ToPath(),5984
@@ -123,6 +145,14 @@ module Http =
         printfn "Getting %s" url
         Http.Request(url,
                      httpMethod = "GET",
+                     silentHttpErrors = true
+        ) |> readResponse parser
+
+    let delete (service : Service) parser  = 
+        let url = service.ServiceUrl
+        printfn "Deleting %s" url
+        Http.Request(url,
+                     httpMethod = "DELETE",
                      silentHttpErrors = true
         ) |> readResponse parser
 

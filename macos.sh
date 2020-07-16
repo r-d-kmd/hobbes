@@ -1,30 +1,41 @@
 #! /bin/bash
 function setupTest(){
-    start && exit 1
-    sleep 5
+    local CURRENT_DIR=$(pwd)
+    cd $SCRIPT_DIR
+    #dotnet test
+    start 
+    echo "Await running state"
     awaitRunningState
     all
     #Forward ports to be able to communicate with the cluster
     kubectl port-forward service/gateway-svc 30080:80 &
     kubectl port-forward service/db-svc 30084:5984 &
-    kubectl port-forward service/rabbitmq-service 31567:15672 &
     #wait a few second to be sure the port forwarding is in effect
     sleep 3
     IP="127.0.0.1"
     SERVER="http://${ip}"
-    #test that the server and DB is accessible
-    curl "${SERVER}:30084"
-    front_url="${SERVER}:30080"
-    curl ${front_url}/ping && exit 1
-    #publish transformations and configurations
-    publish && exit 1
-    
-    logs gateway | tail -1
-    logs conf | tail -1
-    #syncronize and wait for it to complete
-    sync && exit 1
-    sleep 300
 
+    echo "test that the server and DB is accessible"
+    curl "${SERVER}:30084"
+    echo "DB is running"
+
+    front_url="${SERVER}:30080"
+    curl ${front_url}/ping
+    echo "gateway is running"
+
+    echo "publish transformations and configurations"
+    publish || exit 1
+
+    LOGS=$(logs gateway) && echo ${LOGS##*$'\n'}
+    LOGS=$(logs conf) && echo ${LOGS##*$'\n'}
+    
+    echo "syncronize and wait for it to complete"
+
+    sync
+    WAIT=300
+    echo "Waiting ${WAIT}s for sync to complete"
+    sleep $WAIT
+    
     cd $CURRENT_DIR
 }
 

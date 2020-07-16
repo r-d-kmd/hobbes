@@ -22,6 +22,6 @@ spec:
         resources:
           requests:
             cpu: 100m
-            memory: 450Mi
+            memory: 800Mi
       restartPolicy: Always
 status: {}

@@ -7,13 +7,11 @@ spec:
     spec:
         containers:
         - name: publish
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           image: kmdrd/workbench
           env:
-          - name: PAT
+          - name: MASTER_KEY
             value: "Rno8hcqr9rXXs"
-          - name: COLLECTION
-            value: "test"
           - name: HOST
             value: "http://gateway-svc"
         restartPolicy: Never

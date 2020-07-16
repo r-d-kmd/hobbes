@@ -86,7 +86,8 @@ module Data =
 
     let parseConfiguration doc = 
        let config = Config.Parse doc
-       let source = config.Source |> source2AzureSource
+       assert(config.Source |> Option.isSome)
+       let source = config.Source.Value |> source2AzureSource
        
        if System.String.IsNullOrWhiteSpace source.Server then
           if System.String.IsNullOrWhiteSpace source.Project then failwithf "Didn't supply a project %s" doc
@@ -103,17 +104,6 @@ module Data =
              ],
              "value": 90060205
     }""">
-
-    let createDataRecord key (data : Cache.DataResult) =
-        let timeStamp = System.DateTime.Now
-        let record : Cache.CacheRecord= 
-            {
-                CacheKey = key
-                TimeStamp = Some timeStamp
-                Data = data
-            } 
-        record
-
 
     type private RawList = JsonProvider<"""["id_a","id_b"]""">
     let private db = 

@@ -262,7 +262,7 @@ function awaitRunningState(){
     echo "Still waiting for: ${#PODS[@]}"
     for NAME in ${PODS_[@]}
     do 
-        if [ "$(echo "$NAME" | cut -d '-' -f1)" != "sync" ] && [ "$(echo "$NAME" | cut -d '-' -f1)" != "publish" ]
+        if [[ $NAME != sync* ]] && [[ $NAME != publish* ]]
         then
             echo "Waiting for pod/$NAME"
             kubectl wait --for=condition=ready "pod/$NAME" --timeout=60s
@@ -272,15 +272,16 @@ function awaitRunningState(){
     echo "Waiting for DB to be operational"
     while [ "$(logs gateway | grep "DB initialized")" != "DB initialized" ]
     do
-        logs gateway | tail -1
-        logs db | tail -1
+        
+        str=$(logs gateway) && echo ${str##*$'\n'}
+        str=$(logs db) && echo ${str##*$'\n'}
     done
 
     echo "Waiting for Rabbit-MQ to be operational"
     while [ "$(logs conf | grep "Watching queue")" != "Watching queue: cache" ]
     do
-        logs conf | tail -1
-        logs rabbit | tail -1
+        str=$(logs conf) && echo ${str##*$'\n'}
+        str=$(logs rabbit) && echo ${str##*$'\n'}
     done
 
     all
@@ -295,9 +296,11 @@ function startJob(){
     cd $KUBERNETES_DIR
     kubectl delete job.batch/$1 &> /dev/null
     kubectl apply -f $1-job.yaml &> /dev/null || exit 1
+    printf "${Cyan}$1 started\n"
     sleep 5
     eval $(echo "kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s &> /dev/null")
-    logs $1 -f
+    logs $1 -f || all | grep $1
+    printf "${NoColor}\n"
     cd $CURRENT_DIR
 }
 
@@ -306,7 +309,13 @@ function sync(){
 }
 
 function publish(){
+    local CURRENT_DIR=$(pwd)
+    cd $SCRIPT_DIR
+    cd tools/workbench
+    docker build -t kmdrd/workbench . || exit 1
+    printf "${Green}Publisher build${NoColor}\n"
     startJob publish
+    cd $CURRENT_DIR
 }
 
 function forward(){

@@ -31,6 +31,7 @@ module Types =
         | EzEnergy 
         | Gandalf
         | Momentum
+        | Logic
         with member p.Account
                 with get() =
                     match p with
@@ -39,6 +40,7 @@ module Types =
                     | Nexus                      
                     | EzEnergy 
                     | Gandalf
+                    | Logic
                     | Momentum -> "kmddk"
                     | Delta -> "time-payroll-kmddk"
              override this.ToString() = 
@@ -50,28 +52,53 @@ module Types =
                | EzEnergy  -> "EzEnergy"
                | Gandalf -> "Gandalf"
                | Momentum -> "Momentum"
+               | Logic -> "KMDLoGIC"
+    type Join =
+        {
+            Left : string
+            Right : string
+            Field : string
+        }
 
     [<RequireQualifiedAccess>]
     type Source = 
         AzureDevOps of Project
         | Git of GitDataSet * Project
         | Jira of Project
+        | Merge of string list
+        | Join of Join
         | None
         with override this.ToString() = 
                match this with
                AzureDevOps p ->
                    sprintf """{
-                       "name" : "azure devops",
+                       "provider" : "azure devops",
+                       "id" : "%s",
                        "account" : "%s",
                        "project" :"%s"
-                   }""" (p.Account) (p.ToString())
+                   }""" (this.Name) (p.Account) (p.ToString()) 
                | Git (dataset,p) ->
                    sprintf """{
-                       "name" : "git",
+                       "provider" : "git",
+                       "id" : "%s",
                        "project" : "%s",
                        "account" : "%s",
                        "dataset" : "commits"
-                   }""" (p.ToString()) (p.Account)
+                   }""" (this.Name) (p.ToString()) (p.Account)
+               | Merge ids ->
+                    sprintf """{
+                        "id" : "%s",
+                        "provider" : "merge",
+                        "datasets" : [%s]
+                    }""" this.Name (System.String.Join(",",ids |> List.map (sprintf "%A")))
+               | Join join ->
+                   sprintf """{
+                       "provider" : "join",
+                       "id" : "%s"
+                        "left": "%s",
+                        "right" : "%s",
+                        "field" : "%s"
+                    }""" this.Name join.Left join.Right join.Field
                | Jira _
                | None -> failwith "Don't know what to do"
              member this.Name 
@@ -80,11 +107,21 @@ module Types =
                      AzureDevOps p -> "azureDevops." + p.ToString()
                      | Git(ds,p) -> sprintf "git.%s.%s" (p.ToString()) (ds.ToString())
                      | Jira p -> "jira." + p.ToString()
+                     | Merge ids -> "merge." + (System.String.Join("+",ids))
+                     | Join join -> sprintf "join.%s.%s.%s" join.Left join.Right join.Field
                      | None -> null
     
     
     open Hobbes.Web.RawdataTypes
+    let parse stmt =
+        let stmt = stmt |> string
+        Hobbes.Parsing.Parser.parse [stmt]
+        |> Seq.exactlyOne
     let createTransformation name (statements : Hobbes.DSL.Statements list) =
+       //verify the validity of the statements
+       statements
+       |> List.iter (parse >> ignore)
+
        {
            Name = name
            Statements = 

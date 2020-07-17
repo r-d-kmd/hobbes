@@ -20,5 +20,8 @@ spec:
         image: azuredevops
         name: hobbes-azuredevops
         resources: {}
+        resources:
+          requests:
+            cpu: 100m
       restartPolicy: Always
 status: {}

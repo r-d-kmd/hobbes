@@ -295,7 +295,7 @@ function startJob(){
     printf "${Cyan}$1 started\n"
     sleep 5
     eval $(echo "kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s &> /dev/null")
-    logs $1 -f || all | grep $1
+    logs $1 -f &
     printf "${NoColor}\n"
     cd $CURRENT_DIR
 }

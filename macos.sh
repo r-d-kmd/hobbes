@@ -29,7 +29,7 @@ function setupTest(){
     LOGS=$(logs gateway) && echo ${LOGS##*$'\n'}
     LOGS=$(logs conf) && echo ${LOGS##*$'\n'}
     
-    echo "syncronize and wait for it to complete"
+    echo "Syncronize"
 
     sync
     WAIT=300

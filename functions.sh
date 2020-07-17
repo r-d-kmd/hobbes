@@ -186,8 +186,7 @@ function listServices(){
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    set -e
-    kubectl apply -f env.JSON 
+    set -e 
     kubectl apply -k ./ 
     
     awaitRunningState

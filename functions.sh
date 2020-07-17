@@ -190,9 +190,6 @@ function start() {
     kubectl apply -k ./ 
     
     awaitRunningState
-    
-    kubectl port-forward service/gateway-svc 30080:80 &
-    kubectl port-forward service/db-svc 30084:5984 &
 
     set +e
     cd $CURRENT_DIR
@@ -288,7 +285,7 @@ function startJob(){
     set +e
 
     printf "${Cyan}$1 started\n"
-    sleep 5
+    sleep  5
     eval $(echo "kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s &> /dev/null")
     logs $1 -f || all | grep $1
     printf "${NoColor}\n"

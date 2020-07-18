@@ -7,7 +7,6 @@ function setupTest(){
     #start 
     echo "Await running state"
     all
-    
     #Forward ports to be able to communicate with the cluster
     kubectl port-forward service/gateway-svc 30080:80 &
     kubectl port-forward service/db-svc 30084:5984 &

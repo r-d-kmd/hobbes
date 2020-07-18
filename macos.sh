@@ -13,7 +13,7 @@ function setupTest(){
     
     #wait a few second to be sure the port forwarding is in effect
     sleep 3
-    IP="127.0.0.1"
+    IP="$(minikube ip)"
     SERVER="http://${ip}"
 
     printf "${Purple}test that the server and DB is accessible${NoColor}"

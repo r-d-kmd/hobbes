@@ -58,16 +58,22 @@ module Log =
                              "stacktrace" : "%s",
                              "message" : "%s"}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) logType (stacktrace |> jsonify) (msg |> jsonify)
         if env "LOG_LOCATION" "console" = "console" then
+            let esc = string (char 0x1B)
+            let red = esc + "[31;1m"
+            let noColor = esc + "[0m"
+            let yellow = esc + "[1;33m"
             //let's print log messages to console when running locally
             let now() =  System.DateTime.Now.ToString()
             let printer = 
                 if logType < logLevel then
                     ignore
                 else
-                    if logType = Error then
-                        eprintfn "%s - %s" (now())
-                    else
-                        printfn "%s - %s" (now())
+                    let p =
+                        match logType with
+                        Error -> eprintfn "%s%s - %s %s" red
+                        | Debug -> printfn "%s%s - %s %s" yellow
+                        | _ -> printfn "%s%s - %s %s" noColor
+                    fun s -> p (now()) s noColor
             (if System.String.IsNullOrWhiteSpace(stacktrace) then
               sprintf "%s" msg
              else

@@ -7,33 +7,35 @@ function setupTest(){
     echo "Await running state"
     awaitRunningState
     all
+    
     #Forward ports to be able to communicate with the cluster
     kubectl port-forward service/gateway-svc 30080:80 &
     kubectl port-forward service/db-svc 30084:5984 &
+    
     #wait a few second to be sure the port forwarding is in effect
     sleep 3
     IP="127.0.0.1"
     SERVER="http://${ip}"
 
-    echo "test that the server and DB is accessible"
+    printf "${LightBlue}test that the server and DB is accessible${NoColor}"
     curl "${SERVER}:30084"
-    echo "DB is running"
+    printf "${LightBlue}DB is running${NoColor}"
 
     front_url="${SERVER}:30080"
     curl ${front_url}/ping
-    echo "gateway is running"
+    printf "${LightBlue}gateway is running${NoColor}"
 
-    echo "publish transformations and configurations"
+    printf "${LightBlue}publish transformations and configurations${NoColor}"
     publish || exit 1
 
     LOGS=$(logs gateway) && echo ${LOGS##*$'\n'}
     LOGS=$(logs conf) && echo ${LOGS##*$'\n'}
     
-    echo "Syncronize"
+    printf "${LightBlue}Syncronize${NoColor}"
 
     sync
     WAIT=300
-    echo "Waiting ${WAIT}s for sync to complete"
+    printf "${LightBlue}Waiting ${WAIT}s for sync to complete${NoColor}"
     sleep $WAIT
     
     cd $CURRENT_DIR

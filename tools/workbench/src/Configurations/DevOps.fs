@@ -1,4 +1,3 @@
-
 namespace Workbench.Configurations
 open Workbench.Types
 
@@ -23,5 +22,5 @@ module DevOps =
 
             [
                 Workbench.Transformations.Git.allCommits
-            ] |> addConfiguration (Source.Git(Commits,p)) "allCommits"
+            ] |> addConfiguration Production (Source.Git(Commits,p)) "allCommits"
         )

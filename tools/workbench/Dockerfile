@@ -4,8 +4,7 @@ FROM kmdrd/app AS build
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
 
 ARG WORKER_NAME
-
 WORKDIR /app
 COPY --from=build /app .
 
-ENTRYPOINT ["dotnet","hobbes.workbench.dll","--publish", "development"]
+ENTRYPOINT ["dotnet","hobbes.workbench.dll"]

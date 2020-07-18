@@ -3,11 +3,40 @@ namespace Hobbes.OData
 open Hobbes.Parsing
 
 module Compile = 
-    
+    type Filter =
+        Eq of string * string
+        | Gt of string * string
+        | Lt of string * string
+        | Ge of string * string
+        | Le of string * string
+        | Ne of string * string
+        | Contains of string * string
+        | And of Filter * Filter
+        | Or of Filter * Filter
+        | Not of Filter
+        override x.ToString() =
+            let binary op lhs rhs =
+                sprintf "( %s %s %s )" lhs op rhs
+            match x with
+            Eq (lhs,rhs) -> binary "eq" lhs rhs
+            | Gt (lhs,rhs) -> binary "gt" lhs rhs
+            | Lt (lhs,rhs) -> binary "lt" lhs rhs
+            | Ge (lhs,rhs) -> binary "ge" lhs rhs
+            | Le (lhs,rhs) -> binary "le" lhs rhs
+            | Ne (lhs,rhs) -> binary "ne" lhs rhs
+            | Contains(lhs,rhs) -> sprintf "(contains(%s,%s))" lhs rhs
+            | And (lhs,rhs) -> binary "and" (string lhs) (string rhs)
+            | Or (lhs,rhs) -> binary "" (string lhs) (string rhs)
+            | Not f -> 
+                f 
+                |> string 
+                |> sprintf "(not %s)"
+
+        
     type CompileResult = {
-        Filters : string option
-        Fields : string option
-        OrderBy : string option
+        Filters : Filter list
+        Fields : string list
+        OrderBy : string list
     }
            
     let parsedExpressions (expressions : seq<AST.Expression>) = 
@@ -17,19 +46,15 @@ module Compile =
         let compiledLhs = compileExpression lhs
         let compiledRhs = compileExpression rhs
 
-        let binary op lhs rhs =
-            sprintf "%s %s %s" lhs op rhs
-
         let ops = 
             match op with
-            AST.GreaterThan -> binary "gt"        
-            | AST.GreaterThanOrEqual -> binary "ge" 
-            | AST.LessThan -> binary "lt"           
-            | AST.LessThanOrEqual -> binary "le"  
-            | AST.EqualTo -> binary "eq"
-            | AST.Contains ->
-                sprintf "contains(%s,%s)"
-        ops compiledLhs compiledRhs
+            AST.GreaterThan -> Gt        
+            | AST.GreaterThanOrEqual -> Ge
+            | AST.LessThan -> Lt          
+            | AST.LessThanOrEqual -> Le
+            | AST.EqualTo -> Eq
+            | AST.Contains -> Contains
+        ops (compiledLhs,compiledRhs)
 
     and compileExpression exp =
         let binary lhs rhs op = 
@@ -98,16 +123,19 @@ module Compile =
         let compiledExp = 
             match c with 
             AST.And (lhs,rhs) ->
-                sprintf "%s and %s" (compileBooleanExpression lhs) (compileBooleanExpression rhs)
+                And(compileBooleanExpression lhs,compileBooleanExpression rhs)
             |AST.Or(lhs,rhs) ->
-                sprintf "%s or %s" (compileBooleanExpression lhs) (compileBooleanExpression rhs)
+                Or(compileBooleanExpression lhs, compileBooleanExpression rhs)
+            |AST.Not(AST.Comparison(lhs,rhs,AST.EqualTo)) ->
+                Ne(compileExpression lhs,compileExpression rhs)
             |AST.Not(exp) ->
-                exp |> compileBooleanExpression |> sprintf "not %s"
+                exp |> compileBooleanExpression |> Not
             |AST.Comparison(lhs,rhs,op) ->
                 compileComparisonExpression lhs rhs op
             |AST.ValueOfColumn fieldName -> 
-                       fieldName
-        sprintf "( %s )" compiledExp
+                Eq(fieldName,"true")
+        compiledExp
+
     let expressions (lines : #seq<string>) = 
         let rec union list1 list2 =
             match list1, list2 with
@@ -118,9 +146,9 @@ module Compile =
         match lines with
         l when l |> Seq.isEmpty  -> 
             {
-                Fields = None
-                Filters = None
-                OrderBy = None
+                Fields = []
+                Filters = []
+                OrderBy = []
             }
         | lines ->
             let ast = Parser.parse lines
@@ -132,64 +160,40 @@ module Compile =
                       match fs with
                       AST.Only _ ->  (fields,orderBy)
                       | AST.SliceColumns a ->
-                            match  fields with
-                            None -> (a |> List.sort |> Some,orderBy)
-                            | Some f ->
-                                (f |> List.sort |> union a |> Some,orderBy)
+                            (fields |> List.sort |> union a,orderBy)
                       | AST.DenseColumns
                       | AST.DenseRows  
                       | AST.NumericColumns
                       | AST.IndexBy _ -> failwith "Not supported"
                       | AST.SortBy name ->  
-                          (fields, match orderBy with
-                                   None -> [name] |> Some
-                                   | Some cols -> name::cols |> Some)
+                          (fields, name::orderBy)
                   | AST.Reduction _
                   | AST.Cluster _ 
                   | AST.Column _ -> failwith "Not implemented"
                   | AST.NoOp -> (fields,orderBy)
-               ) (None,None)
+               )([],[])
             let filters =
-                let f =
-                    ast
-                    |> Seq.fold(fun filters a ->
-                        match a with
-                        AST.FilterAndSorting fs ->
-                            match fs with
-                            AST.Only(c) ->
-                                (compileBooleanExpression c)::filters
-                            | AST.SliceColumns _ -> filters
-                            | AST.DenseColumns
-                            | AST.DenseRows  
-                            | AST.NumericColumns
-                            | AST.IndexBy _ -> failwith "Not supported"
-                            | AST.SortBy _ -> filters
-                        | AST.Reduction _
-                        | AST.Cluster _ 
-                        | AST.Column _ -> failwith "Not implemented"
-                        | AST.NoOp -> filters
-                    ) []
-
-                match f with
-                [] -> None
-                | [f] -> Some f
-                | fs ->
-                    System.String.Join(" and ", fs) |> Some
-                
-            let orderBy = 
-                orderBy
-                |> Option.bind(fun fs ->
-                    System.String.Join(",",fs |> List.rev)
-                    |> Some
-                )   
-            let fields = 
-                fields
-                |> Option.bind(fun fs ->
-                    System.String.Join(",",fs)
-                    |> Some
-                )
+                ast
+                |> Seq.fold(fun filters a ->
+                    match a with
+                    AST.FilterAndSorting fs ->
+                        match fs with
+                        AST.Only(c) ->
+                            (compileBooleanExpression c)::filters
+                        | AST.SliceColumns _ -> filters
+                        | AST.DenseColumns
+                        | AST.DenseRows  
+                        | AST.NumericColumns
+                        | AST.IndexBy _ -> failwith "Not supported"
+                        | AST.SortBy _ -> filters
+                    | AST.Reduction _
+                    | AST.Cluster _ 
+                    | AST.Column _ -> failwith "Not implemented"
+                    | AST.NoOp -> filters
+                ) []
+          
             {
                 Fields = fields
                 Filters = filters
                 OrderBy = orderBy
-            }
+            }            

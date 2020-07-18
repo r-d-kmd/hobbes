@@ -23,9 +23,12 @@ module Data =
     [<Get ("/collectors")>]
     let collectors () =
         200,(",",listConfigurations()
-                  |> Seq.filter(fun config -> config.Source |> Option.isSome) 
+                  |> Seq.filter(fun config -> 
+                      match config.Source.Provider with
+                      "join" | "merge" -> false
+                      | _ -> true) 
                   |> Seq.map(fun config ->
-                    config.Source.Value.Provider 
+                    config.Source.Provider 
                   ) |> Seq.distinct
                   |> Seq.filter(System.String.IsNullOrWhiteSpace >> not)
                   |> Seq.map (sprintf "%A")
@@ -36,11 +39,9 @@ module Data =
     let sources (systemName:string) =
         200,(",\n",listConfigurations()
                   |> Seq.filter(fun config ->
-                        match config.Source with
-                        Some source -> source.Provider = systemName
-                        | None -> false
+                        config.Source.Provider = systemName
                   ) |> Seq.map(fun config ->
-                     config.Source.Value.JsonValue.ToString()
+                     config.Source.JsonValue.ToString()
                   ) |> Seq.distinct
             ) |> System.String.Join
             |> sprintf "[%s]"
@@ -62,14 +63,14 @@ module Data =
     [<Post ("/configuration", true)>]
     let storeConfiguration (configuration : string) =
         let conf = Config.Parse configuration
-#if DEBUG
-        let datasets = conf.Datasets
-        let transformations = conf.Transformations
-        Log.logf "Configuration %s. Transformations: %A Datasets: %A" configuration transformations datasets
-        assert(System.String.IsNullOrWhiteSpace(conf.Id) |> not)
-        assert(conf.Source |> Option.isNone || System.String.IsNullOrWhiteSpace(conf.Source.Value.Provider) |> not)
-        assert(datasets.Length + transformations.Length > 0)
-#endif
+        let hasValue d = System.String.IsNullOrWhiteSpace d |> not
+        Log.logf "Configuration %s." configuration
+        assert(hasValue conf.Id)
+        assert(hasValue conf.Source.Provider)
+        assert(conf.Transformations.Length > 0)
+        assert(conf.Source.Provider <> "merge" || conf.Source.Datasets.Length > 0)
+        assert(conf.Source.Provider <> "join" || (hasValue(conf.Source.Left.Value)&& hasValue (conf.Source.Right.Value) && hasValue (conf.Source.Field.Value)))
+
         200,configurations.InsertOrUpdate configuration
 
     [<Post ("/transformation", true)>]

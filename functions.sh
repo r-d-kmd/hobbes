@@ -1,4 +1,4 @@
-#! /bin/bash
+
 Black='\033[0;30m'
 DarkGray='\033[1;30m'
 Red='\033[0;31m'
@@ -17,57 +17,44 @@ LightGray='\033[0;37m'
 White='\033[1;37m'
 NoColor='\033[0m'
 
-eval $(SHELL=/bin/bash minikube -p minikube docker-env)
+echo "Evaluating"
+eval $(minikube -p minikube docker-env)
 #source <(kubectl completion bash)
 
-function get_script_dir(){
-     SOURCE="${BASH_SOURCE[0]}"
-     # While $SOURCE is a symlink, resolve it
-     while [ -h "$SOURCE" ]; do
-          DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-          SOURCE="$( readlink "$SOURCE" )"
-          # If $SOURCE was a relative symlink (so no "/" as prefix, need to resolve it relative to the symlink base directory
-          [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-     done
-     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-     echo "$DIR"
-}
-
-SCRIPT_DIR=$(get_script_dir)
+if [[ $(uname -s) == CYGWIN_NT* ]]
+then
+   SCRIPT_DIR=$(pwd)
+else
+    SOURCE="${BASH_SOURCE[0]}"
+    # While $SOURCE is a symlink, resolve it
+    while [ -h "$SOURCE" ]; do
+        printf "${LightBlue}$SOURCE${NoColor}\n"
+        DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+        SOURCE="$( readlink "$SOURCE" )"
+        # If $SOURCE was a relative symlink (so no "/" as prefix, need to resolve it relative to the symlink base directory
+        [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+    done
+    SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+fi
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 
-declare -a APPS=(db)
-function services(){
-    local APP_NAME=""
-    for PROJECT_FILE in $(find ${SCRIPT_DIR}/services -name *.fsproj)
-    do
-        local FILE_NAME=`basename $PROJECT_FILE`
-        APP_NAME=$(echo $FILE_NAME | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
-        APPS+=($APP_NAME)
-    done 
-    APP_NAME=""
-    for PROJECT_FILE in $(find ${SCRIPT_DIR}/workers -name *.fsproj)
-    do
-        local FILE_NAME=`basename $PROJECT_FILE`
-        if [[ "$FILE_NAME" = *.worker.* ]] 
-        then
-            APP_NAME=$(echo $FILE_NAME | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
-        fi
-        APPS+=($APP_NAME)
-    done 
-}
-services
-
+printf "${LightBlue}sourcing${NoColor}\n"
 if [[ $(uname -s) == MINGW64_NT* ]]
 then
     printf "${Red}Running on windows${NoColor}\n"
+elif [[ $(uname -s) == CYGWIN_NT* ]]
+then
+    source <(cat macos.sh | dos2unix)
+    printf "${Yellow}Running CygWin${NoColor}\n"
 else
     printf "${Green}Mac${NoColor}\n"
     source macos.sh
 fi
 
-if [ $(uname -s) = "Darwin" ]
+if [ $(uname -s) = MINGW64_NT* ]
 then
+    declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "uniformdata")
+else
     declare -a APPS=(db)
     function services(){
          local APP_NAME=""
@@ -87,8 +74,6 @@ then
          done 
     }
     services
-else
-    declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "uniformdata")
 fi
 
 function getJobWorker(){
@@ -133,8 +118,10 @@ function restart(){
     for var in "$@"
     do
         local FILE_NAME=$(ls *$var*-deployment.yaml)
+        set -e
         kubectl scale --replicas=0 -f $FILE_NAME
         kubectl scale --replicas=1 -f $FILE_NAME
+        set +e
     done
     cd $CURRENT_DIR
 }
@@ -164,11 +151,24 @@ function build(){
     elif [[ $1 =~ $re ]]
     then
         build "build" $1 
-    elif [ -z "$2" ]
-    then
-        dotnet fake build --target "$1"
     else
-        dotnet fake build --target "$1" --parallel $2
+        for LAST in $@; do :; done
+        if [[ $LAST =~ $re ]]
+        then
+            P=$LAST
+            echo "Running with $P parallel builds"
+        else
+            P=1
+        fi
+        for target in "$@"
+        do
+            if [[ $target =~ $re ]]
+            then
+               echo "Done building"
+            else
+                dotnet fake build --target "$target" --parallel $P
+            fi
+        done
     fi
     cd $CURRENT_DIR
 }
@@ -186,16 +186,17 @@ function listServices(){
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
+    set -e 
+    kubectl apply -k ./ 
+    
+    awaitRunningState
 
-    kubectl apply -f env.JSON
-    kubectl apply -k ./
-    sleep 5
+    set +e
     cd $CURRENT_DIR
 }
 
 function startkube(){
-    set $PATH=$PATH:/Applications/VirtualBox.app/
-    minikube start --vm-driver docker
+    minikube start --driver=docker --memory=4GB
 }
 
 function update(){
@@ -227,19 +228,6 @@ function pingService(){
 
 function testServiceIsFunctioning(){
     pingService $1 2>/dev/null | grep HTTP | tail -1 | cut -d$' ' -f2
-}
-
-declare -a PODS=()
-function pods(){
-    PODS=()
-    PODS_=$(kubectl get pods | grep - | cut -d ' ' -f 1)
-    for NAME in ${PODS_[@]}
-    do 
-        if [[ $(isRunning $NAME) != "True" ]]
-        then
-            PODS+="$NAME"
-        fi
-    done
 }
 
 function awaitRunningState(){
@@ -291,9 +279,13 @@ function startJob(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
     kubectl delete job.batch/$1 &> /dev/null
-    kubectl apply -f $1-job.yaml &> /dev/null || exit 1
+    
+    set -e
+    kubectl apply -f $1-job.yaml &> /dev/null
+    set +e
+
     printf "${Cyan}$1 started\n"
-    sleep 5
+    sleep  5
     eval $(echo "kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s &> /dev/null")
     logs $1 -f &
     printf "${NoColor}\n"
@@ -308,7 +300,11 @@ function publish(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
     cd tools/workbench
-    docker build -t kmdrd/workbench . || exit 1
+
+    set -e
+    docker build -t kmdrd/workbench .
+    set +e
+
     printf "${Green}Publisher build${NoColor}\n"
     startJob publish
     cd $CURRENT_DIR

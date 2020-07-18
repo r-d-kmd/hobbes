@@ -64,7 +64,8 @@ module Data =
             "account" : "kmddk",
             "project" : "gandalf",
             "dataset" : "commits",
-            "server" : "https://analytics.dev.azure.com/kmddk/flowerpot"
+            "server" : "https://analytics.dev.azure.com/kmddk/flowerpot",
+            "query" : ["slice columns WorkItemType", "only 1 = 1", "only IsCurrent"]
         }"""
 
     [<Literal>]
@@ -85,8 +86,8 @@ module Data =
 
     let parseConfiguration doc = 
        let config = Config.Parse doc
-       assert(config.Source |> Option.isSome)
-       let source = config.Source.Value |> source2AzureSource
+       assert(config.Source.Provider = "azure devops")
+       let source = config.Source |> source2AzureSource
        
        if System.String.IsNullOrWhiteSpace source.Server then
           if System.String.IsNullOrWhiteSpace source.Project then failwithf "Didn't supply a project %s" doc

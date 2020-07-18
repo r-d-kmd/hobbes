@@ -11,7 +11,9 @@
   <ItemGroup>
     <Compile Include="Types.fs" />
     <Compile Include="production transformations/*.fs" />
-    <Compile Include="Configurations/*.fs" />
+    <Compile Include="Configurations/DevOps.fs" />
+    <Compile Include="Configurations/State.fs" />
+    <Compile Include="Configurations/Test.fs" />
     <Compile Include="Tests/Tests.fs" />
     <Compile Include="Program.fs" />
     <None Include="*.json">

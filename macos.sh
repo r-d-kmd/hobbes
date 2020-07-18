@@ -4,9 +4,8 @@ function setupTest(){
     cd $SCRIPT_DIR
     #dotnet test
     set -e
-    start 
+    #start 
     echo "Await running state"
-    awaitRunningState
     all
     
     #Forward ports to be able to communicate with the cluster

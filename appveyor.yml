@@ -55,7 +55,7 @@ install:
 
 before_build:
   - CHANGE_MINIKUBE_NONE_USER=true MINIKUBE_HOME=${MINIKUBE_HOME} 
-  - minikube --driver=docker start
+  - minikube --driver=docker --memory=4gb start
   - ip=$(minikube ip)
   - eval $(minikube docker-env) 
   - echo ${ENV_FILE} | kubectl apply -f -
@@ -67,6 +67,7 @@ build_script:
   
 test_script:
   - source functions.sh
+  - start
   - setupTest
   - test
 deploy_script:

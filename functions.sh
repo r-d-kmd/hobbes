@@ -281,12 +281,11 @@ function startJob(){
     kubectl delete job.batch/$1 &> /dev/null
     
     set -e
-    kubectl apply -f $1-job.yaml &> /dev/null
+    kubectl apply -f $1-job.yaml
     set +e
 
     printf "${Cyan}$1 started\n"
-    sleep  5
-    eval $(echo "kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s &> /dev/null")
+    kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s
     logs $1 -f &
     printf "${NoColor}\n"
     cd $CURRENT_DIR

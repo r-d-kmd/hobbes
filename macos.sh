@@ -19,10 +19,13 @@ function setupTest(){
     
     set -e
     publish 
+    sleep 60
     echo "transformations and configurations were published successfully"
     echo "syncronize and wait for it to complete"
     kubectl config get-contexts
     kubectl config use-context minikube
+    kubectl get all
+
     sync
     set +e
 

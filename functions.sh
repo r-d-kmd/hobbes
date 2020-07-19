@@ -256,12 +256,14 @@ function awaitRunningState(){
     echo "Waiting for DB to be operational"
     while [ "$(logs gateway | grep "DB initialized")" != "DB initialized" ]
     do
+        kubectl get pods | grep gateway
         sleep 1
     done
 
     echo "Waiting for Rabbit-MQ to be operational"
     while [ "$(logs conf | grep "Watching queue")" != "Watching queue: cache" ]
     do
+        kubectl get pods | grep configurations
         sleep 1
     done
 
@@ -301,7 +303,7 @@ function publish(){
     docker build -t kmdrd/workbench .
     set +e
 
-    printf "${Green}Publisher build${NoColor}\n"
+    printf "${Green}Publisher built${NoColor}\n"
     startJob publish
     cd $CURRENT_DIR
 }

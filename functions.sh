@@ -264,7 +264,7 @@ function awaitRunningState(){
     while [ "$(logs conf | grep "Watching queue")" != "Watching queue: cache" ]
     do
         kubectl get pods | grep configurations
-        sleep 1
+        sleep 10
     done
 
     all

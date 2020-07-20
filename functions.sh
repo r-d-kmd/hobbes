@@ -95,7 +95,7 @@ function getName(){
 
 function logs(){
     local NAME=$(getName $1)
-    kubectl wait --for=condition=ready "$NAME" --timeout=60s
+    kubectl wait --for=condition=ready pod/"$NAME" --timeout=60s
     kubectl logs $2 $NAME
 }
 
@@ -285,7 +285,7 @@ function startJob(){
 
     printf "${Cyan}$1 started\n"
     kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s
-    logs $1 -f &
+    kubectl logs pod/$(getName $1) -f &
     printf "${NoColor}\n"
     cd $CURRENT_DIR
 }

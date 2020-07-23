@@ -118,10 +118,10 @@ function restart(){
     for var in "$@"
     do
         local FILE_NAME=$(ls *$var*-deployment.yaml)
-        set -e
+        
         kubectl scale --replicas=0 -f $FILE_NAME
         kubectl scale --replicas=1 -f $FILE_NAME
-        set +e
+        
     done
     cd $CURRENT_DIR
 }
@@ -186,12 +186,12 @@ function listServices(){
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    set -e 
+    
     kubectl apply -k ./ 
     
     awaitRunningState
 
-    set +e
+    
     cd $CURRENT_DIR
 }
 
@@ -279,9 +279,9 @@ function startJob(){
     cd $KUBERNETES_DIR
     kubectl delete job.batch/$1 &> /dev/null
     
-    set -e
+   
     kubectl apply -f $1-job.yaml
-    set +e
+    
 
     printf "${Cyan}$1 started\n"
     kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s
@@ -299,9 +299,7 @@ function publish(){
     cd $SCRIPT_DIR
     cd tools/workbench
 
-    set -e
     docker build -t kmdrd/workbench .
-    set +e
 
     printf "${Green}Publisher built${NoColor}\n"
     startJob publish

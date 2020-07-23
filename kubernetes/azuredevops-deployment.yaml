@@ -18,10 +18,7 @@ spec:
             name: env
         imagePullPolicy: Never
         image: azuredevops
-        name: hobbes-azuredevops
+        name: azuredevops
         resources: {}
-        resources:
-          requests:
-            cpu: 100m
       restartPolicy: Always
 status: {}

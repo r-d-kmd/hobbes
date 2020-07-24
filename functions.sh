@@ -178,6 +178,8 @@ function start() {
     
     awaitRunningState
 
+    kubectl port-forward service/gateway-svc 30080:80 &
+    kubectl port-forward service/db-svc 30084:5984 &
     
     cd $CURRENT_DIR
 }

@@ -62,21 +62,22 @@ steps:
 - script: source functions.sh && build buildfortest 8 && docker images
   displayName: Build the world
 
-- script: source functions.sh &&
-          start &&
-          sleep 3 &&
-          printf "${Purple}Publishing transformations and configurations\n" &&
-          publish &&
-          NAME="pod/$(getName publish)" &&
-          kubectl wait --for=condition=ready ${NAME} --timeout=120s &&
-          $(kubectl logs ${NAME} -f &) &&
-          kubectl wait --for=condition=completed ${NAME} --timeout=120s &&
-          kubectl describe ${NAME} &&
-          printf "${NoColor}\n" &&
-          kubectl config get-contexts &&
-          kubectl config use-context minikube &&
-          kubectl get all &&
-          sync
+- script: |
+    source functions.sh
+    start
+    sleep 3
+    printf "${Purple}Publishing transformations and configurations\n"
+    publish
+    NAME="pod/$(getName publish)"
+    kubectl wait --for=condition=ready ${NAME} --timeout=120s
+    $(kubectl logs ${NAME} -f &)
+    kubectl wait --for=condition=completed ${NAME} --timeout=120s
+    kubectl describe ${NAME}
+    printf "${NoColor}\n"
+    kubectl config get-contexts
+    kubectl config use-context minikube
+    kubectl get all
+    sync
           
   displayName: Setup tests
 

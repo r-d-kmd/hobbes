@@ -70,14 +70,17 @@ steps:
     publish
     NAME="pod/$(getName publish)"
     kubectl wait --for=condition=ready ${NAME} --timeout=120s
-    $(kubectl logs ${NAME} -f &)
+    printf "${Purple}Publishing\n"
+    kubectl logs ${NAME} -f &
     kubectl wait --for=condition=completed ${NAME} --timeout=120s
+    printf "Published${NoColor}\n"
     kubectl describe ${NAME}
-    printf "${NoColor}\n"
     kubectl config get-contexts
     kubectl config use-context minikube
     kubectl get all
+    printf "${Cyan}Sync\n"
     sync
+    printf "${Cyan}Syncing${NoColor}\n"
           
   displayName: Setup tests
 

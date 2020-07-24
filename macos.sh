@@ -3,7 +3,7 @@ function setupTest(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
     #dotnet test
-    set -e
+    
     #start 
     echo "Await running state"
     all
@@ -17,7 +17,6 @@ function setupTest(){
 
     printf "${Purple}Publishing transformations and configurations\n" 
     
-    set -e
     publish 
     sleep 60
     echo "transformations and configurations were published successfully"
@@ -27,7 +26,6 @@ function setupTest(){
     kubectl get all
 
     sync
-    set +e
 
     WAIT=300
     printf "${Yellow}Waiting ${WAIT}s for sync to complete\n${NoColor}"
@@ -37,16 +35,14 @@ function setupTest(){
 }
 
 function test(){
-    set -e
-    NAME=$(kubectl get pods -l app=gateway -o name) 
+    NAME=$(kubectl get pods -l app=gateway -o name)
     newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=${IP} --env-var "master_key"=${MASTER_KEY}
     echo "*********************GATEWAY********************************"
     echo "*********************GATEWAY********************************"
     echo "*********************GATEWAY********************************"
-    logs gateway | printf "${Green}%s\n" &
-    logs uniform | printf "${Purple}%s\n" &
+    logs gateway | printf "${Green}%s\n${NoColor}" &
+    logs uniform | printf "${Purple}%s\n${NoColor}" &
     echo "*********************UNIFORM********************************"
     echo "*********************UNIFORM********************************"
     echo "*********************UNIFORM********************************"
-    set +e
 } 

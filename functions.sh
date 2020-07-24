@@ -76,21 +76,8 @@ else
     services
 fi
 
-function getJobWorker(){
-    local JOB_NAME=$(kubectl get all | grep job.batch/syncronization-scheduler-.*$1 | cut -d ' ' -f 1)
-    if [[ "$JOB_NAME" = job.batch/* ]]
-    then
-        echo $JOB_NAME
-    fi
-}
-
 function getName(){
-    local NAME=$(kubectl get pods | grep $1 | cut -d ' ' -f 1 )
-    if [ -z "$NAME" ]
-    then
-       NAME=$(getJobWorker $1)
-    fi
-    echo $NAME
+    echo "$(kubectl get pods | grep $1 | cut -d ' ' -f 1 )"
 }
 
 function logs(){
@@ -186,7 +173,7 @@ function listServices(){
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    
+    kubectl apply -f env.JSON
     kubectl apply -k ./ 
     
     awaitRunningState
@@ -279,13 +266,14 @@ function startJob(){
     cd $KUBERNETES_DIR
     kubectl delete job.batch/$1 &> /dev/null
     
-   
     kubectl apply -f $1-job.yaml
     
-
     printf "${Cyan}$1 started\n"
-    kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s
-    kubectl logs pod/$(getName $1) -f &
+    NAME="pod/$(getName $1)"
+    kubectl wait --for=condition=ready ${NAME} --timeout=120s
+    echo "logging ${NAME}" kubectl logs ${NAME} -f &
+    kubectl wait --for=condition=completed ${NAME} --timeout=120s
+    kubectl describe ${NAME}
     printf "${NoColor}\n"
     cd $CURRENT_DIR
 }

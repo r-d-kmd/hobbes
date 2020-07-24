@@ -1,4 +1,4 @@
-#! /bin/bash
+
 Black='\033[0;30m'
 DarkGray='\033[1;30m'
 Red='\033[0;31m'
@@ -17,57 +17,44 @@ LightGray='\033[0;37m'
 White='\033[1;37m'
 NoColor='\033[0m'
 
-eval $(SHELL=/bin/bash minikube -p minikube docker-env)
+echo "Evaluating"
+eval $(minikube -p minikube docker-env)
 #source <(kubectl completion bash)
 
-function get_script_dir(){
-     SOURCE="${BASH_SOURCE[0]}"
-     # While $SOURCE is a symlink, resolve it
-     while [ -h "$SOURCE" ]; do
-          DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-          SOURCE="$( readlink "$SOURCE" )"
-          # If $SOURCE was a relative symlink (so no "/" as prefix, need to resolve it relative to the symlink base directory
-          [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-     done
-     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-     echo "$DIR"
-}
-
-SCRIPT_DIR=$(get_script_dir)
+if [[ $(uname -s) == CYGWIN_NT* ]]
+then
+   SCRIPT_DIR=$(pwd)
+else
+    SOURCE="${BASH_SOURCE[0]}"
+    # While $SOURCE is a symlink, resolve it
+    while [ -h "$SOURCE" ]; do
+        printf "${LightBlue}$SOURCE${NoColor}\n"
+        DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+        SOURCE="$( readlink "$SOURCE" )"
+        # If $SOURCE was a relative symlink (so no "/" as prefix, need to resolve it relative to the symlink base directory
+        [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+    done
+    SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+fi
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 
-declare -a APPS=(db)
-function services(){
-    local APP_NAME=""
-    for PROJECT_FILE in $(find ${SCRIPT_DIR}/services -name *.fsproj)
-    do
-        local FILE_NAME=`basename $PROJECT_FILE`
-        APP_NAME=$(echo $FILE_NAME | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
-        APPS+=($APP_NAME)
-    done 
-    APP_NAME=""
-    for PROJECT_FILE in $(find ${SCRIPT_DIR}/workers -name *.fsproj)
-    do
-        local FILE_NAME=`basename $PROJECT_FILE`
-        if [[ "$FILE_NAME" = *.worker.* ]] 
-        then
-            APP_NAME=$(echo $FILE_NAME | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
-        fi
-        APPS+=($APP_NAME)
-    done 
-}
-services
-
+printf "${LightBlue}sourcing${NoColor}\n"
 if [[ $(uname -s) == MINGW64_NT* ]]
 then
     printf "${Red}Running on windows${NoColor}\n"
+elif [[ $(uname -s) == CYGWIN_NT* ]]
+then
+    source <(cat macos.sh | dos2unix)
+    printf "${Yellow}Running CygWin${NoColor}\n"
 else
     printf "${Green}Mac${NoColor}\n"
     source macos.sh
 fi
 
-if [ $(uname -s) = "Darwin" ]
+if [ $(uname -s) = MINGW64_NT* ]
 then
+    declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "uniformdata")
+else
     declare -a APPS=(db)
     function services(){
          local APP_NAME=""
@@ -87,30 +74,15 @@ then
          done 
     }
     services
-else
-    declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "uniformdata")
 fi
 
-function getJobWorker(){
-    local JOB_NAME=$(kubectl get all | grep job.batch/syncronization-scheduler-.*$1 | cut -d ' ' -f 1)
-    if [[ "$JOB_NAME" = job.batch/* ]]
-    then
-        echo $JOB_NAME
-    fi
-}
-
 function getName(){
-    local NAME=$(kubectl get pods | grep $1 | cut -d ' ' -f 1 )
-    if [ -z "$NAME" ]
-    then
-       NAME=$(getJobWorker $1)
-    fi
-    echo $NAME
+    echo "$(kubectl get pods | grep $1 | cut -d ' ' -f 1 )"
 }
 
 function logs(){
     local NAME=$(getName $1)
-    kubectl wait --for=condition=ready "$NAME" --timeout=60s
+    kubectl wait --for=condition=ready pod/"$NAME" --timeout=60s
     kubectl logs $2 $NAME
 }
 
@@ -133,8 +105,10 @@ function restart(){
     for var in "$@"
     do
         local FILE_NAME=$(ls *$var*-deployment.yaml)
-        kubectl scale --replicas=0 -f $FILE_NAME && cd $CURRENT_DIR && exit 1
-        kubectl scale --replicas=1 -f $FILE_NAME && cd $CURRENT_DIR && exit 1
+        
+        kubectl scale --replicas=0 -f $FILE_NAME
+        kubectl scale --replicas=1 -f $FILE_NAME
+        
     done
     cd $CURRENT_DIR
 }
@@ -199,15 +173,12 @@ function listServices(){
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
+    kubectl apply -f env.JSON
+    kubectl apply -k ./ 
     
-    kubectl apply -f env.JSON && cd $CURRENT_DIR && exit 1
-    kubectl apply -k ./ && cd $CURRENT_DIR && exit 1
-
     awaitRunningState
 
-    kubectl port-forward service/gateway-svc 30080:80 &
-    kubectl port-forward service/db-svc 30084:5984 &
-
+    
     cd $CURRENT_DIR
 }
 
@@ -272,16 +243,15 @@ function awaitRunningState(){
     echo "Waiting for DB to be operational"
     while [ "$(logs gateway | grep "DB initialized")" != "DB initialized" ]
     do
-        
-        str=$(logs gateway) && echo ${str##*$'\n'}
-        str=$(logs db) && echo ${str##*$'\n'}
+        kubectl get pods | grep gateway
+        sleep 1
     done
 
     echo "Waiting for Rabbit-MQ to be operational"
     while [ "$(logs conf | grep "Watching queue")" != "Watching queue: cache" ]
     do
-        str=$(logs conf) && echo ${str##*$'\n'}
-        str=$(logs rabbit) && echo ${str##*$'\n'}
+        kubectl get pods | grep configurations
+        sleep 10
     done
 
     all
@@ -295,12 +265,11 @@ function startJob(){
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
     kubectl delete job.batch/$1 &> /dev/null
-    kubectl apply -f $1-job.yaml &> /dev/null || exit 1
+    
+    kubectl apply -f $1-job.yaml
+    
     printf "${Cyan}$1 started\n"
-    sleep 5
-    eval $(echo "kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s &> /dev/null")
-    logs $1 -f || all | grep $1
-    printf "${NoColor}\n"
+    
     cd $CURRENT_DIR
 }
 
@@ -312,8 +281,10 @@ function publish(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
     cd tools/workbench
-    docker build -t kmdrd/workbench . || exit 1
-    printf "${Green}Publisher build${NoColor}\n"
+
+    docker build -t kmdrd/workbench .
+
+    printf "${Green}Publisher built${NoColor}\n"
     startJob publish
     cd $CURRENT_DIR
 }

@@ -13,4 +13,4 @@ spec:
           imagePullPolicy: Never
           image: syncronization
         restartPolicy: Never
-  backoffLimit: 4
+  backoffLimit: 1

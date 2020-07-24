@@ -48,7 +48,7 @@ steps:
   displayName: Pull minikube image
 
 # Start Minikube
-- script: minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
+- script: minikube start --driver=docker --memory=4gb
   displayName: Start Minikube
 
 # Fix permissions issue in AzurePipelines
@@ -62,10 +62,28 @@ steps:
 - script: source functions.sh && build buildfortest 8 && docker images
   displayName: Build the world
 
-- script: source functions.sh && setupTest
+- script: source functions.sh
+          start
+          kubectl port-forward service/gateway-svc 30080:80 &
+          kubectl port-forward service/db-svc 30084:5984 &
+          sleep 3
+          printf "${Purple}Publishing transformations and configurations\n"
+          publish
+          NAME="pod/$(getName publish)"
+          kubectl wait --for=condition=ready ${NAME} --timeout=120s
+          kubectl logs ${NAME} -f &
+          kubectl wait --for=condition=completed ${NAME} --timeout=120s
+          kubectl describe ${NAME}
+          printf "${NoColor}\n"
+          kubectl config get-contexts
+          kubectl config use-context minikube
+          kubectl get all
+          sync
+          
   displayName: Setup tests
 
-- script: newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY)
+- script: sleep 300
+          newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY)
   displayName: Run postman tests
 
 - script: git config --global credential.helper store &&

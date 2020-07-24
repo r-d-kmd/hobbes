@@ -13,8 +13,7 @@ spec:
         app: uniformdata
     spec:
       containers:
-      - env:
-        imagePullPolicy: Never
+      - imagePullPolicy: Never
         image: uniformdata
         name: hobbes-uniformdata
         envFrom:

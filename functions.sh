@@ -269,12 +269,7 @@ function startJob(){
     kubectl apply -f $1-job.yaml
     
     printf "${Cyan}$1 started\n"
-    NAME="pod/$(getName $1)"
-    kubectl wait --for=condition=ready ${NAME} --timeout=120s
-    echo "logging ${NAME}" kubectl logs ${NAME} -f &
-    kubectl wait --for=condition=completed ${NAME} --timeout=120s
-    kubectl describe ${NAME}
-    printf "${NoColor}\n"
+    
     cd $CURRENT_DIR
 }
 

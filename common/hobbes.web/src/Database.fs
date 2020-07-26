@@ -131,7 +131,12 @@ namespace Hobbes.Web
                     match env "COUCHDB_PASSWORD" null with
                     null -> failwith "DB password not configured"
                     | pwd -> pwd
-                let rec inner() =
+                let rec inner (tries : int) =
+                    let retry() = 
+                        async{
+                            do! Async.Sleep 5000
+                            return! inner (tries + 1)
+                        }
                     let check url =
                         async {
                             try
@@ -144,14 +149,14 @@ namespace Hobbes.Web
                                 
                                 if resp.StatusCode > 299 then
                                    eprintfn "Error checking [%s]. %d - %s" url resp.StatusCode (resp |> Http.readBody)
-                                   do! Async.Sleep 2000
-                                   return! inner()
+                                   return! retry()
                              with
                             :? System.UriFormatException as e ->
                                 failwithf "Uri (%s) format exception Message: %s. Trace: %s" url e.Message e.StackTrace
                             | e ->
-                                eprintfn "Failed to connecto to DB. Message: %s. Trace: %s" e.Message e.StackTrace
-                                return! inner()
+                                if tries % 100 = 0 then
+                                    eprintfn "DB not reachable. Message: %s. Trace: %s" e.Message e.StackTrace
+                                return! retry()
                         }
                     async {
 
@@ -161,7 +166,7 @@ namespace Hobbes.Web
                         do! check (ServerUrl + "_users")
                         
                     }
-                do! inner()
+                do! (inner 0)
                 return ServerUrl,dbUser,dbPwd
             }
 

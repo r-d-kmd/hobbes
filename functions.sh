@@ -242,14 +242,12 @@ function awaitRunningState(){
     echo "Waiting for DB to be operational"
     while [ "$(logs gateway | grep "DB initialized")" != "DB initialized" ]
     do
-        kubectl get pods | grep gateway
         sleep 1
     done
 
     echo "Waiting for Rabbit-MQ to be operational"
     while [ "$(logs conf | grep "Watching queue")" != "Watching queue: cache" ]
     do
-        kubectl get pods | grep configurations
         sleep 10
     done
 

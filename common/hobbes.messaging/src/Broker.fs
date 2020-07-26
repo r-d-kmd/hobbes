@@ -112,16 +112,23 @@ module Broker =
             queues <- queues.Add queueName
             
             
-    let rec awaitQueue() = 
-        async{
-            try
-                let channel = init()
-                declare channel "dead_letter"
-            with e -> 
-               printfn "Queue not yet ready. Message: %s" e.Message
-               do! Async.Sleep 5000
-               do! awaitQueue()
-        } 
+    let awaitQueue =
+        let rec inner tries = 
+            let retry() =  
+                async{
+                    do! Async.Sleep 5000
+                    return! inner (tries + 1)
+                }
+            async{
+                try
+                    let channel = init()
+                    declare channel "dead_letter"
+                with e -> 
+                    if tries % 100 = 0 then
+                        printfn "Queue not yet ready. Message: %s" e.Message
+                    do! retry()
+            } 
+        inner 0
 
     type MessageResult = 
         Success

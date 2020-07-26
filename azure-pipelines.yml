@@ -85,6 +85,7 @@ steps:
   displayName: Setup tests
 
 - script: |
+    kubectl port-forward service/gateway-svc 30080:80 &
     sleep 300
     source functions.sh
     logs azure

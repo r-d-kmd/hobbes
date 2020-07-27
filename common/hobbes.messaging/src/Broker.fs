@@ -112,7 +112,7 @@ module Broker =
             queues <- queues.Add queueName
             
             
-    let awaitQueue =
+    let awaitQueue() =
         let rec inner tries = 
             let retry() =  
                 async{

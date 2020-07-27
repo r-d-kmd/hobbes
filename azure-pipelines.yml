@@ -68,6 +68,7 @@ steps:
     sleep 3
     printf "${Purple}Publishing transformations and configurations\n"
     publish
+    logs gateway
     NAME="pod/$(getName publish)"
     kubectl wait --for=condition=ready ${NAME} --timeout=120s
     printf "${Purple}Publishing\n"

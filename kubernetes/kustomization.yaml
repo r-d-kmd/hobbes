@@ -14,7 +14,6 @@ resources:
   - gateway-svc.yaml
   - uniformdata-deployment.yaml
   - uniformdata-svc.yaml
-  - sync-job.yaml
   - rabbitmq-controller.yaml
   - rabbitmq-service.yaml
   - metrics-server.yaml

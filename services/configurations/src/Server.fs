@@ -30,9 +30,9 @@ let private app = application {
 }
 let peek cacheKey =
     match Http.get (cacheKey |> Http.UniformDataService.Read |> Http.UniformData) Hobbes.Helpers.Json.deserialize<Cache.CacheRecord> with
-    Http.Error(sc,msg) -> 
+    Http.Error _ -> 
         false
-    | Http.Success cacheRecord -> 
+    | Http.Success _ -> 
         true
 
 type DependingTransformationList = FSharp.Data.JsonProvider<"""[
@@ -50,7 +50,7 @@ let dependingTransformations (cacheKey : string) =
 #if DEBUG    
     let isCacheStale = true
 #else
-    let isCacheStale = time < System.DateTime.Now.AddHours -1. 
+    let isCacheStale = (dependencies.Count = 0 || time < System.DateTime.Now.AddHours -1.)
 #endif    
     if isCacheStale then
         time <- System.DateTime.Now

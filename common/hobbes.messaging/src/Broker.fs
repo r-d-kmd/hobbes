@@ -124,7 +124,7 @@ module Broker =
                     let channel = init()
                     declare channel "dead_letter"
                 with e -> 
-                    if tries % 100 = 0 then
+                    if tries % 1000 = 0 then
                         printfn "Queue not yet ready. Message: %s" e.Message
                     do! retry()
             } 

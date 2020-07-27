@@ -154,7 +154,7 @@ namespace Hobbes.Web
                             :? System.UriFormatException as e ->
                                 failwithf "Uri (%s) format exception Message: %s. Trace: %s" url e.Message e.StackTrace
                             | e ->
-                                if tries % 100 = 0 then
+                                if tries % 1000 = 0 then
                                     eprintfn "DB not reachable. Message: %s. Trace: %s" e.Message e.StackTrace
                                 return! retry()
                         }

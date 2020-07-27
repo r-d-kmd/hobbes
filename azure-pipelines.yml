@@ -86,10 +86,11 @@ steps:
 
 - script: |
     kubectl port-forward service/gateway-svc 30080:80 &
+    kubectl port-forward service/db-svc 15984:5984 &
     sleep 120
     source functions.sh
     printf "${Purple}"
-    logs azure
+    echo $(logs azure)
     printf "${Cyan}"
     logs git
     printf "${Green}"
@@ -97,8 +98,9 @@ steps:
     printf "${Yellow}"
     logs sync
     printf "${Blue}"
-    logs conf
+    echo $(logs conf)
     printf "${NoColor}"
+    wget "http://$(minikube ip):35984/configurations/_all_docs
     newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY)
   displayName: Run postman tests
 

@@ -104,7 +104,7 @@ module Program =
             configurations
             |> Seq.iter(fun doc ->
                 Log.logf "Creating configurations: %s" (Database.CouchDoc.Parse doc).Id
-                Http.Request(urlConfigurations, 
+                let body  = Http.RequestString(urlConfigurations, 
                              httpMethod = "PUT",
                              body = TextRequest doc,
                              headers = 
@@ -112,6 +112,7 @@ module Program =
                                    HttpRequestHeaders.BasicAuth pat ""
                                    HttpRequestHeaders.ContentType HttpContentTypes.Json
                                 ]
-                            ) |> ignore
+                            )
+                Log.log body
             )
             0

@@ -87,7 +87,7 @@ steps:
 
 - script: |
     kubectl port-forward service/gateway-svc 30080:80 &
-    kubectl port-forward service/db-svc 15984:5984 &
+    kubectl port-forward service/db-svc 35984:5984 &
     sleep 120
     source functions.sh
     printf "${Purple}Azure devops\n"

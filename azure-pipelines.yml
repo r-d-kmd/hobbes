@@ -98,7 +98,9 @@ steps:
     printf "${Blue}Configurations\n"
     logs conf
     printf "${Green}Configurations\n"
-    wget "http://127.0.0.1:${DB_PORT}/configurations/_all_docs"
+    DB_SERVER="http://127.0.0.1:${DB_PORT}"
+    wget "${DB_SERVER}/configurations/_all_docs"
+    wget "${DB_SERVER}/uniformdatacache/_all_docs"
     printf "${NoColor}"
     newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY)
   displayName: Run postman tests

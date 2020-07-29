@@ -98,7 +98,7 @@ steps:
     printf "${Blue}Configurations\n"
     logs conf
     printf "${Green}Configurations\n"
-    DB_SERVER="http://127.0.0.1:${DB_PORT}"
+    DB_SERVER="http://admin:password@127.0.0.1:${DB_PORT}"
     wget "${DB_SERVER}/configurations/_all_docs"
     wget "${DB_SERVER}/uniformdatacache/_all_docs"
     printf "${NoColor}"

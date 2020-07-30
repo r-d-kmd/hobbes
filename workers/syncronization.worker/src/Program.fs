@@ -37,11 +37,11 @@ let main _ =
         sources
         |> Array.iter(fun source ->
             let queueName = source.Provider.ToLower().Replace(" ","")
-            let message = 
-                source.JsonValue.ToString()
-                |> Sync
-                |> Json.serialize
-            Broker.Generic queueName message
+            source.JsonValue.ToString()
+            |> Sync
+            |> Message
+            |> Json.serialize
+            |> Broker.Generic queueName
         )
         0
     | Http.Error(sc,m) -> 

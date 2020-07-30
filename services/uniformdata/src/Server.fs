@@ -13,7 +13,6 @@ let private appRouter = router {
     fetch <@ ping @>
     withArg <@ read @>
     withBody <@ update @>
-    withArg <@ clear @>
 } 
 
 let private app = application {

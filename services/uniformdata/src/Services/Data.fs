@@ -2,12 +2,8 @@ namespace Hobbes.UniformData.Services
 
 open Hobbes.Web.Routing
 open Hobbes.Web
-open Hobbes.Messaging.Broker
-open Hobbes.Messaging
-open FSharp.Data
 
-[<RouteArea ("/dataset", false)>]
-module DataSet =
+module Data =
     let private cache = Cache.dynamicCache("uniform")
 
     let private dataToString data =

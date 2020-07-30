@@ -129,7 +129,7 @@ let transformData (message : CalculationMessage) =
                         (formatted
                          |> Cache.createDynamicCacheRecord key record.DependsOn).JsonValue
                         |> string
-                        |> Http.put (Http.UpdateFormatted |> Http.UniformData)
+                        |> Http.put (Http.Update |> Http.UniformData)
                         |> ignore
                         Log.logf "Formatting of [%s] to [%A] resulting in [%s] completed" cacheKey format key
                         Success

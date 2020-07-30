@@ -97,9 +97,6 @@ steps:
     printf "${Cyan}**************Git********************\n"
     logs git
     printf "${Cyan}**************Git********************\n"
-    printf "${Yellow}**************Sync********************\n"
-    logs sync
-    printf "${Yellow}**************Sync********************\n"
     printf "${Purple}**************Uniform********************\n"
     logs uniform
     printf "${Purple}**************Uniform********************\n"

@@ -89,7 +89,7 @@ steps:
     DB_PORT=35984
     kubectl port-forward service/gateway-svc 30080:80 &
     kubectl port-forward service/db-svc ${DB_PORT}:5984 &
-    sleep 120
+    sleep 300
     source functions.sh
     printf "${Purple}Azure devops\n"
     logs azure

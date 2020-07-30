@@ -207,7 +207,7 @@ module Reader =
 
     let sync azureToken (source : AzureDevOpsSource.Root) = 
         
-        let rec _read hashes url = 
+        let rec _read hashes url : int * string = 
             Log.logf "syncing with %s@%s" azureToken url
             let resp = 
                 url
@@ -243,27 +243,22 @@ module Reader =
 
                     body
                     |> tryNextLink
-                    |> Option.iter(fun nextlink ->   
+                    |> Option.map(fun nextlink ->   
                            Log.logf "Continuing with %s" nextlink
                            _read hashes nextlink
-                    )
+                    ) |> Option.orElse(Some(500,body))
+                    |> Option.get
                 | _ -> 
-                    ()
+                    200,"ok"
             else 
                 let message = 
                     match resp.Body with 
                     Text t -> t 
                     | _ -> ""
-                failwith <| sprintf "StatusCode: %d. Message: %s" resp.StatusCode message
+                resp.StatusCode, message
         
         let url = 
             source
             |> getInitialUrl                                   
-        try
-            url
-            |> _read []
-            200,"ok"
-        with e ->
-            let msg = sprintf "failed to sync Message: %s Url: %s" e.Message url
-            Log.exc e msg
-            500, msg
+        url
+        |> _read []

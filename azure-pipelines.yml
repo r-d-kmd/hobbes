@@ -91,6 +91,9 @@ steps:
     kubectl port-forward service/db-svc ${DB_PORT}:5984 &
     sleep 120
     source functions.sh
+    printf "${Green}**************Sync********************\n"
+    logs sync
+    printf "**************Sync********************\n"
     printf "${Purple}**************Azure devops********************\n"
     logs azure
     printf "${Purple}**************Azure devops********************\n"
@@ -101,8 +104,8 @@ steps:
     logs uniform
     printf "${Purple}**************Uniform********************\n"
     printf "${Yellow}**************Calculator********************\n"
-    logs calc
-    printf "${Yellow}**************Calculator********************\n"
+    logs calc | printf "%s\n"
+    printf "**************Calculator********************${NoColor}\n"
     
     DB_USER="admin:password"
     DB_SERVER="http://127.0.0.1:${DB_PORT}"

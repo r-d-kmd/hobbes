@@ -241,5 +241,6 @@ module Broker =
         static member Calculation (handler : CalculationMessage -> _) = 
             watch "calculation" handler
         static member Generic queueName msg =
+            assert(queueName |> String.IsNullOrWhiteSpace |> not)
             printfn "Publishing (%s) as generic on (%s)" msg queueName
             publishString queueName msg

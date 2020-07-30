@@ -6,8 +6,18 @@ open Hobbes.Helpers
 
 type CollectorList = FSharp.Data.JsonProvider<"""["azure devops","git"]""">
 type SourceList = FSharp.Data.JsonProvider<"""[{
-                      "name": "azure devops"
-                    },{"name" : "git"}]""">
+                "provider" : "azuredevops",
+                "id" : "lkjlkj", 
+                "project" : "gandalf",
+                "dataset" : "commits",
+                "server" : "https://analytics.dev.azure.com/kmddk/flowerpot"
+            },{
+                "provider" : "azuredevops",
+                "id" : "lkjlkj", 
+                "project" : "gandalf",
+                "dataset" : "commits",
+                "server" : "https://analytics.dev.azure.com/kmddk/flowerpot"
+            }]""">
 [<EntryPoint>]
 let main _ =
     match Http.get (Http.Configurations Http.Collectors) CollectorList.Parse  with
@@ -26,7 +36,7 @@ let main _ =
             sources
         sources
         |> Array.iter(fun source ->
-            let queueName = source.Name.ToLower().Replace(" ","")
+            let queueName = source.Provider.ToLower().Replace(" ","")
             let message = 
                 source.JsonValue.ToString()
                 |> Sync

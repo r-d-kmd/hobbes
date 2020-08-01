@@ -16,7 +16,7 @@ module Data =
         match Http.get (configuration |> Some |> Http.Configuration |> Http.Configurations) RawdataTypes.Config.Parse with
         Http.Success config -> 
             let key = config |> RawdataTypes.keyFromConfig
-            match Http.get (key + ":Json" |> Http.UniformDataService.Read |> Http.UniformData) id with
+            match Http.get (key + ":Json" |> Http.UniformDataService.ReadFormatted |> Http.UniformData) id with
             Http.Success json ->
                 200, json
             | Http.Error(sc,m) -> sc,sprintf "Data for configuration %s not found. Message: %s" configuration m

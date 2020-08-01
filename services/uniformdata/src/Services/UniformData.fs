@@ -2,24 +2,22 @@ namespace Hobbes.UniformData.Services
 
 open Hobbes.Web.Routing
 open Hobbes.Web
+open Hobbes.Helpers
+open Hobbes.Messaging.Broker
+open Hobbes.Messaging
 
+[<RouteArea ("/data", false)>]
 module Data =
-    let private cache = Cache.dynamicCache("uniform")
-
-    let private dataToString data =
-        Array.map (fun (d : Cache.DynamicRecord.Datum) -> d.JsonValue.ToString()) data
-        |> String.concat ","
-        |> sprintf "[%s]"
-
+    let private cache = Cache.cache("uniform") 
     [<Get ("/read/%s")>]
     let read key =
-        let dataSet =
+        let uniformData =
            key
            |> cache.Get 
             
-        match dataSet with
-        Some dataSet ->
-            200, dataToString dataSet.Data
+        match uniformData with
+        Some uniformData ->
+            200, (uniformData |> Json.serialize)
         | None -> 
             404,"No data found"
 
@@ -29,21 +27,20 @@ module Data =
             let args =
                 try
                     dataAndKey
-                    |> Cache.DynamicRecord.Parse
+                    |> Json.deserialize<Cache.CacheRecord>
                     |> Some
                 with e ->
                     eprintfn "Failed to deserialization (%s). %s %s" dataAndKey e.Message e.StackTrace
                     None
             match args with
             Some args ->
-                let key = args.Id
+                let key = args.CacheKey
                 let data = args.Data
-                let dependsOn = args.DependsOn |> Array.toList
                 Log.logf "updating cache with _id: %s" key
-                try
+                try    
                     data
-                    |> Array.map(fun d -> d.JsonValue)
-                    |> cache.InsertOrUpdate key dependsOn
+                    |> cache.InsertOrUpdate key args.DependsOn
+                    Broker.Cache (Updated key)
                 with e ->
                     Log.excf e "Failed to insert %s" (dataAndKey.Substring(0,min 500 dataAndKey.Length))
                 200, "updated"
@@ -53,4 +50,4 @@ module Data =
             500,"Internal server error"
     [<Get "/ping">]
     let ping () =
-        200, "ping - DataSet"
+        200, "ping - UniformData"

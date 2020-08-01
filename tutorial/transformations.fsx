@@ -56,8 +56,9 @@ This example sorts the rows by the SprintNumber column, so that we would get the
 
 (**
 #### Dense
-The dense command is used to either make the rows dense, or make the column dense. The following two examples shows how to do both
-respectively.
+The dense command is used to filter either rows or columns. 
+Only dense rows/columns will be kept. A dense row/column is one with out a lot of missing values.
+The following two examples shows how to do both respectively.
 *)
 dense rows
 

@@ -23,7 +23,7 @@ module Data =
         | None -> 
             404,"No data found"
 
-    [<Put ("/update", true)>]
+    [<Post ("/update", true)>]
     let update dataAndKey =
         try
             let args =

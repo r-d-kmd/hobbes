@@ -23,7 +23,7 @@ let toMatrix (cacheRecord : Cache.CacheRecord) =
     ) |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
 
 let insertOrUpdate doc = 
-    match Http.put (Http.UniformDataService.Update |> Http.UniformData) doc with
+    match Http.post (Http.UniformDataService.Update |> Http.UniformData) doc with
         Http.Error(sc,msg) -> 
             failwithf "Failed inserting/updating data %d - %s" sc msg
         | Http.Success _ -> 

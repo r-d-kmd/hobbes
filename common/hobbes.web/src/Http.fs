@@ -52,15 +52,30 @@ module Http =
     type UniformDataService = 
         Read of string
         | Update
+        | ReadFormatted of string
+        | UpdateFormatted
         with member x.ToPath() =
                 match x with
                 Read key -> 
                     [
+                        "data"
                         "read"
                         key
                     ]
                 | Update -> 
                     [
+                        "data"
+                        "update"
+                    ]
+                | ReadFormatted key -> 
+                    [
+                        "dataset"
+                        "read"
+                        key
+                    ]
+                | UpdateFormatted -> 
+                    [
+                        "dataset"
                         "update"
                     ]
 

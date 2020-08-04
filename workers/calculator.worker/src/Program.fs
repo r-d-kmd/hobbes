@@ -101,7 +101,7 @@ let transformData (message : CalculationMessage) =
                                 |> Array.zip names
                                 |> Array.map(fun (colName,(value : Cache.Value)) ->
                                     let valueAsString = 
-                                        match value with
+                                        (match value with
                                         Cache.Value.Date dt -> 
                                             dt
                                             |> string
@@ -111,6 +111,7 @@ let transformData (message : CalculationMessage) =
                                         | Cache.Value.Float f -> sprintf "%f" f
                                         | Cache.Value.Boolean b -> sprintf "%b" b 
                                         | Cache.Value.Null -> "null"
+                                        ).Replace("\\", "\\\\")
                                     sprintf """ "%s" : %s """ colName valueAsString
                                 ))
                             |> sprintf "{%s}"
@@ -127,9 +128,9 @@ let transformData (message : CalculationMessage) =
                             formatToJson rows names
                     try
                         (formatted
-                         |> Cache.createDynamicCacheRecord key record.DependsOn).JsonValue
+                        |> Cache.createDynamicCacheRecord key record.DependsOn).JsonValue
                         |> string
-                        |> Http.put (Http.Update |> Http.UniformData)
+                        |> Http.post (Http.UpdateFormatted |> Http.UniformData)
                         |> ignore
                         Log.logf "Formatting of [%s] to [%A] resulting in [%s] completed" cacheKey format key
                         Success

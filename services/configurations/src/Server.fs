@@ -139,21 +139,30 @@ let getDependingTransformations (cacheMsg : CacheMessage) =
          match cacheMsg with
          CacheMessage.Empty -> Success
          | Updated cacheKey -> 
-            dependingTransformations cacheKey
-            |> Seq.iter(fun transformation ->    
+            let depending = dependingTransformations cacheKey
+            if Seq.isEmpty depending then
                 {
-                    Transformation = 
-                        {
-                            Name = transformation.Name
-                            Statements = transformation.Statements
-                        }
-                    DependsOn = cacheKey
+                   Format = Json
+                   CacheKey = cacheKey
                 }
-                |> Transform
+                |> Format
                 |> Broker.Calculation
-            )
-            handleMerges cacheKey
-            handleJoins cacheKey
+            else
+                depending
+                |> Seq.iter(fun transformation ->    
+                    {
+                        Transformation = 
+                            {
+                                Name = transformation.Name
+                                Statements = transformation.Statements
+                            }
+                        DependsOn = cacheKey
+                    }
+                    |> Transform
+                    |> Broker.Calculation
+                )
+                handleMerges cacheKey
+                handleJoins cacheKey
             Success
     with e ->
         Log.excf e "Failed to perform calculation."

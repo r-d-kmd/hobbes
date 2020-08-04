@@ -3,6 +3,7 @@ namespace Hobbes.UniformData.Services
 open Hobbes.Web.Routing
 open Hobbes.Web
 
+[<RouteArea ("/dataset", false)>]
 module Dataset =
     let private cache = Cache.dynamicCache("uniform")
 
@@ -31,7 +32,6 @@ module Dataset =
                     let args = 
                         dataAndKey
                         |> Cache.DynamicRecord.Parse
-                        |> Some
                     let key = args.Id
                     let data = args.Data
                     let dependsOn = args.DependsOn |> Array.toList

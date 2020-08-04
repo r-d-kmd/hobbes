@@ -24,6 +24,7 @@ module Cache =
                 | :? float as f -> f |> Value.Float
                 | :? decimal as d -> d |> float |> Value.Float
                 | :? string as s  -> s |> Value.Text
+                | :? bool as b -> b |> Value.Boolean
                 | s ->
                     Log.errorf "Didn't recognise value (%A)" s
                     assert(false)
@@ -95,14 +96,14 @@ module Cache =
         }
 
     let createDynamicCacheRecord key (dependsOn : string list) (data : FSharp.Data.JsonValue []) =
-        let dependsOn = System.String.Join(",", dependsOn)
+        let dependsOn = System.String.Join("\",\"", dependsOn)
         let data = 
             System.String.Join(",", data |> Array.map(fun d -> d.ToString()))
         let timeStamp = System.DateTime.Now
         sprintf """{
                     "_id": "%s",
                     "timestamp": "%A",
-                    "dependsOn" : "[%s]",
+                    "dependsOn" : ["%s"],
                     "data": [%s]
                 }""" key timeStamp dependsOn data
         |> DynamicRecord.Parse

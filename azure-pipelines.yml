@@ -1,29 +1,39 @@
-  # ASP.NET
+# ASP.NET
 # Build and test ASP.NET projects.
 # Add steps that publish symbols, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
 
 trigger:
-  - development
-  
+- master
+
 pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- task: Npm@1
+
+# Need go 1.13 or higher
+- task: GoTool@0
   inputs:
-    command: 'install'
+    version: '1.13'
+- script: GO111MODULE=on GOPATH=$tmpGoPath go get sigs.k8s.io/kustomize/kustomize/v3
+  displayName: Go get kustomize
 
-- script: sudo npm install -s -g --unicode=false newman@4.6.1
-  displayName: Install newman
-
-- script: newman --version
-  displayName: Verify newman version
-
+- script: unset GOPATH &&
+          unset GO111MODULES &&
+          git clone https://github.com/kubernetes-sigs/kustomize &&
+          cd kustomize &&
+          git checkout kustomize/v3.2.3 &&
+          (cd kustomize; go install .) &&
+          ~/go/bin/kustomize version
+  displayName: Install Kustomize
+- task: KubectlInstaller@0
+  inputs:
+    kubectlVersion: 'latest'
 - script: dotnet tool install fake-cli
   displayName: Install Fake
   
 - task: NuGetToolInstaller@1
+- script: echo "$(ENV_FILE)"
 
 - task: DockerInstaller@0
   inputs:
@@ -48,71 +58,34 @@ steps:
   displayName: Pull minikube image
 
 # Start Minikube
-- script: minikube start --driver=docker --memory=4gb
+- script: minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
   displayName: Start Minikube
 
 # Fix permissions issue in AzurePipelines
 - script: sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context
-  displayName: Fix permissions issue in AzurePipelines
+  displayName: Fix permissions
 
 # Set up cluster
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
-  displayName: Setup cluster
+  displayName: Apply kubernetes environment file
   
-- script: source functions.sh && build buildfortest 8 && docker images
+- script: source functions.sh && build PushApps 8 && docker images
   displayName: Build the world
 
-- script: |
-    source functions.sh
-    start
-    sleep 3
-    printf "${Purple}Publishing transformations and configurations\n"
-    publish
-    logs gateway
-    NAME="pod/$(getName publish)"
-    kubectl wait --for=condition=ready ${NAME} --timeout=120s
-    printf "${Purple}Publishing\n"
-    kubectl logs ${NAME} -f &
-    kubectl wait --for=condition=completed ${NAME} --timeout=120s
-    printf "Published${NoColor}\n"
-    kubectl describe ${NAME}
-    kubectl config get-contexts
-    kubectl config use-context minikube
-    kubectl get all
-    printf "${Cyan}Sync\n"
-    sync
-    printf "${Cyan}Syncing${NoColor}\n"
-          
-  displayName: Setup tests
-
-- script: |
-    DB_PORT=35984
-    kubectl port-forward service/gateway-svc 30080:80 &
-    kubectl port-forward service/db-svc ${DB_PORT}:5984 &
-    sleep 180
-    source functions.sh
-    printf "${Cyan}**************Git********************\n"
-    logs git
-    printf "${Cyan}**************Git********************\n"
-    printf "${Purple}**************Uniform********************\n"
-    logs uniform
-    printf "${Purple}**************Uniform********************\n"
-    
-    DB_USER="admin:password"
-    DB_SERVER="http://127.0.0.1:${DB_PORT}"
-    curl -u "${DB_USER}" "${DB_SERVER}/configurations/_all_docs"
-    curl -u "${DB_USER}" "${DB_SERVER}/uniformcache/_all_docs"
-    printf "${NoColor}"
-    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY)
-  displayName: Run postman tests
-
-- script: git config --global credential.helper store &&
-          git config --global user.email "hobbes_buildserver@kmd.dk" &&
-          git config --global user.name "Build server" &&
-          echo "azure-pipelines.yml merge=ours" > .gitattributes &&
-          git config --global merge.ours.driver true &&
-          git remote add pseudo https://$(GIT_ACCESS_TOKEN):x-oauth-basic@github.com/r-d-kmd/hobbes.git &&
-          git checkout master &&
-          git merge origin/development &&
-          git push pseudo master
-  displayName: Push to master
+- script: source functions.sh && applyProductionYaml
+  displayName: Setup production yaml
+ 
+- script: source functions.sh && cd kubernetes && kubectl apply -f test.yaml
+  displayName: Apply production yaml to minikube
+  
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: 'az aks get-credentials --name hobbes-kub --resource-group hobbes-rg && 
+                   kubectl get all &&
+                   cd kubernetes &&
+                   ls &&
+                   echo "$(ENV_FILE)" | kubectl apply -f - &&
+                   kubectl apply -f test.yaml'

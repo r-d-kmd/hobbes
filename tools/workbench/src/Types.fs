@@ -1,4 +1,5 @@
 namespace Workbench
+open Hobbes.Web.RawdataTypes
 
 [<AutoOpen>]
 module Types = 
@@ -149,7 +150,31 @@ module Types =
                 match configurations |> Map.tryFind collection with
                 None -> Map.empty
                 | Some c -> c
+
             let name = source.Name + "." + name
+
+            let updateConfToCacheKey name =
+                let conf = collectionConfigurations
+                           |> Map.find name
+                let sourceId = conf.Source.ToString()
+                               |> keyFromSourceDoc
+                let trans = 
+                    conf.Transformations
+                    |> List.map (fun t -> t.Name)
+                System.String.Join(":",sourceId::trans)
+
+            let source = match source with
+                         | Source.Merge names -> names
+                                                 |> List.map updateConfToCacheKey
+                                                 |> Source.Merge 
+                         | Source.Join {Field = f; Left = l; Right = r} -> {
+                                                                                Field = f
+                                                                                Left  = updateConfToCacheKey l
+                                                                                Right = updateConfToCacheKey r
+                                                                           }
+                                                                           |> Source.Join
+                         | s -> s
+                         
             match collectionConfigurations |> Map.tryFind name with
             Some _ -> failwithf "There's already a configuration called %s" name
             | None ->

@@ -93,7 +93,7 @@ module Reader =
                       if odataQuery.Fields |> List.isEmpty |> not then yield "select", System.String.Join(",", odataQuery.Fields)
                       if odataQuery.OrderBy |> List.isEmpty |> not then yield "orderby", System.String.Join(",", odataQuery.OrderBy)
                     ]
-                    |> List.map(fun (a,b) -> a, System.Web.HttpUtility.UrlEncode b)
+                    |> List.map(fun (a,b) -> sprintf "$%s=%s" a (System.Web.HttpUtility.UrlEncode b))
                 )
             
             sprintf "%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&%s" server query

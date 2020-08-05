@@ -14,6 +14,7 @@
     <Compile Include="Configurations/DevOps.fs" />
     <Compile Include="Configurations/State.fs" />
     <Compile Include="Configurations/Test.fs" />
+    <Compile Include="Configurations/MergeJoinTest.fs" />
     <Compile Include="Tests/Tests.fs" />
     <Compile Include="Program.fs" />
     <None Include="*.json">

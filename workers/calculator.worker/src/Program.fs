@@ -128,7 +128,7 @@ let transformData (message : CalculationMessage) =
                             formatToJson rows names
                     try
                         (formatted
-                        |> Cache.createDynamicCacheRecord key record.DependsOn).JsonValue
+                        |> Cache.createDynamicCacheRecord key [cacheKey]).JsonValue
                         |> string
                         |> Http.post (Http.UpdateFormatted |> Http.UniformData)
                         |> ignore

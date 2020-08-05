@@ -63,6 +63,7 @@ module Program =
             Workbench.Configurations.State.initialise()
             Workbench.Configurations.DevOps.initialise()
             Workbench.Configurations.Test.initialise()
+            //Workbench.Configurations.MergeJoinTest.initialise()
 
             let transformations = 
                 Workbench.Types.allTransformations collection

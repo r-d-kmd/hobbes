@@ -114,8 +114,8 @@ let handleMerges cacheKey =
     | Some configuration ->
         let allUpdated = 
             configuration.Source.Datasets
-            |> Array.exists(peek)
-            |> not
+            |> Array.forall(peek)
+
         if allUpdated then
             {
                 CacheKey = configuration |> keyFromConfig
@@ -161,8 +161,8 @@ let getDependingTransformations (cacheMsg : CacheMessage) =
                     |> Transform
                     |> Broker.Calculation
                 )
-                handleMerges cacheKey
-                handleJoins cacheKey
+            handleMerges cacheKey
+            handleJoins cacheKey
             Success
     with e ->
         Log.excf e "Failed to perform calculation."

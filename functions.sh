@@ -18,7 +18,12 @@ White='\033[1;37m'
 NoColor='\033[0m'
 
 echo "Evaluating"
-eval $(minikube -p minikube docker-env)
+if [[ $(uname -s) == CYGWIN_NT* ]] || [[ $(uname -s) == "Darwin" ]] || [[ $(uname -s) == MINGW64_NT* ]]
+then
+    eval $(minikube docker-env)
+else
+    eval $(SHELL=/bin/bash; minikube -p minikube docker-env)
+fi
 #source <(kubectl completion bash)
 
 if [[ $(uname -s) == CYGWIN_NT* ]]
@@ -51,7 +56,7 @@ else
     source macos.sh
 fi
 
-if [ $(uname -s) = MINGW64_NT* ]
+if [[ $(uname -s) = MINGW64_NT* ]]
 then
     declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "uniformdata")
 else

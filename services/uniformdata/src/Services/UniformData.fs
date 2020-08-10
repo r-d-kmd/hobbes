@@ -21,13 +21,6 @@ module Data =
         | None -> 
             404,"No data found"
 
-    [<Delete ("/clear/%s")>]
-    let clear key =
-        try
-            cache.Delete key
-            200, "Deleted"
-        with e ->
-            500, e.Message
     [<Post ("/update", true)>]
     let update dataAndKey =
         try

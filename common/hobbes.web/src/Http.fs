@@ -51,9 +51,8 @@ module Http =
                     ]
     type UniformDataService = 
         Read of string
-        | ReadFormatted of string
-        | Delete of string
         | Update
+        | ReadFormatted of string
         | UpdateFormatted
         with member x.ToPath() =
                 match x with
@@ -63,22 +62,16 @@ module Http =
                         "read"
                         key
                     ]
+                | Update -> 
+                    [
+                        "data"
+                        "update"
+                    ]
                 | ReadFormatted key -> 
                     [
                         "dataset"
                         "read"
                         key
-                    ]
-                | Delete key -> 
-                    [
-                        "data"
-                        "delete"
-                        key
-                    ]
-                | Update -> 
-                    [
-                        "data"
-                        "update"
                     ]
                 | UpdateFormatted -> 
                     [

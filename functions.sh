@@ -81,26 +81,13 @@ else
     services
 fi
 
-function getJobWorker(){
-    local JOB_NAME=$(kubectl get all | grep job.batch/syncronization-scheduler-.*$1 | cut -d ' ' -f 1)
-    if [[ "$JOB_NAME" = job.batch/* ]]
-    then
-        echo $JOB_NAME
-    fi
-}
-
 function getName(){
-    local NAME=$(kubectl get pods | grep $1 | cut -d ' ' -f 1 )
-    if [ -z "$NAME" ]
-    then
-       NAME=$(getJobWorker $1)
-    fi
-    echo $NAME
+    echo "$(kubectl get pods | grep $1 | cut -d ' ' -f 1 )"
 }
 
 function logs(){
     local NAME=$(getName $1)
-    kubectl wait --for=condition=ready "$NAME" --timeout=60s
+    kubectl wait --for=condition=ready pod/"$NAME" --timeout=60s
     kubectl logs $2 $NAME
 }
 
@@ -123,10 +110,10 @@ function restart(){
     for var in "$@"
     do
         local FILE_NAME=$(ls *$var*-deployment.yaml)
-        set -e
+        
         kubectl scale --replicas=0 -f $FILE_NAME
         kubectl scale --replicas=1 -f $FILE_NAME
-        set +e
+        
     done
     cd $CURRENT_DIR
 }
@@ -191,16 +178,11 @@ function listServices(){
 function start() {
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
-    set -e
-    kubectl apply -f env.JSON 
+    kubectl apply -f env.JSON
     kubectl apply -k ./ 
     
     awaitRunningState
     
-    kubectl port-forward service/gateway-svc 30080:80 &
-    kubectl port-forward service/db-svc 30084:5984 &
-
-    set +e
     cd $CURRENT_DIR
 }
 
@@ -265,16 +247,13 @@ function awaitRunningState(){
     echo "Waiting for DB to be operational"
     while [ "$(logs gateway | grep "DB initialized")" != "DB initialized" ]
     do
-        
-        str=$(logs gateway) && echo ${str##*$'\n'}
-        str=$(logs db) && echo ${str##*$'\n'}
+        sleep 1
     done
 
     echo "Waiting for Rabbit-MQ to be operational"
     while [ "$(logs conf | grep "Watching queue")" != "Watching queue: cache" ]
     do
-        str=$(logs conf) && echo ${str##*$'\n'}
-        str=$(logs rabbit) && echo ${str##*$'\n'}
+        sleep 10
     done
 
     all
@@ -289,15 +268,10 @@ function startJob(){
     cd $KUBERNETES_DIR
     kubectl delete job.batch/$1 &> /dev/null
     
-    set -e
-    kubectl apply -f $1-job.yaml &> /dev/null
-    set +e
-
+    kubectl apply -f $1-job.yaml
+    
     printf "${Cyan}$1 started\n"
-    sleep 5
-    eval $(echo "kubectl wait --for=condition=ready pod/$(getName $1) --timeout=120s &> /dev/null")
-    logs $1 -f || all | grep $1
-    printf "${NoColor}\n"
+    
     cd $CURRENT_DIR
 }
 
@@ -310,11 +284,9 @@ function publish(){
     cd $SCRIPT_DIR
     cd tools/workbench
 
-    set -e
     docker build -t kmdrd/workbench .
-    set +e
 
-    printf "${Green}Publisher build${NoColor}\n"
+    printf "${Green}Publisher built${NoColor}\n"
     startJob publish
     cd $CURRENT_DIR
 }

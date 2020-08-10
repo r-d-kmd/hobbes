@@ -50,3 +50,9 @@ group test
     nuget Microsoft.NET.Test.SDK
     nuget microsoft.testplatform.testhost
     nuget xunit.runner.VisualStudio  
+
+group tutorial
+    source https://www.nuget.org/api/v2
+    framework: auto-detect
+    storage: none
+    nuget FSharp.Formatting

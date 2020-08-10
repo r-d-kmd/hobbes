@@ -18,10 +18,7 @@ spec:
             name: env
         imagePullPolicy: Never
         image: git
-        name: hobbes-git
-        resources:
-          requests:
-            cpu: 100m
-            memory: 800Mi
+        name: git
+        resources: {}
       restartPolicy: Always
 status: {}

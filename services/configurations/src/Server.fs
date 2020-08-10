@@ -30,9 +30,9 @@ let private app = application {
 }
 let peek cacheKey =
     match Http.get (cacheKey |> Http.UniformDataService.Read |> Http.UniformData) Hobbes.Helpers.Json.deserialize<Cache.CacheRecord> with
-    Http.Error(sc,msg) -> 
+    Http.Error _ -> 
         false
-    | Http.Success cacheRecord -> 
+    | Http.Success _ -> 
         true
 
 type DependingTransformationList = FSharp.Data.JsonProvider<"""[
@@ -50,7 +50,7 @@ let dependingTransformations (cacheKey : string) =
 #if DEBUG    
     let isCacheStale = true
 #else
-    let isCacheStale = time < System.DateTime.Now.AddHours -1. 
+    let isCacheStale = (dependencies.Count = 0 || time < System.DateTime.Now.AddHours -1.)
 #endif    
     if isCacheStale then
         time <- System.DateTime.Now
@@ -114,8 +114,8 @@ let handleMerges cacheKey =
     | Some configuration ->
         let allUpdated = 
             configuration.Source.Datasets
-            |> Array.exists(peek)
-            |> not
+            |> Array.forall(peek)
+
         if allUpdated then
             {
                 CacheKey = configuration |> keyFromConfig
@@ -139,19 +139,28 @@ let getDependingTransformations (cacheMsg : CacheMessage) =
          match cacheMsg with
          CacheMessage.Empty -> Success
          | Updated cacheKey -> 
-            dependingTransformations cacheKey
-            |> Seq.iter(fun transformation ->    
+            let depending = dependingTransformations cacheKey
+            if Seq.isEmpty depending then
                 {
-                    Transformation = 
-                        {
-                            Name = transformation.Name
-                            Statements = transformation.Statements
-                        }
-                    DependsOn = cacheKey
+                   Format = Json
+                   CacheKey = cacheKey
                 }
-                |> Transform
+                |> Format
                 |> Broker.Calculation
-            )
+            else
+                depending
+                |> Seq.iter(fun transformation ->    
+                    {
+                        Transformation = 
+                            {
+                                Name = transformation.Name
+                                Statements = transformation.Statements
+                            }
+                        DependsOn = cacheKey
+                    }
+                    |> Transform
+                    |> Broker.Calculation
+                )
             handleMerges cacheKey
             handleJoins cacheKey
             Success

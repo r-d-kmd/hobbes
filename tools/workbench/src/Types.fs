@@ -1,4 +1,5 @@
 namespace Workbench
+open Hobbes.Web.RawdataTypes
 
 [<AutoOpen>]
 module Types = 
@@ -144,6 +145,47 @@ module Types =
                
     let mutable private configurations : Map<Collection,Map<string,Configuration>> = Map.empty
     let rec addConfiguration (collection : Collection) (source : Source ) name transformations =
+        let add collection =
+            let collectionConfigurations = 
+                match configurations |> Map.tryFind collection with
+                None -> Map.empty
+                | Some c -> c
+
+            let name = source.Name + "." + name
+
+            let updateConfToCacheKey name =
+                let conf = collectionConfigurations
+                           |> Map.find name
+                let sourceId = conf.Source.ToString()
+                               |> keyFromSourceDoc
+                let trans = 
+                    conf.Transformations
+                    |> List.map (fun t -> t.Name)
+                System.String.Join(":",sourceId::trans)
+
+            let source = match source with
+                         | Source.Merge names -> names
+                                                 |> List.map updateConfToCacheKey
+                                                 |> Source.Merge 
+                         | Source.Join {Field = f; Left = l; Right = r} -> {
+                                                                                Field = f
+                                                                                Left  = updateConfToCacheKey l
+                                                                                Right = updateConfToCacheKey r
+                                                                           }
+                                                                           |> Source.Join
+                         | s -> s
+                         
+            match collectionConfigurations |> Map.tryFind name with
+            Some _ -> failwithf "There's already a configuration called %s" name
+            | None ->
+                configurations.Add(collection,
+                                   collectionConfigurations 
+                                   |> Map.add name {
+                                          Name = name
+                                          Source = source
+                                          Transformations = 
+                                              transformations
+                                     })
         match collection with
         All ->
             [
@@ -153,24 +195,11 @@ module Types =
             ] |> List.iter(fun col ->
                   addConfiguration col (source : Source ) name transformations
             )
+        | Test ->
+            configurations <- add Test           
+            configurations <- add Development
         | _ ->
-            configurations <- 
-                let collectionConfigurations = 
-                    match configurations |> Map.tryFind collection with
-                    None -> Map.empty
-                    | Some c -> c
-                let name = source.Name + "." + name
-                match collectionConfigurations |> Map.tryFind name with
-                Some _ -> failwithf "There's already a configuration called %s" name
-                | None ->
-                    configurations.Add(collection,
-                                       collectionConfigurations 
-                                       |> Map.add name {
-                                              Name = name
-                                              Source = source
-                                              Transformations = 
-                                                  transformations
-                                         })
+            configurations <- add collection
                 
     let rec allConfigurations collection =
         match collection with

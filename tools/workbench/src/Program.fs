@@ -63,6 +63,7 @@ module Program =
             Workbench.Configurations.State.initialise()
             Workbench.Configurations.DevOps.initialise()
             Workbench.Configurations.Test.initialise()
+            //Workbench.Configurations.MergeJoinTest.initialise()
 
             let transformations = 
                 Workbench.Types.allTransformations collection
@@ -105,13 +106,13 @@ module Program =
             |> Seq.iter(fun doc ->
                 Log.logf "Creating configurations: %s" (Database.CouchDoc.Parse doc).Id
                 Http.Request(urlConfigurations, 
-                             httpMethod = "PUT",
-                             body = TextRequest doc,
-                             headers = 
-                                [
-                                   HttpRequestHeaders.BasicAuth pat ""
-                                   HttpRequestHeaders.ContentType HttpContentTypes.Json
-                                ]
-                            ) |> ignore
+                    httpMethod = "PUT",
+                    body = TextRequest doc,
+                    headers = 
+                       [
+                          HttpRequestHeaders.BasicAuth pat ""
+                          HttpRequestHeaders.ContentType HttpContentTypes.Json
+                       ]
+                ) |> ignore
             )
             0

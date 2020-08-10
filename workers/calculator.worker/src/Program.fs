@@ -23,7 +23,7 @@ let toMatrix (cacheRecord : Cache.CacheRecord) =
     ) |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
 
 let insertOrUpdate doc = 
-    match Http.put (Http.UniformDataService.Update |> Http.UniformData) doc with
+    match Http.post (Http.UniformDataService.Update |> Http.UniformData) doc with
         Http.Error(sc,msg) -> 
             failwithf "Failed inserting/updating data %d - %s" sc msg
         | Http.Success _ -> 
@@ -101,7 +101,7 @@ let transformData (message : CalculationMessage) =
                                 |> Array.zip names
                                 |> Array.map(fun (colName,(value : Cache.Value)) ->
                                     let valueAsString = 
-                                        match value with
+                                        (match value with
                                         Cache.Value.Date dt -> 
                                             dt
                                             |> string
@@ -111,6 +111,7 @@ let transformData (message : CalculationMessage) =
                                         | Cache.Value.Float f -> sprintf "%f" f
                                         | Cache.Value.Boolean b -> sprintf "%b" b 
                                         | Cache.Value.Null -> "null"
+                                        ).Replace("\\", "\\\\")
                                     sprintf """ "%s" : %s """ colName valueAsString
                                 ))
                             |> sprintf "{%s}"
@@ -127,9 +128,9 @@ let transformData (message : CalculationMessage) =
                             formatToJson rows names
                     try
                         (formatted
-                         |> Cache.createDynamicCacheRecord key record.DependsOn).JsonValue
+                        |> Cache.createDynamicCacheRecord key [cacheKey]).JsonValue
                         |> string
-                        |> Http.put (Http.UpdateFormatted |> Http.UniformData)
+                        |> Http.post (Http.UpdateFormatted |> Http.UniformData)
                         |> ignore
                         Log.logf "Formatting of [%s] to [%A] resulting in [%s] completed" cacheKey format key
                         Success

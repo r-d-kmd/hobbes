@@ -2,12 +2,9 @@ namespace Hobbes.UniformData.Services
 
 open Hobbes.Web.Routing
 open Hobbes.Web
-open Hobbes.Messaging.Broker
-open Hobbes.Messaging
-open FSharp.Data
 
 [<RouteArea ("/dataset", false)>]
-module DataSet =
+module Dataset =
     let private cache = Cache.dynamicCache("uniform")
 
     let private dataToString data =
@@ -27,22 +24,23 @@ module DataSet =
         | None -> 
             404,"No data found"
 
-    [<Put ("/update", true)>]
+    [<Post ("/update", true)>]
     let update dataAndKey =
         try
             let args =
                 try
-                    dataAndKey
-                    |> Cache.DynamicRecord.Parse
-                    |> Some
+                    let args = 
+                        dataAndKey
+                        |> Cache.DynamicRecord.Parse
+                    let key = args.Id
+                    let data = args.Data
+                    let dependsOn = args.DependsOn |> Array.toList
+                    Some (key,data,dependsOn)
                 with e ->
                     eprintfn "Failed to deserialization (%s). %s %s" dataAndKey e.Message e.StackTrace
                     None
             match args with
-            Some args ->
-                let key = args.Id
-                let data = args.Data
-                let dependsOn = args.DependsOn |> Array.toList
+            Some (key,data,dependsOn) ->
                 Log.logf "updating cache with _id: %s" key
                 try
                     data

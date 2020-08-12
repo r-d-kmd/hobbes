@@ -52,7 +52,7 @@ module AST =
     and Cluster = 
         Buckets of noOfbuckets: int * Reduction
         | KMeansClustering of noOfClusters: int * Reduction
-        | Distinct of Reduction
+        | Each of Reduction
         | GroupBy of columnNames: string list * GroupReduction: GroupReduction
     and BooleanExpression = 
         And of BooleanExpression * BooleanExpression

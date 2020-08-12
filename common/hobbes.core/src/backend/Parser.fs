@@ -60,7 +60,7 @@ module Parser =
                   )
    
     let private distinctExpression = 
-        kwDistincct >>. reduction >>= (AST.Distinct >> preturn)
+        kwEach >>. reduction >>= (AST.Each >> preturn)
 
     let private clusteringExpression kw ast = 
         kw >>. pipe2 (pint32 .>> (spaces1 <|> opArrow)) reduction  (fun buckets reduction -> ast(buckets, reduction))

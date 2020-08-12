@@ -176,7 +176,7 @@ module Clustering =
         
 
            
-    let inline internal distinct transformation (frame : Frame<_,_>) = 
+    let inline internal each transformation (frame : Frame<_,_>) = 
          counting frame.RowCount transformation frame
 
 module DataStructures =
@@ -840,8 +840,8 @@ module DataStructures =
                 match c with
                  | AST.Buckets(b,reduction) -> Clustering.counting b reduction 
                  | AST.KMeansClustering (b,reduction) -> Clustering.kmeans b reduction 
-                 | AST.Distinct reduction ->
-                        Clustering.distinct reduction 
+                 | AST.Each reduction ->
+                        Clustering.each reduction 
                  | AST.GroupBy(columnNames, groupReduction) ->
                      let reducer = 
                          match groupReduction with

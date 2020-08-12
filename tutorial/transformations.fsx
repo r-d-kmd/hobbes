@@ -216,7 +216,7 @@ rename State.Name "NewName"
 
 slice columns ["NewName"; ChangedDate.Name]
 (**
-To make this into a named transformation, that could be used in a transformation, one would have to write it as follows:
+To make this into a named transformation, that could be used in a configuration, one would have to write it as follows:
 *)
 let renameAndSlice =
     [

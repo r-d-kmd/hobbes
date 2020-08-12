@@ -1,21 +1,15 @@
-  # ASP.NET
+# ASP.NET
 # Build and test ASP.NET projects.
 # Add steps that publish symbols, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
 
 trigger:
-  - development
-  
+- master
+
 pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- task: Npm@1
-  inputs:
-    command: 'install'
-
-- script: sudo npm install -s -g --unicode=false newman@4.6.1
-  displayName: Install newman
 
 - script: newman --version
   displayName: Verify newman version
@@ -24,6 +18,7 @@ steps:
   displayName: Install Fake
   
 - task: NuGetToolInstaller@1
+- script: echo "$(ENV_FILE)"
 
 - task: DockerInstaller@0
   inputs:
@@ -48,18 +43,18 @@ steps:
   displayName: Pull minikube image
 
 # Start Minikube
-- script: minikube start --driver=docker --memory=4gb
+- script: minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
   displayName: Start Minikube
 
 # Fix permissions issue in AzurePipelines
 - script: sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context
-  displayName: Fix permissions issue in AzurePipelines
+  displayName: Fix permissions
 
 # Set up cluster
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
-  displayName: Setup cluster
+  displayName: Apply kubernetes environment file
   
-- script: source functions.sh && build buildfortest 8 && docker images
+- script: source functions.sh && build PushApps 8 && docker images
   displayName: Build the world
 
 - script: |

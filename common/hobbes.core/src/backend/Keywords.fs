@@ -27,7 +27,7 @@ module Keywords =
     let internal kwDate = createKeywordReturn "date" AST.Date
     let internal kwDay = createKeywordReturn "day" AST.Day
     let internal kwDense    =  createKeyword "dense"
-    let internal kwDistincct = createKeyword "distinct" 
+    let internal kwEach = createKeyword "each" 
 
     let internal kwElse  =     createKeyword "else"
     let internal kwExpanding = createKeyword "expanding"

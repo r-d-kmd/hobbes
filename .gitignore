@@ -35,3 +35,4 @@ kubernetes/temp.yaml
 services/**/Dockerfile
 workers/azuredevops.worker/Dockerfile
 kubernetes/log.txt
+hobbes-vscode/hb/grammar/hobbes.YAML-tmLanguage

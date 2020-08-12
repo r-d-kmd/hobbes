@@ -74,15 +74,15 @@ steps:
     printf "${Purple}Publishing\n"
     kubectl logs ${NAME} -f &
     kubectl wait --for=condition=complete job.batch/publish --timeout=60s
-    printf "Published${NoColor}\n"
-    kubectl describe ${NAME}
-    kubectl config get-contexts
-    kubectl config use-context minikube
-    kubectl get all
+    printf "${Purple}Published${NoColor}\n"
     printf "${Cyan}Sync\n"
     sync
     printf "${Cyan}Syncing${NoColor}\n"
-          
+    NAME="pod/$(getName sync)"
+    kubectl wait --for=condition=ready ${NAME} --timeout=30s >> /dev/null
+    kubectl logs ${NAME} -f &
+    kubectl wait --for=condition=complete job.batch/sync --timeout=60s
+
   displayName: Setup tests
 
 - script: |

@@ -12,8 +12,6 @@ spec:
           env:
           - name: PAT
             value: "Rno8hcqr9rXXs"
-          - name: COLLECTION
-            value: "test"
           - name: HOST
             value: "http://gateway-svc"
         restartPolicy: Never

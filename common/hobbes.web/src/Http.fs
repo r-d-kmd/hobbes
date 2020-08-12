@@ -49,17 +49,35 @@ module Http =
                         "calculate"
                         key
                     ]
-    type CacheService = 
+    type UniformDataService = 
         Read of string
         | Update
+        | ReadFormatted of string
+        | UpdateFormatted
         with member x.ToPath() =
-              match x with
-              Read key -> 
-                  [
-                      "read"
-                      key
-                  ]
-              | Update -> ["update"]
+                match x with
+                Read key -> 
+                    [
+                        "data"
+                        "read"
+                        key
+                    ]
+                | Update -> 
+                    [
+                        "data"
+                        "update"
+                    ]
+                | ReadFormatted key -> 
+                    [
+                        "dataset"
+                        "read"
+                        key
+                    ]
+                | UpdateFormatted -> 
+                    [
+                        "dataset"
+                        "update"
+                    ]
 
     type DbService =
        Root
@@ -70,7 +88,7 @@ module Http =
               | Database s -> [s]
            
     type Service = 
-         UniformData of CacheService
+         UniformData of UniformDataService
          | Db of DbService
          | Calculator of CalculatorService
          | Configurations of ConfigurationService
@@ -120,6 +138,14 @@ module Http =
         printfn "Getting %s" url
         Http.Request(url,
                      httpMethod = "GET",
+                     silentHttpErrors = true
+        ) |> readResponse parser
+
+    let delete (service : Service) parser  = 
+        let url = service.ServiceUrl
+        printfn "Deleting %s" url
+        Http.Request(url,
+                     httpMethod = "DELETE",
                      silentHttpErrors = true
         ) |> readResponse parser
 

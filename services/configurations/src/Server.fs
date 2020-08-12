@@ -28,21 +28,29 @@ let private app = application {
     memory_cache
     use_gzip
 }
-let cache = Cache.Cache(Http.UniformData)
+let peek cacheKey =
+    match Http.get (cacheKey |> Http.UniformDataService.Read |> Http.UniformData) Hobbes.Helpers.Json.deserialize<Cache.CacheRecord> with
+    Http.Error _ -> 
+        false
+    | Http.Success _ -> 
+        true
+
 type DependingTransformationList = FSharp.Data.JsonProvider<"""[
     {
         "_id" : "lkjlkj",
         "lines" : ["lkjlkj", "lkjlkj","o9uulkj"]
     }
 ]""">
-let mutable (time,dependencies : Map<string,seq<Transformation>>) = (System.DateTime.MinValue,Map.empty)
-    
+let mutable time = System.DateTime.MinValue
+let mutable dependencies : Map<string,seq<Transformation>> = Map.empty
+let mutable merges : Map<string,Config.Root> = Map.empty
+let mutable joins : Map<string,Config.Root> = Map.empty
 let dependingTransformations (cacheKey : string) =
     assert(not(cacheKey.EndsWith(":") || System.String.IsNullOrWhiteSpace cacheKey))
 #if DEBUG    
     let isCacheStale = true
 #else
-    let isCacheStale = time < System.DateTime.Now.AddHours -1. 
+    let isCacheStale = (dependencies.Count = 0 || time < System.DateTime.Now.AddHours -1.)
 #endif    
     if isCacheStale then
         time <- System.DateTime.Now
@@ -76,31 +84,85 @@ let dependingTransformations (cacheKey : string) =
                     |> Seq.map snd 
                     |> Seq.distinctBy(fun t -> t.Name)
             ) |> Map.ofSeq
+        merges <-
+            configurations.List()
+            |> Seq.filter(fun configuration ->
+                configuration.Source.Provider = "merge"
+            ) |> Seq.collect(fun configuration ->
+                configuration.Source.Datasets
+                |> Array.map(fun ds -> ds,configuration)
+            ) |> Map.ofSeq
+        joins  <-
+            configurations.List()
+            |> Seq.filter(fun configuration ->
+                configuration.Source.Provider = "join"
+            ) |> Seq.collect(fun configuration ->
+                [
+                    configuration.Source.Left.Value,configuration
+                    configuration.Source.Right.Value,configuration
+                ]
+            ) |> Map.ofSeq
     match dependencies |> Map.tryFind cacheKey with
     None -> 
         Log.debugf "No dependencies found for key (%s)" cacheKey
         Seq.empty
     | Some dependencies ->
         dependencies
-        
+let handleMerges cacheKey = 
+    match merges |> Map.tryFind cacheKey with
+    None -> ()
+    | Some configuration ->
+        let allUpdated = 
+            configuration.Source.Datasets
+            |> Array.forall(peek)
+
+        if allUpdated then
+            {
+                CacheKey = configuration |> keyFromConfig
+                Datasets = configuration.Source.Datasets
+            } |> Merge
+            |> Broker.Calculation
+
+let handleJoins cacheKey = 
+    match joins |> Map.tryFind cacheKey with
+    None -> ()
+    | Some configuration ->
+        {
+            CacheKey = configuration |> keyFromConfig
+            Left = configuration.Source.Left.Value
+            Right = configuration.Source.Right.Value
+            Field = configuration.Source.Field.Value
+        } |> Join
+        |> Broker.Calculation
 let getDependingTransformations (cacheMsg : CacheMessage) = 
     try
          match cacheMsg with
          CacheMessage.Empty -> Success
          | Updated cacheKey -> 
-            dependingTransformations cacheKey
-            |> Seq.iter(fun transformation ->    
+            let depending = dependingTransformations cacheKey
+            if Seq.isEmpty depending then
                 {
-                    Transformation = 
-                        {
-                            Name = transformation.Name
-                            Statements = transformation.Statements
-                        }
-                    CacheKey = cacheKey
+                   Format = Json
+                   CacheKey = cacheKey
                 }
-                |> Transform
+                |> Format
                 |> Broker.Calculation
-            )
+            else
+                depending
+                |> Seq.iter(fun transformation ->    
+                    {
+                        Transformation = 
+                            {
+                                Name = transformation.Name
+                                Statements = transformation.Statements
+                            }
+                        DependsOn = cacheKey
+                    }
+                    |> Transform
+                    |> Broker.Calculation
+                )
+            handleMerges cacheKey
+            handleJoins cacheKey
             Success
     with e ->
         Log.excf e "Failed to perform calculation."

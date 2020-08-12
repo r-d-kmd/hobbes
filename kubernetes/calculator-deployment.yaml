@@ -18,10 +18,7 @@ spec:
             name: env
         imagePullPolicy: Never
         image: calculator
-        name: hobbes-calculator
-        resources:
-          requests:
-            cpu: 50m
-            memory: 450Mi
+        name: calculator
+        resources: {}
       restartPolicy: Always
 status: {}

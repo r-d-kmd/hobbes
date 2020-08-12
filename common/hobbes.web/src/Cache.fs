@@ -24,6 +24,7 @@ module Cache =
                 | :? float as f -> f |> Value.Float
                 | :? decimal as d -> d |> float |> Value.Float
                 | :? string as s  -> s |> Value.Text
+                | :? bool as b -> b |> Value.Boolean
                 | s ->
                     Log.errorf "Didn't recognise value (%A)" s
                     assert(false)
@@ -63,9 +64,21 @@ module Cache =
             CacheKey : string
             [<JsonProperty("timestamp")>]
             TimeStamp : System.DateTime option
+            DependsOn : string list
             [<JsonProperty("data")>]
             Data : DataResult
         }
+    type DynamicRecord = FSharp.Data.JsonProvider<"""{
+        "_id" : "khjkjhkjh",
+        "timestamp" : "13/07/2020 11:55:21",
+        "dependsOn" : ["lkjlk","lhkjh"],
+        "data" : [{"columnName1":"value","columnName2" : 1},{"columnName1":"value","columnName2" : 1}]
+    }""">
+    
+    type BaseRecord = FSharp.Data.JsonProvider<"""{
+        "_id" : "khjkjhkjh",
+        "dependsOn" : ["lkjlk","lhkjh"]
+    }""">
 
     let key (source : string) = 
         let whitespaceToRemove = [|' ';'\t';'\n';'\r'|]
@@ -73,15 +86,27 @@ module Cache =
         |> System.String.Concat
         |> hash
     
-      
-    let private createCacheRecord key (data : DataResult) =
-
+    let inline createCacheRecord key dependsOn (data : DataResult)  =
         let timeStamp = System.DateTime.Now
         {
             CacheKey =  key
             TimeStamp = Some timeStamp
+            DependsOn = dependsOn
             Data = data
         }
+
+    let createDynamicCacheRecord key (dependsOn : string list) (data : FSharp.Data.JsonValue []) =
+        let dependsOn = System.String.Join("\",\"", dependsOn)
+        let data = 
+            System.String.Join(",", data |> Array.map(fun d -> d.ToString()))
+        let timeStamp = System.DateTime.Now
+        sprintf """{
+                    "_id": "%s",
+                    "timestamp": "%A",
+                    "dependsOn" : ["%s"],
+                    "data": [%s]
+                }""" key timeStamp dependsOn data
+        |> DynamicRecord.Parse
 
     let readData (cacheRecordText : string) =
         let cacheRecord = Json.deserialize<CacheRecord> cacheRecordText 
@@ -94,41 +119,49 @@ module Cache =
                    |> Seq.zip columnNames)
         )
 
-    type ICacheProvider = 
-         abstract member InsertOrUpdate : string -> DataResult -> unit
-         abstract member Get : string -> CacheRecord option
-
-    type Cache private(provider : ICacheProvider) =
-        static let parser = Json.deserialize<CacheRecord>
-        new(name) =  
-            let db = 
-                Database.Database(name + "cache", parser, Log.loggerInstance)
+    type Cache<'recordType,'dataType> (name : string, deserializer : string -> 'recordType,serializer : 'recordType -> string , recordCreator : string -> string list -> 'dataType -> 'recordType) =
+        let dbName = name + "cache"
+        let db = 
+            Database.Database(dbName, deserializer, Log.loggerInstance)
+        let list = 
+            Database.Database(dbName, BaseRecord.Parse, Log.loggerInstance)
             
-            Cache {new ICacheProvider with 
-                            member __.InsertOrUpdate key data = 
-                                    data
-                                    |> createCacheRecord key 
-                                    |> db.InsertOrUpdate 
-                                    |> Log.debugf "Inserted data: %s"
-                            
-                            member __.Get (key : string) = 
-                                Log.logf "trying to retrieve cached %s from database" key
-                                key
-                                |> db.TryGet }
-        new(service : Http.CacheService -> Http.Service) =
-            Cache {new ICacheProvider with 
-                            member __.InsertOrUpdate key data = 
-                                data
-                                |> createCacheRecord key 
-                                |> Http.post (Http.Update |> service)
-                                |> ignore
-                                
-                            member __.Get (key : string) = 
-                                match Http.get (key |> Http.CacheService.Read |> service) parser with
-                                Http.Success d -> Some d
-                                | Http.Error (code,msg) ->
-                                    Log.errorf  "Failed to load from cache. Status: %d. Message: %s" code msg
-                                    None}
-                                    
-        member __.InsertOrUpdate = provider.InsertOrUpdate
-        member __.Get = provider.Get
+        member __.InsertOrUpdate key dependsOn data = 
+            let serialized = 
+                data
+                |> recordCreator key dependsOn
+                |> serializer
+            assert(try serialized |> deserializer |> ignore; true with _ -> false)
+            serialized
+            |> db.InsertOrUpdate 
+            |> Log.debugf "Inserted data: %s"
+        
+        member __.Get (key : string) = 
+            Log.logf "trying to retrieve cached %s from database" key
+            key
+            |> db.TryGet 
+        member __.Peek (key : string) =
+            db.TryGetRev key |> Option.isSome
+        member cache.Delete (key : string) = 
+            Log.logf "Deleting %s" key
+            let sc,body= 
+                key
+                |> db.Delete
+            list.List()
+            |> Seq.filter(fun doc ->
+                doc.DependsOn |> Array.contains key
+            ) |> Seq.iter(fun doc -> cache.Delete doc.Id)
+            if sc <> 200 then
+                failwithf "Status code %d - %s" sc body
+    let cache name = 
+        Cache(name,
+              Json.deserialize<CacheRecord>,
+              Json.serialize,
+              createCacheRecord)
+    let dynamicCache name = 
+        Cache(
+            name,
+            DynamicRecord.Parse,
+            (fun dynRec -> dynRec.JsonValue.ToString()),
+            createDynamicCacheRecord
+        )

@@ -29,7 +29,7 @@ steps:
 - task: KubectlInstaller@0
   inputs:
     kubectlVersion: 'latest'
-- script: dotnet tool install fake-cli
+- script: dotnet tool update fake-cli
   displayName: Install Fake
   
 - task: NuGetToolInstaller@1

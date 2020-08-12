@@ -1,0 +1,130 @@
+{
+	"create column": {
+		"scope": "hb, hobbes",
+		"prefix": "create colum",
+		"body": [
+			"create column \"${1:columnName}\" (${2:exp})"
+		],
+		"description": "creates a column with the name `columnName` based on the expression `exp` "
+	},
+	"rename column": {
+		"scope": "hb, hobbes",
+		"prefix": "rename colum",
+		"body": [
+			"rename column \"${1:originalName}\" \"${2:newName}\""
+		],
+		"description": "renames a column with the name `originalName` to `newName`"
+	},
+	"pivot": {
+		"scope": "hb, hobbes",
+		"prefix": "pivot",
+		"body": [
+			"pivot (${1:rowExpression}) (${2:columnExpression}) (${3:valueExpression}) ${4:reduction}"
+		],
+		"description": "Create a pivot table using `rowExpression` as the key for the rows, `columnExpression` as the key for the columns and `valueExpression` as the value for each corresponding cell. The grouped values are reduced using the specified `reduction`"
+	},
+	"slice colums": {
+		"scope": "hb, hobbes",
+		"prefix": "slice columns",
+		"body": [
+			"slice columns ${1:listOfColumnNames}"
+		],
+		"description": "removes all columns that are not mentioned in the list. Will not fail if a named column doesn't exist"
+	},
+	"keep dense columns": {
+		"scope": "hb, hobbes",
+		"prefix": "dense columns",
+		"body": [
+			"dense columns"
+		],
+		"description": "keeps only dense columns. That is columns where most rows have a value present"
+	},
+	"keep dense rows": {
+		"scope": "hb, hobbes",
+		"prefix": "dense rows",
+		"body": [
+			"dense rows"
+		],
+		"description": "keeps only dense rows. That is rows where most columns have a value present"
+	},
+	"keep numeric columns": {
+		"scope": "hb, hobbes",
+		"prefix": "numeric columns",
+		"body": [
+			"numeric columns"
+		],
+		"description": "keeps only numeric columns"
+	},
+	"index table by expression": {
+		"scope": "hb, hobbes",
+		"prefix": "index by",
+		"body": [
+			"index by ${1:exp}"
+		],
+		"description": "Indexes the table based on the expression `exp`. Mostly relevant when joining data. Since joins are always done on the index"
+	},
+	"sort by": {
+		"scope": "hb, hobbes",
+		"prefix": "sort by",
+		"body": [
+			"sort by ${1:columnName}"
+		],
+		"description": "sorts the table based on the column `columnName`"
+	},
+	"Filter rows": {
+		"scope": "hb, hobbes",
+		"prefix": "only",
+		"body": [
+			"only (${1:leftHandSide}) = (${2:rightHandSide})"
+		],
+		"description": "keeps all the rows where the `leftHandSide` evaluates to the same value as `rightHandSide`"
+	},
+	"Buckets": {
+		"scope": "hb, hobbes",
+		"prefix": "buckets",
+		"body": [
+			"buckets (${1:numberOfBuckets}) -> (${2:reducttion})"
+		],
+		"description": "Divides the data into `numberOfBuckets` buckets with an equal number of items in each (aside the last bucket which gets what's left). The reduction is used for each bucket to reduce the value to a scalar. Any non-numeric column is discarded"
+	},
+	"K-means clustering": {
+		"scope": "hb, hobbes",
+		"prefix": "k-means",
+		"body": [
+			"buckets (${1:numberOfClusters}) -> (${2:reducttion})"
+		],
+		"description": "Runs the k-means clustering algorithm on the data (non-numeric columns are discarded). For each value serie in each cluster the reduction is applied to find a representative scalar value"
+	},
+	"each": {
+		"scope": "hb, hobbes",
+		"prefix": "each",
+		"body": [
+			"each ${1:reduction}"
+		],
+		"description": "performs the reduction on each cell in each row. Discards non-numeric cells"
+	},
+	"group by": {
+		"scope": "hb, hobbes",
+		"prefix": "group by",
+		"body": [
+			"group by \"${1:columnName}\" -> ${2:reductionOrSelector}"
+		],
+		"description": "Groups the data based on the columnName and either reduces all cells in a group by the specified reduction or picks a representing row by the specified selector"
+	},
+	"group by - maxby": {
+		"scope": "hb, hobbes",
+		"prefix": "group by maxby",
+		"body": [
+			"group by \"${1:columnName}\" -> maxby ${2:exp}"
+		],
+		"description": "Groups the data based on the columnName and picks the row where `exp` evaluates to the highest value"
+	},
+	"group by - minby": {
+		"scope": "hb, hobbes",
+		"prefix": "group by minby",
+		"body": [
+			"group by \"${1:columnName}\" -> minby ${2:exp}"
+		],
+		"description": "Groups the data based on the columnName and picks the row where `exp` evaluates to the lowest value"
+	}
+}

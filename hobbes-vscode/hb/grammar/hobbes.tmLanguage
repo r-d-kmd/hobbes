@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>scopeName</key>
+    <string>source.hobbes</string>
+    <key>fileTypes</key>
+    <array>
+      <string>hb</string>
+    </array>
+    <key>patterns</key>
+    <array>
+      <dict>
+        <key>name</key>
+        <string>keyword.control.hobbes</string>
+        <key>match</key>
+        <string>only|else|if|then</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>keyword.operator.hobbes</string>
+        <key>match</key>
+        <string>\b(-&gt;|=&gt;|=|int)\b</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>keyword.operator.values.hobbes</string>
+        <key>match</key>
+        <string>\b(keys|ordinals)\b</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>keyword.operator.dates.hobbes</string>
+        <key>match</key>
+        <string>\b(date|day|week|weekday|month|year)\b</string>
+      </dict>
+      <dict>
+        <key>name</key>
+        <string>keyword.other.hobbes</string>
+        <key>match</key>
+        <string>\b(buckets|by|column|columns|count|create|rename|dense|distinct|expanding|extrapolatio|format|group|index|keys|k-means|linear|maxby|max|mean|median|min|minby|missing|moving|numeric|pivot|regex|regression|rows|slice|sort|stddev|sum|variance)\b</string>
+      </dict>
+    </array>
+  </dict>
+</plist>

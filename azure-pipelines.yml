@@ -20,7 +20,9 @@ steps:
 - script: newman --version
   displayName: Verify newman version
 
-- script: dotnet tool install fake-cli
+- script: |
+    dotnet tool uninstall fake-cli
+    dotnet tool install fake-cli
   displayName: Install Fake
   
 - task: NuGetToolInstaller@1

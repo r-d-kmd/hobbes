@@ -72,10 +72,10 @@ steps:
     publish
     logs gateway
     NAME="pod/$(getName publish)"
-    kubectl wait --for=condition=ready ${NAME} --timeout=120s
+    kubectl wait --for=condition=ready ${NAME} --timeout=30s
     printf "${Purple}Publishing\n"
     kubectl logs ${NAME} -f &
-    kubectl wait --for=condition=completed ${NAME} --timeout=120s
+    kubectl wait --for=condition=completed job.batch/publish --timeout=120s
     printf "Published${NoColor}\n"
     kubectl describe ${NAME}
     kubectl config get-contexts

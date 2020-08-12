@@ -22,9 +22,13 @@ module Data =
 
     [<Get ("/collectors")>]
     let collectors () =
-        200,(",",listConfigurations() 
+        200,(",",listConfigurations()
+                  |> Seq.filter(fun config -> 
+                      match config.Source.Provider with
+                      "join" | "merge" -> false
+                      | _ -> true) 
                   |> Seq.map(fun config ->
-                    config.Source.Name 
+                    config.Source.Provider 
                   ) |> Seq.distinct
                   |> Seq.filter(System.String.IsNullOrWhiteSpace >> not)
                   |> Seq.map (sprintf "%A")
@@ -35,7 +39,7 @@ module Data =
     let sources (systemName:string) =
         200,(",\n",listConfigurations()
                   |> Seq.filter(fun config ->
-                        config.Source.Name = systemName
+                        config.Source.Provider = systemName
                   ) |> Seq.map(fun config ->
                      config.Source.JsonValue.ToString()
                   ) |> Seq.distinct
@@ -59,11 +63,14 @@ module Data =
     [<Post ("/configuration", true)>]
     let storeConfiguration (configuration : string) =
         let conf = Config.Parse configuration
-        Log.logf "Configuration %s" configuration
-        assert(System.String.IsNullOrWhiteSpace(conf.Id) |> not)
-        assert(System.String.IsNullOrWhiteSpace(conf.Source.Name) |> not)
-        assert(conf.Transformations |> Array.isEmpty |> not)
-        
+        let hasValue d = System.String.IsNullOrWhiteSpace d |> not
+        Log.logf "Configuration %s." configuration
+        assert(hasValue conf.Id)
+        assert(hasValue conf.Source.Provider)
+        assert(conf.Transformations.Length > 0)
+        assert(conf.Source.Provider <> "merge" || conf.Source.Datasets.Length > 0)
+        assert(conf.Source.Provider <> "join" || (hasValue(conf.Source.Left.Value)&& hasValue (conf.Source.Right.Value) && hasValue (conf.Source.Field.Value)))
+
         200,configurations.InsertOrUpdate configuration
 
     [<Post ("/transformation", true)>]

@@ -36,48 +36,79 @@ module Reader =
              "LeadTimeDays", fun row -> row.LeadTimeDays |> Value.Bind
              "CycleTimeDays", fun row -> row.CycleTimeDays |> Value.Bind
              "StoryPoints", fun row -> row.StoryPoints |> Value.Bind
-             //"RevisedDate", fun row -> row.RevisedDate |> Value.Bind
-             //"Priority", fun row -> row.Priority |> Value.Bind
-             //"IsLastRevisionOfDay" , fun row -> row.IsLastRevisionOfDay |> Value.Bind
-             //"Title",  fun row -> row.Title |> Value.Create
-             //"WorkItemRevisionSK", fun row -> row.WorkItemRevisionSk |> Value.Create
+             "RevisedDate", fun row -> row.RevisedDate |> Value.Bind
+             "Priority", fun row -> row.Priority |> Value.Bind
+             "IsLastRevisionOfDay" , fun row -> row.IsLastRevisionOfDay |> Value.Bind
+             "Title",  fun row -> row.Title |> Value.Create
+             "WorkItemRevisionSK", fun row -> row.WorkItemRevisionSk |> Value.Create
         ]    
     //The first url to start with, if there's already some stored data
     let private getInitialUrl (source : AzureDevOpsSource.Root)=
-        if System.String.IsNullOrWhiteSpace source.Server then 
-            let account = 
-                let acc = source.Account.Replace("_", "-")
-                if System.String.IsNullOrWhiteSpace(acc) then "kmddk"
-                else acc
-
-            let filters = 
-                System.String.Join(" and ",
-                    [
-                        "IsLastRevisionOfDay", "eq", "true"
-                        "WorkItemType", "ne", "'Task'"
-                        "IsCurrent", "eq", "true"
-                    ] |> List.map(fun (a,b,c) -> sprintf "%s %s %s" a b c)
-                ).Replace(" ", "%20")
+        let server = 
+            if System.String.IsNullOrWhiteSpace source.Server then 
+                let account = 
+                    let acc = source.Account.Replace("_", "-")
+                    if System.String.IsNullOrWhiteSpace(acc) then "kmddk"
+                    else acc
+                sprintf "https://analytics.dev.azure.com/%s/%s" account source.Project
+            else
+                source.Server
+        let odataQuery = 
+            if source.Query |> Array.isEmpty |> not then
+                source.Query
+                |> Hobbes.OData.Compile.expressions
+            else
+                {
+                    Fields =  "iteration"::(azureFields |> List.map fst)
+                    Filters =
+                        [
+                            Hobbes.OData.Compile.And(
+                                Hobbes.OData.Compile.And(
+                                    Hobbes.OData.Compile.Eq("IsLastRevisionOfDay", "true"),
+                                    Hobbes.OData.Compile.Ne("WorkItemType", "'Task'")),
+                                    Hobbes.OData.Compile.Eq("IsCurrent", "true")
+                            )
+                        ]
+                    OrderBy = []
+                }
+        
+                                        
                 
-            let initialUrl = 
-                let selectedFields = 
-                   (",", azureFields |> List.map fst) |> System.String.Join
-                let path = 
-                    (sprintf "/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&$select=%s,Iteration&$filter=%s and WorkItemRevisionSK gt " selectedFields filters).Replace(" ", "%20")
+        let initialUrl (lastId:int64) = 
+            let query = 
+                let emitIfSpecified fieldName =
+                    Option.bind(fun (field : string) -> 
+                        field
+                        |> System.Web.HttpUtility.UrlEncode
+                        |> sprintf "$%s=%s" fieldName
+                        |> Some
+                    )
 
-                sprintf "https://analytics.dev.azure.com/%s/%s%s%d" account source.Project path
-            let key = source.JsonValue.ToString() |> keyFromSourceDoc 
-            try
-                match key |> Data.tryLatestId with
-                Some workItemRevisionId -> 
-                    initialUrl workItemRevisionId
-                | None -> 
-                    Log.debugf "Didn't get a work item revision id for %s" key
-                    initialUrl 0L
-            with e -> 
-                Log.excf e "Failed to get latest for (%s)" key 
+                System.String.Join("&",
+                    [
+                      yield "filter", Hobbes.OData.Compile.Gt("WorkItemRevisionSK",string(lastId))::odataQuery.Filters
+                                      |> List.reduce(fun filter c -> 
+                                          Hobbes.OData.Compile.And(filter,c)
+                                      ) |> string
+                      if odataQuery.Fields |> List.isEmpty |> not then yield "select", System.String.Join(",", odataQuery.Fields)
+                      if odataQuery.OrderBy |> List.isEmpty |> not then yield "orderby", System.String.Join(",", odataQuery.OrderBy)
+                    ]
+                    |> List.map(fun (a,b) -> sprintf "$%s=%s" a (System.Web.HttpUtility.UrlEncode b))
+                )
+            
+            sprintf "%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&%s" server query
+
+        let key = source.JsonValue.ToString() |> keyFromSourceDoc 
+        try
+            match key |> Data.tryLatestId with
+            Some workItemRevisionId -> 
+                initialUrl workItemRevisionId
+            | None -> 
+                Log.debugf "Didn't get a work item revision id for %s" key
                 initialUrl 0L
-        else source.Server + "/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&$select=WorkItemId,ChangedDate,WorkItemType,CreatedDate,ClosedDate,State,StateCategory,LeadTimeDays,CycleTimeDays,StoryPoints,Iteration&$filter=IsLastRevisionOfDay%20eq%20true%20and%20WorkItemType%20ne%20'Task'%20and%20WorkItemRevisionSK%20gt%200"
+        with e -> 
+            Log.excf e "Failed to get latest for (%s)" key 
+            initialUrl 0L
 
     //sends a http request   
     let private request user pwd httpMethod body url  =
@@ -176,7 +207,7 @@ module Reader =
 
     let sync azureToken (source : AzureDevOpsSource.Root) = 
         
-        let rec _read hashes url = 
+        let rec _read hashes url : int * string = 
             Log.logf "syncing with %s@%s" azureToken url
             let resp = 
                 url
@@ -212,27 +243,22 @@ module Reader =
 
                     body
                     |> tryNextLink
-                    |> Option.iter(fun nextlink ->   
+                    |> Option.map(fun nextlink ->   
                            Log.logf "Continuing with %s" nextlink
                            _read hashes nextlink
-                    )
+                    ) |> Option.orElse(Some(500,body))
+                    |> Option.get
                 | _ -> 
-                    ()
+                    200,"ok"
             else 
                 let message = 
                     match resp.Body with 
                     Text t -> t 
                     | _ -> ""
-                failwith <| sprintf "StatusCode: %d. Message: %s" resp.StatusCode message
+                resp.StatusCode, message
         
         let url = 
             source
             |> getInitialUrl                                   
-        try
-            url
-            |> _read []
-            200,"ok"
-        with e ->
-            let msg = sprintf "failed to sync Message: %s Url: %s" e.Message url
-            Log.exc e msg
-            500, msg
+        url
+        |> _read []

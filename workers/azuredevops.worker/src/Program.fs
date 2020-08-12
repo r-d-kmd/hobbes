@@ -1,7 +1,5 @@
-open System
 open Hobbes.Helpers.Environment
 open Readers.AzureDevOps.Data
-open Hobbes.Web.RawdataTypes
 open Readers.AzureDevOps
 open Hobbes.Web
 open Hobbes.Messaging
@@ -9,7 +7,12 @@ open Hobbes.Messaging.Broker
 
 let synchronize (source : AzureDevOpsSource.Root) token =
         try
-            let statusCode, body = Reader.sync token source
+            Reader.sync token source
+            |> Some
+        with e ->
+            Log.excf e "Sync failed due to exception"
+            None
+        |> Option.bind(fun (statusCode,body) ->
             Log.debugf "Sync finised with statusCode %d and result %s" statusCode body
             if statusCode > 200 || statusCode < 300 then 
                 match Reader.read source with
@@ -18,9 +21,7 @@ let synchronize (source : AzureDevOpsSource.Root) token =
             else
                 Log.errorf  "Syncronization failed. %d Message: %s" statusCode body
                 None                 
-        with e ->
-            Log.excf e "Sync failed due to exception"
-            None
+        )
 
 let handleMessage message =
     match message with
@@ -46,12 +47,7 @@ let handleMessage message =
                 sprintf "Conldn't syncronize. %s %s" sourceDoc token
                 |> Failure 
             | Some (key,data) -> 
-                let data = 
-                    {
-                        CacheKey = key
-                        TimeStamp = None 
-                        Data = data
-                    } : Cache.CacheRecord
+                let data = Cache.createCacheRecord key [] data
                 match Http.post (Http.UniformData Http.Update) data with
                 Http.Success _ -> 
                    Log.logf "Data uploaded to cache"

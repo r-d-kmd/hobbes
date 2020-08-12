@@ -6,7 +6,8 @@
   </PropertyGroup>
   <Import Project="$(TargetsPath)hobbes.properties.targets" />
   <ItemGroup>
-    <Compile Include="Services/Data.fs" />
+    <Compile Include="Services/Dataset.fs" />
+    <Compile Include="Services/UniformData.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
   <Import Project="..\..\..\.paket\Paket.Restore.targets" />

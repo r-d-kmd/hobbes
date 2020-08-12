@@ -169,8 +169,7 @@ module Security =
                             s.Split(":").[0] //Ignore password part of basic
                            )
                 else
-                    authToken 
-            printfn "%s" key
+                    authToken
 
             if (env "MASTER_USER" null) = key then 
                 printfn "Authenticating using master key"

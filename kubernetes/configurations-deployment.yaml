@@ -13,10 +13,9 @@ spec:
         app: configurations
     spec:
       containers:
-      - env:
-        imagePullPolicy: Never
+      - imagePullPolicy: Never
         image: configurations
-        name: hobbes-configurations
+        name: configurations
         envFrom:
         - secretRef:
             name: env

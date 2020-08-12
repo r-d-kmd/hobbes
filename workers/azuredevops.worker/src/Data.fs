@@ -64,7 +64,8 @@ module Data =
             "account" : "kmddk",
             "project" : "gandalf",
             "dataset" : "commits",
-            "server" : "https://analytics.dev.azure.com/kmddk/flowerpot"
+            "server" : "https://analytics.dev.azure.com/kmddk/flowerpot",
+            "query" : ["slice columns WorkItemType", "only 1 = 1", "only IsCurrent"]
         }"""
 
     [<Literal>]
@@ -85,6 +86,7 @@ module Data =
 
     let parseConfiguration doc = 
        let config = Config.Parse doc
+       assert(config.Source.Provider = "azure devops")
        let source = config.Source |> source2AzureSource
        
        if System.String.IsNullOrWhiteSpace source.Server then
@@ -102,17 +104,6 @@ module Data =
              ],
              "value": 90060205
     }""">
-
-    let createDataRecord key (data : Cache.DataResult) =
-        let timeStamp = System.DateTime.Now
-        let record : Cache.CacheRecord= 
-            {
-                CacheKey = key
-                TimeStamp = Some timeStamp
-                Data = data
-            } 
-        record
-
 
     type private RawList = JsonProvider<"""["id_a","id_b"]""">
     let private db = 

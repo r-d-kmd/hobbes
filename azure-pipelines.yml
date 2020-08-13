@@ -101,13 +101,15 @@ steps:
     newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY)
   displayName: Run postman tests
 
-- script: git config --global credential.helper store &&
-          git config --global user.email "hobbes_buildserver@kmd.dk" &&
-          git config --global user.name "Build server" &&
-          echo "azure-pipelines.yml merge=ours" > .gitattributes &&
-          git config --global merge.ours.driver true &&
-          git remote add pseudo https://$(GIT_ACCESS_TOKEN):x-oauth-basic@github.com/r-d-kmd/hobbes.git &&
-          git checkout master &&
-          git merge origin/development &&
-          git push pseudo master
+- script: |
+    docker push kmdrd/workbench
+    git config --global credential.helper store
+    git config --global user.email "hobbes_buildserver@kmd.dk"
+    git config --global user.name "Build server"
+    echo "azure-pipelines.yml merge=ours" > .gitattributes
+    git config --global merge.ours.driver true
+    git remote add pseudo https://$(GIT_ACCESS_TOKEN):x-oauth-basic@github.com/r-d-kmd/hobbes.git
+    git checkout master
+    git merge origin/development
+    git push pseudo master
   displayName: Push to master

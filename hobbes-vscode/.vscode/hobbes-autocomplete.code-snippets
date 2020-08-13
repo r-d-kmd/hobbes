@@ -178,5 +178,37 @@
 			"missing"
 		],
 		"description": "Represents the lack of a value"
+	},
+	"Moving" : {
+		"scope": "hb, hobbes",
+		"prefix": "moving",
+		"body": [
+			"moving ${1:reduction} ${2:windowSize} [ ${3:exp} ]"
+		],
+		"description": "Calculates the reduction over a moving window. The window contains `windowSize` data consecutive points og the `exp`. `reduction` can be one of the following: min,max,mean,median,stddev,variance,count,sum"
+	},
+	"Expanding" : {
+		"scope": "hb, hobbes",
+		"prefix": "expanding",
+		"body": [
+			"expanding ${1:reduction} [ ${3:exp} ]"
+		],
+		"description": "Calculates the reduction from the beging of the data to the current data point in `exp`. `reduction` can be one of the following: min,max,mean,median,stddev,variance,count,sum"
+	},
+	"Linear regression" : {
+		"scope": "hb, hobbes",
+		"prefix": "linear regression",
+		"body": [
+			"linear regression [ ${1:xSeriesExp} ] [ ${2:ySeriesExp} ]"
+		],
+		"description": "Calculates a linear regression over the input (`xSeriesExp`) and the output (`ySeriesExp`)"
+	},
+	"Linear extrapolation" : {
+		"scope": "hb, hobbes",
+		"prefix": "linear extrapolation",
+		"body": [
+			"linear extrapolation [ ${1:knownData} ] ${2:numberOfPredictedValues} ${3:trainingDataLength}"
+		],
+		"description": "Makes a linear extrapolation of the given data, using the keys of the table as input data. Extrapolates to include `"
 	}
 }

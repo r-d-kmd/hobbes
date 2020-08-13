@@ -131,7 +131,7 @@
 		"description": "Groups the data based on the columnName and picks the row where `exp` evaluates to the lowest value"
 	},
 	//Expressions
-	"format datw" : {
+	"format date" : {
 		"scope": "hb, hobbes",
 		"prefix": "format date",
 		"body": [
@@ -139,4 +139,44 @@
 		],
 		"description": "Returns the specified portion of the date. dateFormat can be one of: year, month, Day, Date, Week, WeekDay"
 	},
+	"If this then that" : {
+		"scope": "hb, hobbes",
+		"prefix": "if",
+		"body": [
+			"if [${1:boolExp}] { ${2:ifBodyExp} } else { ${3:elseBodyExp} }"
+		],
+		"description": "returns `ifBodyExp` if `boolExp` evaluates to true otherwise returns `elseBodyExp`"
+	},
+	"Int" : {
+		"scope": "hb, hobbes",
+		"prefix": "int",
+		"body": [
+			"int ( ${1:exp} )"
+		],
+		"description": "returns exp as an integer. If it can't be converted to an integer the transformation will fail"
+	},
+	"Regular expression" : {
+		"scope": "hb, hobbes",
+		"prefix": "regex, reg-ex",
+		"body": [
+			"regex [${1:exp}] ${2:regularExpression} ${3:tokenList}"
+		],
+		"description": "looks for matches of `regularExpression` in `exp` and uses the tokens of either $# to represent a match group (# being an integer) or a literal to construct the result. The tokens are concatenated"
+	},
+	"Keys" : {
+		"scope": "hb, hobbes",
+		"prefix": "keys",
+		"body": [
+			"keys"
+		],
+		"description": "returns the key (index) of each row"
+	},
+	"Missing" : {
+		"scope": "hb, hobbes",
+		"prefix": "missing",
+		"body": [
+			"missing"
+		],
+		"description": "Represents the lack of a value"
+	}
 }

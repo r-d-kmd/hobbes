@@ -100,13 +100,17 @@ module Cache =
         let data = 
             System.String.Join(",", data |> Array.map(fun d -> d.ToString()))
         let timeStamp = System.DateTime.Now
-        sprintf """{
-                    "_id": "%s",
-                    "timestamp": "%A",
-                    "dependsOn" : ["%s"],
-                    "data": [%s]
-                }""" key timeStamp dependsOn data
-        |> DynamicRecord.Parse
+        let res = 
+            sprintf """{
+                        "_id": "%s",
+                        "timestamp": "%A",
+                        "dependsOn" : ["%s"],
+                        "data": [%s]
+                    }""" key timeStamp dependsOn data
+            |> DynamicRecord.Parse
+        assert(res.Id = key)
+        assert(res.Timestamp = (sptrinf "%A" timestamp)
+        res
 
     let readData (cacheRecordText : string) =
         let cacheRecord = Json.deserialize<CacheRecord> cacheRecordText 

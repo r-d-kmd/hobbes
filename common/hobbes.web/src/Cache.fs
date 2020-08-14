@@ -109,7 +109,7 @@ module Cache =
                     }""" key timeStamp dependsOn data
             |> DynamicRecord.Parse
         assert(res.Id = key)
-        assert(res.Timestamp = (sptrinf "%A" timestamp)
+        assert(res.Timestamp = (sprintf "%A" timeStamp))
         res
 
     let readData (cacheRecordText : string) =

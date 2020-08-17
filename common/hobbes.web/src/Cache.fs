@@ -95,10 +95,9 @@ module Cache =
             Data = data
         }
 
-    let createDynamicCacheRecord key (dependsOn : string list) (data : FSharp.Data.JsonValue []) =
+    let createDynamicCacheRecord key (dependsOn : string list) data =
         let dependsOn = System.String.Join("\",\"", dependsOn)
-        let data = 
-            System.String.Join(",", data |> Array.map(fun d -> d.ToString()))
+       
         let timeStamp = System.DateTime.Now
         let res = 
             sprintf """{

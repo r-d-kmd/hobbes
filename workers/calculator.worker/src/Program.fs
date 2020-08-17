@@ -2,7 +2,7 @@ open Hobbes.Web
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
 open Hobbes.Helpers
-
+open Thoth.Json.Net
 
 let fromCache cacheKey =
     match Http.get (cacheKey |> Http.UniformDataService.Read |> Http.UniformData) Json.deserialize<Cache.CacheRecord> with
@@ -93,54 +93,54 @@ let transformData (message : CalculationMessage) =
                     with e ->
                         Log.excf e "Couldn't load data for formatting"
                         None
-                let formatToJson rows names = 
-                        rows
-                        |> Array.map(fun row ->
-                            System.String.Join(",",
-                                row
-                                |> Array.zip names
-                                |> Array.map(fun (colName,(value : Cache.Value)) ->
-                                    let valueAsString = 
-                                        (match value with
-                                        Cache.Value.Date dt -> 
-                                            dt
-                                            |> string
-                                            |> sprintf """ "%s" """
-                                        | Cache.Value.Text t -> sprintf """ "%s" """ t
-                                        | Cache.Value.Int i -> sprintf "%d" i 
-                                        | Cache.Value.Float f -> sprintf "%f" f
-                                        | Cache.Value.Boolean b -> sprintf "%b" b 
-                                        | Cache.Value.Null -> "null"
-                                        ).Replace("\\", "\\\\")
-                                    sprintf """ "%s" : %s """ colName valueAsString
-                                ))
-                            |> sprintf "{%s}"
-                            |> FSharp.Data.JsonValue.Parse
-                        )
-                record
-                |> Option.bind(fun record ->
+
+                let encodeValue value = 
+                    (match value with
+                     Cache.Value.Date dt -> 
+                         dt
+                         |> string
+                         |> Encode.string
+                     | Cache.Value.Text t -> Encode.string t
+                     | Cache.Value.Int i -> Encode.int i
+                     | Cache.Value.Float f -> Encode.float f
+                     | Cache.Value.Boolean b -> Encode.bool b 
+                     | Cache.Value.Null -> Encode.nil)
+                match record with
+                Some record -> 
                     let names = record.Data.ColumnNames
                     let rows = record.Data.Values
                     let key = sprintf "%s:%A" cacheKey format
                     let formatted = 
                         match format with
                         | Json -> 
-                            formatToJson rows names
+                            rows 
+                            |> Array.map(fun row ->
+                                row
+                                |> Array.zip names
+                                |> Array.map(fun (colName,(value : Cache.Value)) ->
+                                    colName,encodeValue value
+                                ) |> List.ofArray
+                                |> Encode.object
+                            ) |> Encode.array
                     try
-                        (formatted
-                        |> Cache.createDynamicCacheRecord key [cacheKey]).JsonValue
-                        |> string
-                        |> Http.post (Http.UpdateFormatted |> Http.UniformData)
-                        |> ignore
-                        Log.logf "Formatting of [%s] to [%A] resulting in [%s] completed" cacheKey format key
-                        Success
-                        |> Some
+                        let data = 
+                            formatted.ToString()
+                            |> Cache.createDynamicCacheRecord key [cacheKey]
+                        match 
+                            data
+                            |> Http.post (Http.UpdateFormatted |> Http.UniformData) with
+                        Http.Success _ -> 
+                            Log.logf "Formatting of [%s] to [%A] resulting in [%s] completed" cacheKey format key
+                            Success
+                        | Http.Error(sc,msg) ->
+                            sprintf "Trying posting data (%s) to uniform put failed with %d - %s"  (data.JsonValue.ToString()) sc msg
+                            |> Failure
                     with e ->
                        sprintf "Couldn't insert data (key: %s)." key
                        |> Failure
-                       |> Some
-                ) |> Option.orElse(Some Success)
-                |> Option.get
+                | None -> 
+                    sprintf "Couldn't get cached data. See log for details. cache key: %s" cacheKey
+                    |> Failure
     with e ->
        Log.errorf "Couldn't insert data (%A)." message
        Excep e 

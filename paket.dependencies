@@ -5,6 +5,7 @@ storage: none
 
 nuget FSharp.Core
 nuget Newtonsoft.Json
+nuget Thoth.Json.Net
 
 group workbench
     source https://www.nuget.org/api/v2 

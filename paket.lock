@@ -2,8 +2,14 @@ STORAGE: NONE
 RESTRICTION: || (== net40) (== netcoreapp3.1)
 NUGET
   remote: https://www.nuget.org/api/v2
+    Fable.Core (3.1.5) - restriction: || (&& (== net40) (>= netstandard2.0)) (== netcoreapp3.1)
+      FSharp.Core (>= 4.7) - restriction: || (&& (== net40) (>= netstandard2.0)) (== netcoreapp3.1)
     FSharp.Core (4.7.2)
     Newtonsoft.Json (12.0.3)
+    Thoth.Json.Net (4.1)
+      Fable.Core (>= 3.0 < 4.0) - restriction: || (&& (== net40) (>= netstandard2.0)) (== netcoreapp3.1)
+      FSharp.Core (>= 4.6.2) - restriction: || (&& (== net40) (>= net46)) (&& (== net40) (>= netstandard2.0)) (== netcoreapp3.1)
+      Newtonsoft.Json (>= 11.0.2) - restriction: || (&& (== net40) (>= net46)) (&& (== net40) (>= netstandard2.0)) (== netcoreapp3.1)
 
 GROUP collectors
 STORAGE: NONE

@@ -12,12 +12,10 @@ module Reader =
     //which signals that the data has been paged and that we're not at the last page yet
     let private tryNextLink (data : string) = 
         let data = AzureDevOpsAnalyticsRecord.Parse data
-        try
-            if System.String.IsNullOrWhiteSpace(data.OdataNextLink) |> not then
-                Some data.OdataNextLink
-            else 
-                None
-        with _ -> None
+        if System.String.IsNullOrWhiteSpace(data.OdataNextLink) |> not then
+            Some data.OdataNextLink
+        else 
+            None
     //If there's no work item records returned, this will return true
     let isEmpty (data : string) = 
         let data = AzureDevOpsAnalyticsRecord.Parse data
@@ -246,7 +244,7 @@ module Reader =
                     |> Option.map(fun nextlink ->   
                            Log.logf "Continuing with %s" nextlink
                            _read hashes nextlink
-                    ) |> Option.orElse(Some(500,body))
+                    ) |> Option.orElse(Some(200,body))
                     |> Option.get
                 | _ -> 
                     200,"ok"

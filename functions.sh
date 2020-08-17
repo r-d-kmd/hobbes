@@ -284,7 +284,7 @@ function publish(){
     cd $SCRIPT_DIR
     cd tools/workbench
     
-    docker build -t kmdrd/workbench -e BUILD_CONFIGURATION=Release .
+    docker build -t kmdrd/workbench .
 
     printf "${Green}Publisher built${NoColor}\n"
     startJob publish

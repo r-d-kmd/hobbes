@@ -44,7 +44,7 @@ module Dataset =
                 Log.logf "updating cache with _id: %s" key
                 try
                     data
-                    |> Array.map(fun d -> d.JsonValue)
+                    |> Array.map(fun d -> d.JsonValue.ToString() |> Thoth.Json.Net.JsonValue.Parse)
                     |> cache.InsertOrUpdate key dependsOn
                 with e ->
                     Log.excf e "Failed to insert %s" (dataAndKey.Substring(0,min 500 dataAndKey.Length))

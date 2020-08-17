@@ -69,7 +69,7 @@ steps:
     printf "${Purple}Publishing\n"
     kubectl logs ${NAME} -f &
     kubectl wait --for=condition=complete job.batch/publish --timeout=60s
-    printf "${Purple}Published${NoColor}\n"
+    printf "${Purple}Published${NoColor}\n" 
     printf "${Cyan}Sync\n"
     sync
     printf "${Cyan}Syncing${NoColor}\n"

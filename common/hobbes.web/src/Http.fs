@@ -106,7 +106,7 @@ module Http =
              member x.ServiceUrl 
                   with get() = 
                       let serviceName,path,port = x.ToParts()
-                      let pathString = System.String.Join("/",path) 
+                      let pathString = System.String.Join("/",path |> List.map System.Web.HttpUtility.UrlEncode) 
                       sprintf "http://%s-svc:%d/%s"  serviceName port pathString
 
 

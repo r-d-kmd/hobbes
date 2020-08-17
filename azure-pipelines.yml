@@ -54,7 +54,7 @@ steps:
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
-- script: source functions.sh && build PushApps 8 && docker images
+- script: source functions.sh && build BuildForTest 8 && docker images
   displayName: Build the world
 
 - script: |

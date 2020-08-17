@@ -33,5 +33,5 @@ docker/build
 kubernetes/all.yaml
 kubernetes/temp.yaml
 services/**/Dockerfile
-workers/azuredevops.worker/Dockerfile
+workers/**/Dockerfile
 kubernetes/log.txt

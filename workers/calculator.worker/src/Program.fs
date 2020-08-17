@@ -121,10 +121,10 @@ let transformData (message : CalculationMessage) =
                                     colName,encodeValue value
                                 ) |> List.ofArray
                                 |> Encode.object
-                            ) |> Encode.array
+                            )
                     try
                         let data = 
-                            formatted.ToString()
+                            formatted
                             |> Cache.createDynamicCacheRecord key [cacheKey]
                         match 
                             data

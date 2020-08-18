@@ -387,6 +387,11 @@ Targets.PullDb ==> Targets.BuildForTest
 Targets.PullSdk ==> Targets.BuildForTest
 Targets.PullRuntime ==> Targets.BuildForTest
 
+Targets.PullApp ==> Targets.PushApps 
+Targets.PullDb ==> Targets.PushApps
+Targets.PullSdk ==> Targets.PushApps
+Targets.PullRuntime ==> Targets.PushApps
+
 Targets.GenericSdk
     ?=> Targets.All
     ==> Targets.Complete

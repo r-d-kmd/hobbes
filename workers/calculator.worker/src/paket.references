@@ -1,5 +1,6 @@
 FSharp.Core
 Newtonsoft.Json
+Thoth.Json.Net
 
 group core
     Deedle

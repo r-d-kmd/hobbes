@@ -283,7 +283,7 @@ function publish(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
     cd tools/workbench
-
+    
     docker build -t kmdrd/workbench .
 
     printf "${Green}Publisher built${NoColor}\n"

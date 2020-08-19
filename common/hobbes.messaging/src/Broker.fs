@@ -51,7 +51,7 @@ module Broker =
         }
 
     type Format = 
-        Json    
+        Json
 
     type FormatMessage = 
         {

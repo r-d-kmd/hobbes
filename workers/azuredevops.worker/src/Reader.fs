@@ -6,24 +6,24 @@ open Hobbes.Helpers.Environment
 open Hobbes.Web.RawdataTypes
 open Hobbes.Web
 open Hobbes.Web.Cache
+open Thoth.Json.Net
+
 module Reader =
 
     //looks whether it's the last record or there's a odatanextlink porperty 
     //which signals that the data has been paged and that we're not at the last page yet
     let private tryNextLink (data : string) = 
         let data = AzureDevOpsAnalyticsRecord.Parse data
-        try
-            if System.String.IsNullOrWhiteSpace(data.OdataNextLink) |> not then
-                Some data.OdataNextLink
-            else 
-                None
-        with _ -> None
+        if System.String.IsNullOrWhiteSpace(data.OdataNextLink) |> not then
+            Some data.OdataNextLink
+        else 
+            None
     //If there's no work item records returned, this will return true
     let isEmpty (data : string) = 
         let data = AzureDevOpsAnalyticsRecord.Parse data
         data.Value |> Array.isEmpty
     
-    //TODO: Why are these fields commented out??
+    
     let private azureFields : (string * (AzureDevOpsAnalyticsRecord.Value -> Value) ) list= 
         [
              "WorkItemId",  fun row -> row.WorkItemId |> Value.Create
@@ -132,8 +132,7 @@ module Reader =
                 headers = headers
             )
 
-    let formatRawdataCache key (timeStamp : string ) rawdataCache =
-        assert((System.String.IsNullOrWhiteSpace key) |> not)
+    let formatRawdataCache (timeStamp : string ) rawdataCache =
         
         let columnNames = 
             [
@@ -187,9 +186,8 @@ module Reader =
                RowCount = rows.Length
             } : Cache.DataResult
             
-        key, data
+        data
 
-    //Reads data from the raw data store. This should be exposed as part of the API in some form 
     let read (source : AzureDevOpsSource.Root) =
         let key = source.JsonValue.ToString() |> keyFromSourceDoc
 
@@ -200,10 +198,10 @@ module Reader =
         let raw = 
             source
             |> bySource
-            |> Option.bind((formatRawdataCache key timeStamp) >> Some)
+            |> Option.bind((formatRawdataCache timeStamp) >> Some)
 
         Log.logf "\n\n azure devops:%s \n\n" (source.JsonValue.ToString())        
-        raw
+        key,raw
 
     let sync azureToken (source : AzureDevOpsSource.Root) = 
         
@@ -220,25 +218,19 @@ module Reader =
                 match body with
                 _ when body |> isEmpty |> not ->
 
-                    let body' = 
-                        body.Replace("\\\"","'")
-                    
                     let rawdataRecord =
-                        sprintf """{
-                            "_id" : "%s",
-                            "timeStamp" : "%s",
-                            "data" : %s,
-                            "url" : "%s",
-                            "source" : %s,
-                            "recordCount" : %d,
-                            "hashes" : [%s]
-                            }""" rawId 
-                                 (System.DateTime.Now.ToString()) 
-                                 body' 
-                                 url 
-                                 (source.JsonValue.ToString()) 
-                                 hashes.Length
-                                 (System.String.Join(",",hashes |> Seq.map(sprintf """ "%s" """))) 
+                        let present p =
+                            System.String.IsNullOrWhiteSpace p |> not
+
+                        Encode.object [
+                            "_id", Encode.string rawId
+                            "timeStamp", Encode.string (System.DateTime.Now.ToString()) 
+                            "data", JsonValue.Parse body
+                            "url", Encode.string url
+                            "source", JsonValue.Parse (source.JsonValue.ToString())
+                            "recordCount", Encode.int hashes.Length
+                            "hashes", Encode.array (hashes |> Seq.map(Encode.string) |> Array.ofSeq)
+                        ] |> Encode.toString 0
                     insertOrUpdate rawdataRecord
 
                     body
@@ -246,7 +238,7 @@ module Reader =
                     |> Option.map(fun nextlink ->   
                            Log.logf "Continuing with %s" nextlink
                            _read hashes nextlink
-                    ) |> Option.orElse(Some(500,body))
+                    ) |> Option.orElse(Some(200,body))
                     |> Option.get
                 | _ -> 
                     200,"ok"

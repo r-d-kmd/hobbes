@@ -269,7 +269,7 @@ function startJob(){
     kubectl delete job.batch/$1 &> /dev/null
     
     kubectl apply -f $1-job.yaml
-    
+    logs $1
     printf "${Cyan}$1 started\n"
     
     cd $CURRENT_DIR
@@ -283,7 +283,7 @@ function publish(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
     cd tools/workbench
-
+    
     docker build -t kmdrd/workbench .
 
     printf "${Green}Publisher built${NoColor}\n"

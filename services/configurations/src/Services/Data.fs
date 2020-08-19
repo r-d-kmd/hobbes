@@ -37,14 +37,28 @@ module Data =
 
     [<Get ("/sources/%s")>]
     let sources (systemName:string) =
-        200,(",\n",listConfigurations()
-                  |> Seq.filter(fun config ->
-                        config.Source.Provider = systemName
-                  ) |> Seq.map(fun config ->
-                     config.Source.JsonValue.ToString()
-                  ) |> Seq.distinct
-            ) |> System.String.Join
-            |> sprintf "[%s]"
+        let systemName = 
+            systemName
+            |> System.Web.HttpUtility.UrlDecode
+        let availableSources = 
+            listConfigurations()
+            |> Seq.map(fun config ->
+              config.Source
+            )
+
+        let sources = 
+            availableSources
+            |> Seq.filter(fun source ->
+                source.Provider = systemName
+            ) |> Seq.map(fun source ->
+                source.JsonValue.ToString()
+            ) |> Seq.distinct
+        if sources |> Seq.isEmpty then
+            404, sprintf "No sources found for %s. Available sources are %A" systemName (availableSources |> Seq.map(fun s -> s.Provider) |> Seq.distinct |> List.ofSeq)
+        else
+            200,(",\n", sources
+                ) |> System.String.Join
+                |> sprintf "[%s]"
 
 
     [<Get ("/configuration/%s")>]

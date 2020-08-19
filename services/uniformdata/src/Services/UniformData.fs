@@ -19,7 +19,7 @@ module Data =
         Some uniformData ->
             200, (uniformData |> Json.serialize)
         | None -> 
-            404,"No data found"
+            404,sprintf "No data found for %s" key
 
     [<Post ("/update", true)>]
     let update dataAndKey =

@@ -1,10 +1,11 @@
-version 5.245.1
+version 5.244.0
 source https://www.nuget.org/api/v2
 framework: auto-detect
 storage: none
 
 nuget FSharp.Core
 nuget Newtonsoft.Json
+nuget Thoth.Json.Net
 
 group workbench
     source https://www.nuget.org/api/v2 

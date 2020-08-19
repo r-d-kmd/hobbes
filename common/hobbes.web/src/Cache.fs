@@ -3,6 +3,7 @@ namespace Hobbes.Web
 open Hobbes.Helpers.Environment
 open Hobbes.Helpers
 open Newtonsoft.Json
+open Thoth.Json.Net
 
 module Cache =
     [<RequireQualifiedAccess>]
@@ -95,18 +96,30 @@ module Cache =
             Data = data
         }
 
-    let createDynamicCacheRecord key (dependsOn : string list) (data : FSharp.Data.JsonValue []) =
-        let dependsOn = System.String.Join("\",\"", dependsOn)
-        let data = 
-            System.String.Join(",", data |> Array.map(fun d -> d.ToString()))
+    let createDynamicCacheRecord key (dependsOn : string list) dataArray =
+        assert(key |> System.String.IsNullOrWhiteSpace |> not)
+
+        let dependsOn = 
+            dependsOn
+            |> List.map Encode.string
+            |> Array.ofList
+            |> Encode.array
+        let dataJson = 
+            Encode.array dataArray
         let timeStamp = System.DateTime.Now
-        sprintf """{
-                    "_id": "%s",
-                    "timestamp": "%A",
-                    "dependsOn" : ["%s"],
-                    "data": [%s]
-                }""" key timeStamp dependsOn data
-        |> DynamicRecord.Parse
+        let res = 
+            Encode.object
+                [
+                    "_id",Encode.string key
+                    "timestamp", Encode.string (sprintf "%A" timeStamp)
+                    "dependsOn", dependsOn
+                    "data", dataJson
+                ]
+            |> Encode.toString 0
+            |> DynamicRecord.Parse
+        assert(res.Id = key)
+        assert(res.Timestamp = (sprintf "%A" timeStamp))
+        res
 
     let readData (cacheRecordText : string) =
         let cacheRecord = Json.deserialize<CacheRecord> cacheRecordText 

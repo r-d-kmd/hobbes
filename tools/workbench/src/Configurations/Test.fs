@@ -29,3 +29,6 @@ module Test =
         [
           Metrics.martin
         ] |> addAzureConfiguration "martin"
+        [
+          Metrics.martin
+        ] |> addConfiguration Test (Source.AzureDevOps(Project.Gandalf)) "martin"

@@ -1,0 +1,17 @@
+scopeName: "source.hobbes"
+fileTypes: [hb]
+patterns: 
+  - name: "keyword.control.hobbes"
+    match: "only|else|if|then|by"
+  - name: "keyword.operator.hobbes"
+    match: "\\b(->|=>|=|int)\\b"
+  - name: "keyword.operator.values.hobbes"
+    match: "\\b(keys|ordinals|index|missing)\\b"
+  - name: "keyword.operator.dates.hobbes"
+    match: "\\b(date|day|week|weekday|month|year)\\b"
+  - name: "keyword.operator.aggregator.hobbes"
+    match: "\\b(count|distinct|max|mean|median|min|stddev|sum|variance)\\b"
+  - name: "keyword.operator.filter.hobbes"
+    match: "\\b(dense|numeric)\\b"
+  - name: "keyword.other.hobbes"
+    match: "\\b(buckets|column|columns|create|rename|dense|expanding|extrapolation|format|group|index|keys|k-means|linear|maxby|minby|moving|numeric|pivot|regex|regression|rows|slice|sort)\\b"

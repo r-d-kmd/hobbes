@@ -136,10 +136,13 @@ module Http =
     let get (service : Service) parser  = 
         let url = service.ServiceUrl
         printfn "Getting %s" url
-        Http.Request(url,
-                     httpMethod = "GET",
-                     silentHttpErrors = true
-        ) |> readResponse parser
+        try
+            Http.Request(url,
+                         httpMethod = "GET",
+                         silentHttpErrors = true
+            ) |> readResponse parser
+        with e ->
+            Error(500, sprintf "%s%s %s" url e.Message e.StackTrace)
 
     let delete (service : Service) parser  = 
         let url = service.ServiceUrl
@@ -152,12 +155,15 @@ module Http =
     let private putOrPost httpMethod (service : Service) (body : string) = 
         let url = service.ServiceUrl
         printfn "%sting binary to %s" httpMethod url
-        Http.Request(url,
-                     httpMethod = httpMethod,
-                     body = TextRequest body,
-                     headers = [HttpRequestHeaders.ContentTypeWithEncoding("application/json", System.Text.Encoding.Default)],
-                     silentHttpErrors = true
-        ) |> readResponse id
+        try
+            Http.Request(url,
+                         httpMethod = httpMethod,
+                         body = TextRequest body,
+                         headers = [HttpRequestHeaders.ContentTypeWithEncoding("application/json", System.Text.Encoding.Default)],
+                         silentHttpErrors = true
+            ) |> readResponse id
+        with e ->
+           Error(500, sprintf "%s %s %s" url e.Message e.StackTrace)
 
     let put = putOrPost "PUT"
     let post<'a> service (body : 'a) = 

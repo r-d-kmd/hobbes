@@ -97,6 +97,8 @@ module Cache =
         }
 
     let createDynamicCacheRecord key (dependsOn : string list) dataArray =
+        assert(key |> System.String.IsNullOrWhiteSpace |> not)
+
         let dependsOn = 
             dependsOn
             |> List.map Encode.string

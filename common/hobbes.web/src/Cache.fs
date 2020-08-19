@@ -115,7 +115,7 @@ module Cache =
                     "dependsOn", dependsOn
                     "data", dataJson
                 ]
-            |> string
+            |> Encode.toString 0
             |> DynamicRecord.Parse
         assert(res.Id = key)
         assert(res.Timestamp = (sprintf "%A" timeStamp))

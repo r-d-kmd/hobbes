@@ -53,11 +53,9 @@ module Log =
                .Replace("\t","\\t")
 
     let private writeLogMessage (logType : LogType) stacktrace (msg : string) =
-        let doc = sprintf """{"timestamp" : "%s",
-                             "type" : "%A",
-                             "stacktrace" : "%s",
-                             "message" : "%s"}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) logType (stacktrace |> jsonify) (msg |> jsonify)
+        
         if env "LOG_LOCATION" "console" = "console" then
+            let maxMessageLength = env "MAX_LOG_LENGTH" "500" |> int
             let esc = string (char 0x1B)
             let red = esc + "[31;1m"
             let noColor = esc + "[0m"
@@ -74,6 +72,7 @@ module Log =
                         | Debug -> printfn "%s%s - %s %s" yellow
                         | _ -> printfn "%s%s - %s %s" noColor
                     fun s -> p (now()) s noColor
+            let msg = msg.Substring(0,min msg.Length maxMessageLength)
             (if System.String.IsNullOrWhiteSpace(stacktrace) then
               sprintf "%s" msg
              else
@@ -81,6 +80,10 @@ module Log =
             |> printer
         else
             async {
+                let doc = sprintf """{"timestamp" : "%s",
+                             "type" : "%A",
+                             "stacktrace" : "%s",
+                             "message" : "%s"}""" (System.DateTime.Now.ToString(System.Globalization.CultureInfo.InvariantCulture)) logType (stacktrace |> jsonify) (msg |> jsonify)
                try
                   if logType >= logLevel then
                       doc |>_logger

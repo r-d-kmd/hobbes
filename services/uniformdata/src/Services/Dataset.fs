@@ -33,7 +33,11 @@ module Dataset =
                         dataAndKey
                         |> Cache.DynamicRecord.Parse
                     let key = args.Id
+                    if System.String.IsNullOrWhiteSpace(key) then
+                        Log.errorf "No id provided %s" dataAndKey
                     let data = args.Data
+                    if data.Length > 0 then
+                        Log.errorf "No data provided %s" dataAndKey
                     let dependsOn = args.DependsOn |> Array.toList
                     Some (key,data,dependsOn)
                 with e ->
@@ -44,7 +48,7 @@ module Dataset =
                 Log.logf "updating cache with _id: %s" key
                 try
                     data
-                    |> Array.map(fun d -> d.JsonValue)
+                    |> Array.map(fun d -> d.JsonValue.ToString() |> Thoth.Json.Net.JsonValue.Parse)
                     |> cache.InsertOrUpdate key dependsOn
                 with e ->
                     Log.excf e "Failed to insert %s" (dataAndKey.Substring(0,min 500 dataAndKey.Length))

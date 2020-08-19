@@ -130,13 +130,6 @@ let docker command dir =
         let args = arguments.Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries)
         System.String.Join(" ",args) 
     run "docker" dir (arguments.Replace("  "," ").Trim())
-
-let version =
-        match buildConfiguration with
-        DotNet.BuildConfiguration.Release -> "latest"
-        | DotNet.BuildConfiguration.Debug -> "debug"
-        | _ -> failwithf "configuration has no specific version. %A" buildConfiguration
-
 let commonLibDir = "./docker/.lib/"
 
 let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "2.0.default"
@@ -198,8 +191,12 @@ let commons =
         Targets.Messaging
     ]
 let apps : seq<App*string> = 
+    let enumerateProjectFiles (dir : DirectoryInfo) = 
+        dir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
+        |> Seq.filter(fun n -> n.Name.ToLower().EndsWith(".tests.fsproj") |> not) //exclude test projects
     let services = 
-        serviceDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
+        serviceDir
+        |> enumerateProjectFiles
         |> Seq.map(fun file ->
             let workingDir = 
                 file.Directory.Parent.FullName
@@ -211,7 +208,8 @@ let apps : seq<App*string> =
         )
 
     let workers = 
-        workerDir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
+        workerDir
+        |> enumerateProjectFiles
         |> Seq.map(fun file ->
             let workingDir = 
                 file.Directory.Parent.FullName
@@ -233,14 +231,17 @@ let buildApp (name : string) (appType : string) workingDir =
                t + ":" + "latest"
            ]
 
-        let file = sprintf "%s/Dockerfile.%s" dockerDir.FullName appType |> Some
-        System.IO.File.Copy(file.Value, sprintf "%s/Dockerfile" workingDir,true)
+        let file = sprintf "%s/Dockerfile.%s" dockerDir.FullName appType
+        let dest = sprintf "%s/Dockerfile" workingDir
+        System.IO.File.Copy(file, dest,true)
+        printfn "%s copied tp %s" file dest
+
         docker (Build(None,tag,buildArgs)) workingDir
         tags
         |> List.iter(fun t -> 
             docker (Tag(tag,t)) workingDir
         )
-        System.IO.File.Delete(sprintf "%s/Dockerfile" workingDir)
+        File.Delete(sprintf "%s/Dockerfile" workingDir)
 
     let push _ = 
         let tags =
@@ -386,6 +387,11 @@ Targets.PullApp ==> Targets.BuildForTest
 Targets.PullDb ==> Targets.BuildForTest
 Targets.PullSdk ==> Targets.BuildForTest
 Targets.PullRuntime ==> Targets.BuildForTest
+
+Targets.PullApp ==> Targets.PushApps 
+Targets.PullDb ==> Targets.PushApps
+Targets.PullSdk ==> Targets.PushApps
+Targets.PullRuntime ==> Targets.PushApps
 
 Targets.GenericSdk
     ?=> Targets.All

@@ -131,7 +131,7 @@
 		"description": "Groups the data based on the columnName and picks the row where `exp` evaluates to the lowest value"
 	},
 	//Expressions
-	"format datw" : {
+	"format date" : {
 		"scope": "hb, hobbes",
 		"prefix": "format date",
 		"body": [
@@ -139,4 +139,76 @@
 		],
 		"description": "Returns the specified portion of the date. dateFormat can be one of: year, month, Day, Date, Week, WeekDay"
 	},
+	"If this then that" : {
+		"scope": "hb, hobbes",
+		"prefix": "if",
+		"body": [
+			"if [${1:boolExp}] { ${2:ifBodyExp} } else { ${3:elseBodyExp} }"
+		],
+		"description": "returns `ifBodyExp` if `boolExp` evaluates to true otherwise returns `elseBodyExp`"
+	},
+	"Int" : {
+		"scope": "hb, hobbes",
+		"prefix": "int",
+		"body": [
+			"int ( ${1:exp} )"
+		],
+		"description": "returns exp as an integer. If it can't be converted to an integer the transformation will fail"
+	},
+	"Regular expression" : {
+		"scope": "hb, hobbes",
+		"prefix": "regex, reg-ex",
+		"body": [
+			"regex [${1:exp}] ${2:regularExpression} ${3:tokenList}"
+		],
+		"description": "looks for matches of `regularExpression` in `exp` and uses the tokens of either $# to represent a match group (# being an integer) or a literal to construct the result. The tokens are concatenated"
+	},
+	"Keys" : {
+		"scope": "hb, hobbes",
+		"prefix": "keys",
+		"body": [
+			"keys"
+		],
+		"description": "returns the key (index) of each row"
+	},
+	"Missing" : {
+		"scope": "hb, hobbes",
+		"prefix": "missing",
+		"body": [
+			"missing"
+		],
+		"description": "Represents the lack of a value"
+	},
+	"Moving" : {
+		"scope": "hb, hobbes",
+		"prefix": "moving",
+		"body": [
+			"moving ${1:reduction} ${2:windowSize} [ ${3:exp} ]"
+		],
+		"description": "Calculates the reduction over a moving window. The window contains `windowSize` data consecutive points og the `exp`. `reduction` can be one of the following: min,max,mean,median,stddev,variance,count,sum"
+	},
+	"Expanding" : {
+		"scope": "hb, hobbes",
+		"prefix": "expanding",
+		"body": [
+			"expanding ${1:reduction} [ ${3:exp} ]"
+		],
+		"description": "Calculates the reduction from the beging of the data to the current data point in `exp`. `reduction` can be one of the following: min,max,mean,median,stddev,variance,count,sum"
+	},
+	"Linear regression" : {
+		"scope": "hb, hobbes",
+		"prefix": "linear regression",
+		"body": [
+			"linear regression [ ${1:xSeriesExp} ] [ ${2:ySeriesExp} ]"
+		],
+		"description": "Calculates a linear regression over the input (`xSeriesExp`) and the output (`ySeriesExp`)"
+	},
+	"Linear extrapolation" : {
+		"scope": "hb, hobbes",
+		"prefix": "linear extrapolation",
+		"body": [
+			"linear extrapolation [ ${1:knownData} ] ${2:numberOfPredictedValues} ${3:trainingDataLength}"
+		],
+		"description": "Makes a linear extrapolation of the given data, using the keys of the table as input data. Extrapolates to include `"
+	}
 }

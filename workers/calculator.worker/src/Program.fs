@@ -2,7 +2,7 @@ open Hobbes.Web
 open Hobbes.Messaging.Broker
 open Hobbes.Messaging
 open Hobbes.Helpers
-
+open Hobbes.Workers.Calculator.Processer
 
 let fromCache cacheKey =
     match Http.get (cacheKey |> Http.UniformDataService.Read |> Http.UniformData) Json.deserialize<Cache.CacheRecord> with
@@ -12,15 +12,7 @@ let fromCache cacheKey =
         else
             failwithf "Failed retrieving data %d - %s" sc msg
     | Http.Success cacheRecord -> 
-        cacheRecord
-
-let toMatrix (cacheRecord : Cache.CacheRecord) = 
-    let columnNames = cacheRecord.Data.ColumnNames
-    cacheRecord.Data.Rows()
-    |> Seq.mapi(fun index row ->
-        index,row
-              |> Seq.zip columnNames
-    ) |> Hobbes.FSharp.DataStructures.DataMatrix.fromRows
+        cacheRecord.Data
 
 let insertOrUpdate doc = 
     match Http.post (Http.UniformDataService.Update |> Http.UniformData) doc with
@@ -36,12 +28,12 @@ let transformData (message : CalculationMessage) =
                 data
                 |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows                 
             let transformedData = 
-                try
-                    dataJson
-                    |> Json.deserialize<Cache.DataResult> 
-                with e ->
-                    Log.excf e "Couldn't deserialize (%s)" dataJson
-                    reraise()
+                dataJson
+                |> Json.deserialize<Cache.DataResult> 
+
+            assert(transformedData.ColumnNames.Length =  transformedData.Values.[0].Length)
+            assert(transformedData.Values.Length =  transformedData.RowCount)
+
             transformedData
             |> Cache.createCacheRecord key dependsOn
             |> Json.serialize
@@ -49,101 +41,67 @@ let transformData (message : CalculationMessage) =
             Log.logf "Transformation of [%A] using [%A] resulting in [%s] completed" dependsOn message key
             Success
         with e ->
-         Excep e
-    try
-            match message with
-            Merge message ->
-                let cacheKey = message.CacheKey
-                let dependsOn = message.Datasets |> Array.toList
-                let data = 
-                    message.Datasets
-                    |> Array.map (fromCache >> toMatrix)
-                    |> Array.reduce(fun res matrix ->
-                        res.Combine matrix
-                    )
-                insertMatrix cacheKey dependsOn data
-            | Join message ->
-                let cacheKey = message.CacheKey
-                let dependsOn = [message.Left;message.Right]
-                let left = 
-                    message.Left
-                    |> (fromCache >> toMatrix)
-                let right = 
-                    message.Right
-                    |> (fromCache >> toMatrix)
-                let data = 
-                    right |> left.Join message.Field 
-                insertMatrix cacheKey dependsOn data
-            | Transform message -> 
-                let dependsOn = message.DependsOn
-                let transformation = message.Transformation
-                let key = dependsOn + ":" + transformation.Name
-                dependsOn
-                |> (fromCache >> toMatrix)
-                |> Hobbes.FSharp.Compile.expressions transformation.Statements     
-                |> insertMatrix key [dependsOn] 
-            | Format message ->
-                let cacheKey = message.CacheKey
-                let format = message.Format
-                let record = 
-                    try
-                        message.CacheKey
-                        |> fromCache 
-                        |> Some
-                    with e ->
-                        Log.excf e "Couldn't load data for formatting"
-                        None
-                let formatToJson rows names = 
-                        rows
-                        |> Array.map(fun row ->
-                            System.String.Join(",",
-                                row
-                                |> Array.zip names
-                                |> Array.map(fun (colName,(value : Cache.Value)) ->
-                                    let valueAsString = 
-                                        (match value with
-                                        Cache.Value.Date dt -> 
-                                            dt
-                                            |> string
-                                            |> sprintf """ "%s" """
-                                        | Cache.Value.Text t -> sprintf """ "%s" """ t
-                                        | Cache.Value.Int i -> sprintf "%d" i 
-                                        | Cache.Value.Float f -> sprintf "%f" f
-                                        | Cache.Value.Boolean b -> sprintf "%b" b 
-                                        | Cache.Value.Null -> "null"
-                                        ).Replace("\\", "\\\\")
-                                    sprintf """ "%s" : %s """ colName valueAsString
-                                ))
-                            |> sprintf "{%s}"
-                            |> FSharp.Data.JsonValue.Parse
-                        )
-                record
-                |> Option.bind(fun record ->
-                    let names = record.Data.ColumnNames
-                    let rows = record.Data.Values
-                    let key = sprintf "%s:%A" cacheKey format
-                    let formatted = 
-                        match format with
-                        | Json -> 
-                            formatToJson rows names
-                    try
-                        (formatted
-                        |> Cache.createDynamicCacheRecord key [cacheKey]).JsonValue
-                        |> string
-                        |> Http.post (Http.UpdateFormatted |> Http.UniformData)
-                        |> ignore
-                        Log.logf "Formatting of [%s] to [%A] resulting in [%s] completed" cacheKey format key
-                        Success
-                        |> Some
-                    with e ->
-                       sprintf "Couldn't insert data (key: %s)." key
-                       |> Failure
-                       |> Some
-                ) |> Option.orElse(Some Success)
-                |> Option.get
-    with e ->
-       Log.errorf "Couldn't insert data (%A)." message
-       Excep e 
+            Log.excf e "Couldn't insert data (%A)." message
+            Excep e 
+    
+    match message with
+    Merge message ->
+        let cacheKey = message.CacheKey
+        let dependsOn = message.Datasets |> Array.toList
+        message.Datasets
+        |> Array.map fromCache 
+        |> merge
+        |> insertMatrix cacheKey dependsOn
+    | Join message ->
+        let cacheKey = message.CacheKey
+        let dependsOn = [message.Left;message.Right]
+        let left = 
+            message.Left
+            |> fromCache
+        let right = 
+            message.Right
+            |> fromCache
+        
+        join left right message.Field 
+        |> insertMatrix cacheKey dependsOn
+    | Transform message -> 
+        let dependsOn = message.DependsOn
+        let transformation = message.Transformation
+        let key = dependsOn + ":" + transformation.Name
+        dependsOn
+        |> fromCache
+        |> transform message.Transformation.Statements
+        |> insertMatrix key [dependsOn] 
+    | Format message ->
+        let cacheKey = message.CacheKey
+        let record = 
+            try
+                message.CacheKey
+                |> fromCache
+                |> Some
+            with e ->
+                Log.excf e "Couldn't load data for formatting"
+                None
+        let key = sprintf "%s:%A" cacheKey message.Format
+        match record with
+        Some record ->
+            let formatted = format message.Format record.Values record.ColumnNames
+            let data = 
+                formatted
+                |> Cache.createDynamicCacheRecord key [cacheKey]
+            match 
+                data.JsonValue.ToString()
+                |> Http.post (Http.UpdateFormatted |> Http.UniformData) with
+            Http.Success _ -> 
+                Log.logf "Formatting of [%s] to [%A] resulting in [%s] completed" cacheKey message.Format key
+                Success
+            | Http.Error(sc,msg) ->
+                sprintf "Trying posting data (%s) to uniform put failed with %d - %s"  (data.JsonValue.ToString().Substring(0,min (data.JsonValue.ToString().Length) 500)) sc msg
+                |> Failure
+        | None -> 
+            sprintf "Couldn't get cached data. See log for details. cache key: %s" cacheKey
+            |> Failure
+
 
 [<EntryPoint>]
 let main _ =

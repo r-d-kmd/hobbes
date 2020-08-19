@@ -25,7 +25,7 @@ let private appRouter = router {
 } 
 
 let private app = application {
-    url (sprintf "http://0.0.0.0:%d/" port)
+    url (sprintf "http://0.0.0.0:%d/" port) 
     use_router appRouter
     memory_cache
     use_gzip

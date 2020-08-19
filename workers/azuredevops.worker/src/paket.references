@@ -1,6 +1,6 @@
 FSharp.Core
 Newtonsoft.Json
-
+Thoth.Json.Net
 
 group web
     FSharp.Data

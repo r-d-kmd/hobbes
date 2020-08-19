@@ -17,11 +17,11 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.helpers", "common\ho
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.messaging", "common\hobbes.messaging\src\hobbes.messaging.fsproj", "{CCB5A2AB-E707-498F-B6B2-CF529105451F}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.configurations", "services\configurations\src\configurations.fsproj", "{77A8AE02-8252-43BF-ABF0-CD73073910A5}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "configurations", "services\configurations\src\configurations.fsproj", "{77A8AE02-8252-43BF-ABF0-CD73073910A5}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.gateway", "services\gateway\src\gateway.fsproj", "{6D2F467E-4E86-46BD-8AAA-D9CCE165F402}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "gateway", "services\gateway\src\gateway.fsproj", "{6D2F467E-4E86-46BD-8AAA-D9CCE165F402}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.uniformdata", "services\uniformdata\src\uniformdata.fsproj", "{2B2B57E3-076D-4F57-A927-90D58C49890A}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "uniformdata", "services\uniformdata\src\uniformdata.fsproj", "{2B2B57E3-076D-4F57-A927-90D58C49890A}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "azureDevOps.worker", "workers\azuredevops.worker\src\azureDevOps.worker.fsproj", "{331CC185-3292-4B55-BCFB-FBC33B77741E}"
 EndProject
@@ -33,13 +33,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{4C588B8F
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workbench", "workbench", "{C8C3473C-1A74-4A24-8A19-F023791AEEB5}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "hobbes.workbench", "tools\workbench\src\hobbes.workbench.fsproj", "{39D243AF-266B-496C-B1B5-69A856AA4AAE}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.workbench", "tools\workbench\src\hobbes.workbench.fsproj", "{39D243AF-266B-496C-B1B5-69A856AA4AAE}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "git.worker", "workers\git.worker\src\git.worker.fsproj", "{B001F133-7096-4D85-A0D7-CB91BACDCE2C}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "git.worker", "workers\git.worker\src\git.worker.fsproj", "{B001F133-7096-4D85-A0D7-CB91BACDCE2C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{60044ED0-AA1D-11EA-A934-09260C0BF938}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "hobbes.tests", "common\hobbes.core\tests\hobbes.tests.fsproj", "{CAA29A8A-2731-487C-AE1B-0B19922226CC}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "hobbes.core.tests", "common\hobbes.core\tests\hobbes.core.tests.fsproj", "{CAA29A8A-2731-487C-AE1B-0B19922226CC}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "calculator.worker.tests", "workers\calculator.worker\tests\calculator.worker.tests.fsproj", "{CBB7E7EC-DF34-4696-8FB6-9052C63ED460}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -99,6 +101,10 @@ Global
 		{CAA29A8A-2731-487C-AE1B-0B19922226CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CAA29A8A-2731-487C-AE1B-0B19922226CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CAA29A8A-2731-487C-AE1B-0B19922226CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBB7E7EC-DF34-4696-8FB6-9052C63ED460}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBB7E7EC-DF34-4696-8FB6-9052C63ED460}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBB7E7EC-DF34-4696-8FB6-9052C63ED460}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBB7E7EC-DF34-4696-8FB6-9052C63ED460}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -118,6 +124,7 @@ Global
 		{39D243AF-266B-496C-B1B5-69A856AA4AAE} = {C8C3473C-1A74-4A24-8A19-F023791AEEB5}
 		{B001F133-7096-4D85-A0D7-CB91BACDCE2C} = {39C1B9A0-F506-4A10-9CEF-030B2B37CF28}
 		{CAA29A8A-2731-487C-AE1B-0B19922226CC} = {60044ED0-AA1D-11EA-A934-09260C0BF938}
+		{CBB7E7EC-DF34-4696-8FB6-9052C63ED460} = {60044ED0-AA1D-11EA-A934-09260C0BF938}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D853A974-516B-4C5A-AEA1-869E5B627DCF}

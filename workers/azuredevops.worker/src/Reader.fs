@@ -230,7 +230,7 @@ module Reader =
                             "source", JsonValue.Parse (source.JsonValue.ToString())
                             "recordCount", Encode.int hashes.Length
                             "hashes", Encode.array (hashes |> Seq.map(Encode.string) |> Array.ofSeq)
-                        ] |> string
+                        ] |> Encode.toString 0
                     insertOrUpdate rawdataRecord
 
                     body

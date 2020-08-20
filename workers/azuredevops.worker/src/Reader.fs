@@ -198,7 +198,7 @@ module Reader =
         let raw = 
             source
             |> bySource
-            |> Option.bind((formatRawdataCache timeStamp) >> Some)
+            |> Option.bind((Seq.map Hobbes.Helpers.Json.deserialize<DataResult>) >> Some)
 
         Log.logf "\n\n azure devops:%s \n\n" (source.JsonValue.ToString())        
         key,raw
@@ -222,6 +222,12 @@ module Reader =
                         let present p =
                             System.String.IsNullOrWhiteSpace p |> not
 
+                        let body = 
+                            (body
+                             |> AzureDevOpsAnalyticsRecord.Parse).Value
+                            |> formatRawdataCache (System.DateTime.Now.ToString())
+                            |> Hobbes.Helpers.Json.serialize
+
                         Encode.object [
                             "_id", Encode.string rawId
                             "timeStamp", Encode.string (System.DateTime.Now.ToString()) 
@@ -231,7 +237,8 @@ module Reader =
                             "recordCount", Encode.int hashes.Length
                             "hashes", Encode.array (hashes |> Seq.map(Encode.string) |> Array.ofSeq)
                         ] |> Encode.toString 0
-                    insertOrUpdate rawdataRecord
+                        
+                        |> insertOrUpdate 
 
                     body
                     |> tryNextLink

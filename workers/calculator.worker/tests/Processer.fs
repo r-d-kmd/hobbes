@@ -66,7 +66,7 @@ module Processer =
        Assert.Equal(result.RowCount,record1.RowCount + record2.RowCount)
     
     [<Fact>]
-    let ```merge where one collcetion is empty``() = 
+    let ``merge where one collcetion is empty``() = 
        let result = MOT.merge [|record1;record3|]
        Assert.Equal(result.RowCount,record1.RowCount)
        

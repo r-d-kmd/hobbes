@@ -1,7 +1,7 @@
 namespace Hobbes.Web
     open FSharp.Data
     open Hobbes.Helpers 
-    
+    type ErrorMessage = JsonProvider<"""{"error":"bad_request","reason":"invalid UTF-8 JSON"}""">
     type Logger = string -> unit
     type LogFormatter<'a> = Printf.StringFormat<'a,unit>
     type ILog =
@@ -504,7 +504,11 @@ namespace Hobbes.Web
                 if (status >= 200 && status < 399) then
                     body
                 else
-                    log.Errorf "Failed to update document. %d - %s" status body
+                    let message = ErrorMessage.Parse body
+                    if message.Reason = "invalid UTF-8 JSON" then
+                       log.Errorf "invalid json. %s" doc
+                    else
+                       log.Errorf "Failed to update document. %d - %s" status body
                     sprintf """{"status": %d,"message":"%s"}""" status body
 
             member __.Compact() = 

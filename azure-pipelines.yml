@@ -77,15 +77,13 @@ steps:
     kubectl wait --for=condition=ready ${NAME} --timeout=30s >> /dev/null
     kubectl logs ${NAME} -f &
     kubectl wait --for=condition=complete job.batch/sync --timeout=60s
-    sleep 120
-    logs azuredevops
   displayName: Setup tests
 
 - script: |
     DB_PORT=35984
     kubectl port-forward service/gateway-svc 30080:80 &
     kubectl port-forward service/db-svc ${DB_PORT}:5984 &
-    sleep 180
+    sleep 120
     source functions.sh
     printf "${Cyan}**************Git********************\n"
     logs git

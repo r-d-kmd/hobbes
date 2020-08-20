@@ -38,7 +38,15 @@ module Program =
             
             let collection = 
                 match arguments.TryGetResult Collection with
-                None -> Collection.Development
+                None -> 
+                    match env "COLLECTION" null with
+                    null -> Collection.Development
+                    | collection ->
+                        match collection.ToLower() with 
+                        "production" -> Production
+                        | "test" -> Test
+                        | "dev" | "development" -> Development
+                        | c -> failwithf "%s collection unknown" c
                 | Some e -> e
                 
             let host = 

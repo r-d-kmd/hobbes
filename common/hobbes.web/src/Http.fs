@@ -155,11 +155,12 @@ module Http =
     let private putOrPost httpMethod (service : Service) (body : string) = 
         let url = service.ServiceUrl
         printfn "%sting binary to %s" httpMethod url
+        let encoding = System.Text.Encoding.UTF8
         try
             Http.Request(url,
                          httpMethod = httpMethod,
-                         body = TextRequest body,
-                         headers = [HttpRequestHeaders.ContentTypeWithEncoding("application/json", System.Text.Encoding.Default)],
+                         body = (body |> encoding.GetBytes |> BinaryUpload),
+                         headers = [HttpRequestHeaders.ContentTypeWithEncoding("application/json",encoding )],
                          silentHttpErrors = true
             ) |> readResponse id
         with e ->

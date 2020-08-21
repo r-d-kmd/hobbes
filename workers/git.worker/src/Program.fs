@@ -18,12 +18,12 @@ let synchronize (source : GitSource.Root) token =
                     |> Seq.distinct
                     |> Seq.map(fun c ->
                          [|
-                             c.Id |> Value.Create
-                             c.Date |> Value.Create
-                             c.Project |> Value.Create
-                             c.RepositoryName |> Value.Create
-                             c.BranchName |> Value.Create
-                             c.Author |> Value.Create
+                             c.Id |> box
+                             c.Date |> box
+                             c.Project |> box
+                             c.RepositoryName |> box
+                             c.BranchName |> box
+                             c.Author |> box
                          |]
                     ) |> Array.ofSeq
                 columnNames, values, (commits |> Seq.length)
@@ -62,12 +62,12 @@ let handleMessage message =
             | Some data -> 
                 let data = Cache.createCacheRecord key [] data
                 try
-                    match Http.post (Http.UniformData Http.Update) data with
+                    match Http.post (Http.UniformData Http.Update) (data.ToString()) with
                     Http.Success _ -> 
                        Log.logf "Data uploaded to cache"
                        Success
                     | Http.Error(status,msg) -> 
-                        sprintf "Upload to uniform data failed. %d %s. Data: %s" status msg (data |> Json.serialize)
+                        sprintf "Upload to uniform data failed. %d %s. Data: %s" status msg (data.ToString())
                         |> Failure
                 with e ->
                     Log.excf e "Failed to cache data"

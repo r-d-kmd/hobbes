@@ -75,7 +75,7 @@ module Program =
 
             let transformations = 
                 Workbench.Types.allTransformations collection
-                |> Seq.map Json.serialize
+                |> Seq.map Newtonsoft.Json.JsonConvert.SerializeObject
 
             let configurations = 
                 Workbench.Types.allConfigurations collection

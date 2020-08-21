@@ -1,4 +1,6 @@
 Newtonsoft.Json
+Thoth.Json.Net
+
 group web
     Saturn 
     Giraffe

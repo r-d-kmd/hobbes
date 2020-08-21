@@ -17,7 +17,7 @@ module Data =
             
         match uniformData with
         Some uniformData ->
-            200, (uniformData |> Json.serialize)
+            200, uniformData.ToString()
         | None -> 
             404,sprintf "No data found for %s" key
 
@@ -27,7 +27,7 @@ module Data =
             let args =
                 try
                     dataAndKey
-                    |> Json.deserialize<Cache.CacheRecord>
+                    |> Cache.CacheRecord.OfJson
                     |> Some
                 with e ->
                     eprintfn "Failed to deserialization (%s). %s %s" dataAndKey e.Message e.StackTrace

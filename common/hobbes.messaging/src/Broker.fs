@@ -5,9 +5,11 @@ open RabbitMQ.Client.Events
 open System
 open System.Text
 open Hobbes.Helpers.Environment
-open Hobbes.Helpers
+open Newtonsoft.Json
 
 module Broker = 
+    let private serialize<'a> (o:'a) = JsonConvert.SerializeObject(o)
+    let private deserialize<'a> json = JsonConvert.DeserializeObject<'a>(json)
     type CacheMessage = 
         Updated of string
         | Empty
@@ -151,7 +153,7 @@ module Broker =
 
     let private publish<'a> queueName (message : Message<'a>) =    
         message
-        |> Json.serialize
+        |> serialize
         |> publishString queueName
     
     let rec signalWathcDog queueName =
@@ -192,7 +194,7 @@ module Broker =
                     try
                         let msg = 
                             msgText 
-                            |> Json.deserialize<Message<'a>>
+                            |> deserialize<Message<'a>>
                         match msg with
                         //Bark -> dog.Reset()
                         | Message msg ->

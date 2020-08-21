@@ -10,7 +10,7 @@ open Hobbes.Web.RawdataTypes
 module Data =
     
     let configurations = Database.Database("configurations", Config.Parse, Log.loggerInstance)
-    let transformations = Database.Database("transformations", Hobbes.Helpers.Json.deserialize<Transformation>, Log.loggerInstance)
+    let transformations = Database.Database("transformations", Newtonsoft.Json.JsonConvert.DeserializeObject<Transformation>, Log.loggerInstance)
    
     let inline private listConfigurations () = 
         configurations.List()
@@ -72,7 +72,7 @@ module Data =
     let transformation (transformationName : string) =
         match transformations.TryGet transformationName with
         None -> 404, sprintf "Transformation (%s) not found" transformationName
-        | Some transformation -> 200, transformation |> Hobbes.Helpers.Json.serialize
+        | Some transformation -> 200, transformation |> Newtonsoft.Json.JsonConvert.SerializeObject
 
     [<Post ("/configuration", true)>]
     let storeConfiguration (configuration : string) =
@@ -91,7 +91,7 @@ module Data =
     let storeTransformation (transformation : string) =
         let trans = 
             try
-                Hobbes.Helpers.Json.deserialize<Transformation> transformation
+                Newtonsoft.Json.JsonConvert.DeserializeObject<Transformation> transformation
             with e ->
                Log.excf e "Failed to deserialize %s" transformation
                reraise()

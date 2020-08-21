@@ -145,7 +145,7 @@ module Data =
             data
             |> Seq.map(fun s -> 
                 s.Data.JsonValue.ToString()
-                |> Hobbes.Helpers.Json.deserialize<Cache.DataResult>
+                |> Cache.DataResult.OfJson
             )
         if result |> Seq.isEmpty then None
         else Some result

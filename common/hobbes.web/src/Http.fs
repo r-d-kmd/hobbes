@@ -166,9 +166,5 @@ module Http =
            Error(500, sprintf "%s %s %s" url e.Message e.StackTrace)
 
     let put = putOrPost "PUT"
-    let post<'a> service (body : 'a) = 
-        let payload = 
-            match body :> obj with
-            :? string as payload -> payload
-            | _ -> (body |> Hobbes.Helpers.Json.serialize)
-        putOrPost "POST" service payload
+    let post service (body : string) = 
+        putOrPost "POST" service body

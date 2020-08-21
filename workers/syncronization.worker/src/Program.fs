@@ -40,7 +40,7 @@ let main _ =
             source.JsonValue.ToString()
             |> Sync
             |> Message
-            |> Json.serialize
+            |> Newtonsoft.Json.JsonConvert.SerializeObject
             |> Broker.Generic queueName
         )
         0

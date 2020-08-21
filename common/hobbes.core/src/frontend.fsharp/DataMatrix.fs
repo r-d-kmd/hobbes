@@ -5,6 +5,7 @@ open Accord.MachineLearning
 open Hobbes.Parsing
 open System
 open Accord.Statistics.Models.Regression.Linear
+open Thoth.Json.Net
 
 module Clustering = 
     let withKeys colName (frame : Frame<AST.KeyType,_>) = 
@@ -180,28 +181,7 @@ module Clustering =
          counting frame.RowCount transformation frame
 
 module DataStructures =
-    [<RequireQualifiedAccess>]
-    type Value = 
-       Int of int
-       | Float of float
-       | Date of System.DateTime
-       | Text of string
-       | Boolean of bool
-       | Null
 
-    type DataResult = 
-        {
-            [<Newtonsoft.Json.JsonProperty("columnNames")>]
-            ColumnNames : string []
-            [<Newtonsoft.Json.JsonProperty("rows")>]
-            Values : Value [][]
-            [<Newtonsoft.Json.JsonProperty("rowCount")>]
-            RowCount : int
-        }
-
-    type JsonTableFormat = 
-        Rows
-        | Csv
     let inline private jsonString (s : string) = 
         "\"" +
          s.Replace("\\","\\\\")
@@ -211,7 +191,7 @@ module DataStructures =
         abstract Transform : AST.Expression -> IDataMatrix
         abstract Combine : IDataMatrix -> IDataMatrix
         abstract Join : string -> IDataMatrix -> IDataMatrix
-        abstract ToJson : JsonTableFormat -> string
+        abstract ToJson : unit -> string
         abstract RowCount : int with get
     
     type private Comp = System.IComparable
@@ -902,24 +882,19 @@ module DataStructures =
 
             ) |> Seq.filter(fun (_,values) -> values |> Seq.isEmpty |> not)
         
-        let serialiseValue (value : obj) = 
+        let encodeValue (value : obj) = 
             match value with
-            null -> Value.Null
-            | :? int as value ->  
-                Value.Int value
-            | :? float as value -> 
-                Value.Float value
-            | :? decimal as value -> 
-                value 
-                |> float 
-                |> Value.Float
-            | :? DateTime as value -> 
-                Value.Date value
-            | :? string as value -> 
-                Value.Text value
-            | :? bool as b -> 
-                Value.Boolean b
-            | value -> failwithf "Don't know how to value %A" value
+            null -> Encode.nil
+            | :? DateTime as d -> 
+                d.ToString() |> Encode.string
+            | :? DateTimeOffset as d -> 
+                d.ToLocalTime().DateTime.ToString() |> Encode.string
+            | :? int as i  -> i |> Encode.int
+            | :? float as f -> f |> Encode.float
+            | :? decimal as d -> d |> Encode.decimal
+            | :? string as s  -> s |> Encode.string
+            | :? bool as b -> b |> Encode.bool
+            | _ -> failwithf "Don't know how to encode %A" value
 
         member private ___.Columns 
             with get() =
@@ -994,56 +969,51 @@ module DataStructures =
                 | AST.NoOp -> 
                     this
                     :> IDataMatrix
-            member this.ToJson format =
-                match format with
-                Rows -> 
-                    let table = 
-                        frame
-                        |> toTable
+            member this.ToJson() =
+                let table = 
+                    frame
+                    |> toTable
 
-                    let columnNames = 
-                        table |> Seq.map fst |> Array.ofSeq
+                let columnNames = 
+                    table |> Seq.map fst |> Array.ofSeq
 
-                    let values =
-                        table
-                        |> Seq.map(fun (_,values) ->
-                            values
-                            |> Seq.map (fun (_,v) -> v |> serialiseValue) 
-                            |> Array.ofSeq
-                        ) |> Array.ofSeq
-                        |> Array.transpose
+                let values =
+                    table
+                    |> Seq.map(fun (_,values) ->
+                        values
+                        |> Seq.map (fun (_,v) -> v) 
+                        |> Array.ofSeq
+                    ) |> Array.ofSeq
+                    |> Array.transpose
 
-                    let result = 
-                        {
-                            ColumnNames = columnNames
-                            Values = values
-                            RowCount = (this :> IDataMatrix).RowCount
-                        } 
+                let rowCount = (this :> IDataMatrix).RowCount
+                     
+                let result = 
+                    Encode.object [
+                          "columnNames", Encode.array (columnNames |> Array.map Encode.string)
+                          "values", Encode.array (values |> Array.map(fun row ->
+                                    Encode.array (row |> Array.map(fun cell ->
+                                        match cell with
+                                        null -> Encode.nil
+                                        | :? System.DateTime as d -> 
+                                            d.ToString() |> Encode.string
+                                        | :? System.DateTimeOffset as d -> 
+                                            d.ToLocalTime().DateTime.ToString() |> Encode.string
+                                        | :? int as i  -> i |> Encode.int
+                                        | :? float as f -> f |> Encode.float
+                                        | :? decimal as d -> d |> Encode.decimal
+                                        | :? string as s  -> s |> Encode.string
+                                        | :? bool as b -> b |> Encode.bool
+                                        | _ -> failwithf "Don't know how to encode %A" cell
+                                    )) 
+                                ))
+                          "rowCount", Encode.int rowCount
+                    ] |> Encode.toString 0
 
-                    assert(result.RowCount = result.Values.Length)
+                assert(rowCount = values.Length)
 
-                    result
-                    |> Newtonsoft.Json.JsonConvert.SerializeObject
-                | Csv ->
-                    let rows = 
-                        frame
-                         |> Frame.getCols
-                         |> Series.observations
-                         |> Seq.map(fun (columnName, values) ->
-                             columnName::(values
-                                           |> Series.observationsAll
-                                           |> Seq.map(fun (_,v) -> 
-                                               match v with
-                                               None -> ""
-                                               | Some v -> let v = match (v : obj) with
-                                                                     :? DateTimeOffset as d -> d.ToString "dd/MM/yyyy" |> box
-                                                                   | :? DateTime as d -> d.ToString "dd/MM/yyyy" |> box
-                                                                   | v -> v
-                                                           v.ToString().Replace(":",";")
-                                           ) |> List.ofSeq)
-                         ) |> Seq.transpose
-                         |> Seq.map(fun s -> System.String.Join(":",s))
-                    System.String.Join("\r\n",rows)
+                result
+                
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module DataMatrix =
@@ -1070,5 +1040,5 @@ module DataStructures =
                 frame
                 |> DataMatrix
                 :> IDataMatrix
-        let toJson format (matrix : #IDataMatrix) =
-            matrix.ToJson format
+        let toJson (matrix : #IDataMatrix) =
+            matrix.ToJson()

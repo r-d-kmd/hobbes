@@ -29,7 +29,7 @@ let private app = application {
     use_gzip
 }
 let peek cacheKey =
-    match Http.get (cacheKey |> Http.UniformDataService.Read |> Http.UniformData) Hobbes.Helpers.Json.deserialize<Cache.CacheRecord> with
+    match Http.get (cacheKey |> Http.UniformDataService.Read |> Http.UniformData) Cache.CacheRecord.OfJson with
     Http.Error _ -> 
         false
     | Http.Success _ -> 

@@ -1,7 +1,7 @@
 namespace Hobbes.Web
     open FSharp.Data
     open Hobbes.Helpers 
-    
+    type ErrorMessage = JsonProvider<"""{"error":"bad_request","reason":"invalid UTF-8 JSON"}""">
     type Logger = string -> unit
     type LogFormatter<'a> = Printf.StringFormat<'a,unit>
     type ILog =
@@ -479,11 +479,10 @@ namespace Hobbes.Web
                     log.Excf e "Failed getting documents by key. POST Body: %s" (body.Substring(0,min body.Length 500))
                     reraise()
             member __.Views with get() = _views
-            member this.InsertOrUpdate (record : 'a) =
-                match record :> obj with
-                  :? Runtime.BaseTypes.IJsonDocument as j -> j.JsonValue.ToString()
-                  | _ -> record |> Json.serialize
+            member this.InsertOrUpdate (record : #Runtime.BaseTypes.IJsonDocument) =
+                record.JsonValue.ToString()
                 |> this.InsertOrUpdate
+                
             member this.InsertOrUpdate doc =
                  
                 let id = (CouchDoc.Parse doc).Id
@@ -504,7 +503,11 @@ namespace Hobbes.Web
                 if (status >= 200 && status < 399) then
                     body
                 else
-                    log.Errorf "Failed to update document. %d - %s" status body
+                    let message = ErrorMessage.Parse body
+                    if message.Reason = "invalid UTF-8 JSON" then
+                       log.Errorf "invalid json. %s" doc
+                    else
+                       log.Errorf "Failed to update document. %d - %s" status body
                     sprintf """{"status": %d,"message":"%s"}""" status body
 
             member __.Compact() = 

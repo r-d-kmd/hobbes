@@ -6,59 +6,97 @@ open Newtonsoft.Json
 open Thoth.Json.Net
 
 module Cache =
-    [<RequireQualifiedAccess>]
-    type Value = 
-       Int of int
-       | Float of float
-       | Date of System.DateTime
-       | Text of string
-       | Boolean of bool
-       | Null
-       with static member Create v =
-                match v :> obj with        
-                null -> Value.Null
-                | :? System.DateTime as d -> 
-                    d |> Value.Date
-                | :? System.DateTimeOffset as d -> 
-                    d.ToLocalTime().DateTime |> Value.Date
-                | :? int as i  -> i |> Value.Int
-                | :? float as f -> f |> Value.Float
-                | :? decimal as d -> d |> float |> Value.Float
-                | :? string as s  -> s |> Value.Text
-                | :? bool as b -> b |> Value.Boolean
-                | s ->
-                    Log.errorf "Didn't recognise value (%A)" s
-                    assert(false)
-                    s |> string |> Value.Text
-            static member Bind v = 
-                match v with
-                Some v -> 
-                    Value.Create v
-                | None -> 
-                    Value.Create null
-
     type DataResult = 
         {
             [<JsonProperty("columnNames")>]
             ColumnNames : string []
             [<JsonProperty("rows")>]
-            Values : Value [][]
+            Values : obj [][]
             [<JsonProperty("rowCount")>]
             RowCount : int
-        } with member x.Rows() =
+        } with static member Decode =
+                 let decode = 
+                     (Decode.array Decode.int)
+                 let boxingInt = 
+                     Decode.map box
+                        Decode.int
+                 let boxingString = 
+                     Decode.map(fun (s : string) ->
+                         match System.DateTime.TryParse s with
+                         true,dt -> box dt
+                         | _ -> box s) Decode.string
+                 let boxingFloat = 
+                     Decode.map box
+                        Decode.float
+                 let boxingDecimal = 
+                     Decode.map box
+                        Decode.decimal
+                 let boxingBool = 
+                     Decode.map box
+                        Decode.bool
+                 let boxingNull = 
+                     Decode.map
+                        (fun _ -> null)
+                 let objDecoder = 
+                     [
+                         boxingInt
+                         boxingString
+                         boxingFloat
+                         boxingDecimal
+                         boxingBool
+                         (fun s o -> 
+                            let txt = 
+                                if o |> isNull then
+                                   null
+                                else
+                                   (o |> string).ToLower()
+                            if txt |> System.String.IsNullOrWhiteSpace || txt.ToLower() = "null" then 
+                                Ok(null) 
+                            else
+                                Error(DecoderError(s,ErrorReason.FailMessage (sprintf "%s isn't null. found at %s" txt s)))
+                        )
+                     ]
+                 
+                 Decode.object(fun get ->
+                     {
+                         ColumnNames = get.Required.Field "columnNames" (Decode.array Decode.string)
+                         Values = get.Required.Field "values" (Decode.array (Decode.array (Decode.oneOf objDecoder)))
+                         RowCount = get.Required.Field "rowCount" Decode.int
+                     }
+                 )
+               static member OfJson (json:string)=
+                 match Decode.fromString DataResult.Decode json with
+                 Ok dataResult -> dataResult
+                 | Error msg -> failwith msg
+
+               member x.Rows() =
                     x.Values
-                    |> Array.map(
-                           Array.map(
-                               function
-                                   Value.Int i -> box i
-                                   | Value.Float f -> box f
-                                   | Value.Date d -> box d
-                                   | Value.Text s -> box s
-                                   | Value.Null -> null
-                                   | Value.Boolean b -> box b
-                           )
-                    )
-    
+               member x.JsonValue 
+                   with get() = 
+                       Encode.object [
+                           "columnNames", Encode.array (x.ColumnNames |> Array.map Encode.string)
+                           "values", Encode.array (x.Values |> Array.map(fun row ->
+                                Encode.array (row |> Array.map(fun cell ->
+                                    match cell with
+                                    null -> Encode.nil
+                                    | :? System.DateTime as d -> 
+                                        d.ToString() |> Encode.string
+                                    | :? System.DateTimeOffset as d -> 
+                                        d.ToLocalTime().DateTime.ToString() |> Encode.string
+                                    | :? int as i  -> i |> Encode.int
+                                    | :? float as f -> f |> Encode.float
+                                    | :? decimal as d -> d |> Encode.decimal
+                                    | :? string as s  -> s |> Encode.string
+                                    | :? bool as b -> b |> Encode.bool
+                                    | _ -> failwithf "Don't know how to encode %A" cell
+                                )) 
+                            ))
+                           "rowCount", Encode.int x.RowCount
+                       ]
+               override x.ToString() = 
+                   x.JsonValue
+                   |> Encode.toString 0
+
     type CacheRecord = 
         {
             [<JsonProperty("_id")>]
@@ -69,6 +107,40 @@ module Cache =
             [<JsonProperty("data")>]
             Data : DataResult
         }
+        with static member OfJson (json:string) =
+                let decoder =  
+                      Decode.object(fun get ->
+                          {
+                              CacheKey = get.Required.Field "_id" Decode.string
+                              TimeStamp = get.Optional.Field "timestamp" (
+                                               Decode.map (fun (s : string) -> 
+                                                   match System.DateTime.TryParse s with
+                                                   true,dt -> dt
+                                                   | _ -> 
+                                                       Log.errorf "Couldn't parse (%s) as date" s
+                                                       failwithf "not a date %s" s
+                                               ) Decode.string)
+                              DependsOn = get.Required.Field "dependsOn" (Decode.map (fun a -> a |> List.ofArray) (Decode.array Decode.string))
+                              Data = get.Required.Field "data" DataResult.Decode
+                          }
+                      )
+                      
+                match Decode.fromString decoder json with
+                Ok record -> record
+                | Error msg -> failwith msg 
+             member x.JsonValue 
+                   with get() = 
+                       Encode.object [
+                           yield "_id", Encode.string x.CacheKey
+                           if x.TimeStamp.IsSome then 
+                               yield "timestamp", Encode.string (x.TimeStamp.Value.ToString())
+                           yield "dependsOn", Encode.list(x.DependsOn |> List.map Encode.string) 
+                           yield "data", x.Data.JsonValue
+                       ]
+             override x.ToString() = 
+                x.JsonValue
+                |> Encode.toString 0     
+
     type DynamicRecord = FSharp.Data.JsonProvider<"""{
         "_id" : "khjkjhkjh",
         "timestamp" : "13/07/2020 11:55:21",
@@ -122,7 +194,7 @@ module Cache =
         res
 
     let readData (cacheRecordText : string) =
-        let cacheRecord = Json.deserialize<CacheRecord> cacheRecordText 
+        let cacheRecord = CacheRecord.OfJson cacheRecordText 
         let data = cacheRecord.Data
         let columnNames = data.ColumnNames
         
@@ -144,7 +216,12 @@ module Cache =
                 data
                 |> recordCreator key dependsOn
                 |> serializer
-            assert(try serialized |> deserializer |> ignore; true with _ -> false)
+            assert(try 
+                     serialized |> deserializer |> ignore
+                     true 
+                   with e -> 
+                      Log.excf e "Roundtrip assertion failed of %A" data
+                      false)
             serialized
             |> db.InsertOrUpdate 
             |> Log.debugf "Inserted data: %s"
@@ -168,8 +245,8 @@ module Cache =
                 failwithf "Status code %d - %s" sc body
     let cache name = 
         Cache(name,
-              Json.deserialize<CacheRecord>,
-              Json.serialize,
+              CacheRecord.OfJson,
+              (fun record -> record.JsonValue |> Encode.toString 0),
               createCacheRecord)
     let dynamicCache name = 
         Cache(

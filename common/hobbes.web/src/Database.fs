@@ -479,11 +479,10 @@ namespace Hobbes.Web
                     log.Excf e "Failed getting documents by key. POST Body: %s" (body.Substring(0,min body.Length 500))
                     reraise()
             member __.Views with get() = _views
-            member this.InsertOrUpdate (record : 'a) =
-                match record :> obj with
-                  :? Runtime.BaseTypes.IJsonDocument as j -> j.JsonValue.ToString()
-                  | _ -> record |> Json.serialize
+            member this.InsertOrUpdate (record : #Runtime.BaseTypes.IJsonDocument) =
+                record.JsonValue.ToString()
                 |> this.InsertOrUpdate
+                
             member this.InsertOrUpdate doc =
                  
                 let id = (CouchDoc.Parse doc).Id

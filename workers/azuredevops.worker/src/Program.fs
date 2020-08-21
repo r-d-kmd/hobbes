@@ -56,7 +56,7 @@ let handleMessage message =
                 assert(data.Values.Length = 0 || data.ColumnNames.Length = data.Values.[0].Length)
                 
                 let data = Cache.createCacheRecord key [] data
-                match Http.post (Http.UniformData Http.Update) data with
+                match Http.post (Http.UniformData Http.Update) (data.ToString()) with
                 Http.Success _ -> 
                    Log.logf "Data uploaded to cache"
                    Success

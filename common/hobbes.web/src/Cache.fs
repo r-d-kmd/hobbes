@@ -112,7 +112,14 @@ module Cache =
                       Decode.object(fun get ->
                           {
                               CacheKey = get.Required.Field "_id" Decode.string
-                              TimeStamp = get.Optional.Field "timestamp" (Decode.map (fun (s : string) -> System.DateTime.Parse s) Decode.string)
+                              TimeStamp = get.Optional.Field "timestamp" (
+                                               Decode.map (fun (s : string) -> 
+                                                   match System.DateTime.TryParse s with
+                                                   true,dt -> dt
+                                                   | _ -> 
+                                                       Log.errorf "Couldn't parse (%s) as date" s
+                                                       failwithf "not a date %s" s
+                                               ) Decode.string)
                               DependsOn = get.Required.Field "dependsOn" (Decode.map (fun a -> a |> List.ofArray) (Decode.array Decode.string))
                               Data = get.Required.Field "data" DataResult.Decode
                           }
@@ -124,10 +131,11 @@ module Cache =
              member x.JsonValue 
                    with get() = 
                        Encode.object [
-                           "_id", Encode.string x.CacheKey
-                           "timestamp", Encode.string (x.TimeStamp.ToString())
-                           "dependsOn", Encode.list(x.DependsOn |> List.map Encode.string) 
-                           "data", x.Data.JsonValue
+                           yield "_id", Encode.string x.CacheKey
+                           if x.TimeStamp.IsSome then 
+                               yield "timestamp", Encode.string (x.TimeStamp.Value.ToString())
+                           yield "dependsOn", Encode.list(x.DependsOn |> List.map Encode.string) 
+                           yield "data", x.Data.JsonValue
                        ]
              override x.ToString() = 
                 x.JsonValue
@@ -208,7 +216,12 @@ module Cache =
                 data
                 |> recordCreator key dependsOn
                 |> serializer
-            assert(try serialized |> deserializer |> ignore; true with _ -> false)
+            assert(try 
+                     serialized |> deserializer |> ignore
+                     true 
+                   with e -> 
+                      Log.excf e "Roundtrip assertion failed of %A" data
+                      false)
             serialized
             |> db.InsertOrUpdate 
             |> Log.debugf "Inserted data: %s"

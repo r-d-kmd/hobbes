@@ -26,10 +26,14 @@ let transformData (message : CalculationMessage) =
         try
             let dataJson = 
                 data
-                |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows                 
+                |> Hobbes.FSharp.DataStructures.DataMatrix.toJson                
             let transformedData = 
-                dataJson
-                |> Cache.DataResult.OfJson 
+                try
+                    dataJson
+                    |> Cache.DataResult.OfJson 
+                with e ->
+                   Log.excf e "Couldn't deserialize data %s" dataJson
+                   reraise()
 
             assert(transformedData.ColumnNames.Length =  transformedData.Values.[0].Length)
             assert(transformedData.Values.Length =  transformedData.RowCount)

@@ -133,14 +133,13 @@ module Data =
                 hasData
                 && (doc.Source.JsonValue.ToString() |> keyFromSourceDoc) = configSearchKey
             )
-        Log.debugf "Project data found by source %A" res
         res
 
     let bySource (source : AzureDevOpsSource.Root) = 
         let data =
             source
             |> projectsBySource
-        Log.debugf "Rawdata by source: %A" (data |> List.ofSeq)
+       
         let result = 
             data
             |> Seq.map(fun s -> 

@@ -96,7 +96,7 @@ module Reader =
                     |> List.map(fun (a,b) -> sprintf "$%s=%s" a (System.Web.HttpUtility.UrlEncode b))
                 )
             
-            sprintf "%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&$top=100&%s" server query
+            sprintf "%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&$top=1&%s" server query
 
         let key = source.JsonValue.ToString() |> keyFromSourceDoc 
         try

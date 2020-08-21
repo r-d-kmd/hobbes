@@ -13,7 +13,7 @@ let synchronize (source : AzureDevOpsSource.Root) token =
         Log.excf e "Sync failed due to exception"
         None
     |> Option.bind(fun (statusCode,body) ->
-        Log.debugf "Sync finised with statusCode %d and result %s..." statusCode (body.Substring(min body.Length 500))
+        Log.debugf "Sync finised with statusCode %d" statusCode
         if statusCode > 200 || statusCode < 300 then 
             match Reader.read source with
             _,None -> failwith "Could not read data from raw"
@@ -61,7 +61,7 @@ let handleMessage message =
                    Log.logf "Data uploaded to cache"
                    Success
                 | Http.Error(status,msg) -> 
-                    sprintf "Upload to uniform data failed. %d %s" status msg
+                    sprintf "Upload of %s to uniform data failed. %d %s" (data.ToString()) status msg
                     |> Failure
         with e ->
             Log.excf e "Failed to process message"

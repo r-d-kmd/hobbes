@@ -300,7 +300,7 @@ namespace Hobbes.Web
         and Database<'a> (databaseName, parser : string -> 'a, log : ILog) =
             let mutable _views : Map<string,View> = Map.empty
             
-            let request httpMethod isTrial body path rev queryString =
+            let request httpMethod isTrial (body : string option) path rev queryString =
                 let enc (s : string) = System.Web.HttpUtility.UrlEncode s           
                 let root = 
                      System.String.Join("/", [
@@ -327,11 +327,11 @@ namespace Hobbes.Web
                       | Delete -> "DELETE", "from"          
                     
                 log.Debugf "%sting %A %s (%s,%A) %s" m url direction root path databaseName
-                
+                let encoding = System.Text.Encoding.UTF8
                 let headers =
                     [
                         yield HttpRequestHeaders.BasicAuth user pwd
-                        yield HttpRequestHeaders.ContentType HttpContentTypes.Json
+                        yield HttpRequestHeaders.ContentTypeWithEncoding(HttpContentTypes.Json, encoding)
                         if rev |> Option.isSome then yield HttpRequestHeaders.IfMatch rev.Value
                     ]
                 let statusCode,body = 
@@ -348,7 +348,7 @@ namespace Hobbes.Web
                                 Http.Request(url,
                                     httpMethod = m, 
                                     silentHttpErrors = true, 
-                                    body = TextRequest body,
+                                    body = (body |> encoding.GetBytes |> BinaryUpload),
                                     headers = headers
                                 )
                         resp.StatusCode, resp |> getBody
@@ -482,7 +482,7 @@ namespace Hobbes.Web
             member this.InsertOrUpdate (record : #Runtime.BaseTypes.IJsonDocument) =
                 record.JsonValue.ToString()
                 |> this.InsertOrUpdate
-                
+
             member this.InsertOrUpdate doc =
                  
                 let id = (CouchDoc.Parse doc).Id

@@ -5,7 +5,7 @@ open Hobbes.Helpers
 open Hobbes.Workers.Calculator.Processer
 
 let fromCache cacheKey =
-    match Http.get (cacheKey |> Http.UniformDataService.Read |> Http.UniformData) Json.deserialize<Cache.CacheRecord> with
+    match Http.get (cacheKey |> Http.UniformDataService.Read |> Http.UniformData) Cache.CacheRecord.OfJson with
     Http.Error(sc,msg) -> 
         if sc = 404 then 
             failwithf "No data for that key (%s)" cacheKey
@@ -26,17 +26,21 @@ let transformData (message : CalculationMessage) =
         try
             let dataJson = 
                 data
-                |> Hobbes.FSharp.DataStructures.DataMatrix.toJson Hobbes.FSharp.DataStructures.Rows                 
+                |> Hobbes.FSharp.DataStructures.DataMatrix.toJson                
             let transformedData = 
-                dataJson
-                |> Json.deserialize<Cache.DataResult> 
+                try
+                    dataJson
+                    |> Cache.DataResult.OfJson 
+                with e ->
+                   Log.excf e "Couldn't deserialize data %s" dataJson
+                   reraise()
 
             assert(transformedData.ColumnNames.Length =  transformedData.Values.[0].Length)
             assert(transformedData.Values.Length =  transformedData.RowCount)
 
-            transformedData
-            |> Cache.createCacheRecord key dependsOn
-            |> Json.serialize
+            (transformedData
+             |> Cache.createCacheRecord key dependsOn).ToString()
+            
             |> insertOrUpdate 
             Log.logf "Transformation of [%A] using [%A] resulting in [%s] completed" dependsOn message key
             Success

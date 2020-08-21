@@ -24,23 +24,23 @@ module Reader =
         data.Value |> Array.isEmpty
     
     
-    let private azureFields : (string * (AzureDevOpsAnalyticsRecord.Value -> Value) ) list= 
+    let private azureFields : (string * (AzureDevOpsAnalyticsRecord.Value -> obj) ) list= 
         [
-             "WorkItemId",  fun row -> row.WorkItemId |> Value.Create
-             "ChangedDate", fun row -> row.ChangedDate |> Value.Bind
-             "WorkItemType",  fun row -> row.WorkItemType |> Value.Create
-             "CreatedDate", fun row -> row.CreatedDate |> Value.Bind
-             "ClosedDate", fun row -> row.ClosedDate |> Value.Bind
-             "State", fun row -> row.State |> Value.Bind
-             "StateCategory",fun row -> row.StateCategory |> Value.Bind
-             "LeadTimeDays", fun row -> row.LeadTimeDays |> Value.Bind
-             "CycleTimeDays", fun row -> row.CycleTimeDays |> Value.Bind
-             "StoryPoints", fun row -> row.StoryPoints |> Value.Bind
-             "RevisedDate", fun row -> row.RevisedDate |> Value.Bind
-             "Priority", fun row -> row.Priority |> Value.Bind
-             "IsLastRevisionOfDay" , fun row -> row.IsLastRevisionOfDay |> Value.Bind
-             "Title",  fun row -> row.Title |> Value.Create
-             "WorkItemRevisionSK", fun row -> row.WorkItemRevisionSk |> Value.Create
+             "WorkItemId",  fun row -> row.WorkItemId |> box
+             "ChangedDate", fun row -> match row.ChangedDate with None -> null | Some v -> box v
+             "WorkItemType",  fun row -> row.WorkItemType |> box
+             "CreatedDate", fun row -> match row.CreatedDate with None -> null | Some v -> box v
+             "ClosedDate", fun row -> match row.ClosedDate with None -> null | Some v -> box v
+             "State", fun row -> match row.State with None -> null | Some v -> box v
+             "StateCategory",fun row -> match row.StateCategory with None -> null | Some v -> box v
+             "LeadTimeDays", fun row -> match row.LeadTimeDays with None -> null | Some v -> box v
+             "CycleTimeDays", fun row -> match row.CycleTimeDays with None -> null | Some v -> box v
+             "StoryPoints", fun row -> match row.StoryPoints with None -> null | Some v -> box v
+             "RevisedDate", fun row -> match row.RevisedDate with None -> null | Some v -> box v
+             "Priority", fun row -> match row.Priority with None -> null | Some v -> box v
+             "IsLastRevisionOfDay" , fun row -> match row.IsLastRevisionOfDay with None -> null | Some v -> box v
+             "Title",  fun row -> row.Title |> box
+             "WorkItemRevisionSK", fun row -> row.WorkItemRevisionSk |> box
         ]    
     //The first url to start with, if there's already some stored data
     let private getInitialUrl (source : AzureDevOpsSource.Root)=
@@ -96,7 +96,7 @@ module Reader =
                     |> List.map(fun (a,b) -> sprintf "$%s=%s" a (System.Web.HttpUtility.UrlEncode b))
                 )
             
-            sprintf "%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&%s" server query
+            sprintf "%s/_odata/v2.0/WorkItemRevisions?$expand=Iteration,Area&$top=1&%s" server query
 
         let key = source.JsonValue.ToString() |> keyFromSourceDoc 
         try
@@ -148,36 +148,35 @@ module Reader =
                 "Iteration.Number"
             ] @ (azureFields |> List.map fst)
             |> Array.ofList
-        let rows : Value [] [] = 
+        let rows = 
             rawdataCache
             |> Seq.map(fun (row : AzureDevOpsAnalyticsRecord.Value) ->
                 let iterationProperties =
                     match (row.Iteration) with
                     Some iteration ->
                         [
-                           iteration.IterationPath |> Value.Create
-                           iteration.IterationLevel1 |> Value.Bind
-                           iteration.IterationLevel2 |> Value.Bind
-                           iteration.IterationLevel3 |> Value.Bind
-                           iteration.IterationLevel4 |> Value.Bind
-                           iteration.StartDate |> Value.Bind
-                           iteration.EndDate |> Value.Bind
-                           iteration.Number |> Value.Create
+                           iteration.IterationPath |> box
+                           match iteration.IterationLevel1 with None -> null | Some v -> box v
+                           match iteration.IterationLevel2 with None -> null | Some v -> box v
+                           match iteration.IterationLevel3 with None -> null | Some v -> box v
+                           match iteration.IterationLevel4 with None -> null | Some v -> box v
+                           match iteration.StartDate with None -> null | Some v -> box v
+                           match iteration.EndDate with None -> null | Some v -> box v
+                           iteration.Number |> box
                         ]
                     | None -> []
                 let areaProperty =
                     match row.Area with
-                    Some area -> area.AreaPath |> Value.Create
-                    | None -> Value.Null
+                    Some area -> area.AreaPath |> box
+                    | None -> null
                 let properties = 
                     azureFields
                     |> List.map(fun (name, getter) ->
                         getter row
                     )
                 
-                (Value.Create(timeStamp)::areaProperty::iterationProperties@properties)
+                ((box timeStamp)::areaProperty::iterationProperties@properties)
                 |> Array.ofList
-                
             ) |> Array.ofSeq
         let data = 
             {
@@ -198,7 +197,14 @@ module Reader =
         let raw = 
             source
             |> bySource
-            |> Option.bind((formatRawdataCache timeStamp) >> Some)
+            |> Option.bind(Seq.reduce(fun d d' -> 
+                    {
+                        d with
+                           Values = d.Values |> Array.append d'.Values
+                           RowCount = d.RowCount + d'.RowCount
+                    }
+                ) >> Some
+            )
 
         Log.logf "\n\n azure devops:%s \n\n" (source.JsonValue.ToString())        
         key,raw
@@ -222,16 +228,22 @@ module Reader =
                         let present p =
                             System.String.IsNullOrWhiteSpace p |> not
 
+                        let body = 
+                            ((body
+                             |> AzureDevOpsAnalyticsRecord.Parse).Value
+                            |> formatRawdataCache (System.DateTime.Now.ToString())).JsonValue
+
                         Encode.object [
                             "_id", Encode.string rawId
                             "timeStamp", Encode.string (System.DateTime.Now.ToString()) 
-                            "data", JsonValue.Parse body
+                            "data", body
                             "url", Encode.string url
                             "source", JsonValue.Parse (source.JsonValue.ToString())
                             "recordCount", Encode.int hashes.Length
                             "hashes", Encode.array (hashes |> Seq.map(Encode.string) |> Array.ofSeq)
                         ] |> Encode.toString 0
-                    insertOrUpdate rawdataRecord
+                        
+                        |> insertOrUpdate 
 
                     body
                     |> tryNextLink

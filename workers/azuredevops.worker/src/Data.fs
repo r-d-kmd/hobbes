@@ -74,10 +74,10 @@ module Data =
                 "source" : """ + AzureDevOpsSourceString + """,
                 "data" : {
                     "columnNames" : ["a","b"],
-                    "values" : [["zcv","lkj"],[1.2,3.45],["2019-01-01","2019-01-01"]]
+                    "values" : [["zcv","lkj"],[1.2,3.45],["2019-01-01","2019-01-01"]],
+                    "rowCount" : 1
                 }
         }"""
-
     type internal AzureDevOpsSource = FSharp.Data.JsonProvider<AzureDevOpsSourceString>
     type internal AzureDevOpsData = FSharp.Data.JsonProvider<AzureDevOpsDataString>
 
@@ -111,7 +111,6 @@ module Data =
 
     let insertOrUpdate (doc : string) = 
         db.InsertOrUpdate doc
-        |> Log.debugf "Inserted data: %s"
         
     let get key = 
         db.TryGet key
@@ -131,36 +130,21 @@ module Data =
                     doc.JsonValue.Properties() 
                     |> Seq.tryFind(fun (n,_) -> n = "data") 
                     |> Option.isSome
-                let hasSource = 
-                    doc.JsonValue.Properties() 
-                    |> Seq.tryFind(fun (n,_) -> n = "data") 
-                    |> Option.isSome
-                hasData && hasSource
+                hasData
                 && (doc.Source.JsonValue.ToString() |> keyFromSourceDoc) = configSearchKey
             )
-        Log.debugf "Project data found by source %A" res
         res
 
     let bySource (source : AzureDevOpsSource.Root) = 
         let data =
             source
             |> projectsBySource
-        Log.debugf "Rawdata by source: %A" (data |> List.ofSeq)
+       
         let result = 
             data
-            |> Seq.collect(fun s -> 
-                let hasData = 
-                    s.JsonValue.Properties() 
-                    |> Seq.tryFind(fun (n,_) -> n = "data") 
-                    |> Option.isSome
-                if hasData then
-                    try
-                        let data = s.Data :> obj :?> AzureDevOpsAnalyticsRecord.Root
-                        data.Value
-                    with _ -> 
-                        Array.empty
-                else
-                    Array.empty
+            |> Seq.map(fun s -> 
+                s.Data.JsonValue.ToString()
+                |> Cache.DataResult.OfJson
             )
         if result |> Seq.isEmpty then None
         else Some result

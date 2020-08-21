@@ -33,13 +33,16 @@ module Dataset =
                         dataAndKey
                         |> Cache.DynamicRecord.Parse
                     let key = args.Id
+                    let data = args.Data
                     if System.String.IsNullOrWhiteSpace(key) then
                         Log.errorf "No id provided %s" dataAndKey
-                    let data = args.Data
-                    if data.Length > 0 then
+                        None
+                    elif data.Length = 0 then
                         Log.errorf "No data provided %s" dataAndKey
-                    let dependsOn = args.DependsOn |> Array.toList
-                    Some (key,data,dependsOn)
+                        None
+                    else
+                        let dependsOn = args.DependsOn |> Array.toList
+                        Some (key,data,dependsOn)
                 with e ->
                     eprintfn "Failed to deserialization (%s). %s %s" dataAndKey e.Message e.StackTrace
                     None

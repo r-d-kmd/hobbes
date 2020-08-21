@@ -16,44 +16,44 @@ module Processer =
     let record1 = 
         [|
             [| 
-                Value.Int 0
-                Value.Date(System.DateTime(2019,5,7))
-                Value.Text "Magrethe II"
-                Value.Boolean true
+                box 0
+                box (System.DateTime(2019,5,7))
+                box  "Magrethe II"
+                box  true
             |]
             [|
-                Value.Int 1
-                Value.Date(System.DateTime(2009,3,2))
-                Value.Text "Isabella"
-                Value.Boolean false
+                box  1
+                box (System.DateTime(2009,3,2))
+                box  "Isabella"
+                box  false
             |]
             [|
-                Value.Int 2
-                Value.Date(System.DateTime(2008,19,6))
-                Value.Text "Frederik X"
-                Value.Boolean true
+                box  2
+                box (System.DateTime(2008,19,6))
+                box  "Frederik X"
+                box true
             |]
         |] |> createRecord
 
     let record2 = 
         [|
             [| 
-                Value.Int 3
-                Value.Date(System.DateTime(2019,7,5))
-                Value.Text "Elisabeth II"
-                Value.Boolean false
+                box 3
+                box (System.DateTime(2019,7,5))
+                box "Elisabeth II"
+                box  false
             |]
             [|
-                Value.Int 4
-                Value.Date(System.DateTime(2009,2,3))
-                Value.Text "Harry"
-                Value.Boolean true
+                box 4
+                box (System.DateTime(2009,2,3))
+                box "Harry"
+                box true
             |]
             [|
-                Value.Int 5
-                Value.Date(System.DateTime(2008,6,19))
-                Value.Text "Richard I"
-                Value.Boolean false
+                box 5
+                box (System.DateTime(2008,6,19))
+                box "Richard I"
+                box false
             |]
         |] |> createRecord
        
@@ -66,7 +66,7 @@ module Processer =
        Assert.Equal(result.RowCount,record1.RowCount + record2.RowCount)
     
     [<Fact>]
-    let ```merge where one collcetion is empty``() = 
+    let ``merge where one collcetion is empty``() = 
        let result = MOT.merge [|record1;record3|]
        Assert.Equal(result.RowCount,record1.RowCount)
        

@@ -39,17 +39,18 @@ module Processer =
 
     let format format rows columnNames =
       
-        let encodeValue value = 
-            (match value with
-             Cache.Value.Date dt -> 
+        let encodeValue (value :obj) = 
+            match value with
+            :? System.DateTime as dt -> 
                  dt
                  |> string
                  |> Encode.string
-             | Cache.Value.Text t -> Encode.string t
-             | Cache.Value.Int i -> Encode.int i
-             | Cache.Value.Float f -> Encode.float f
-             | Cache.Value.Boolean b -> Encode.bool b 
-             | Cache.Value.Null -> Encode.nil)
+            | :? string as t -> Encode.string t
+            | :? int as i -> Encode.int i
+            | :? float as f -> Encode.float f
+            | :? bool as b -> Encode.bool b 
+            | null -> Encode.nil
+            | v -> failwithf "Can't encode %A" v
         
         match format with
         | Json -> 
@@ -57,7 +58,7 @@ module Processer =
             |> Array.map(fun row ->
                 row
                 |> Array.zip columnNames
-                |> Array.map(fun (colName,(value : Cache.Value)) ->
+                |> Array.map(fun (colName,(value : obj)) ->
                     colName,encodeValue value
                 ) |> List.ofArray
                 |> Encode.object

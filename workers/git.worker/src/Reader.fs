@@ -118,7 +118,7 @@ module Reader =
     }
     
     let request account project body path  = 
-        let url = sprintf "https://dev.azure.com/%s/%s/_apis/git/repositories%s?api-version=5.1&$top=10000000" account project path
+        let url = sprintf "https://dev.azure.com/%s/%s/_apis/git/repositories%s?api-version=5.1&$top=100000" account project path
         let headers =
             [
                 HttpRequestHeaders.BasicAuth user pwd

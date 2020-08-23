@@ -103,16 +103,12 @@ module Broker =
             eprintfn "Failed to initialize queue. %s:%d. Message: %s" host port e.Message
             reraise()
 
-    let mutable queues = Set.empty
     let private declare (channel : IModel) queueName =  
         channel.QueueDeclare(queueName,
                                  true,
                                  false,
                                  false,
                                  null) |> ignore
-        if queues |> Set.contains queueName |> not then
-            queues <- queues.Add queueName
-            
             
     let awaitQueue() =
         let rec inner tries = 
@@ -156,68 +152,54 @@ module Broker =
         |> serialize
         |> publishString queueName
     
-    let rec signalWathcDog queueName =
-        //async{
-        //    do! Async.Sleep watchDogInterval
-        //    publish queueName Bark
-        //}
-        ()
-  
-    (*type private Dog(intervalInSeconds : int) = 
-        let mutable resetAt = DateTime.Now
-        member __.IsAlive 
-                 with get() = 
-                     (DateTime.Now - resetAt).TotalSeconds |> int < (intervalInSeconds * 2)
-        member __.Reset() = 
-            resetAt <- DateTime.Now*)
-
     let private watch<'a> queueName (handler : 'a -> MessageResult) =
         let mutable keepAlive = true
-        //let dog = Dog(watchDogInterval)
+        let queue = Collections.Concurrent.ConcurrentQueue<'a>()
         try
             let channel = init()
             declare channel queueName
 
             let consumer = EventingBasicConsumer(channel)
-            consumer.Received.AddHandler(EventHandler<BasicDeliverEventArgs>(fun _ (ea : BasicDeliverEventArgs) ->
-                let deadLetter msgText (e : System.Exception) =
+            let deadLetter msgText (e : System.Exception) =
                     {
                         OriginalQueue = queueName
                         OriginalMessage = msgText
                         ExceptionMessage = e.Message
                         ExceptionStackTrace = e.StackTrace
                     } |> Message |> publish "dead_letter" 
-                    channel.BasicAck(ea.DeliveryTag,false)
-                try
-                    let msgText = 
-                        Encoding.UTF8.GetString(ea.Body.ToArray())
-                    try
-                        let msg = 
-                            msgText 
-                            |> deserialize<Message<'a>>
-                        match msg with
-                        //Bark -> dog.Reset()
-                        | Message msg ->
-                            match msg |> handler with
-                            Success ->
-                                printfn "Message ack'ed"
-                                channel.BasicAck(ea.DeliveryTag,false)
-                            | Failure m ->
-                                printfn "Message could not be processed (%s). %s" m msgText
-                            | Excep e ->
-                                e |> deadLetter msgText
-                    with e ->
-                        e |> deadLetter msgText 
-                        eprintfn "Failed to parse message (%s) (Message will be ack'ed). Error: %s %s" msgText e.Message e.StackTrace 
+
+            consumer.Received.AddHandler(EventHandler<BasicDeliverEventArgs>(fun _ (ea : BasicDeliverEventArgs) -> 
+                let msgText = 
+                    Encoding.UTF8.GetString(ea.Body.ToArray())
+                try        
+                    let msg = 
+                        msgText
+                        |> deserialize<Message<'a>>
+                    match msg with
+                    | Message msg ->
+                        queue.Enqueue msg
+                        channel.BasicAck(ea.DeliveryTag,false)
                 with e ->
-                   eprintfn  "Failed while processing message. %s %s" e.Message e.StackTrace
-                   e |> deadLetter null
+                    e |> deadLetter msgText
+                    eprintfn "Failed to parse message (%s) (Message will be ack'ed). Error: %s %s" msgText e.Message e.StackTrace 
+                
             ))
             
             channel.BasicConsume(queueName,false,consumer) |> ignore
             printfn "Watching queue: %s" queueName
-            while true (*dog.IsAlive*) do
-                System.Threading.Thread.Sleep(watchDogInterval / 2)
+            //to limit memory pressure, we're only going to handle one message at a time
+            while keepAlive do
+                match queue.TryDequeue() with
+                true,msg ->
+                    match msg |> handler with
+                    Success ->
+                        printfn "Message processed successfully"
+                    | Failure m ->
+                        printfn "Message could not be processed (%s). %s" m (serialize msg)
+                    | Excep e ->
+                        e |> deadLetter (serialize msg)
+                | _ ->
+                    System.Threading.Thread.Sleep(watchDogInterval / 2)
          with e ->
            eprintfn "Failed to subscribe to the queue. %s:%d. Message: %s" host port e.Message
            keepAlive <- false

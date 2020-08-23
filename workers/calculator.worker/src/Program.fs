@@ -50,61 +50,77 @@ let transformData (message : CalculationMessage) =
     
     match message with
     Merge message ->
-        let cacheKey = message.CacheKey
-        let dependsOn = message.Datasets |> Array.toList
-        message.Datasets
-        |> Array.map fromCache 
-        |> merge
-        |> insertMatrix cacheKey dependsOn
+        try
+            let cacheKey = message.CacheKey
+            let dependsOn = message.Datasets |> Array.toList
+            message.Datasets
+            |> Array.map fromCache 
+            |> merge
+            |> insertMatrix cacheKey dependsOn
+        with e ->
+            Log.excf e "Merge failed"
+            Excep e
     | Join message ->
-        let cacheKey = message.CacheKey
-        let dependsOn = [message.Left;message.Right]
-        let left = 
-            message.Left
-            |> fromCache
-        let right = 
-            message.Right
-            |> fromCache
-        
-        join left right message.Field 
-        |> insertMatrix cacheKey dependsOn
-    | Transform message -> 
-        let dependsOn = message.DependsOn
-        let transformation = message.Transformation
-        let key = dependsOn + ":" + transformation.Name
-        dependsOn
-        |> fromCache
-        |> transform message.Transformation.Statements
-        |> insertMatrix key [dependsOn] 
-    | Format message ->
-        let cacheKey = message.CacheKey
-        let record = 
-            try
-                message.CacheKey
+        try
+            let cacheKey = message.CacheKey
+            let dependsOn = [message.Left;message.Right]
+            let left = 
+                message.Left
                 |> fromCache
-                |> Some
-            with e ->
-                Log.excf e "Couldn't load data for formatting"
-                None
-        let key = sprintf "%s:%A" cacheKey message.Format
-        match record with
-        Some record ->
-            let formatted = format message.Format record.Values record.ColumnNames
-            let data = 
-                formatted
-                |> Cache.createDynamicCacheRecord key [cacheKey]
-            match 
-                data.JsonValue.ToString()
-                |> Http.post (Http.UpdateFormatted |> Http.UniformData) with
-            Http.Success _ -> 
-                Log.logf "Formatting of [%s] to [%A] resulting in [%s] completed" cacheKey message.Format key
-                Success
-            | Http.Error(sc,msg) ->
-                sprintf "Trying posting data (%s) to uniform put failed with %d - %s"  (data.JsonValue.ToString().Substring(0,min (data.JsonValue.ToString().Length) 500)) sc msg
+            let right = 
+                message.Right
+                |> fromCache
+            
+            join left right message.Field 
+            |> insertMatrix cacheKey dependsOn
+        with e ->
+           Log.exc e "Join failed"
+           Excep e
+    | Transform message -> 
+        try
+            let dependsOn = message.DependsOn
+            let transformation = message.Transformation
+            let key = dependsOn + ":" + transformation.Name
+            dependsOn
+            |> fromCache
+            |> transform message.Transformation.Statements
+            |> insertMatrix key [dependsOn] 
+        with e ->
+            Log.exc e "Transformation failed"
+            Excep e
+    | Format message ->
+        try
+            let cacheKey = message.CacheKey
+            let record = 
+                try
+                    message.CacheKey
+                    |> fromCache
+                    |> Some
+                with e ->
+                    Log.excf e "Couldn't load data for formatting"
+                    None
+            let key = sprintf "%s:%A" cacheKey message.Format
+            match record with
+            Some record ->
+                let formatted = format message.Format record.Values record.ColumnNames
+                let data = 
+                    formatted
+                    |> Cache.createDynamicCacheRecord key [cacheKey]
+                match 
+                    data.JsonValue.ToString()
+                    |> Http.post (Http.UpdateFormatted |> Http.UniformData) with
+                Http.Success _ -> 
+                    Log.logf "Formatting of [%s] to [%A] resulting in [%s] completed" cacheKey message.Format key
+                    Success
+                | Http.Error(sc,msg) ->
+                    sprintf "Trying posting data (%s) to uniform put failed with %d - %s"  (data.JsonValue.ToString().Substring(0,min (data.JsonValue.ToString().Length) 500)) sc msg
+                    |> Failure
+            | None -> 
+                sprintf "Couldn't get cached data. See log for details. cache key: %s" cacheKey
                 |> Failure
-        | None -> 
-            sprintf "Couldn't get cached data. See log for details. cache key: %s" cacheKey
-            |> Failure
+        with e ->
+            Log.exc e "Couldn't create json dataset"
+            Excep e
 
 
 [<EntryPoint>]

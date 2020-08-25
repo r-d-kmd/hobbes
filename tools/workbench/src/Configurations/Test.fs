@@ -4,10 +4,17 @@ open Workbench.Transformations
 
 module Test = 
 
-    let project = Project.Flowerpot 
+    let projects = 
+      [
+        Project.Flowerpot 
+        Project.Gandalf
+        Project.Nexus
+      ]
     
-    let addGitConfiguraiton = addConfiguration  Test (Source.Git(Commits,project))
-    let addAzureConfiguration = addConfiguration Test (Source.AzureDevOps(project))
+    let addGitConfiguraiton = addConfiguration Test (Source.Git(Commits,project))
+    let addAzureConfiguration conf = 
+          projects
+          |> List.map(fun project -> addConfiguration Test (Source.AzureDevOps(project)) conf)
     let initialise() = 
         [
             Git.allCommits

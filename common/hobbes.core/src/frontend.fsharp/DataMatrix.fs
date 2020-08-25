@@ -1042,3 +1042,4 @@ module DataStructures =
                 :> IDataMatrix
         let toJson (matrix : #IDataMatrix) =
             matrix.ToJson()
+        

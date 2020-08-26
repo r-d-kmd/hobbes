@@ -23,30 +23,34 @@ let insertOrUpdate doc =
             
 let transformData (message : CalculationMessage) =
     let insertMatrix key dependsOn data = 
-        try
-            let dataJson = 
-                data
-                |> Hobbes.FSharp.DataStructures.DataMatrix.toJson                
-            let transformedData = 
-                try
-                    dataJson
-                    |> Cache.DataResult.OfJson 
-                with e ->
-                   Log.excf e "Couldn't deserialize data %s" dataJson
-                   reraise()
-
+        
+        let dataJson = 
+            data
+            |> Hobbes.FSharp.DataStructures.DataMatrix.toJson                
+        let transformedData = 
+            try
+                dataJson
+                |> Cache.DataResult.OfJson 
+                |> Some
+            with e ->
+               Log.excf e "Couldn't deserialize data %s" dataJson
+               None
+        transformedData
+        |> Option.bind(fun transformedData ->
             assert(transformedData.ColumnNames.Length =  transformedData.Values.[0].Length)
             assert(transformedData.Values.Length =  transformedData.RowCount)
-
-            (transformedData
-             |> Cache.createCacheRecord key dependsOn).ToString()
-            
-            |> insertOrUpdate 
-            Log.logf "Transformation of [%A] using [%A] resulting in [%s] completed" dependsOn message key
-            Success
-        with e ->
-            Log.excf e "Couldn't insert data (%A)." message
-            Excep e 
+            try
+                (transformedData
+                 |> Cache.createCacheRecord key dependsOn).ToString()
+                
+                |> insertOrUpdate 
+                Log.logf "Transformation of [%A] using [%A] resulting in [%s] completed" dependsOn message key
+                Success |> Some
+            with e ->
+                Log.excf e "Couldn't insert data (%A)." message
+                Excep e |> Some
+        ) |> Option.orElse(dataJson |> sprintf "Couldn't deserialize data %s" |> Failure |> Some)
+        |> Option.get 
     
     match message with
     Merge message ->

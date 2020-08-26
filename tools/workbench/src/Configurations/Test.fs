@@ -11,10 +11,12 @@ module Test =
         Project.Nexus
       ]
     
-    let addGitConfiguraiton = addConfiguration Test (Source.Git(Commits,project))
-    let addAzureConfiguration conf = 
+    let addGitConfiguraiton name transformations = 
           projects
-          |> List.map(fun project -> addConfiguration Test (Source.AzureDevOps(project)) conf)
+          |> List.iter(fun project -> addConfiguration Test (Source.Git(Commits,project)) name transformations)
+    let addAzureConfiguration name transformations = 
+          projects
+          |> List.iter(fun project -> addConfiguration Test (Source.AzureDevOps(project)) name transformations)
     let initialise() = 
         [
             Git.allCommits
@@ -29,13 +31,10 @@ module Test =
             let next = current::previous
             next
             |> List.rev
-            |> addAzureConfiguration name
+            |> addConfiguration Test (Source.AzureDevOps(Project.Flowerpot)) name
             next
         ) [] |> ignore
 
         [
           Metrics.martin
         ] |> addAzureConfiguration "martin"
-        [
-          Metrics.martin
-        ] |> addConfiguration Test (Source.AzureDevOps(Project.Gandalf)) "martin"

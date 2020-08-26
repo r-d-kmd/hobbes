@@ -11,6 +11,7 @@ module DevOps =
           Project.Momentum
           Project.Nexus
           Project.UVskole
+          Project.Logic
        ]
 
     let initialise() = 

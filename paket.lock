@@ -196,6 +196,46 @@ NUGET
     System.Windows.Extensions (4.7) - restriction: || (&& (== net40) (>= netcoreapp3.0)) (== netcoreapp3.1)
       System.Drawing.Common (>= 4.7) - restriction: || (&& (== net40) (>= netcoreapp3.0)) (== netcoreapp3.1)
 
+GROUP visualizer
+STORAGE: PACKAGES
+RESTRICTION: || (== net40) (== netcoreapp3.1)
+NUGET
+  remote: https://www.nuget.org/api/v2
+    Accord (3.8)
+    Accord.MachineLearning (3.8)
+      Accord (>= 3.8)
+      Accord.Math (>= 3.8)
+      Accord.Statistics (>= 3.8)
+    Accord.Math (3.8)
+      Accord (>= 3.8)
+    Accord.Statistics (3.8)
+      Accord (>= 3.8)
+      Accord.Math (>= 3.8)
+    Deedle (2.2)
+      FSharp.Core (>= 4.5.2)
+    FParsec (1.1.1)
+      FSharp.Core (>= 4.3.4) - restriction: || (&& (== net40) (>= net45)) (&& (== net40) (>= netstandard2.0)) (== netcoreapp3.1)
+    FSharp.Core (4.7.2)
+    FSharp.Data (3.3.3)
+      FSharp.Core (>= 4.3.4) - restriction: || (&& (== net40) (>= netstandard2.0)) (== netcoreapp3.1)
+    Google.DataTable.Net.Wrapper (4.0)
+    MathNet.Numerics (4.12)
+    MathNet.Numerics.FSharp (4.12)
+      FSharp.Core (>= 4.3.3) - restriction: || (&& (== net40) (>= net45)) (&& (== net40) (>= netstandard1.6)) (== netcoreapp3.1)
+      MathNet.Numerics (>= 4.12) - restriction: || (&& (== net40) (>= net45)) (&& (== net40) (>= netstandard1.6)) (== netcoreapp3.1)
+    Newtonsoft.Json (12.0.3)
+    XPlot.GoogleCharts (3.0.1)
+      FSharp.Core (>= 4.5.2)
+      Google.DataTable.Net.Wrapper (>= 4.0)
+      Newtonsoft.Json (>= 12.0.2)
+    XPlot.GoogleCharts.Deedle (3.0.1)
+      Deedle (>= 2.1)
+      FSharp.Core (>= 4.5.2)
+      XPlot.GoogleCharts (>= 3.0.1)
+    XPlot.Plotly (3.0.1)
+      FSharp.Core (>= 4.5.2)
+      Newtonsoft.Json (>= 12.0.2)
+
 GROUP web
 STORAGE: NONE
 RESTRICTION: || (== net40) (== netcoreapp3.1)

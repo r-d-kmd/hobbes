@@ -160,7 +160,7 @@ module Http =
             Http.Request(url,
                          httpMethod = httpMethod,
                          body = (body |> encoding.GetBytes |> BinaryUpload),
-                         headers = [HttpRequestHeaders.ContentTypeWithEncoding("application/json",encoding )],
+                         headers = [HttpRequestHeaders.ContentTypeWithEncoding("application/json",encoding)],
                          silentHttpErrors = true
             ) |> readResponse id
         with e ->

@@ -21,7 +21,7 @@ group core
 
     nuget Accord.MachineLearning
     nuget Deedle
-    nuget FParsec ~> 1.1
+    nuget FParsec
 
 group collectors
     source https://www.nuget.org/api/v2 
@@ -57,3 +57,26 @@ group tutorial
     framework: auto-detect
     storage: none
     nuget FSharp.Formatting
+
+group visualizer
+    source https://www.nuget.org/api/v2
+    framework: auto-detect
+    storage: packages
+
+    # FSharp.Data
+    nuget FSharp.Data 
+
+    # MathNet.Numerics
+    nuget MathNet.Numerics 
+    nuget MathNet.Numerics.FSharp 
+
+    # XPlot
+    nuget XPlot.Plotly 
+    nuget XPlot.GoogleCharts 
+    nuget XPlot.GoogleCharts.Deedle 
+    nuget Newtonsoft.Json 
+    
+    #should be same version as core but as long as this is a script we need to store them
+    nuget FParsec
+    nuget Deedle
+    nuget Accord.MachineLearning

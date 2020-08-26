@@ -18,3 +18,8 @@ If chaning the dependencies or the commonlibraries you should you the target **a
 
 ## Apps
 If you have change any of the apps, you can either run a target named the same as the app i.e. **gateway**, **calculator** etc or you can simply run __fake build__ using the default target that builds all apps but __not__ the sdk image
+
+
+## Deployment
+
+To be able to work with the kubectl tool int the azure portal you'll to run the following command `az aks get-credentials --resource-group hobbes-rg --name hobbes-kub`

@@ -8,7 +8,7 @@
 #r "../../packages/visualizer/FParsec/lib/netstandard2.0/FParsec.dll"
 #r "../../packages/visualizer/FParsec/lib/netstandard2.0/FParsecCS.dll"
 #r "../../packages/visualizer/XPlot.GoogleCharts/lib/netstandard2.0/XPlot.GoogleCharts.dll"
-#r "../../common/hobbes.core/src/bin/Release/netcoreapp3.1/hobbes.core.dll"
+#r "../../common/hobbes.core/src/bin/Debug/netcoreapp3.1/hobbes.core.dll"
 
 open Hobbes
 open System.IO

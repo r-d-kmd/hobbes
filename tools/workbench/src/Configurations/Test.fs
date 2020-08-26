@@ -4,10 +4,19 @@ open Workbench.Transformations
 
 module Test = 
 
-    let project = Project.Flowerpot 
+    let projects = 
+      [
+        Project.Flowerpot 
+        Project.Gandalf
+        Project.Nexus
+      ]
     
-    let addGitConfiguraiton = addConfiguration  Test (Source.Git(Commits,project))
-    let addAzureConfiguration = addConfiguration Test (Source.AzureDevOps(project))
+    let addGitConfiguraiton name transformations = 
+          projects
+          |> List.iter(fun project -> addConfiguration Test (Source.Git(Commits,project)) name transformations)
+    let addAzureConfiguration name transformations = 
+          projects
+          |> List.iter(fun project -> addConfiguration Test (Source.AzureDevOps(project)) name transformations)
     let initialise() = 
         [
             Git.allCommits
@@ -29,6 +38,3 @@ module Test =
         [
           Metrics.martin
         ] |> addAzureConfiguration "martin"
-        [
-          Metrics.martin
-        ] |> addConfiguration Test (Source.AzureDevOps(Project.Gandalf)) "martin"

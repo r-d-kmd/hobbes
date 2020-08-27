@@ -25,8 +25,8 @@ module Reader =
                     "date": "2020-04-21T07:17:10Z"
                 },
                 "committer": {
-                    "name": "Jakob Pele Leer",
-                    "email": "JL@kmd.dk",
+                    "name": "Jjlkj",
+                    "email": "nobody@kmd.dk",
                     "date": "2020-04-21T07:17:10Z"
                 },
                 "comment": "Merged PR 37570: Student member submitting form about end of education only registers",
@@ -45,7 +45,7 @@ module Reader =
             "name": "refs/heads/47902_fix_f_ui_nightly_tests_pt3",
             "objectId": "0ba81f799d711fd6dfda9f39d3224cc30869bc57",
             "creator": {
-                "displayName": "Karolina Michon (KLM)",
+                "displayName": "lkhlkjlkj",
                 "url": "https://spsprodweu1.vssps.visualstudio.com/A5171eb22-e5ac-4dc3-a6f5-552b63c90b71/_apis/Identities/0adac0d0-283d-6c75-8654-828be949be3b",
                 "_links": {
                     "avatar": {
@@ -53,7 +53,7 @@ module Reader =
                     }
                 },
                 "id": "0adac0d0-283d-6c75-8654-828be949be3b",
-                "uniqueName": "KLM@kmd.dk",
+                "uniqueName": "lklækælk@kmd.dk",
                 "imageUrl": "https://dev.azure.com/kmddk/_api/_common/identityImage?id=0adac0d0-283d-6c75-8654-828be949be3b",
                 "descriptor": "aad.MGFkYWMwZDAtMjgzZC03Yzc1LTg2NTQtODI4YmU5NDliZTNi"
             },
@@ -67,13 +67,13 @@ module Reader =
             {
                 "commitId": "b1c561d96ff1808700b34b3ef5346e0df4bf5ed8",
                 "author": {
-                    "name": "Jakob Pele Leer",
-                    "email": "JL@kmd.dk",
+                    "name": "sdfg",
+                    "email": "fgs@kmd.dk",
                     "date": "2020-04-21T07:17:10Z"
                 },
                 "committer": {
-                    "name": "Jakob Pele Leer",
-                    "email": "JL@kmd.dk",
+                    "name": "fdg",
+                    "email": "fdsadf@kmd.dk",
                     "date": "2020-04-21T07:17:10Z"
                 },
                 "comment": "Merged PR 37570: Student member submitting form about end of education only registers",
@@ -117,8 +117,12 @@ module Reader =
         DefaultBranch : string
     }
     
-    let request account project body path  = 
-        let url = sprintf "https://dev.azure.com/%s/%s/_apis/git/repositories%s?api-version=5.1&$top=100000" account project path
+    let request account project body filter path  = 
+        let filter = 
+            match filter with
+            None -> ""
+            | Some f -> "&filter=" + f
+        let url = sprintf "https://dev.azure.com/%s/%s/_apis/git/repositories%s?api-version=5.1&$top=100000%s" account project path filter
         let headers =
             [
                 HttpRequestHeaders.BasicAuth user pwd
@@ -168,7 +172,7 @@ module Reader =
               }
             }""" shortBranchName |> Some
         let statusCode,commits = 
-            repo.Id |> sprintf "/%s/commitsbatch" |> request account project body
+            repo.Id |> sprintf "/%s/commitsbatch" |> request account project body None
         
         if statusCode = 200 then
             let parsedCommits = 
@@ -198,7 +202,7 @@ module Reader =
 
     let private repositories account project = 
         let statusCode, list = 
-            get account project ""
+            get account project None ""
         logf "Repositories: %d %s" statusCode list
 
         if statusCode = 200 then 
@@ -233,11 +237,11 @@ module Reader =
         IsLastCommit : bool
     }
 
-    let branches account project =
+    let branches account project filter =
        repositories account project
        |> Seq.collect(fun repo -> 
             let statusCode,branches = 
-                repo.Id |> sprintf "/%s/refs" |> get account project
+                repo.Id |> sprintf "/%s/refs" |> get account project filter
             
             if statusCode = 200 then 
                 let parsedBranches = 
@@ -282,4 +286,28 @@ module Reader =
             else
                 errorf  "Error when reading branches of %s. Staus: %d. Message: %s" repo.Name statusCode branches
                 Seq.empty
+        )
+
+    let releaseBranches account project = 
+        let rec fitVersion (v : int list) =
+           match v with
+           b::r::minor::[major] ->
+               major, minor ,r, b
+           | _ when v.Length > 4 -> v |> List.rev |> List.take 4 |> List.rev |> fitVersion
+           | v -> 0::v |> fitVersion
+           
+        let mutable prevCommits = Set.empty
+        //todo filter commits so they only exist in one branch (the oldest they are part of)
+        "heads/release"
+        |> Some
+        |> branches account project 
+        |> Seq.sortBy(fun b ->
+            let name = b.Name.Substring("release/".Length)
+            name.Split('.')
+            |> Seq.fold(fun version n ->
+                match System.Int32.TryParse n with
+                false,_ -> version
+                | _,n -> n::version
+            ) []
+            |> fitVersion
         )

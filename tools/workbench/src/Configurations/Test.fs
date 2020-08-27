@@ -31,7 +31,7 @@ module Test =
             let next = current::previous
             next
             |> List.rev
-            |> addAzureConfiguration name
+            |> addConfiguration Test (Source.AzureDevOps(Project.Flowerpot)) name
             next
         ) [] |> ignore
 

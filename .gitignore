@@ -36,4 +36,5 @@ services/**/Dockerfile
 workers/**/Dockerfile
 kubernetes/log.txt
 hobbes-vscode/hb/grammar/hobbes.YAML-tmLanguage
+nexus.txt
 chart.html

@@ -159,18 +159,26 @@ module Reader =
         Project : string
     }
 
-    let private commitsForBranch account project (repo : Repository) (branchName : string) =
+    let private commitsForBranch account project (repo : Repository) (branchName : string) compareToBranch =
         logf "Reading commits for %s - %s" repo.Name branchName
         let shortBranchName = 
             branchName.Substring("refs/heads/".Length)
-            
+        let fromCommitId = 
+            match compareToBranch with
+            None -> ""
+            | Some branch -> 
+                sprintf """, 
+                "compareVersion" : {
+                    "versionType": "branch",
+                "version": "%s"
+              }""" branch
         let body = 
             sprintf """{
               "itemVersion": {
                 "versionType": "branch",
                 "version": "%s"
-              }
-            }""" shortBranchName |> Some
+              }%s
+            }""" shortBranchName fromCommitId |> Some
         let statusCode,commits = 
             repo.Id |> sprintf "/%s/commitsbatch" |> request account project body None
         
@@ -226,7 +234,7 @@ module Reader =
                 if System.String.IsNullOrWhiteSpace repo.DefaultBranch then 
                     Seq.empty
                 else
-                    commitsForBranch account project repo repo.DefaultBranch
+                    commitsForBranch account project repo repo.DefaultBranch None
             )
         commits
            
@@ -241,68 +249,75 @@ module Reader =
        repositories account project
        |> Seq.collect(fun repo -> 
             let statusCode,branches = 
-                repo.Id |> sprintf "/%s/refs" |> get account project filter
+                let filter = 
+                    filter
+                    |> Option.orElse(Some "heads")
+                repo.Id 
+                |> sprintf "/%s/refs" 
+                |> get account project filter 
             
             if statusCode = 200 then 
                 let parsedBranches = 
                    branches |> BranchList.Parse
-                
+                let mutable prevCommits = Set.empty
+                let mutable lastBranch = None
                 parsedBranches.Value
-                |> Seq.filter(fun branch -> branch.Name.StartsWith "refs/heads/")
-                |> Seq.map (fun branch -> 
-                    async {
-                        let name = branch.Name.Substring("ref/heads/".Length)
-                        let commits = 
-                            try
-                                let commits = commitsForBranch account project repo branch.Name
-                                logf "Read %d commits from %s - %s" (commits |> Seq.length) repo.Name name
-                                commits
-                            with e -> 
-                                excf e "Error when reading commits for branch. %s" branch.Name
-                                Seq.empty
-                        return
-                            if commits |> Seq.isEmpty then 
-                                Seq.empty
-                            else
-                                let lastCommit = 
-                                    commits 
-                                    |> Seq.last
-                                let firstCommit = 
-                                    commits
-                                    |> Seq.head
-                                commits
-                                |> Seq.map(fun commit ->
-                                    {
-                                        Name = name
-                                        IsFirstCommit = (commit = firstCommit)
-                                        IsLastCommit = (commit = lastCommit)
-                                        Commit = commit
-                                    }
-                                )
-                    }
-                ) |> Async.Parallel
-                |> Async.RunSynchronously
-                |> Seq.collect id
+                |> Seq.collect (fun branch -> 
+                    let name = branch.Name.Substring("ref/heads/".Length)
+                    let commits = 
+                        try
+                            let branchCommits = 
+                                commitsForBranch account project repo branch.Name lastBranch
+                            let commits =
+                                branchCommits
+                                |> Seq.filter(fun commit ->
+                                    if commit.Id |> prevCommits.Contains then
+                                        false
+                                    else
+                                        prevCommits <- prevCommits.Add commit.Id
+                                        true
+                                ) 
+                            logf "Read %d commits from %s - %s and kept %d" (branchCommits |> Seq.length) repo.Name name (commits |> Seq.length)
+                            commits
+                        with e -> 
+                            excf e "Error when reading commits for branch. %s" branch.Name
+                            Seq.empty
+                    lastBranch <- Some branch.Name
+                    if commits |> Seq.isEmpty then 
+                        Seq.empty
+                    else
+                        let lastCommit = 
+                            commits 
+                            |> Seq.last
+                        let firstCommit = 
+                            commits
+                            |> Seq.head
+                        commits
+                        |> Seq.map(fun commit ->
+                            let isLast = 
+                                commit = lastCommit
+                            
+                            {
+                                Name = name
+                                IsFirstCommit = (commit = firstCommit)
+                                IsLastCommit = isLast
+                                Commit = commit
+                            }
+                        )
+                ) 
             else
                 errorf  "Error when reading branches of %s. Staus: %d. Message: %s" repo.Name statusCode branches
                 Seq.empty
-        )
+        ) 
 
     let releaseBranches account project = 
-        let rec fitVersion (v : int list) =
-           match v with
-           b::r::minor::[major] ->
-               major, minor ,r, b
-           | _ when v.Length > 4 -> v |> List.rev |> List.take 4 |> List.rev |> fitVersion
-           | v -> 0::v |> fitVersion
-           
-        let mutable prevCommits = Set.empty
-        //todo filter commits so they only exist in one branch (the oldest they are part of)
-        "heads/release"
-        |> Some
-        |> branches account project 
-        |> Seq.sortBy(fun b ->
-            let name = b.Name.Substring("release/".Length)
+        let version (name : string) = 
+            let rec fitVersion (v : int list) =
+               match v with
+               b::r::minor::[major] ->
+                   major, minor ,r, b
+               | _ when v.Length > 4 -> v |> List.rev |> List.take 4 |> List.rev |> fitVersion
+               | v -> 0::v |> fitVersion
             name.Split('.')
             |> Seq.fold(fun version n ->
                 match System.Int32.TryParse n with
@@ -310,4 +325,27 @@ module Reader =
                 | _,n -> n::version
             ) []
             |> fitVersion
+
+        let branchCommits = 
+            "heads/release"
+            |> Some
+            |> branches account project 
+        printf "Collected %d commits from all release branches" (branchCommits |> Seq.length)
+        branchCommits
+        |> Seq.sortBy(fun b ->
+            let name = b.Name.Substring("release/".Length)
+            name |> version
+        ) |> Seq.groupBy(fun b -> b.Name |> version)
+        |> Seq.collect(fun ((major,minor,r,build),branchCommits) ->
+            let length = branchCommits |> Seq.length
+            branchCommits
+            |> Seq.sortBy(fun b -> b.Commit.Date)
+            |> Seq.mapi(fun i b ->
+               {
+                   b with 
+                      Name = sprintf "%d.%d.%d.%d" major minor r build
+                      IsFirstCommit = (i = 0)
+                      IsLastCommit = (i = length)
+               }
+            ) 
         )

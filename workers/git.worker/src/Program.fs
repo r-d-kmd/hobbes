@@ -27,6 +27,23 @@ let synchronize (source : GitSource.Root) token =
                          |]
                     ) |> Array.ofSeq
                 columnNames, values, (commits |> Seq.length)
+            | "releases" ->
+                let releaseCommits =  releaseBranches source.Account source.Project
+                let columnNames = [|"id";"Time";"Project";"Repository Name";"Branch Name";"Author"|]
+                let values =
+                    releaseCommits
+                    |> Seq.map(fun b ->
+                         let c = b.Commit
+                         [|
+                             c.Id |> box
+                             c.Date |> box
+                             c.Project |> box
+                             c.RepositoryName |> box
+                             c.BranchName |> box
+                             c.Author |> box
+                         |]
+                    ) |> Array.ofSeq
+                columnNames, values, (releaseCommits |> Seq.length)
             | ds -> failwithf "Datsaet (%s) not known" ds
         
         {

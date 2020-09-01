@@ -762,7 +762,14 @@ module DataStructures =
                         let res = 
                             frame
                             |> Frame.sliceCols cols
-                        assert(res.ColumnCount = (cols |> Seq.length))
+                        //There might be fewer columns, than in the slice command but no more
+
+                        assert(if res.ColumnCount <= (cols |> Seq.length) then 
+                                    true 
+                               else 
+                                   printfn "%A <> %A" (System.String.Join(",",res.ColumnKeys)) (System.String.Join(",",cols))
+                                   false
+                        )
                         res
                 | AST.IndexBy exp ->
                     fun frame ->

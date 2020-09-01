@@ -15,7 +15,7 @@ module Metrics =
                   SprintNumber.Expression
                   //Use the state column as column key
                   //State.Expression 
-                  (!> "SimpleState")
+                  (ColumnName.State.Expression)
                   //count the number of workitemids
                   Count WorkItemId.Expression
         ]  |> createTransformation "stateCountBySprint"
@@ -30,7 +30,7 @@ module Metrics =
                   //Use the sprint number as the row key
                   SprintNumber.Expression
                   //Use the state column as column key
-                  (!> "SimpleState")
+                  (ColumnName.State.Expression)
                   //count the number of workitemids
                   Count WorkItemId.Expression
         ]  |> createTransformation "bugCountbySprint"
@@ -44,7 +44,7 @@ module Metrics =
                   SprintNumber.Expression
                   //Use the state column as column key
                   //State.Expression 
-                  (!> "SimpleState")
+                  (ColumnName.State.Expression)
                   //count the number of workitemids
                   Sum (!> "StoryPoints")
         ]   |> createTransformation "storyPointSumBySprint"    

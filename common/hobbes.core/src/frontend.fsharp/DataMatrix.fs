@@ -482,8 +482,7 @@ module DataStructures =
                                 k 
                                 |> AST.KeyType.UnWrap
                                 |> string 
-                                |> System.Double.TryParse
-                                |> snd
+                                |> System.Double.Parse
                             | _ -> failwith "Can only extrapolated based on numeric values"
                         ) |> Array.ofSeq
 
@@ -491,9 +490,7 @@ module DataStructures =
                             let ols = OrdinaryLeastSquares()
                             let length = keys.Length + count - 1
                             assert(length > keys.Length)
-                            let x = [|
-                                for i in 0..length -> float i
-                            |]
+                            let x = Array.init length float
                             assert(if x.Length < keys.Length then 
                                       true 
                                    else
@@ -773,7 +770,6 @@ module DataStructures =
                             frame
                             |> Frame.sliceCols cols
                         //There might be fewer columns, than in the slice command but no more
-
                         assert(if res.ColumnCount <= (cols |> Seq.length) then 
                                     true 
                                else 

@@ -8,15 +8,34 @@ open Hobbes.Web.Cache
 
 let synchronize (source : GitSource.Root) token =
     try
+        let time = System.DateTime.Now.ToString()
         let columnNames,values,rowCount = 
             match source.Dataset.ToLower() with
             "commits" ->
                 let commits = commits source.Account source.Project
-                let columnNames = [|"id";"Time";"Project";"Repository Name";"Branch Name";"Author"|]
+                let columnNames = [|"id"; "TimeStamp"; "Time";"Project";"Repository Name";"Branch Name";"Author"|]
                 let values =
                     commits
                     |> Seq.distinct
                     |> Seq.map(fun c ->
+                         [|
+                             c.Id |> box
+                             time |> box
+                             c.Date |> box
+                             c.Project |> box
+                             c.RepositoryName |> box
+                             c.BranchName |> box
+                             c.Author |> box
+                         |]
+                    ) |> Array.ofSeq
+                columnNames, values, (commits |> Seq.length)
+            | "releases" ->
+                let releaseCommits =  releaseBranches source.Account source.Project
+                let columnNames = [|"id";"Time";"Project";"Repository Name";"Branch Name";"Author"|]
+                let values =
+                    releaseCommits
+                    |> Seq.map(fun b ->
+                         let c = b.Commit
                          [|
                              c.Id |> box
                              c.Date |> box
@@ -26,7 +45,7 @@ let synchronize (source : GitSource.Root) token =
                              c.Author |> box
                          |]
                     ) |> Array.ofSeq
-                columnNames, values, (commits |> Seq.length)
+                columnNames, values, (releaseCommits |> Seq.length)
             | ds -> failwithf "Datsaet (%s) not known" ds
         
         {

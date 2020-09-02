@@ -45,12 +45,20 @@ module State =
       General.foldBySprint
       Metrics.stateCountBySprint
     ] |> add "stateCountBySprint"
-    
+    let simpleBurnUp = 
+      [
+        General.foldBySprint
+        Metrics.stateCountBySprint
+        Metrics.simpleBurnUp
+      ]  
+    simpleBurnUp |> add "simpleBurnUp"
+
     [
-      General.foldBySprint
-      Metrics.stateCountBySprint
-      Metrics.simpleBurnUp
-    ]  |> add "simpleBurnUp"
+      Project.Flowerpot
+      Project.Delta
+    ] |> List.iter(fun p -> 
+        (uniformingTransformations.[p])@simpleBurnUp |> Types.addConfiguration Test (Source.AzureDevOps p) "simpleBurnUp" 
+    )
 
     [
       General.foldBySprint

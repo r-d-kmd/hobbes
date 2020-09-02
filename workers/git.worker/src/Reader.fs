@@ -159,17 +159,26 @@ module Reader =
         Project : string
     }
 
-    let private commitsForBranch account project (repo : Repository) (branchName : string) =
+    let private commitsForBranch account project (repo : Repository) (branchName : string) latestBranch =
         logf "Reading commits for %s - %s" repo.Name branchName
         let shortBranchName = 
             branchName.Substring("refs/heads/".Length)
             
         let body = 
-            sprintf """{
+            match latestBranch with
+              None -> ""
+              | Some b ->
+                sprintf """{
+                  "compareVersion": {
+                    "versionType": "branch",
+                    "version": "%s"
+                  }
+                }""" b
+            |> sprintf """{
               "itemVersion": {
                 "versionType": "branch",
                 "version": "%s"
-              }
+              }%s
             }""" shortBranchName |> Some
         let statusCode,commits = 
             repo.Id |> sprintf "/%s/commitsbatch" |> request account project body None
@@ -226,7 +235,7 @@ module Reader =
                 if System.String.IsNullOrWhiteSpace repo.DefaultBranch then 
                     Seq.empty
                 else
-                    commitsForBranch account project repo repo.DefaultBranch
+                    commitsForBranch account project repo repo.DefaultBranch None
             )
         commits
            
@@ -242,7 +251,7 @@ module Reader =
        |> Seq.collect(fun repo -> 
             let statusCode,branches = 
                 repo.Id |> sprintf "/%s/refs" |> get account project filter
-            
+            let mutable latestBranch = None
             if statusCode = 200 then 
                 let parsedBranches = 
                    branches |> BranchList.Parse
@@ -254,7 +263,8 @@ module Reader =
                         let name = branch.Name.Substring("ref/heads/".Length)
                         let commits = 
                             try
-                                let commits = commitsForBranch account project repo branch.Name
+                                let commits = commitsForBranch account project repo branch.Name latestBranch
+                                latestBranch <- Some branch.Name
                                 logf "Read %d commits from %s - %s" (commits |> Seq.length) repo.Name name
                                 commits
                             with e -> 

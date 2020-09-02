@@ -1,3 +1,3 @@
 only 1=1
-group by FTEs -> mean
+group by FTEs -> sum
 index rows by "FTEs"

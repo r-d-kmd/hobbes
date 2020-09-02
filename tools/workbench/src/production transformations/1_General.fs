@@ -29,7 +29,7 @@ module General =
                 | State -> "State"
              member x.Expression 
                 with get() = 
-                    Identifier (x.ToString())
+                    Identifier (x.Name)
              //same as tostring but easier to use in expressions
              member x.Name
                 with get() = 

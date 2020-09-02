@@ -16,7 +16,7 @@ module Playground =
 
     let foldByMonth = 
         [
-            only (!> "SimpleState" == "Done")
+            only (State.Expression == "Done")
             create (column "Year") (date format ChangedDate.Name AST.Year)
             create (column "Month") (date format ChangedDate.Name AST.Month) 
             //group by the tuple sprint name and workitem id

@@ -54,7 +54,7 @@ module Program =
                  | Some host -> host
                  | _ -> 
                     match env "HOST" null with
-                    null -> failwith "Host must be provided"
+                    null -> "http://gateway-svc"
                     | host -> host
             let pat = 
                  match arguments.TryGetResult Pat with

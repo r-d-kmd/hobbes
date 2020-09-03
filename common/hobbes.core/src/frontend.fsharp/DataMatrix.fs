@@ -488,19 +488,14 @@ module DataStructures =
 
                     let predictedXValues = 
                             let ols = OrdinaryLeastSquares()
-                            let x = [|
-                                for i in 0..keys.Length + count - 1 -> float i
-                            |]
-                            let regression = 
-                                ols.Learn(x |> Array.take keys.Length, keys)    
+                            let x = Array.init (keys.Length + count) float
+                            let regression =  ols.Learn(x |> Array.take keys.Length, keys)
+
                             regression.Transform(x)
-                            |> Array.mapi(fun i y ->
-                                if i < keys.Length then
-                                    keys.[i]
-                                else
-                                    y
-                            )
-                        
+                            |> Array.skip keys.Length
+                            |> Array.append keys
+
+                    assert(predictedXValues.Length = (keys.Length + count))
 
                     let createKey (v: float) =
                         v |> 
@@ -516,15 +511,14 @@ module DataStructures =
                     match regressionType with
                     AST.Linear ->
                         let ols = OrdinaryLeastSquares()
-                        let traingKnownData = 
+                        let trainingKnownData = 
                             let index = knownValues.Length - keys.Length
                             knownValues |> Array.splitAt index |> snd
-                        let regression = ols.Learn(keys, traingKnownData)    
-                        let result = 
-                            regression.Transform(predictedXValues)
-                            |> Array.zip predictedXValues
-                            |> Array.map(fun (x,y) -> createKey x => (y :> Comp))
-                        result |> series
+                        let regression = ols.Learn(keys, trainingKnownData)    
+                        regression.Transform(predictedXValues)
+                        |> Array.zip predictedXValues
+                        |> Array.map(fun (x,y) -> createKey x => (y :> Comp))
+                        |> series
 
             | AST.Regression(regressionType,inputTreeNodes,outputTreeNodes) ->
                 let inputExpr = 
@@ -776,7 +770,7 @@ module DataStructures =
                         let columnName = 
                             match exp with
                             AST.ColumnName name ->
-                                //Lets use the optimized verstion if it's a column and not a calcultaed expression
+                                //Lets use the optimized version if it's a column and not a calculated expression
                                 name
                             | _ -> 
                                 let indexByColumnName ="__index__"
@@ -1036,6 +1030,7 @@ module DataStructures =
             frame
             |> DataMatrix
             :> IDataMatrix
+        
         let fromTable table =
                 let frame = 
                     table

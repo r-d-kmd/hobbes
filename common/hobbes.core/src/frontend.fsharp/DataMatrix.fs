@@ -438,6 +438,7 @@ module DataStructures =
                     |> Seq.map(fun (i,(k,_)) -> k => (i :> Comp) )
                     |> series
             | AST.Extrapolate(regressionType, knownValues, count, length) -> 
+                assert(count > 0)
                 let fitSeries : Series<AST.KeyType,_> -> Series<AST.KeyType,_> =
                     match length with
                     None -> id
@@ -481,16 +482,22 @@ module DataStructures =
                                 k 
                                 |> AST.KeyType.UnWrap
                                 |> string 
-                                |> System.Double.TryParse
-                                |> snd
+                                |> System.Double.Parse
                             | _ -> failwith "Can only extrapolated based on numeric values"
                         ) |> Array.ofSeq
 
                     let predictedXValues = 
                             let ols = OrdinaryLeastSquares()
-                            let x = [|
-                                for i in 0..keys.Length + count - 1 -> float i
-                            |]
+                            let length = keys.Length + count - 1
+                            assert(length > keys.Length)
+                            let x = Array.init length float
+                            assert(if x.Length < keys.Length then 
+                                      true 
+                                   else
+                                       printfn "Oridinals (%s) can't be shorter than keys (%s)" (System.String.Join(",", x)) (System.String.Join(",", keys))
+                                       false
+                            )
+                            
                             let regression = 
                                 ols.Learn(x |> Array.take keys.Length, keys)    
                             regression.Transform(x)
@@ -763,7 +770,6 @@ module DataStructures =
                             frame
                             |> Frame.sliceCols cols
                         //There might be fewer columns, than in the slice command but no more
-
                         assert(if res.ColumnCount <= (cols |> Seq.length) then 
                                     true 
                                else 

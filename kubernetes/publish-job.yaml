@@ -10,9 +10,7 @@ spec:
           imagePullPolicy: Never
           image: kmdrd/workbench
           env:
-          - name: PAT
-            value: "Rno8hcqr9rXXs"
-          - name: HOST
-            value: "http://gateway-svc"
+            - name: PAT
+              value: "Rno8hcqr9rXXs"
         restartPolicy: Never
   backoffLimit: 4

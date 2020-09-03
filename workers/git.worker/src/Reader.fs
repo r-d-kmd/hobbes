@@ -170,8 +170,8 @@ module Reader =
                 sprintf """, 
                 "compareVersion" : {
                     "versionType": "branch",
-                "version": "%s"
-              }""" branch
+                    "version": "%s"
+                  }""" branch
         let body = 
             sprintf """{
               "itemVersion": {
@@ -260,14 +260,14 @@ module Reader =
                 let parsedBranches = 
                    branches |> BranchList.Parse
                 let mutable prevCommits = Set.empty
-                let mutable lastBranch = None
+                let mutable lastestBranch = None
                 parsedBranches.Value
                 |> Seq.collect (fun branch -> 
                     let name = branch.Name.Substring("ref/heads/".Length)
                     let commits = 
                         try
                             let branchCommits = 
-                                commitsForBranch account project repo branch.Name lastBranch
+                                commitsForBranch account project repo branch.Name lastestBranch
                             let commits =
                                 branchCommits
                                 |> Seq.filter(fun commit ->
@@ -282,7 +282,7 @@ module Reader =
                         with e -> 
                             excf e "Error when reading commits for branch. %s" branch.Name
                             Seq.empty
-                    lastBranch <- Some branch.Name
+                    lastestBranch <- Some branch.Name
                     if commits |> Seq.isEmpty then 
                         Seq.empty
                     else

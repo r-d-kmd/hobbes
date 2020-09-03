@@ -10,7 +10,14 @@ open Hobbes.FSharp
 
 
 module Frontend =
+    let inline debug() = 
+        if not System.Diagnostics.Debugger.IsAttached then
+            printfn "Attach debugger"
+            while not System.Diagnostics.Debugger.IsAttached do
+                System.Threading.Thread.Sleep 100
 
+        System.Diagnostics.Debugger.Break()
+        
     let parse stmt =
         let stmt = stmt |> string
         Parser.parse [stmt]
@@ -184,7 +191,8 @@ module Frontend =
 
     [<Fact>]
     let onlyReturnSomeDateTime() =
-    
+        debug()
+
         let step = 3
         let date = System.DateTime(2019,8,25).AddDays(float step)
         let statement = only (!> "Sprint Start Date" == date) |> parse
@@ -195,7 +203,7 @@ module Frontend =
             |> asTable
             |> getColumn "Sprint Start Date"
         let expected = seq{yield (AST.KeyType.Create (step - 1), date :> IComparable)}        
-
+        
         compareColumns expected actual
     
     [<Fact>]
@@ -423,3 +431,41 @@ module Frontend =
                        ) 
 
         assertTablesEqual expected actual    
+    
+    [<Fact>]
+    let ``null rows causing index out of bounds``() = 
+        let data = 
+            [
+                "Sprint Number", [null;null;null]
+                "Done", [null;null;null]         
+                "Burn up",[box 0.0; box 0.0; box 0.0]       
+                "Velocity",[null;null;null]
+            ] 
+
+        let columnLength = 
+            data 
+            |> List.head 
+            |> snd 
+            |> List.length
+
+        let matrix = 
+            data
+            |> Seq.map(fun (c,v) ->
+                c,v |> Seq.mapi(fun i v -> AST.KeyType.Create i, v)
+            ) |> DataMatrix.fromTable
+        let length = 10
+        let expression = Extrapolate(Linear,(ColumnName "Burn up"),length,Some 10)
+        let newColumnName = "Burn up Prediction"
+        let result = 
+            CreateColumn(expression,newColumnName)
+            |> Column
+            |> matrix.Transform
+        let columns = 
+            (result :?> DataMatrix).AsTable()
+            |> Seq.map(fun (c,v) -> 
+                c,v |> Seq.map(fun (_,v) -> v) |> Array.ofSeq
+            ) |> Map.ofSeq
+        let predictedValues = columns.["Burn up Prediction"] |> Seq.map(fun v -> v :?> float) |> List.ofSeq
+        let expectedValues = [for _ in 1.. (length + columnLength) -> 0.0]
+        Assert.Equal(result.RowCount,13)
+        Assert.Equal<List<float>>(predictedValues, expectedValues)

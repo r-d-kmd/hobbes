@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <IncludeCore>False</IncludeCore>
-    <IncludeHelpers>True</IncludeHelpers>
+    <IncludeHelpers>False</IncludeHelpers>
     <IncludeWeb>False</IncludeWeb>
     <IncludeMessaging>False</IncludeMessaging>
   </PropertyGroup>

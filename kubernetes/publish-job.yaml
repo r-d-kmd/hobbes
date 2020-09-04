@@ -12,5 +12,7 @@ spec:
           env:
             - name: PAT
               value: "Rno8hcqr9rXXs"
+            - name: COLLECTION
+              value: production
         restartPolicy: Never
   backoffLimit: 4

@@ -365,12 +365,25 @@ create Targets.PullDb (fun _ ->
     docker (Pull "kmdrd/couchdb") "."
 )
 
+Targets.Dependencies 
+    ?=> Targets.Core 
+    ==> Targets.Sdk
+
+Targets.Dependencies
+    ?=> Targets.Web
+    ==> Targets.Sdk
+
+Targets.Dependencies
+    ?=> Targets.Messaging
+    ==> Targets.Sdk
+    
+Targets.Dependencies
+    ?=> Targets.Helpers
+    ==> Targets.Sdk
+
 Targets.GenericSdk
     ?=> Targets.CleanCommon
     ==> Targets.Dependencies
-    ==> Targets.Helpers
-    ==> Targets.Web
-    ==> Targets.Messaging
     ==> Targets.Sdk
     ?=> Targets.PreApps
     ==> Targets.Build

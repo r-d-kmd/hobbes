@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <IncludeCore>False</IncludeCore>
+    <IncludeHelpers>False</IncludeHelpers>
+    <IncludeWeb>False</IncludeWeb>
     <IncludeMessaging>False</IncludeMessaging>
   </PropertyGroup>
   <PropertyGroup>

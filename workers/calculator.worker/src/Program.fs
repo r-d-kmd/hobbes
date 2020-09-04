@@ -85,9 +85,12 @@ let transformData (message : CalculationMessage) =
             let dependsOn = message.DependsOn
             let transformation = message.Transformation
             let key = dependsOn + ":" + transformation.Name
+            Log.errorf "Transformations: %A" (System.String.Join(",", message.Transformation.Statements))
             dependsOn
             |> fromCache
-            |> transform message.Transformation.Statements
+            |> transform (message.Transformation.Statements
+                          |> Seq.map(fun s -> s.Replace("\\","\\\\"))
+                         )
             |> insertMatrix key [dependsOn] 
         with e ->
             Log.exc e "Transformation failed"

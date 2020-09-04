@@ -304,10 +304,12 @@ module DataStructures =
                             matches 
                             |> List.ofSeq 
                             |> List.collect(fun m -> m.Groups |> List.ofSeq)
-                    groups
-                    |> Seq.map(fun g -> g.Value)
-                    |> Array.ofSeq
-                    |> formatter
+                    let res = 
+                        groups
+                        |> Seq.map(fun g -> g.Value)
+                        |> Array.ofSeq
+                        |> formatter
+                    res
                 )
             | AST.DateTime d ->
                Series.mapValues(fun _ -> d :> Comp)           
@@ -443,10 +445,12 @@ module DataStructures =
                     None -> id
                     | Some length ->
                         fun s -> 
-                            s
-                            |> Series.rev
-                            |> Series.take (min length (s |> Series.countKeys))
-                            |> Series.rev
+                            let tail = 
+                                s
+                                |> Series.skip (max 0 (s.KeyCount - length))
+                            tail
+                            |> Series.take (min length (tail.KeyCount))
+                            
 
                 let knownValuesExpr = 
                     (knownValues
@@ -457,7 +461,9 @@ module DataStructures =
                     let trainingData = 
                         inputSeries
                         |> fitSeries
-                        
+                    
+                    assert(trainingData |> Series.countKeys > 0)
+
                     let transformExpressionsToVariants expr = 
                         trainingData
                         |> expr
@@ -489,6 +495,7 @@ module DataStructures =
                     let predictedXValues = 
                             let ols = OrdinaryLeastSquares()
                             let x = Array.init (keys.Length + count) float
+                            
                             let regression =  ols.Learn(x |> Array.take keys.Length, keys)
 
                             regression.Transform(x)

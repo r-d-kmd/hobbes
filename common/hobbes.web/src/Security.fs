@@ -3,10 +3,12 @@ namespace Hobbes.Web
 open System.Security.Cryptography
 open System.IO
 open Hobbes.Web.Database
-open Hobbes.Helpers
 
 module Security =
-
+    let inline private env name defaultValue = 
+            match System.Environment.GetEnvironmentVariable name with
+            null -> defaultValue
+            | v -> v.Trim()
     [<Literal>]
     let private Basic = "basic "
     let private encoding = System.Text.Encoding.UTF8

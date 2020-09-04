@@ -4,10 +4,14 @@ open RabbitMQ.Client
 open RabbitMQ.Client.Events
 open System
 open System.Text
-open Hobbes.Helpers.Environment
+
 open Newtonsoft.Json
 
 module Broker = 
+    let inline private env name defaultValue = 
+        match System.Environment.GetEnvironmentVariable name with
+        null -> defaultValue
+        | v -> v.Trim()
     let private serialize<'a> (o:'a) = JsonConvert.SerializeObject(o)
     let private deserialize<'a> json = JsonConvert.DeserializeObject<'a>(json)
     type CacheMessage = 
@@ -143,7 +147,7 @@ module Broker =
             properties.Persistent <- true
 
             channel.BasicPublish("",queueName, false,properties,body)
-            printfn "Message published to %s:%d/%s" host port queueName
+            printfn "Message (%s) published to %s:%d/%s" message host port queueName
         with e -> 
            eprintfn "Failed to publish to the queue. Message: %s" e.Message
 
@@ -175,6 +179,7 @@ module Broker =
                     let msg = 
                         msgText
                         |> deserialize<Message<'a>>
+                    printfn "msgtext: %s" msgText
                     match msg with
                     | Message msg ->
                         queue.Enqueue msg

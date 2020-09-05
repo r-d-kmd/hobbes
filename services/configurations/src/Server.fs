@@ -43,6 +43,7 @@ type DependingTransformationList = FSharp.Data.JsonProvider<"""[
 ]""">
 let mutable time = System.DateTime.MinValue
 let mutable dependencies : Map<string,seq<Transformation>> = Map.empty
+let mutable readyForFormat : bool = false
 let mutable merges : Map<string,Config.Root> = Map.empty
 let mutable joins : Map<string,Config.Root> = Map.empty
 let dependingTransformations (cacheKey : string) =
@@ -54,6 +55,7 @@ let dependingTransformations (cacheKey : string) =
 #endif    
     if isCacheStale then
         time <- System.DateTime.Now
+        readyForFormat <- false
         dependencies <-
             configurations.List()
             |> Seq.collect(fun configuration ->
@@ -68,6 +70,13 @@ let dependingTransformations (cacheKey : string) =
                     ) |> Array.filter Option.isSome
                     |> Array.map Option.get
                     |> Array.toList
+
+                readyForFormat <- 
+                    let expected = configuration.Transformations
+                                   |> String.concat ":"
+                    let actual = (cacheKey.IndexOf ":") + 1
+                                 |> cacheKey.Substring
+                    expected = actual || readyForFormat
 
                 match transformations with
                 [] -> []
@@ -105,9 +114,9 @@ let dependingTransformations (cacheKey : string) =
     match dependencies |> Map.tryFind cacheKey with
     None -> 
         Log.debugf "No dependencies found for key (%s)" cacheKey
-        Seq.empty
+        Seq.empty, readyForFormat
     | Some dependencies ->
-        dependencies
+        dependencies, readyForFormat
 let handleMerges cacheKey = 
     match merges |> Map.tryFind cacheKey with
     None -> ()
@@ -139,15 +148,15 @@ let getDependingTransformations (cacheMsg : CacheMessage) =
          match cacheMsg with
          CacheMessage.Empty -> Success
          | Updated cacheKey -> 
-            let depending = dependingTransformations cacheKey
-            if Seq.isEmpty depending then
+            let depending, format = dependingTransformations cacheKey
+            if format then
                 {
                    Format = Json
                    CacheKey = cacheKey
                 }
                 |> Format
                 |> Broker.Calculation
-            else
+            if Seq.isEmpty depending |> not then
                 depending
                 |> Seq.iter(fun transformation ->    
                     {

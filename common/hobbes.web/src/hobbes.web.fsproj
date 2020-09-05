@@ -17,6 +17,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Environment.fs" />
     <Compile Include="Http.fs" />
     <Compile Include="Database.fs" />
     <Compile Include="Log.fs" />

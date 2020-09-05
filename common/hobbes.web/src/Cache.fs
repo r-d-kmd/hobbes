@@ -1,11 +1,11 @@
 namespace Hobbes.Web
 
-open Hobbes.Helpers.Environment
-open Hobbes.Helpers
 open Newtonsoft.Json
 open Thoth.Json.Net
+open Hobbes.Helpers.Environment
 
 module Cache =
+     
     type DataResult = 
         {
             [<JsonProperty("columnNames")>]
@@ -139,7 +139,7 @@ module Cache =
                        ]
              override x.ToString() = 
                 x.JsonValue
-                |> Encode.toString 0     
+                |> Encode.toString 0
 
     type DynamicRecord = FSharp.Data.JsonProvider<"""{
         "_id" : "khjkjhkjh",

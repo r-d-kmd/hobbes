@@ -277,6 +277,30 @@ function startJob(){
 
 function sync(){
     startJob sync
+    local RETRIES=0
+    local RESULT_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/uniformcache/_all_docs | grep martin:Json | wc -l)
+    local CONFIG_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs | grep "key" | wc -l)
+    printf "\n"
+    while [ $RESULT_COUNT -ne $CONFIG_COUNT ]
+    do
+       local COUNT=50.0
+       local HASHES=$((RESULT_COUNT*COUNT/CONFIG_COUNT))
+       for i in {0..49}
+       do
+        if [ $i -lt $HASHES ]; then printf "#"; else printf "-"; fi
+       done
+       local PERCENT=$((HASHES*100/COUNT))
+       printf "${PERCENT}%%\r"
+       sleep 10
+       RESULT_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/uniformcache/_all_docs | grep martin:Json | wc -l)
+       RETRIES=$((RETRIES+1))
+       if [ $RETRIES -gt 29 ]; then 
+           printf "${Red}Timed out while sync'ing${NoColor}\n"
+           exit 1
+       fi
+    done
+    printf "\n"
+    
 }
 
 function publish(){

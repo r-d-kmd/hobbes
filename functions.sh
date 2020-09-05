@@ -299,7 +299,7 @@ function sync(){
            exit 1
        fi
     done
-    printf "\n"
+    printf "Synced $RESULT_COUNT out of $CONFIG_COUNT\n"
     
 }
 

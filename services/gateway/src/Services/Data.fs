@@ -2,7 +2,7 @@ namespace Hobbes.Gateway.Services
 
 open Hobbes.Web.Log
 open Hobbes.Web.Routing
-open Hobbes.Helpers
+open Hobbes.Helpers.Environment
 open Hobbes.Web
 
 [<RouteArea "/data">]

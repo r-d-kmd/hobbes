@@ -85,7 +85,7 @@ let transformData (message : CalculationMessage) =
             let dependsOn = message.DependsOn
             let transformation = message.Transformation
             let key = dependsOn + ":" + transformation.Name
-            Log.errorf "Transformations: %A" (System.String.Join(",", message.Transformation.Statements))
+            
             dependsOn
             |> fromCache
             |> transform (message.Transformation.Statements

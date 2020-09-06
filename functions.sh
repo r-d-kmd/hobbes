@@ -278,6 +278,7 @@ function startJob(){
 function sync(){
     startJob sync
     local RETRIES=0
+    kubectl port-forward service/db-svc 5984:5984 &
     local RESULT_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/uniformcache/_all_docs | grep martin:Json | wc -l)
     local CONFIG_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs | grep "key" | wc -l)
     printf "\n"

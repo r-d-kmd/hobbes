@@ -86,6 +86,7 @@ steps:
     else
         printf "${Green} Syncing for $CONFIG_COUNT configurations${NoColor}\n"
         sync
+        printf "${Yellow}Compledted $RESULT_COUNT configurations${NoColor}\n"
     fi
     printf "${Cyan}Syncing${NoColor}\n"
     NAME="pod/$(getName sync)"

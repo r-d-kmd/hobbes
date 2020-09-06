@@ -84,12 +84,14 @@ steps:
         kubectl logs service/gateway-svc        
         printf "${Red}Can't sync${NoColor}\n"
     else
+        printf "${Green} Syncing for $CONFIG_COUNT configurations${NoColor}\n"
         sync
+        printf "${Yellow}Compledted $RESULT_COUNT configurations${NoColor}\n"
     fi
     printf "${Cyan}Syncing${NoColor}\n"
     NAME="pod/$(getName sync)"
     kubectl wait --for=condition=ready ${NAME} --timeout=30s >> /dev/null
-    kubectl logs ${NAME} -f &
+    kubectl logs job/sync -f &
     kubectl wait --for=condition=complete job.batch/sync --timeout=60s
   displayName: Setup tests
 

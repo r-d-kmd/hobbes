@@ -281,6 +281,13 @@ function sync(){
     kubectl port-forward service/db-svc 5984:5984 &
     local RESULT_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/uniformcache/_all_docs | grep martin:Json | wc -l)
     local CONFIG_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs | grep "key" | wc -l)
+    if [ CONFIG_COUNT -eq 0 ]
+    then
+        printf "${Red}Something went wrong with configs\n"
+        curl --silent http://admin:password@127.0.0.1:5984/uniformcache/_all_docs
+        curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs
+        printf "${NoColor}"
+    fi
     printf "\n"
     while [ $RESULT_COUNT -ne $CONFIG_COUNT ]
     do

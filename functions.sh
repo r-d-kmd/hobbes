@@ -278,7 +278,7 @@ function startJob(){
 function sync(){
     startJob sync
     local RETRIES=0
-    local RESULT_COUNT=0
+    RESULT_COUNT=0
     
     printf "\n"
     while [ $RESULT_COUNT -ne $CONFIG_COUNT ]

@@ -278,16 +278,8 @@ function startJob(){
 function sync(){
     startJob sync
     local RETRIES=0
-    kubectl port-forward service/db-svc 5984:5984 &
-    local RESULT_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/uniformcache/_all_docs | grep martin:Json | wc -l)
-    local CONFIG_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs | grep "key" | wc -l)
-    if [ CONFIG_COUNT -eq 0 ]
-    then
-        printf "${Red}Something went wrong with configs\n"
-        curl --silent http://admin:password@127.0.0.1:5984/uniformcache/_all_docs
-        curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs
-        printf "${NoColor}"
-    fi
+    local RESULT_COUNT=0
+    
     printf "\n"
     while [ $RESULT_COUNT -ne $CONFIG_COUNT ]
     do
@@ -302,13 +294,14 @@ function sync(){
        sleep 10
        RESULT_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/uniformcache/_all_docs | grep martin:Json | wc -l)
        RETRIES=$((RETRIES+1))
-       if [ $RETRIES -gt 29 ]; then 
-           printf "${Red}Timed out while sync'ing${NoColor}\n"
-           exit 1
-       fi
     done
-    printf "Synced $RESULT_COUNT out of $CONFIG_COUNT\n"
-    
+    if [ $RESULT_COUNT -eq $CONFIG_COUNT ]
+    then
+        printf "${Green}Synced all $RESULT_COUNT out of $CONFIG_COUNT\n${NoCOlor}"
+    else
+        printf "${Red}Timed out while sync'ing\n"
+        printf "Synced $RESULT_COUNT out of $CONFIG_COUNT\n${NoCOlor}"
+    fi
 }
 
 function publish(){

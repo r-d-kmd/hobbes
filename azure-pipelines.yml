@@ -78,6 +78,8 @@ steps:
         printf "${Red}Something went wrong with configs\n"
         curl http://admin:password@127.0.0.1:5984/uniformcache/_all_docs
         curl http://admin:password@127.0.0.1:5984/configurations/_all_docs
+        logs publish
+        logs gateway
         printf "Can't sync${NoColor}\n"
     else
         sync

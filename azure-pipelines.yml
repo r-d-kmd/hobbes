@@ -74,6 +74,7 @@ steps:
     kubectl port-forward service/db-svc 5984:5984 &
     CONFIG_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs | grep "key" | wc -l)
     echo $CONFIG_COUNT
+    curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs | echo
     if [ $CONFIG_COUNT -eq 0 ]
     then
         printf "${Red}Something went wrong with configs\n"

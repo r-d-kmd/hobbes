@@ -279,7 +279,10 @@ function sync(){
     startJob sync
     local RETRIES=0
     RESULT_COUNT=0
-    
+    if [ -z "$CONFIG_COUNT" ]
+    then
+        CONFIG_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs | grep "key" | wc -l)
+    fi
     printf "\n"
     while [ $RESULT_COUNT -ne $CONFIG_COUNT ]
     do
@@ -292,7 +295,7 @@ function sync(){
        local PERCENT=$((HASHES*100/COUNT))
        printf "${PERCENT}%%\r"
        sleep 10
-       RESULT_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/uniformcache/_all_docs | grep martin:Json | wc -l)
+       RESULT_COUNT=$(curl --silent "http://admin:password@127.0.0.1:5984/uniformcache/_all_docs" | grep :Json | wc -l)
        RETRIES=$((RETRIES+1))
     done
     if [ $RESULT_COUNT -eq $CONFIG_COUNT ]

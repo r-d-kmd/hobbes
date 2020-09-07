@@ -82,7 +82,7 @@ steps:
         kubectl logs job/publish
         printfn "${Cyan}Gateway"
         kubectl logs service/gateway-svc        
-        printf "${Red}Can't sync${NoColor}\n"
+        printf "${Cyan}Can't sync${NoColor}\n"
     else
         printf "${Green} Syncing for $CONFIG_COUNT configurations${NoColor}\n"
         sync

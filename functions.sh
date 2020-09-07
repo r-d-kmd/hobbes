@@ -283,7 +283,7 @@ function sync(){
     printf "\n"
     while [ $RESULT_COUNT -ne $CONFIG_COUNT ]
     do
-       local COUNT=50.0
+       local COUNT=50
        local HASHES=$((RESULT_COUNT*COUNT/CONFIG_COUNT))
        for i in {0..49}
        do

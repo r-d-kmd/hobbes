@@ -26,7 +26,6 @@ type Targets =
    | CleanCommon
    | Dependencies
    | Core
-   | Helpers
    | Web
    | Messaging
    | Sdk
@@ -48,7 +47,6 @@ let targetName =
         Targets.GenericSdk -> "GenericSdk"
        | Targets.CleanCommon -> "CleanCommon"
        | Targets.Dependencies -> "Dependencies"
-       | Targets.Helpers -> "Helpers"
        | Targets.Core -> "Core"
        | Targets.Web -> "Web"
        | Targets.Messaging -> "Messaging"
@@ -186,7 +184,6 @@ let commonPath target =
 let commons = 
     [
         Targets.Web
-        Targets.Helpers
         Targets.Core
         Targets.Messaging
     ]
@@ -241,7 +238,6 @@ let buildApp (name : string) (appType : string) workingDir =
         |> List.iter(fun t -> 
             docker (Tag(tag,t)) workingDir
         )
-        File.Delete(sprintf "%s/Dockerfile" workingDir)
 
     let push _ = 
         let tags =
@@ -375,10 +371,6 @@ Targets.Dependencies
 
 Targets.Dependencies
     ?=> Targets.Messaging
-    ==> Targets.Sdk
-    
-Targets.Dependencies
-    ?=> Targets.Helpers
     ==> Targets.Sdk
 
 Targets.GenericSdk

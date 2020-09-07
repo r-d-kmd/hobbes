@@ -60,6 +60,7 @@ steps:
 - script: |
     source functions.sh
     start
+    kubectl port-forward service/db-svc 5984:5984 &
     sleep 3
     printf "${Purple}Publishing transformations and configurations\n"
     publish
@@ -71,7 +72,6 @@ steps:
     kubectl wait --for=condition=complete job.batch/publish --timeout=60s
     printf "${Purple}Published${NoColor}\n" 
     printf "${Cyan}Sync\n"
-    kubectl port-forward service/db-svc 5984:5984 &
     CONFIG_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs | grep "key" | wc -l)
     echo $CONFIG_COUNT
     curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs | echo

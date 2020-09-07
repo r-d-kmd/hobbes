@@ -12,6 +12,14 @@ module Broker =
         match System.Environment.GetEnvironmentVariable name with
         null -> defaultValue
         | v -> v.Trim()
+    let inline hash (input : string) =
+        use md5Hash = System.Security.Cryptography.MD5.Create()
+        let data = md5Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input))
+        let sBuilder = System.Text.StringBuilder()
+        (data
+        |> Seq.fold(fun (sBuilder : System.Text.StringBuilder) d ->
+                sBuilder.Append(d.ToString("x2"))
+        ) sBuilder).ToString()  
     let private serialize<'a> (o:'a) = JsonConvert.SerializeObject(o)
     let private deserialize<'a> json = JsonConvert.DeserializeObject<'a>(json)
     type CacheMessage = 
@@ -63,6 +71,11 @@ module Broker =
         {
             CacheKey : string
             Format : Format
+        }
+
+    type SyncronizationTicketMessage =
+        {
+            SourceHash : string
         }
 
     type CalculationMessage = 
@@ -229,6 +242,10 @@ module Broker =
             publish "calculation" (Message msg)
         static member Calculation (handler : CalculationMessage -> _) = 
             watch "calculation" handler
+        static member SyncronizationTicket(msg : SyncronizationTicketMessage) = 
+            publish "syncronization" (Message msg)
+        static member SyncronizationTicket (handler : SyncronizationTicketMessage -> _) = 
+            watch "syncronization" handler
         static member Generic queueName msg =
             assert(queueName |> String.IsNullOrWhiteSpace |> not)
             printfn "Publishing (%s) as generic on (%s)" msg queueName

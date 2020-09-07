@@ -157,7 +157,7 @@ module Cache =
         let whitespaceToRemove = [|' ';'\t';'\n';'\r'|]
         source.Split(whitespaceToRemove,System.StringSplitOptions.RemoveEmptyEntries)
         |> System.String.Concat
-        |> hash
+        |> Hobbes.Helpers.Environment.hash
     
     let inline createCacheRecord key dependsOn (data : DataResult)  =
         let timeStamp = System.DateTime.Now

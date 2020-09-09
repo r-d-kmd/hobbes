@@ -1,69 +1,37 @@
-apiVersion: skaffold/v2beta4
+apiVersion: skaffold/v2beta6
 kind: Config
 metadata:
   name: hobbes
 build:
-  tagPolicy:
-    sha256: {}
   artifacts:
     - image: azuredevops
-      context: workers/azuredevops.worker/
-      docker:
-        dockerfile: ../../docker/Dockerfile.worker
-        buildArgs:
-          VERSION : Debug
-          WORKER_NAME : azuredevops
-        cacheFrom: 
-          - kmdrd/app
+      context: workers/azuredevops.worker
     - image: calculator
-      context: workers/calculator.worker/
-      docker:
-        dockerfile: ../../docker/Dockerfile.worker
-        buildArgs:
-          VERSION : Debug
-          WORKER_NAME : calculator
-    - image: git
-      context: workers/git.worker/
-      docker:
-        dockerfile: ../../docker/Dockerfile.worker
-        buildArgs:
-          VERSION : Debug
-          WORKER_NAME : git
-    - image: syncronization
-      context: workers/syncronization.worker/
-      docker:
-        dockerfile: ../../docker/Dockerfile.worker
-        buildArgs:
-          VERSION : Debug
-          WORKER_NAME : syncronization
+      context: workers/calculator.worker
     - image: configurations
       context: services/configurations
-      docker:
-        dockerfile: ../../docker/Dockerfile.service
-        buildArgs:
-          VERSION : Debug
-          WORKER_NAME : configurations
     - image: gateway
       context: services/gateway
-      docker:
-        dockerfile: ../../docker/Dockerfile.service
-        buildArgs:
-          VERSION : Debug
-          WORKER_NAME : gateway
+    - image: git
+      context: workers/git.worker
+    - image: syncronization
+      context: workers/syncronization.worker
     - image: uniformdata
       context: services/uniformdata
-      docker:
-        dockerfile: ../../docker/Dockerfile.service
-        buildArgs:
-          VERSION : Debug
-          WORKER_NAME : uniformdata
-    - image: kmdrd/couchdb
-      context: docker
-      docker:
-        dockerfile: Dockerfile.couchdb
+  tagPolicy:
+    sha256: {}
 deploy:
   kustomize:
     paths:
       - kubernetes
-      - kubernetes/prod_patches
-      - kubernetes/production
+profiles:
+  - name: prod_patches
+    deploy:
+      kustomize:
+        paths:
+          - kubernetes/prod_patches
+  - name: production
+    deploy:
+      kustomize:
+        paths:
+          - kubernetes/production

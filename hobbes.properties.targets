@@ -2,15 +2,14 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <DebugType>Portable</DebugType>
     <IncludeCore Condition="$(IncludeCore) == ''">True</IncludeCore>
-    <IncludeHelpers Condition="$(IncludeHelpers) == ''">True</IncludeHelpers>
     <IncludeWeb Condition="$(IncludeWeb) == ''">True</IncludeWeb>
     <IncludeMessaging Condition="$(IncludeMessaging) == ''">True</IncludeMessaging>
     <IncludeWorkbench Condition="$(IncludeWorkbench) == ''">False</IncludeWorkbench>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Condition="$(IncludeCore) == 'True'"       Include="$(TargetsPath)common\hobbes.core\src\hobbes.core.fsproj" />
-    <ProjectReference Condition="$(IncludeHelpers) == 'True'"    Include="$(TargetsPath)common\hobbes.helpers\src\hobbes.helpers.fsproj" />
     <ProjectReference Condition="$(IncludeWeb) == 'True'"        Include="$(TargetsPath)common\hobbes.web\src\hobbes.web.fsproj" />
     <ProjectReference Condition="$(IncludeMessaging) == 'True'"  Include="$(TargetsPath)common\hobbes.messaging\src\hobbes.messaging.fsproj" />
     <ProjectReference Condition="$(IncludeWorkbench) == 'True'"      Include="$(TargetsPath)tools\workbench\src\hobbes.workbench.fsproj" />

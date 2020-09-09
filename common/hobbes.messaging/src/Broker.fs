@@ -4,10 +4,22 @@ open RabbitMQ.Client
 open RabbitMQ.Client.Events
 open System
 open System.Text
-open Hobbes.Helpers.Environment
+
 open Newtonsoft.Json
 
 module Broker = 
+    let inline private env name defaultValue = 
+        match System.Environment.GetEnvironmentVariable name with
+        null -> defaultValue
+        | v -> v.Trim()
+    let inline hash (input : string) =
+        use md5Hash = System.Security.Cryptography.MD5.Create()
+        let data = md5Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input))
+        let sBuilder = System.Text.StringBuilder()
+        (data
+        |> Seq.fold(fun (sBuilder : System.Text.StringBuilder) d ->
+                sBuilder.Append(d.ToString("x2"))
+        ) sBuilder).ToString()  
     let private serialize<'a> (o:'a) = JsonConvert.SerializeObject(o)
     let private deserialize<'a> json = JsonConvert.DeserializeObject<'a>(json)
     type CacheMessage = 
@@ -61,6 +73,11 @@ module Broker =
             Format : Format
         }
 
+    type SyncronizationTicketMessage =
+        {
+            SourceHash : string
+        }
+
     type CalculationMessage = 
         Transform of TransformMessage
         | Merge of MergeMessage
@@ -91,17 +108,15 @@ module Broker =
     
     let private init() =
         let factory = ConnectionFactory()
-        try
-            factory.HostName <- host
-            factory.Port <- port
-            factory.UserName <- user
-            factory.Password <- password
-            let connection = factory.CreateConnection()
-            let channel = connection.CreateModel()
-            channel
-        with e ->
-            eprintfn "Failed to initialize queue. %s:%d. Message: %s" host port e.Message
-            reraise()
+        
+        factory.HostName <- host
+        factory.Port <- port
+        factory.UserName <- user
+        factory.Password <- password
+        let connection = factory.CreateConnection()
+        let channel = connection.CreateModel()
+        channel
+    
 
     let private declare (channel : IModel) queueName =  
         channel.QueueDeclare(queueName,
@@ -112,9 +127,10 @@ module Broker =
             
     let awaitQueue() =
         let rec inner tries = 
+            let waitms = 5000
             let retry() =  
                 async{
-                    do! Async.Sleep 5000
+                    do! Async.Sleep waitms
                     return! inner (tries + 1)
                 }
             async{
@@ -122,7 +138,7 @@ module Broker =
                     let channel = init()
                     declare channel "dead_letter"
                 with e -> 
-                    if tries % 1000 = 0 then
+                    if tries % (60000 / waitms) = 0 then //write the message once every minute
                         printfn "Queue not yet ready. Message: %s" e.Message
                     do! retry()
             } 
@@ -143,7 +159,7 @@ module Broker =
             properties.Persistent <- true
 
             channel.BasicPublish("",queueName, false,properties,body)
-            printfn "Message published to %s:%d/%s" host port queueName
+           
         with e -> 
            eprintfn "Failed to publish to the queue. Message: %s" e.Message
 
@@ -175,6 +191,7 @@ module Broker =
                     let msg = 
                         msgText
                         |> deserialize<Message<'a>>
+                    
                     match msg with
                     | Message msg ->
                         queue.Enqueue msg
@@ -224,6 +241,10 @@ module Broker =
             publish "calculation" (Message msg)
         static member Calculation (handler : CalculationMessage -> _) = 
             watch "calculation" handler
+        static member SyncronizationTicket(msg : SyncronizationTicketMessage) = 
+            publish "syncronization" (Message msg)
+        static member SyncronizationTicket (handler : SyncronizationTicketMessage -> _) = 
+            watch "syncronization" handler
         static member Generic queueName msg =
             assert(queueName |> String.IsNullOrWhiteSpace |> not)
             printfn "Publishing (%s) as generic on (%s)" msg queueName

@@ -269,8 +269,8 @@ function startJob(){
     kubectl delete job.batch/$1 &> /dev/null
     
     kubectl apply -f $1-job.yaml
-    logs $1
-    printf "${Cyan}$1 started\n"
+    
+    printf "${Cyan}$1 started\n${NoColor}"
     
     cd $CURRENT_DIR
 }
@@ -316,6 +316,7 @@ function publish(){
 
     printf "${Green}Publisher built${NoColor}\n"
     startJob publish
+    logs job/publish -f &
     cd $CURRENT_DIR
 }
 

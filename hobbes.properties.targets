@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <DebugType>Portable</DebugType>
     <IncludeCore Condition="$(IncludeCore) == ''">True</IncludeCore>
     <IncludeWeb Condition="$(IncludeWeb) == ''">True</IncludeWeb>
     <IncludeMessaging Condition="$(IncludeMessaging) == ''">True</IncludeMessaging>

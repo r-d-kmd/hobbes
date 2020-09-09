@@ -1,0 +1,7 @@
+FROM kmdrd/app AS build
+
+# final stage/image
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
+
+WORKDIR /app
+ONBUILD COPY --from=build /app .

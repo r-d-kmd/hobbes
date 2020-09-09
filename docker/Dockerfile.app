@@ -13,4 +13,4 @@ COPY .lib/ /.lib/
 COPY hobbes.properties.targets ./
 
 ONBUILD COPY ./src/ .
-ONBUILD RUN dotnet publish -c ${BUILD_CONFIGURATION} -o /app
+ONBUILD RUN dotnet publish -c Debug -o /app

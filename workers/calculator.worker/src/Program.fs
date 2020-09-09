@@ -22,7 +22,7 @@ let insertOrUpdate doc =
             Log.log "Data inserted"
             
 let transformData (message : CalculationMessage) =
-    let insertMatrix key dependsOn data = 
+    let insertMatrix key dependsOn transformationName data = 
         
         let dataJson = 
             data
@@ -44,7 +44,7 @@ let transformData (message : CalculationMessage) =
                  |> Cache.createCacheRecord key dependsOn).ToString()
                 
                 |> insertOrUpdate 
-                Log.logf "Transformation of [%A] using [%A] resulting in [%s] completed" dependsOn message key
+                Log.logf "Transformation of [%A] using [%s] resulting in [%s] completed" dependsOn transformationName key
                 Success |> Some
             with e ->
                 Log.excf e "Couldn't insert data (%A)." message
@@ -60,7 +60,7 @@ let transformData (message : CalculationMessage) =
             message.Datasets
             |> Array.map fromCache 
             |> merge
-            |> insertMatrix cacheKey dependsOn
+            |> insertMatrix cacheKey dependsOn (System.String.Join("+",message.Datasets))
         with e ->
             Log.excf e "Merge failed"
             Excep e
@@ -76,7 +76,7 @@ let transformData (message : CalculationMessage) =
                 |> fromCache
             
             join left right message.Field 
-            |> insertMatrix cacheKey dependsOn
+            |> insertMatrix cacheKey dependsOn (message.Left + "->" + message.Right )
         with e ->
            Log.exc e "Join failed"
            Excep e
@@ -91,7 +91,7 @@ let transformData (message : CalculationMessage) =
             |> transform (message.Transformation.Statements
                           |> Seq.map(fun s -> s.Replace("\\","\\\\"))
                          )
-            |> insertMatrix key [dependsOn] 
+            |> insertMatrix key [dependsOn] message.Transformation.Name
         with e ->
             Log.exc e "Transformation failed"
             Excep e

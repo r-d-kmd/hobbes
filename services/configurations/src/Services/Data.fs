@@ -78,7 +78,7 @@ module Data =
     let storeConfiguration (configuration : string) =
         let conf = Config.Parse configuration
         let hasValue d = System.String.IsNullOrWhiteSpace d |> not
-        Log.logf "Configuration %s." configuration
+        
         assert(hasValue conf.Id)
         assert(hasValue conf.Source.Provider)
         assert(conf.Transformations.Length > 0)
@@ -95,7 +95,7 @@ module Data =
             with e ->
                Log.excf e "Failed to deserialize %s" transformation
                reraise()
-        eprintfn "Transformation: %s. #Statements: %d" transformation (trans.Statements.Length)
+
         assert(System.String.IsNullOrWhiteSpace(trans.Name) |> not)
         assert(trans.Statements |> List.isEmpty |> not)
 

@@ -4,7 +4,7 @@ open Hobbes.Web.Database
 open Hobbes.Web.Log
 open Hobbes.Web.Routing
 open Hobbes.Web.Security
-open Hobbes.Helpers
+open Hobbes.Helpers.Environment
 
 [<RouteArea ("/", false)>]
 module Root =

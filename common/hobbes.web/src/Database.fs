@@ -195,7 +195,8 @@ namespace Hobbes.Web
                     let resp = request name
                       
                     match resp.StatusCode with
-                    200 ->
+                    200 
+                    | 201 ->
                        printfn "Database created"
                        false
                     | 412 -> 

@@ -212,7 +212,7 @@ module Reader =
     let sync azureToken (source : AzureDevOpsSource.Root) = 
         
         let rec _read hashes url : int * string = 
-            Log.logf "syncing with %s@%s" azureToken url
+            Log.logf "syncing with %s" url
             let resp = 
                 url
                 |> request azureToken azureToken "GET" None                 

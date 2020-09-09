@@ -26,10 +26,10 @@ type Targets =
    | CleanCommon
    | Dependencies
    | Core
-   | Helpers
    | Web
    | Messaging
    | Sdk
+   | SdkImage
    | PreApps
    | Build
    | All
@@ -41,6 +41,7 @@ type Targets =
    | PullDb
    | PullRuntime
    | TestNoBuild
+   | Runtime
    | Generic of string
 
 let targetName = 
@@ -48,10 +49,10 @@ let targetName =
         Targets.GenericSdk -> "GenericSdk"
        | Targets.CleanCommon -> "CleanCommon"
        | Targets.Dependencies -> "Dependencies"
-       | Targets.Helpers -> "Helpers"
        | Targets.Core -> "Core"
        | Targets.Web -> "Web"
        | Targets.Messaging -> "Messaging"
+       | Targets.SdkImage -> "SdkImage"
        | Targets.Sdk -> "Sdk"
        | Targets.PreApps -> "PreApps"
        | Targets.Build -> "Build"
@@ -65,6 +66,7 @@ let targetName =
        | Targets.PullRuntime  -> "PullRuntime"
        | Targets.TestNoBuild -> "TestNoBuild"
        | Targets.PullApp -> "PullApp"
+       | Targets.Runtime -> "Runtime"
 
 
 
@@ -186,7 +188,6 @@ let commonPath target =
 let commons = 
     [
         Targets.Web
-        Targets.Helpers
         Targets.Core
         Targets.Messaging
     ]
@@ -223,7 +224,7 @@ let buildApp (name : string) (appType : string) workingDir =
     let tag = name.ToLower()
     
     let build _ = 
-        let buildArgs = [(sprintf "%s_NAME" (appType.ToUpper()), name)]
+        
         let tags =
            let t = createDockerTag dockerOrg tag
            [
@@ -231,17 +232,26 @@ let buildApp (name : string) (appType : string) workingDir =
                t + ":" + "latest"
            ]
 
-        let file = sprintf "%s/Dockerfile.%s" dockerDir.FullName appType
-        let dest = sprintf "%s/Dockerfile" workingDir
-        System.IO.File.Copy(file, dest,true)
-        printfn "%s copied tp %s" file dest
+        let file = 
+            sprintf "%s/Dockerfile.service" dockerDir.FullName
+            |> System.IO.File.ReadAllText
+        let content = 
+            match appType.ToLower() with
+            "service" -> 
+                file.Replace("${SERVICE_NAME}",name)
+            | "worker" ->
+                file.Replace("${SERVICE_NAME}",name + ".worker")
+            | _ -> failwithf "Don't know app type %s" appType
 
-        docker (Build(None,tag,buildArgs)) workingDir
+        let dest = sprintf "%s/Dockerfile" workingDir
+        System.IO.File.WriteAllText(dest,content)
+        printfn "Dockerfile (%s) written to %s" content dest
+
+        docker (Build(None,tag,[])) workingDir
         tags
         |> List.iter(fun t -> 
             docker (Tag(tag,t)) workingDir
         )
-        File.Delete(sprintf "%s/Dockerfile" workingDir)
 
     let push _ = 
         let tags =
@@ -266,6 +276,7 @@ create Targets.Complete ignore
 create Targets.PushApps ignore
 create Targets.All ignore
 create Targets.Build ignore
+create Targets.Sdk ignore
 
 create Targets.PreApps ignore
 create Targets.BuildForTest ignore
@@ -331,26 +342,34 @@ create Targets.GenericSdk (fun _ ->
         build "Dockerfile.sdk-debug"
 )
 
-create Targets.Sdk (fun _ ->   
+create Targets.Runtime (fun _ ->
+    let isDebug = buildConfiguration = DotNet.BuildConfiguration.Debug
+    let runtimeFileVersion = 
+        if isDebug then
+           "Dockerfile.runtime-debug"
+        else
+           "Dockerfile.runtime" 
+    let tag = sprintf "%s/runtime"dockerOrg
+    docker (Build(Some(runtimeFileVersion),tag,[])) dockerDir.Name
+    if not isDebug then
+        docker (Push tag) dockerDir.Name
+)
+
+create Targets.SdkImage (fun _ ->   
     let tag = sprintf "%s/app" dockerOrg
     let file = Some("Dockerfile.app")
     let build configuration = 
         docker (Build(file,tag,["CONFIGURATION",configuration])) dockerDir.Name
     build "Release"
     docker (Push tag) dockerDir.Name
-
-    //build the debug version for local use if required
-    if buildConfiguration = DotNet.BuildConfiguration.Debug then
-        build "Debug"
 )
 
 create Targets.TestNoBuild (fun _ ->
     run "setupTest" "." "" |> ignore
 )
 
-
 create Targets.PullRuntime (fun _ ->
-    docker (Pull "mcr.microsoft.com/dotnet/core/aspnet:3.1") "."
+    docker (Pull "kmdrd/runtime") "."
 )
 
 create Targets.PullSdk (fun _ ->
@@ -365,19 +384,34 @@ create Targets.PullDb (fun _ ->
     docker (Pull "kmdrd/couchdb") "."
 )
 
+Targets.Dependencies 
+    ?=> Targets.Core 
+    ==> Targets.SdkImage
+
+Targets.Dependencies
+    ?=> Targets.Web
+    ==> Targets.SdkImage
+
+Targets.Dependencies
+    ?=> Targets.Messaging
+    ==> Targets.SdkImage
+
+Targets.SdkImage
+    ?=> Targets.Runtime
+    ==> Targets.Sdk
+
 Targets.GenericSdk
     ?=> Targets.CleanCommon
     ==> Targets.Dependencies
-    ==> Targets.Helpers
-    ==> Targets.Web
-    ==> Targets.Messaging
     ==> Targets.Sdk
     ?=> Targets.PreApps
     ==> Targets.Build
     ==> Targets.All
 
-Targets.Sdk 
-    ==> Targets.All
+Targets.SdkImage
+    ==> Targets.Sdk
+Targets.Runtime
+    ==> Targets.Sdk
 
 Targets.PullSdk ?=> Targets.PreApps
 Targets.PullRuntime ?=> Targets.PreApps
@@ -388,13 +422,20 @@ Targets.PullDb ==> Targets.BuildForTest
 Targets.PullSdk ==> Targets.BuildForTest
 Targets.PullRuntime ==> Targets.BuildForTest
 
+
+Targets.PullRuntime ?=> Targets.PreApps
+Targets.PullApp ?=> Targets.PreApps
+
+Targets.Runtime ==> Targets.PushApps
 Targets.PullApp ==> Targets.PushApps 
 Targets.PullDb ==> Targets.PushApps
 Targets.PullSdk ==> Targets.PushApps
 Targets.PullRuntime ==> Targets.PushApps
 
+
 Targets.GenericSdk
-    ?=> Targets.All
+    ==> Targets.Complete
+Targets.All
     ==> Targets.Complete
 
 Targets.Build

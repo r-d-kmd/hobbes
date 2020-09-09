@@ -57,7 +57,7 @@ module State =
       Project.Flowerpot
       Project.Delta
     ] |> List.iter(fun p -> 
-        (uniformingTransformations.[p])@simpleBurnUp |> Types.addConfiguration Test (Source.AzureDevOps p) "simpleBurnUp" 
+        (uniformingTransformations.[p])@simpleBurnUp |> addConfiguration Test (Source.AzureDevOps p) "simpleBurnUp" 
     )
 
     [

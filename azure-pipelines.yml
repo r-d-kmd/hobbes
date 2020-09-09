@@ -64,18 +64,13 @@ steps:
     sleep 3
     printf "${Purple}Publishing transformations and configurations\n"
     publish
-    logs gateway
-    NAME="pod/$(getName publish)"
-    kubectl wait --for=condition=ready ${NAME} --timeout=30s >> /dev/null
     printf "${Purple}Publishing\n"
-    logs job/publish -f &
     kubectl wait --for=condition=complete job/publish --timeout=60s
     printf "${Purple}Published${NoColor}\n" 
     printf "${Cyan}Sync\n"
     CONFIG_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs | grep "key" | wc -l)
     printf "${Cyan}Syncing${NoColor}\n"
     sync
-    logs job/sync -f &
     kubectl wait --for=condition=complete job/sync --timeout=60s
     printfn "${Green}Syncronization completed.\n"
     printfn "${Blue}Transformation in progress.\n${NoColor}"

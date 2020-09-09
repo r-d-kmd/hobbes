@@ -1,0 +1,37 @@
+apiVersion: skaffold/v2beta6
+kind: Config
+metadata:
+  name: hobbes
+build:
+  artifacts:
+    - image: azuredevops
+      context: workers/azuredevops.worker
+    - image: calculator
+      context: workers/calculator.worker
+    - image: configurations
+      context: services/configurations
+    - image: gateway
+      context: services/gateway
+    - image: git
+      context: workers/git.worker
+    - image: syncronization
+      context: workers/syncronization.worker
+    - image: uniformdata
+      context: services/uniformdata
+  tagPolicy:
+    sha256: {}
+deploy:
+  kustomize:
+    paths:
+      - kubernetes
+profiles:
+  - name: prod_patches
+    deploy:
+      kustomize:
+        paths:
+          - kubernetes/prod_patches
+  - name: production
+    deploy:
+      kustomize:
+        paths:
+          - kubernetes/production

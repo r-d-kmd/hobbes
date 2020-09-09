@@ -108,17 +108,15 @@ module Broker =
     
     let private init() =
         let factory = ConnectionFactory()
-        try
-            factory.HostName <- host
-            factory.Port <- port
-            factory.UserName <- user
-            factory.Password <- password
-            let connection = factory.CreateConnection()
-            let channel = connection.CreateModel()
-            channel
-        with e ->
-            eprintfn "Failed to initialize queue. %s:%d. Message: %s" host port e.Message
-            reraise()
+        
+        factory.HostName <- host
+        factory.Port <- port
+        factory.UserName <- user
+        factory.Password <- password
+        let connection = factory.CreateConnection()
+        let channel = connection.CreateModel()
+        channel
+    
 
     let private declare (channel : IModel) queueName =  
         channel.QueueDeclare(queueName,
@@ -129,9 +127,10 @@ module Broker =
             
     let awaitQueue() =
         let rec inner tries = 
+            let waitms = 5000
             let retry() =  
                 async{
-                    do! Async.Sleep 5000
+                    do! Async.Sleep waitms
                     return! inner (tries + 1)
                 }
             async{
@@ -139,7 +138,7 @@ module Broker =
                     let channel = init()
                     declare channel "dead_letter"
                 with e -> 
-                    if tries % 1000 = 0 then
+                    if tries % (60000 / waitms) = 0 then //write the message once every minute
                         printfn "Queue not yet ready. Message: %s" e.Message
                     do! retry()
             } 
@@ -160,7 +159,7 @@ module Broker =
             properties.Persistent <- true
 
             channel.BasicPublish("",queueName, false,properties,body)
-            printfn "Message (%s) published to %s:%d/%s" message host port queueName
+           
         with e -> 
            eprintfn "Failed to publish to the queue. Message: %s" e.Message
 
@@ -192,7 +191,7 @@ module Broker =
                     let msg = 
                         msgText
                         |> deserialize<Message<'a>>
-                    printfn "msgtext: %s" msgText
+                    
                     match msg with
                     | Message msg ->
                         queue.Enqueue msg

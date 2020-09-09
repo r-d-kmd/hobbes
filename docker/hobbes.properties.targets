@@ -3,6 +3,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <CommonLibPath>/.lib/</CommonLibPath>
+    <DebugType>Portable</DebugType>
     <IncludeCore Condition="$(IncludeCore) == ''">True</IncludeCore>
     <IncludeWeb Condition="$(IncludeWeb) == ''">True</IncludeWeb>
     <IncludeMessaging Condition="$(IncludeMessaging) == ''">True</IncludeMessaging>

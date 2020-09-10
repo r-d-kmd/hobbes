@@ -15,13 +15,34 @@ module Broker =
     let inline hash (input : string) =
         use md5Hash = System.Security.Cryptography.MD5.Create()
         let data = md5Hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input))
-        let sBuilder = System.Text.StringBuilder()
+        let sBuilder = StringBuilder()
         (data
         |> Seq.fold(fun (sBuilder : System.Text.StringBuilder) d ->
                 sBuilder.Append(d.ToString("x2"))
         ) sBuilder).ToString()  
     let private serialize<'a> (o:'a) = JsonConvert.SerializeObject(o)
     let private deserialize<'a> json = JsonConvert.DeserializeObject<'a>(json)
+
+    [<RequireQualifiedAccess>]
+    type Queue = 
+        CacheQueue
+        | AzureDevOpsQueue
+        | GitQueue
+        | CalculationQueue
+        | DeadLetterQueue
+        | LogQueue
+        | GenericQueue of string
+        with member x.Name
+               with get() = 
+                    match x with
+                    CacheQueue -> "cache"
+                    | AzureDevOpsQueue -> "azuredevops"
+                    | GitQueue -> "git"
+                    | CalculationQueue -> "calculation"
+                    | DeadLetterQueue -> "deadletter"
+                    | LogQueue -> "log"
+                    | GenericQueue name -> name.ToLower()
+
     type CacheMessage = 
         Updated of string
         | Empty
@@ -32,7 +53,7 @@ module Broker =
 
     type DeadLetter =
         {
-            OriginalQueue : string
+            OriginalQueue : Queue
             OriginalMessage : string
             ExceptionMessage : string
             ExceptionStackTrace : string
@@ -43,6 +64,11 @@ module Broker =
             Name : string
             Statements : seq<string>
         }
+
+    type LogMessage = 
+        MessageCompletion of json:string
+        | MessageFailure of msg:string * json:string
+        | MessageException of msg:string * json:string
 
     type TransformMessage = 
         {
@@ -73,11 +99,6 @@ module Broker =
             Format : Format
         }
 
-    type SyncronizationTicketMessage =
-        {
-            SourceHash : string
-        }
-
     type CalculationMessage = 
         Transform of TransformMessage
         | Merge of MergeMessage
@@ -86,6 +107,9 @@ module Broker =
 
     type Message<'a> = 
         | Message of 'a
+
+   
+        
 
     let private user = 
         match env "RABBIT_USER" null with
@@ -118,8 +142,8 @@ module Broker =
         channel
     
 
-    let private declare (channel : IModel) queueName =  
-        channel.QueueDeclare(queueName,
+    let private declare (channel : IModel) (queue : Queue) =  
+        channel.QueueDeclare(queue.Name,
                                  true,
                                  false,
                                  false,
@@ -136,7 +160,7 @@ module Broker =
             async{
                 try
                     let channel = init()
-                    declare channel "dead_letter"
+                    declare channel Queue.DeadLetterQueue
                 with e -> 
                     if tries % (60000 / waitms) = 0 then //write the message once every minute
                         printfn "Queue not yet ready. Message: %s" e.Message
@@ -149,16 +173,16 @@ module Broker =
         | Failure of string
         | Excep of Exception
 
-    let private publishString queueName (message : string) =
+    let private publishString queue (message : string) =
         try
             let channel = init()
-            declare channel queueName
+            declare channel queue
             
             let body = ReadOnlyMemory<byte>(Text.Encoding.UTF8.GetBytes(message))
             let properties = channel.CreateBasicProperties()
             properties.Persistent <- true
 
-            channel.BasicPublish("",queueName, false,properties,body)
+            channel.BasicPublish("",queue.Name, true,properties,body)
            
         with e -> 
            eprintfn "Failed to publish to the queue. Message: %s" e.Message
@@ -168,84 +192,105 @@ module Broker =
         |> serialize
         |> publishString queueName
     
-    let private watch<'a> queueName (handler : 'a -> MessageResult) =
+         
+    let private watch<'a> queue (handler : 'a -> MessageResult) shouldLog =
         let mutable keepAlive = true
-        let queue = Collections.Concurrent.ConcurrentQueue<'a>()
+        let msgQueue = Collections.Concurrent.ConcurrentQueue<uint64 * 'a>()
         try
             let channel = init()
-            declare channel queueName
+            declare channel queue
+            let logAndComplete f tag json = 
+                channel.BasicAck(tag,false)
+                if shouldLog then
+                    f json
+                    |> Message
+                    |> publish Queue.LogQueue
 
-            let consumer = EventingBasicConsumer(channel)
-            let deadLetter msgText (e : System.Exception) =
-                    {
-                        OriginalQueue = queueName
-                        OriginalMessage = msgText
+            let messageException tag (e:System.Exception) json = 
+                logAndComplete (fun l -> MessageException(e.Message, l)) tag json
+                {
+                        OriginalQueue = queue
+                        OriginalMessage = json
                         ExceptionMessage = e.Message
                         ExceptionStackTrace = e.StackTrace
-                    } |> Message |> publish "dead_letter" 
+                } |> Message 
+                |> publish Queue.DeadLetterQueue
+            
+            let fail tag msg = 
+                logAndComplete (fun l -> MessageFailure(msg, l)) tag
+            
+            let complete tag = 
+                logAndComplete MessageCompletion tag
+
+            let consumer = EventingBasicConsumer(channel)
 
             consumer.Received.AddHandler(EventHandler<BasicDeliverEventArgs>(fun _ (ea : BasicDeliverEventArgs) -> 
-                let msgText = 
-                    Encoding.UTF8.GetString(ea.Body.ToArray())
-                try        
-                    let msg = 
-                        msgText
-                        |> deserialize<Message<'a>>
-                    
-                    match msg with
-                    | Message msg ->
-                        queue.Enqueue msg
-                        channel.BasicAck(ea.DeliveryTag,false)
-                with e ->
-                    e |> deadLetter msgText
-                    eprintfn "Failed to parse message (%s) (Message will be ack'ed). Error: %s %s" msgText e.Message e.StackTrace 
-                
-            ))
+                    let msgText = 
+                        Encoding.UTF8.GetString(ea.Body.ToArray())
+                    try        
+                        let msg = 
+                            msgText
+                            |> deserialize<Message<'a>>
+                        
+                        match msg with
+                        | Message msg ->
+                            msgQueue.Enqueue (ea.DeliveryTag,msg)
+
+                    with e ->
+                        messageException ea.DeliveryTag e msgText
+                        eprintfn "Failed to parse message (%s) (Message will be ack'ed). Error: %s %s" msgText e.Message e.StackTrace 
+                )
+            )
             
-            channel.BasicConsume(queueName,false,consumer) |> ignore
-            printfn "Watching queue: %s" queueName
+            channel.BasicConsume(queue.Name,false,consumer) |> ignore
+            printfn "Watching queue: %s" queue.Name
             //to limit memory pressure, we're only going to handle one message at a time
             while keepAlive do
-                match queue.TryDequeue() with
-                true,msg ->
+                match msgQueue.TryDequeue() with
+                true,(tag,msg) ->
                     match msg |> handler with
                     Success ->
                         printfn "Message processed successfully"
+                        complete tag (serialize msg)
                     | Failure m ->
-                        printfn "Message could not be processed (%s). %s" m (serialize msg)
+                        let m = 
+                            sprintf "Message could not be processed (%s). %s" m (serialize msg)
+                        printfn "%s" m
+                        fail tag m (serialize msg)
                     | Excep e ->
-                        e |> deadLetter (serialize msg)
+                        messageException tag e (serialize msg)
                 | _ ->
                     System.Threading.Thread.Sleep(watchDogInterval / 2)
          with e ->
            eprintfn "Failed to subscribe to the queue. %s:%d. Message: %s" host port e.Message
            keepAlive <- false
-
+    
     type Broker() =
         do
             let channel = init()
-            declare channel "dead_letter"
+            declare channel Queue.DeadLetterQueue
+        static member MessageCount (queue : Queue) =
+            init().MessageCount queue.Name
         static member Cache(msg : CacheMessage) = 
-            publish "cache" (Message msg)
+            publish Queue.CacheQueue (Message msg)
         static member Cache (handler : CacheMessage -> _) = 
-            watch "cache" handler
+            watch Queue.CacheQueue handler true
         static member AzureDevOps(msg : SyncMessage) = 
-            publish "azuredevops" (Message msg)
+            publish Queue.AzureDevOpsQueue (Message msg)
         static member AzureDevOps (handler : SyncMessage -> _) = 
-            watch "azuredevops" handler
+            watch Queue.AzureDevOpsQueue handler true
         static member Git(msg : SyncMessage) = 
-            publish "git" (Message msg)
+            publish Queue.GitQueue (Message msg)
         static member Git (handler : SyncMessage -> _) = 
-            watch "git" handler
+            watch Queue.GitQueue handler true
         static member Calculation(msg : CalculationMessage) = 
-            publish "calculation" (Message msg)
+            publish Queue.CalculationQueue (Message msg)
         static member Calculation (handler : CalculationMessage -> _) = 
-            watch "calculation" handler
-        static member SyncronizationTicket(msg : SyncronizationTicketMessage) = 
-            publish "syncronization" (Message msg)
-        static member SyncronizationTicket (handler : SyncronizationTicketMessage -> _) = 
-            watch "syncronization" handler
+            watch Queue.CalculationQueue handler true 
+        static member Log(msg : LogMessage) = 
+            publish Queue.LogQueue (Message msg)
+        static member Log (handler : LogMessage -> _) = 
+            watch Queue.LogQueue handler false
         static member Generic queueName msg =
             assert(queueName |> String.IsNullOrWhiteSpace |> not)
-            printfn "Publishing (%s) as generic on (%s)" msg queueName
-            publishString queueName msg
+            publishString (Queue.GenericQueue queueName) msg

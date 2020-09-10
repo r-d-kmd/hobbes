@@ -59,8 +59,6 @@ let handleMessage message =
                 match Http.post (Http.UniformData Http.Update) (data.ToString()) with
                 Http.Success _ -> 
                    Log.logf "Data uploaded to cache"
-                   {SourceHash = key}
-                   |> Broker.SyncronizationTicket 
                    Success
                 | Http.Error(status,msg) -> 
                     sprintf "Upload of %s to uniform data failed. %d %s" (data.ToString()) status msg

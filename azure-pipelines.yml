@@ -72,28 +72,13 @@ steps:
     printf "${Cyan}Syncing${NoColor}\n"
     sync
     kubectl wait --for=condition=complete job/sync --timeout=60s
-    printf "${Green}Syncronization completed.\n"
-    printf "${Blue}Transformation in progress.\n${NoColor}"
+    printf "${Green}Syncronization and tranformations completed.\n${NoColor}"
   displayName: Setup tests
 
 - script: |
-    DB_PORT=35984
-    kubectl port-forward service/gateway-svc 30080:80 &
-    kubectl port-forward service/db-svc ${DB_PORT}:5984 &
-    sleep 120
-    source functions.sh
-    printf "${Cyan}**************Git********************\n"
-    logs service/git-svc
-    printf "${Cyan}**************Git********************\n"
-    printf "${Purple}**************Uniform********************\n"
-    logs service/uniformdata-svc
-    printf "${Purple}**************Uniform********************\n"
-    
-    DB_USER="admin:password"
-    DB_SERVER="http://127.0.0.1:${DB_PORT}"
-    curl -u "${DB_USER}" "${DB_SERVER}/configurations/_all_docs"
-    curl -u "${DB_USER}" "${DB_SERVER}/uniformcache/_all_docs"
     printf "${NoColor}"
+    kubectl port-forward service/gateway-svc 30080:80 &
+    
     newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY)
   displayName: Run postman tests
 

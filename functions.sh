@@ -82,19 +82,18 @@ else
 fi
 
 function shouldBuildSdk(){
+    BUILD_SDK=0
     for FILE in $(git diff HEAD HEAD~ --name-only)
     do
         if [[ $FILE =~ common/* ]]
         then
-           echo "Build sdk"
+           BUILD_SDK=1
         elif [[ $FILE == "docker/Dockerfile.sdk" ]]
         then 
-           echo "Build sdk"
+           BUILD_SDK=1
         elif [[ $FILE == "docker/Dockerfile.runtime" ]]
         then
-           echo "Build sdk"
-        else
-           echo "Don't build SDK"
+           BUILD_SDK=1   
         fi
     done 
 }

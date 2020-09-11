@@ -81,6 +81,24 @@ else
     services
 fi
 
+function shouldBuildSdk(){
+    for FILE in $(git diff HEAD HEAD~ --name-only)
+    do
+        if [[ $FILE =~ common/* ]]
+        then
+           echo "Build sdk"
+        elif [[ $FILE == "docker/Dockerfile.sdk" ]]
+        then 
+           echo "Build sdk"
+        elif [[ $FILE == "docker/Dockerfile.runtime" ]]
+        then
+           echo "Build sdk"
+        else
+           echo "Don't build SDK"
+        fi
+    done 
+}
+
 function getName(){
     echo "$(kubectl get pods | grep $1 | cut -d ' ' -f 1 )"
 }

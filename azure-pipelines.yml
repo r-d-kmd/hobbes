@@ -56,12 +56,8 @@ steps:
   
 - script: |
       source functions.sh 
-      shouldBuildSdk
-      if [[ $BUILD_SDK > 0 ]]
-      then
-          build sdk 8
-          docker push kmdrd/sdk
-      fi
+      build sdk 8
+      docker push kmdrd/sdk
       build BuildForTest 8
   displayName: Build the world
 

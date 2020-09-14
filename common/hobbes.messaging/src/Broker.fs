@@ -139,6 +139,8 @@ module Broker =
         factory.Password <- password
         let connection = factory.CreateConnection()
         let channel = connection.CreateModel()
+        //to limit memory pressure, we're only going to handle one message at a time in any consumer
+        channel.BasicQos(1u,0us,false)
         channel
     
 
@@ -195,19 +197,21 @@ module Broker =
          
     let private watch<'a> queue (handler : 'a -> MessageResult) shouldLog =
         let mutable keepAlive = true
-        let msgQueue = Collections.Concurrent.ConcurrentQueue<uint64 * 'a>()
+        let fails = Collections.Concurrent.ConcurrentDictionary<uint64,int>()
         try
             let channel = init()
             declare channel queue
-            let logAndComplete f tag json = 
-                channel.BasicAck(tag,false)
+            let logAndComplete ack f json = 
+                ack()
                 if shouldLog then
                     f json
                     |> Message
                     |> publish Queue.LogQueue
 
-            let messageException tag (e:System.Exception) json = 
-                logAndComplete (fun l -> MessageException(e.Message, l)) tag json
+            
+            let consumer = EventingBasicConsumer(channel)
+            let messageException tag (e : System.Exception) json = 
+                logAndComplete (fun () -> channel.BasicReject(tag,false)) (fun l -> MessageException(e.Message, l)) json
                 {
                         OriginalQueue = queue
                         OriginalMessage = json
@@ -215,14 +219,6 @@ module Broker =
                         ExceptionStackTrace = e.StackTrace
                 } |> Message 
                 |> publish Queue.DeadLetterQueue
-            
-            let fail tag msg = 
-                logAndComplete (fun l -> MessageFailure(msg, l)) tag
-            
-            let complete tag = 
-                logAndComplete MessageCompletion tag
-
-            let consumer = EventingBasicConsumer(channel)
 
             consumer.Received.AddHandler(EventHandler<BasicDeliverEventArgs>(fun _ (ea : BasicDeliverEventArgs) -> 
                     let msgText = 
@@ -231,11 +227,25 @@ module Broker =
                         let msg = 
                             msgText
                             |> deserialize<Message<'a>>
-                        
+
+                        let tag = ea.DeliveryTag
                         match msg with
                         | Message msg ->
-                            msgQueue.Enqueue (ea.DeliveryTag,msg)
-
+                            match msg |> handler with
+                            Success ->
+                                printfn "Message processed successfully"
+                                logAndComplete (fun () -> channel.BasicAck(tag,false)) MessageCompletion (serialize msg)
+                            | Failure m ->
+                                let json = (serialize msg)
+                                let m = 
+                                    sprintf "Message could not be processed (%s). %s" m json
+                                printfn "%s" m
+                                logAndComplete (fun () -> 
+                                       let failCount = fails.AddOrUpdate(tag,1,fun a b -> fails.[a] + b)
+                                       channel.BasicReject(tag,failCount < 5)) (fun l -> MessageFailure(json, l)
+                                    ) (serialize msg)
+                            | Excep e ->
+                                messageException ea.DeliveryTag e (serialize msg)
                     with e ->
                         messageException ea.DeliveryTag e msgText
                         eprintfn "Failed to parse message (%s) (Message will be ack'ed). Error: %s %s" msgText e.Message e.StackTrace 
@@ -244,23 +254,9 @@ module Broker =
             
             channel.BasicConsume(queue.Name,false,consumer) |> ignore
             printfn "Watching queue: %s" queue.Name
-            //to limit memory pressure, we're only going to handle one message at a time
+            
             while keepAlive do
-                match msgQueue.TryDequeue() with
-                true,(tag,msg) ->
-                    match msg |> handler with
-                    Success ->
-                        printfn "Message processed successfully"
-                        complete tag (serialize msg)
-                    | Failure m ->
-                        let m = 
-                            sprintf "Message could not be processed (%s). %s" m (serialize msg)
-                        printfn "%s" m
-                        fail tag m (serialize msg)
-                    | Excep e ->
-                        messageException tag e (serialize msg)
-                | _ ->
-                    System.Threading.Thread.Sleep(watchDogInterval / 2)
+                System.Threading.Thread.Sleep(watchDogInterval / 2)
          with e ->
            eprintfn "Failed to subscribe to the queue. %s:%d. Message: %s" host port e.Message
            keepAlive <- false

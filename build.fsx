@@ -99,7 +99,7 @@ let run command workingDir args =
     |> Proc.run
     |> ignore
 let buildConfigurationName = (Environment.environVarOrDefault "CONFIGURATION" "Debug").ToLower()
-let buildConfiguration = 
+let mutable buildConfiguration = 
     match buildConfigurationName with
     "release" -> 
         printfn "Using release configuration"
@@ -360,8 +360,11 @@ create Targets.SdkImage (fun _ ->
     let file = Some("Dockerfile.app")
     let build configuration = 
         docker (Build(file,tag,["CONFIGURATION",configuration])) dockerDir.Name
-    build "Release"
-    docker (Push tag) dockerDir.Name
+    match buildConfiguration with 
+    DotNet.BuildConfiguration.Release ->
+        build "Release"
+        docker (Push tag) dockerDir.Name
+    | _ -> build "Debug"
 )
 
 create Targets.TestNoBuild (fun _ ->

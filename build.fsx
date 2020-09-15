@@ -99,7 +99,7 @@ let run command workingDir args =
     |> Proc.run
     |> ignore
 let buildConfigurationName = (Environment.environVarOrDefault "CONFIGURATION" "Debug").ToLower()
-let mutable buildConfiguration = 
+let buildConfiguration = 
     match buildConfigurationName with
     "release" -> 
         printfn "Using release configuration"

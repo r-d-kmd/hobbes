@@ -62,7 +62,7 @@ module Metrics =
         ]  |> createTransformation "simpleBurnUp"
 
     let burnUpWithForecast =
-        [
+        [ (* there's a bug making the calculator crash when runnning this transformation
             //index the rows by sprint number
             index rows by SprintNumber.Expression
             sort by SprintNumber.Name
@@ -73,11 +73,11 @@ module Metrics =
                 "Burn up"
                 "Done"
                 "Velocity"
-                "Burn up Prediction"
+                "Burn up Prediction" 
             ]
             //required to populate the Sprint number column with the predicted values
             create SprintNumber.Name Keys
-        ]  |> createTransformation "burnUpWithForecast"
+         *) ]  |> createTransformation "burnUpWithForecast"
 
     let workItemDoneMovingMean =
         [

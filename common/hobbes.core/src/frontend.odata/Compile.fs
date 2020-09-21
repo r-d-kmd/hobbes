@@ -170,7 +170,6 @@ module Compile =
                   | AST.Reduction _
                   | AST.Cluster _ 
                   | AST.Column _ -> failwith "Not implemented"
-                  | AST.NoOp -> (fields,orderBy)
                )([],[])
             let filters =
                 ast
@@ -189,7 +188,6 @@ module Compile =
                     | AST.Reduction _
                     | AST.Cluster _ 
                     | AST.Column _ -> failwith "Not implemented"
-                    | AST.NoOp -> filters
                 ) []
           
             {

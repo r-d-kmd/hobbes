@@ -22,6 +22,7 @@
     <Compile Include="backend/Keywords.fs" />
     <Compile Include="backend/Expressions.fs" />
     <Compile Include="backend/Parser.fs" />
+    <Compile Include="backend/Analyzer.fs" />
     <Compile Include="frontend.fsharp/DataMatrix.fs" />
     <Compile Include="frontend.fsharp/Compile.fs" />
     <Compile Include="frontend.odata/Compile.fs" />

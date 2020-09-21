@@ -102,7 +102,6 @@ module AST =
         | FilterAndSorting of FilterAndSorting
         | Cluster of Cluster
         | Column of ColumnExpression
-        | NoOp
     [<CustomEquality>]
     [<CustomComparison>]
     type KeyType =

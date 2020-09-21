@@ -974,9 +974,6 @@ module DataStructures =
                     column c
                     |> DataMatrix
                     :> IDataMatrix
-                | AST.NoOp -> 
-                    this
-                    :> IDataMatrix
             member this.ToJson() =
                 let table = 
                     frame

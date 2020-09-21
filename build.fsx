@@ -336,10 +336,6 @@ create Targets.GenericSdk (fun _ ->
 
     build "Dockerfile.sdk"
     docker (Push tag) dockerDir.Name
-
-    //build the debug version for local use if required
-    if buildConfiguration = DotNet.BuildConfiguration.Debug then
-        build "Dockerfile.sdk-debug"
 )
 
 create Targets.Runtime (fun _ ->

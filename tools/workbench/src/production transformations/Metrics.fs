@@ -61,11 +61,12 @@ module Metrics =
             create (column "Velocity") ((moving Mean 3 (!> "Done")))
         ]  |> createTransformation "simpleBurnUp"
 
-    let burnUpWithForecast =
-        [ (* there's a bug making the calculator crash when runnning this transformation
+    (let burnUpWithForecast =
+        
             //index the rows by sprint number
             index rows by SprintNumber.Expression
             sort by SprintNumber.Name
+            (* [ there's a bug making the calculator crash when runnning this transformation
             //Create a column called Burn up Prediction thats a linear extrapolation ten rows ahead based on the last ten rows of the data set
             create (column "Burn up Prediction") ((linear extrapolationLimited) (!> "Burn up") 10 10)
             //drop the sprint number column (to recreate from the index with the new values from the extrapolation)
@@ -76,8 +77,8 @@ module Metrics =
                 "Burn up Prediction" 
             ]
             //required to populate the Sprint number column with the predicted values
-            create SprintNumber.Name Keys
-         *) ]  |> createTransformation "burnUpWithForecast"
+            create SprintNumber.Name Keys *)
+          ]  |> createTransformation "burnUpWithForecast"
 
     let workItemDoneMovingMean =
         [

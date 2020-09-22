@@ -61,8 +61,8 @@ module Metrics =
             create (column "Velocity") ((moving Mean 3 (!> "Done")))
         ]  |> createTransformation "simpleBurnUp"
 
-    (let burnUpWithForecast =
-        
+    let burnUpWithForecast =
+        [
             //index the rows by sprint number
             index rows by SprintNumber.Expression
             sort by SprintNumber.Name

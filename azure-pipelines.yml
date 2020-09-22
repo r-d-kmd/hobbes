@@ -88,4 +88,9 @@ steps:
                    cd kubernetes &&
                    ls &&
                    echo "$(ENV_FILE)" | kubectl apply -f - &&
-                   kubectl apply -f test.yaml'
+                   kubectl apply -f test.yaml &&
+                   kubectl port-forward service/db-svc 5984:5984 & &&
+                   curl -X DELETE -u admin:password 127.0.0.1:5984/configurations &&
+                   curl -X DELETE -u admin:password 127.0.0.1:5984/transformations &&
+                   curl -X DELETE -u admin:password 127.0.0.1:5984/uniformcache &&
+                   kubectl delete --all pods'

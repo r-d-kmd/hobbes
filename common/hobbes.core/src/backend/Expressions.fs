@@ -50,7 +50,7 @@ module Expressions =
             pipe3 (kwLinear .>>? kwExtrapolation >>.
                 expressionInBrackets)
                 (pint32)
-                ((spaces1 >>? pint32 >>= (Some >> preturn)) <|> (spaces >>. newlineReturn None))
+                ((spaces1 >>? pint32 >>= (Some >> preturn)) <|> (spaces >>= (fun _ -> None |> preturn)))
                 (fun outputs count trainingLength -> Extrapolate(Linear,outputs, count, trainingLength)) 
 
         let ``int`` = kwInt >>? expr >>= (AST.Int >> preturn) 

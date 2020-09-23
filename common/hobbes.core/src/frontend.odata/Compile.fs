@@ -39,7 +39,7 @@ module Compile =
         OrderBy : string list
     }
            
-    let parsedExpressions (expressions : seq<AST.Expression>) = 
+    let parsedExpressions (expressions : seq<AST.Statement>) = 
         expressions
 
     let rec compileComparisonExpression lhs rhs op  =
@@ -136,22 +136,23 @@ module Compile =
                 Eq(fieldName,"true")
         compiledExp
 
-    let expressions (lines : #seq<string>) = 
+    let expressions (statemens : string) = 
         let rec union list1 list2 =
             match list1, list2 with
             | [], other | other, [] -> other
             | x::xs, y::_ when x < y -> x :: (union xs list2)
             | _, y::ys -> y :: (union list1 ys)
 
-        match lines with
-        l when l |> Seq.isEmpty  -> 
+        match statemens.Trim() with
+        "" -> 
             {
                 Fields = []
                 Filters = []
                 OrderBy = []
             }
         | lines ->
-            let ast = Parser.parse lines
+            let ast = StatementParser.parse statemens
+            
             let fields,orderBy = 
                ast 
                |> Seq.fold(fun (fields,orderBy) a ->

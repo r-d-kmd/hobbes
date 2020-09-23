@@ -6,7 +6,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../hobbes.core/src/hobbes.core.fsproj" />
+    <ProjectReference Include="../src/hobbes.core.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AST.fs" />

@@ -4,7 +4,7 @@ module Analyzer =
     
     type TransformationInfo = 
       {
-          Statement : AST.Expression
+          Statement : AST.Statement
           InputColumns : string list 
           OutputColumns : string list
       }

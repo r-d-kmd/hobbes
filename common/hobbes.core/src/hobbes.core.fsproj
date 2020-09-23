@@ -21,7 +21,8 @@
     <Compile Include="backend/Primitives.fs" />
     <Compile Include="backend/Keywords.fs" />
     <Compile Include="backend/Expressions.fs" />
-    <Compile Include="backend/Parser.fs" />
+    <Compile Include="backend/StatementParser.fs" />
+    <Compile Include="backend/BlockParser.fs" />
     <Compile Include="backend/Analyzer.fs" />
     <Compile Include="frontend.fsharp/DataMatrix.fs" />
     <Compile Include="frontend.fsharp/Compile.fs" />

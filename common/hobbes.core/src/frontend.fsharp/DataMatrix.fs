@@ -188,7 +188,7 @@ module DataStructures =
           .Replace("\"","\\\"") 
         + "\""
     type IDataMatrix = 
-        abstract Transform : AST.Expression -> IDataMatrix
+        abstract Transform : AST.Statement -> IDataMatrix
         abstract Combine : IDataMatrix -> IDataMatrix
         abstract Join : string -> IDataMatrix -> IDataMatrix
         abstract ToJson : unit -> string

@@ -4,7 +4,7 @@ namespace Hobbes.Parsing
 module Primitives = 
     open FParsec
     type Parser<'a> = Parser<'a,unit> 
-    
+    let spaces = many (anyOf " \t\r")
     let private identifier : Parser<_> = identifier (IdentifierOptions())
   
     let stringThenWhiteSpace s = pstring s >>. spaces
@@ -45,7 +45,7 @@ module Primitives =
 
     //someName || "some quoted string"
     let columnName = stringLiteral <|> identifier 
-    //col1, "col2" , "column three"
+    //col1 "col2" "column three"
     let columnNameList = many1 (columnName .>> spaces) 
         // We want to support decimal or hexadecimal numbers with an optional minus
         // sign. Integers may have an 'L' suffix to indicate that the number should

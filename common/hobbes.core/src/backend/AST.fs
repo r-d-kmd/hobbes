@@ -92,16 +92,22 @@ module AST =
        | SortBy of columnName : string
        | Only of condition: BooleanExpression
 
-    type ColumnExpression = 
+    type ColumnStatements = 
         CreateColumn of ComputationExpression * string
         | RenameColumn of string * string
         | Pivot of rowkey: ComputationExpression * columnkey: ComputationExpression * value : ComputationExpression * Reduction
 
-    type Expression = 
+    type Statement = 
         Reduction of Reduction
         | FilterAndSorting of FilterAndSorting
         | Cluster of Cluster
-        | Column of ColumnExpression
+        | Column of ColumnStatements
+
+    type Block = 
+        Statements of Statement list
+        | Comment of string
+        | Source of source:string * properties:Map<string,string>
+
     [<CustomEquality>]
     [<CustomComparison>]
     type KeyType =

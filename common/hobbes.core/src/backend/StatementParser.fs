@@ -1,9 +1,10 @@
 ﻿namespace Hobbes.Parsing
 
-module Parser = 
+module StatementParser = 
     open FParsec.Primitives
     open FParsec.CharParsers
     open Hobbes.Parsing.Expressions
+    open Hobbes.Parsing.Primitives
 
     let private indexByColumn = kwIndex >>. kwRows >>. kwBy >>. expression >>= (AST.IndexBy >> preturn)
     let private sortByColumns = kwSort  >>. kwBy  >>. kwColumn >>. columnName >>= (AST.SortBy >> preturn)
@@ -11,11 +12,11 @@ module Parser =
     let private dense = kwDense >>?  (kwColumns  >>= (fun _ -> AST.DenseColumns |> preturn) <|> (kwRows >>= (fun _ -> AST.DenseRows |> preturn)))
     let private numericColumns = kwNumeric >>? kwColumns >>= (fun _ -> AST.NumericColumns |> preturn)
     let private only = 
-        kwOnly >>. expression .>> (skipNewline <|> eof) >>= (
+        kwOnly >>. expression >>= (
             checkBooleanExp
             >> AST.Only 
             >> preturn)
-
+    
     let filtering = 
         indexByColumn <|>
         sortByColumns <|>
@@ -77,19 +78,18 @@ module Parser =
         bucketsExpression <|> 
         kmeansExpression
         >>= (AST.Cluster >> preturn)
-
     
-    let expression = 
+    let statement = 
         column <|>
         filtering <|>
-        clustering
-        
-    let parse (lines : seq<string>) = 
-        lines
-        |> Seq.map(fun exp ->
-            match run expression exp with
-            Failure(msg,e,_) ->
-                  failwithf "Line: %d, Col: %d\t %s" e.Position.Line e.Position.Column msg
-            | Success(expression,_, _ ) ->
-                 expression
-        )
+        clustering 
+
+    let statements = 
+        many1 (statement .>> spaces .>> (skipNewline <|> eof))
+
+    let parse (input : string) = 
+        match run statements input with
+        Failure(msg,e,_) ->
+            failwithf "Line: %d, Col: %d\t %s" e.Position.Line e.Position.Column msg
+        | Success(res,_,_)->
+            res

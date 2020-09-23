@@ -28,6 +28,7 @@ type Targets =
    | Core
    | Web
    | Messaging
+   | PushCommonNugets
    | Sdk
    | SdkImage
    | PreApps
@@ -52,6 +53,7 @@ let targetName =
        | Targets.Core -> "Core"
        | Targets.Web -> "Web"
        | Targets.Messaging -> "Messaging"
+       | Targets.PushCommonNugets -> "PushCommonNugets"
        | Targets.SdkImage -> "SdkImage"
        | Targets.Sdk -> "Sdk"
        | Targets.PreApps -> "PreApps"
@@ -98,13 +100,14 @@ let run command workingDir args =
     |> CreateProcess.ensureExitCode
     |> Proc.run
     |> ignore
-let buildConfigurationName = (Environment.environVarOrDefault "CONFIGURATION" "Debug").ToLower()
+let nugetFeedUrl = "https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2"
+//let buildConfigurationName = (Environment.environVarOrDefault "CONFIGURATION" "RELEASE").ToLower()
 let buildConfiguration = 
-    match buildConfigurationName with
-    "release" -> 
+    //match buildConfigurationName with
+    //"release" -> 
         printfn "Using release configuration"
         DotNet.BuildConfiguration.Release
-    | _ -> DotNet.BuildConfiguration.Debug
+    //| _ -> DotNet.BuildConfiguration.Debug
 type DockerCommand = 
     Push of string
     | Pull of string
@@ -326,6 +329,17 @@ commons |> List.iter(fun common ->
     create targetName (fun _ -> 
         let projectFile = commonPath common
         package buildConfiguration commonLibDir projectFile
+        let commonSrcPath = projectFile + "/.."
+        let packages = Directory.EnumerateFiles(commonSrcPath, "*.nupkg")
+        let dateTime = System.DateTime.UtcNow
+        let version = sprintf "1.%i.%i.%i-default" dateTime.Year dateTime.DayOfYear ((int) dateTime.TimeOfDay.TotalSeconds)
+        File.deleteAll packages
+        sprintf "pack --version %s ./" version
+        |> run "paket" commonSrcPath 
+        let nupkgFilePath = Directory.EnumerateFiles(commonSrcPath, "*.nupkg")
+                            |> Seq.exactlyOne
+        sprintf "push --url %s --api-key na %s" nugetFeedUrl nupkgFilePath
+        |> run "paket" "./"
     )
 ) 
 

@@ -80,3 +80,12 @@ group visualizer
     nuget FParsec
     nuget Deedle
     nuget Accord.MachineLearning
+
+group docker
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "nala" password: "$FEED_PAT"
+    framework: auto-detect
+    storage: none
+    
+    nuget hobbes.core
+    nuget hobbes.messaging 
+    nuget hobbes.web

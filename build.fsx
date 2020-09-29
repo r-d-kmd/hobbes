@@ -101,7 +101,7 @@ let run command workingDir args =
     |> Proc.run
     |> ignore
 let nugetFeedUrl = "https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2"
-//let buildConfigurationName = (Environment.environVarOrDefault "CONFIGURATION" "RELEASE").ToLower()
+//let buildConfigurationName = (Environment.environVarOrDefault "CONFIGURATION" "Debug").ToLower()
 let buildConfiguration = 
     //match buildConfigurationName with
     //"release" -> 

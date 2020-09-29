@@ -9,8 +9,11 @@ COPY build/.paket /.paket
 
 RUN mono /.paket/paket.exe restore
 
-COPY .lib/ /.lib/
-COPY hobbes.properties.targets ./
+COPY paket.references /paket.references
+COPY hobbes.properties.targets .
 
 ONBUILD COPY ./src/ .
+
+ONBUILD RUN cat /paket.references >> ./paket.references
+
 ONBUILD RUN dotnet publish -c ${BUILD_CONFIGURATION} -o /app

@@ -21,7 +21,7 @@ group core
 
     nuget Accord.MachineLearning
     nuget Deedle
-    nuget FParsec
+    nuget FParsec 
 
 group collectors
     source https://www.nuget.org/api/v2 

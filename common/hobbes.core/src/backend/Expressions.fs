@@ -2,26 +2,27 @@ namespace Hobbes.Parsing
 
 open FParsec
 open AST
+open Hobbes.Parsing.Primitives
 
 module Expressions = 
     
     let checkBooleanExp  = 
              function 
-                 Boolean b -> b
-                 | ColumnName c -> ValueOfColumn c
+                 ColumnName c -> ValueOfColumn c
+                 | ComputationExpression.Boolean b -> b
                  | _ -> 
                      //TODO: rewrite to user the FParsec error reporting
                      failwith "Expected a boolean expression"
     
 
-    let formatDate = 
+    let formatDate : Parser<_> = 
         pipe2 (kwFormat .>>? kwDate >>. spaces1 >>. columnName .>> spaces1) dateFormat (fun columnName format -> AST.FormatDate(columnName,format))
     
 
-    let private opp = new OperatorPrecedenceParser<AST.ComputationExpression,unit,unit>()
-    let private expr = opp.ExpressionParser
+    let private opp  = new OperatorPrecedenceParser<AST.ComputationExpression,unit,YamlParser.Types.State>()
+    let private expr : Parser<_> = opp.ExpressionParser
     
-    let expressionInBrackets = 
+    let expressionInBrackets : Parser<_> = 
         spaces >>. (between (skipString "[" .>> spaces) (spaces >>. skipString "]") expr) .>> spaces
 
     let private computationExpression =
@@ -66,19 +67,19 @@ module Expressions =
                       AST.IfThisThenElse(condition,thenBody,elseBody)
                   ))
 
-        let regExGroupExpression = 
+        let regExGroupExpression : Parser<_> = 
             (pstring "$" >>. pint32) >>= (AST.RegExGroupIdentifier >> preturn)
             <|> (pquotedStringLiteral >>= (AST.RegExResultString >> preturn))
 
-        let regExGroupExpressions =
-            let expr = sepBy regExGroupExpression (skipString "+")
+        let regExGroupExpressions : Parser<_> =
+            let expr : Parser<_> = sepBy regExGroupExpression (skipString "+")
             between (skipString "[") (skipString "]") expr
 
         let regex = 
             pipe3 (kwRegex >>. expressionInBrackets) regexLiteral regExGroupExpressions (fun expr literal result ->
                RegularExpression(expr, literal.Replace("\\/","/"),result) 
             )
-
+        let number : Parser<_> = (pnumber >>= (AST.Number >> preturn))
         opp.TermParser <- 
             ifThisThenElse
             <|> int
@@ -87,7 +88,7 @@ module Expressions =
             <|> regression
             <|> regex
             <|> extrapolation
-            <|> (pnumber >>= (AST.Number >> preturn))
+            <|> number
             <|> kwMissing
             <|> kwKeys
             <|> formatDate

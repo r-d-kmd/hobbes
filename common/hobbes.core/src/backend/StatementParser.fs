@@ -83,9 +83,9 @@ module StatementParser =
         column <|>
         filtering <|>
         clustering 
-
-    let statements = 
-        many1 (statement .>> spaces .>> (skipNewline <|> eof))
+    
+    let statements : Parser<_> = 
+        many (statement .>> eol )
 
     let parse (input : string) = 
         match run statements input with

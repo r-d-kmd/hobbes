@@ -196,9 +196,11 @@ module Types =
                   addConfiguration col (source : Source ) name transformations
             )
         | Test ->
-            configurations <- add Test           
-            configurations <- add Development
-        | _ ->
+            configurations <- add Test
+        | Production ->
+            configurations <- add Test
+            configurations <- add collection
+        | _ -> 
             configurations <- add collection
                 
     let rec allConfigurations collection =

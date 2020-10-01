@@ -17,11 +17,15 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="yaml-parser"><HintPath>../.lib/yaml-parser/yaml-parser.dll</HintPath></Reference>
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="backend/AST.fs" />
     <Compile Include="backend/Primitives.fs" />
     <Compile Include="backend/Keywords.fs" />
     <Compile Include="backend/Expressions.fs" />
     <Compile Include="backend/StatementParser.fs" />
+    <Compile Include="backend/SourceBlockParser.fs" />
     <Compile Include="backend/BlockParser.fs" />
     <Compile Include="backend/Analyzer.fs" />
     <Compile Include="frontend.fsharp/DataMatrix.fs" />

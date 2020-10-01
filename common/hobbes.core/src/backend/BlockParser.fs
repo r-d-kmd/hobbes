@@ -4,7 +4,8 @@ module BlockParser =
     open FParsec.Primitives
     open FParsec.CharParsers
     open Hobbes.Parsing.StatementParser
-  
+    open Hobbes.Parsing.Primitives
+
     let private blockEnd =
         attempt ((newline .>> newline) >>. preturn () <|> eof)
     let statementBlock = 
@@ -13,8 +14,9 @@ module BlockParser =
         pstring "#" >>. 
             (manyCharsTill anyChar blockEnd) >>= (((+) "#") >> AST.Comment >> preturn)
 
-    let private pblock = 
-       (attempt commentBlock)
+    let private pblock : Parser<_> = 
+       (attempt SourceBlockParser.parse)
+       <|> (attempt commentBlock)
        <|> statementBlock
 
     let parse (input : string) = 
@@ -29,7 +31,7 @@ module BlockParser =
            |> List.partition(fun (block,res) ->
                 match res with
                 Failure _ ->
-                    printf "Failing block %s" block
+                    printfn "Failing block %s" block
                     true 
                 | Success _ ->
                     false

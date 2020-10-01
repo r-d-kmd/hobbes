@@ -3,10 +3,24 @@ namespace Hobbes.Parsing
 [<AutoOpen>]
 module Primitives = 
     open FParsec
-    type Parser<'a> = Parser<'a,unit> 
-    let spaces = many (anyOf " \t\r")
+    open YamlParser.Types
+
+    type Parser<'a> = Parser<'a,YamlParser.Types.State> 
+    let spaces : Parser<_> = skipMany (skipAnyOf " \t\r")
+    let spaces1 : Parser<_> = skipMany1 (skipAnyOf " \t\r")
     let private identifier : Parser<_> = identifier (IdentifierOptions())
-  
+    let eof : Parser<_>=
+        fun stream ->
+            if stream.IsEndOfStream then Reply(())
+            else Reply(Error, ErrorMessageList(ErrorMessage.Expected "eof"))
+
+    let rec eol : Parser<_> = 
+        fun stream ->
+            if stream.IsEndOfStream then Reply(())
+            elif stream.SkipNewline() then Reply(())
+            else 
+                (skipAnyOf " \t\r" .>> eol) stream
+
     let stringThenWhiteSpace s = pstring s >>. spaces
     let stringLiteral<'u> : Parser<string, 'u> =
         let normalChar = satisfy (fun c -> c <> '\\' && c <> '"')
@@ -30,17 +44,17 @@ module Primitives =
         between (pstring delim) (pstring delim)
                 (manyChars (normalChar <|> escapedChar))
     
-    let pquotedStringLiteral : Parser<string, unit> =
+    let pquotedStringLiteral : Parser<_> =
         delimitedString "\'" "\\nrt"
 
-    let quotedStringLiteral : Parser<AST.ComputationExpression, unit> = 
+    let quotedStringLiteral : Parser<AST.ComputationExpression, YamlParser.Types.State> = 
         pquotedStringLiteral >>= ((fun (s : string) -> 
              match System.DateTime.TryParse(s,System.Globalization.CultureInfo.CurrentCulture,System.Globalization.DateTimeStyles.None) with
              true, v  -> AST.DateTime v
              | false, _ -> AST.String s
         ) >> preturn)
         
-    let regexLiteral : Parser<string, unit> = 
+    let regexLiteral : Parser<_> = 
         delimitedString "/" "\\abtrvfnexcudw.$^{[(|)*+?" .>> spaces
 
     //someName || "some quoted string"
@@ -54,7 +68,7 @@ module Primitives =
         NumberLiteralOptions.AllowMinusSign
         ||| NumberLiteralOptions.AllowFraction
 
-    let private number : Parser<AST.Number, unit> =
+    let private number : Parser<_> =
         let parser = numberLiteral numberFormat "number"
         fun stream ->
             let reply = parser stream
@@ -85,4 +99,13 @@ module Primitives =
                     Reply(Error, messageError "invalid number suffix")
             else // reconstruct error reply
                 Reply(reply.Status, reply.Error)
-    let pnumber = number
+    let pnumber : Parser<_> = number
+    let run p = 
+       let state  =
+           { 
+              indent      = 0L
+              indentType  = AutoDetect
+              context     = BlockIn
+              chomping    = None 
+           }
+       runParserOnString p state ""

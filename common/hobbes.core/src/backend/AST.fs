@@ -103,10 +103,18 @@ module AST =
         | Cluster of Cluster
         | Column of ColumnStatements
 
+    type Value = 
+        | Mapping of Map<Value, Value> 
+        | Sequence of Value list
+        | String of string
+        | Boolean of bool
+        | Decimal of decimal
+        | Null
+
     type Block = 
         Statements of Statement list
         | Comment of string
-        | Source of source:string * properties:Map<string,string>
+        | Source of source:string * properties:Map<string,Value>
 
     [<CustomEquality>]
     [<CustomComparison>]

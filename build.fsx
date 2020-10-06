@@ -88,7 +88,7 @@ let runOrDefaultWithArguments =
     targetName
     >> Target.runOrDefaultWithArguments 
 
-let dockerOrg = "kmdrd"
+let dockerOrg = "hobbes.azurecr.io"
 let run command workingDir args = 
     let arguments = 
         match args |> String.split ' ' with
@@ -369,7 +369,7 @@ create Targets.SdkImage (fun _ ->
     let tag = sprintf "%s/app" dockerOrg
     let file = Some("Dockerfile.app")
     let build configuration = 
-        docker (Build(file,tag,["CONFIGURATION",configuration])) dockerDir.Name
+        docker (Build(file,tag,["CONFIGURATION",configuration; "ARG_FEED", (Environment.environVarOrDefault "FEED_PAT" "Missing")])) dockerDir.Name
     match buildConfiguration with 
     DotNet.BuildConfiguration.Release ->
         build "Release"
@@ -382,19 +382,19 @@ create Targets.TestNoBuild (fun _ ->
 )
 
 create Targets.PullRuntime (fun _ ->
-    docker (Pull "kmdrd/runtime") "."
+    docker (Pull (sprintf "%s/runtime" dockerOrg)) "."
 )
 
 create Targets.PullSdk (fun _ ->
-    docker (Pull "kmdrd/sdk") "."
+    docker (Pull (sprintf "%s/sdk" dockerOrg)) "."
 )
 
 create Targets.PullApp (fun _ ->
-    docker (Pull "kmdrd/app") "."
+    docker (Pull (sprintf "%s/app" dockerOrg)) "."
 )
 
 create Targets.PullDb (fun _ ->
-    docker (Pull "kmdrd/couchdb") "."
+    docker (Pull (sprintf "%s/couchdb" dockerOrg)) "."
 )
 
 Targets.Dependencies 

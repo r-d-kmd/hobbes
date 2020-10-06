@@ -1,7 +1,7 @@
 FROM hobbes.azurecr.io/app AS build
 
 # final stage/image
-FROM kmdrd/runtime
+FROM hobbes.azurecr.io/runtime
 
 ENV port 8085
 

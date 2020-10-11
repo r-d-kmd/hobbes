@@ -1,5 +1,5 @@
 version 5.244.0
-source https://www.nuget.org/api/v2
+source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
 framework: auto-detect
 storage: none
 
@@ -8,30 +8,30 @@ nuget Newtonsoft.Json
 nuget Thoth.Json.Net
 
 group workbench
-    source https://www.nuget.org/api/v2 
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
     framework: auto-detect
     storage: none
     
     nuget Argu
 
 group core
-    source https://www.nuget.org/api/v2 
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
     framework: auto-detect
     storage: none
 
     nuget Accord.MachineLearning
     nuget Deedle
-    nuget FParsec 
+    nuget FParsec
 
 group collectors
-    source https://www.nuget.org/api/v2 
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
     framework: auto-detect
     storage: none
 
     nuget RabbitMQ.Client
 
 group web
-    source https://www.nuget.org/api/v2 
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 
     framework: auto-detect
     storage: none
 
@@ -41,7 +41,7 @@ group web
     nuget Microsoft.Extensions.PlatformAbstractions
 
 group test
-    source https://www.nuget.org/api/v2
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
     framework: auto-detect
     storage: none
     
@@ -53,13 +53,13 @@ group test
     nuget xunit.runner.VisualStudio  
 
 group tutorial
-    source https://www.nuget.org/api/v2
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
     framework: auto-detect
     storage: none
     nuget FSharp.Formatting
 
 group visualizer
-    source https://www.nuget.org/api/v2
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
     framework: auto-detect
     storage: packages
 
@@ -80,4 +80,12 @@ group visualizer
     nuget FParsec
     nuget Deedle
     nuget Accord.MachineLearning
-    nuget FSharp.Formatting
+
+group docker
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
+    framework: auto-detect
+    storage: none
+    
+    nuget hobbes.core
+    nuget hobbes.messaging 
+    nuget hobbes.web

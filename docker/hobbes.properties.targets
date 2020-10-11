@@ -4,15 +4,5 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <CommonLibPath>/.lib/</CommonLibPath>
     <DebugType>Portable</DebugType>
-    <IncludeCore Condition="$(IncludeCore) == ''">True</IncludeCore>
-    <IncludeWeb Condition="$(IncludeWeb) == ''">True</IncludeWeb>
-    <IncludeMessaging Condition="$(IncludeMessaging) == ''">True</IncludeMessaging>
-    <IncludeWorkbench Condition="$(IncludeWorkbench) == ''">False</IncludeWorkbench>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Condition="$(IncludeCore) == 'True'"      Include="hobbes.core"><HintPath>$(CommonLibPath)hobbes.core.dll</HintPath></Reference>
-    <Reference Condition="$(IncludeWeb) == 'True'"       Include="hobbes.web"><HintPath>$(CommonLibPath)hobbes.web.dll</HintPath></Reference>
-    <Reference Condition="$(IncludeMessaging) == 'True'" Include="hobbes.messaging"><HintPath>$(CommonLibPath)hobbes.messaging.dll</HintPath></Reference>
-    <Reference Condition="$(IncludeWorkbench) == 'True'" Include="hobbes.workbench"><HintPath>$(CommonLibPath)hobbes.workbench.dll</HintPath></Reference>
-  </ItemGroup>
 </Project>

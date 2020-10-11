@@ -39,3 +39,5 @@ kubernetes/log.txt
 hobbes-vscode/hb/grammar/hobbes.YAML-tmLanguage
 nexus.txt
 chart.html
+*.cache
+tools/visualizer/*.html

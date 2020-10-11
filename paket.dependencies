@@ -80,3 +80,4 @@ group visualizer
     nuget FParsec
     nuget Deedle
     nuget Accord.MachineLearning
+    nuget FSharp.Formatting

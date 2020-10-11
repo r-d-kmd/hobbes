@@ -207,10 +207,14 @@ module AST =
                                 lst1
                                 |> List.zip lst2
                                 |> List.tryFind(fun (a,b) -> a <> b)
-                                |> Option.bind(fun _ -> Some -1)
+                                |> Option.bind(fun (a,b) -> (a :> System.IComparable).CompareTo b |> Some)
                                 |> Option.orElse(Some 0)
                                 |> Option.get
-                            | _,_ -> -1
+                            | DateTime dt1,DateTime dt2 -> dt1.CompareTo dt2
+                            | Missing,Missing -> 0
+                            | Missing,_ -> -1
+                            | _,Missing -> 1
+                            | a,b -> failwithf "Can't compare %A to %A" a b
                         result
                        
                     | _ -> -1

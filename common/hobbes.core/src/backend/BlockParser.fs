@@ -10,9 +10,10 @@ module BlockParser =
         attempt ((newline .>> newline) >>. preturn () <|> eof)
     let statementBlock = 
         statements .>> blockEnd >>= (AST.Statements >> preturn)
+    let commentBlockEnd = skipString "!#" >>. blockEnd
     let commentBlock =
-        pstring "#" >>. 
-            (manyCharsTill anyChar blockEnd) >>= (((+) "#") >> AST.Comment >> preturn)
+        skipString "!#" >>. 
+            (manyCharsTill anyChar commentBlockEnd) >>= (AST.Comment >> preturn)
 
     let private pblock : Parser<_> = 
        (attempt SourceBlockParser.parse)

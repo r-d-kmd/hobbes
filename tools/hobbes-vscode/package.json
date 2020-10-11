@@ -1,0 +1,25 @@
+{
+    "name": "hb",
+    "displayName": "hobbes-ext",
+    "description": "A syntax highlighter for the hobbes data analysis language ",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.49.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "hobbes",
+            "aliases": ["Hobbes", "hobbes"],
+            "extensions": [".hb"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "hobbes",
+            "scopeName": "source.hobbes",
+            "path": "./syntaxes/hobbes.tmLanguage"
+        }]
+    }
+}

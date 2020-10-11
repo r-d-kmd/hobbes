@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <title>MTTR</title>
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    </head>
+    <body>
+        <h1>Mean time to recover (MTTR)</h1>
+<p>Research shows that company that are fast at resolving issues after they have been reported also perform well from a business perspective</p>
+<h2>Reading the graph</h2>
+<p>If we are improving there will be an downwards trend. The two lines represent a shorter and a longer persepctive.
+The trend of the "long" is a stronger signal however if the short has recently changed direction, to the opposite of the long trand, this might be a sign that the long trend will change in the near future</p>
+<div id="437bad70-a7cb-43f5-b659-c30e47b47d02" style="width: 900px; height: 500px;"></div>
+        <script>
+            var data = [{"type":"scatter","x":[5.0,6.0,7.0,8.0,10.0,11.0,18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,34.0,35.0,36.0,37.0,38.0,39.0,40.0,41.0,42.0,43.0,44.0,45.0,47.0,48.0,49.0,50.0,51.0,52.0],"y":[31.794530583666663,32.81141078699999,50.881570752,59.53657677111111,40.50096258444444,40.51847473944444,42.64084326211111,36.87007809011111,38.797040282333334,39.54804026733334,40.06641121566667,40.01784969716667,26.820933493166667,16.455643367611106,13.520825989277771,16.848147583087297,33.34767020958729,33.1410637255873,47.05545955669841,47.688628792253965,44.89471477225397,29.427103370072153,29.517848740072157,19.170064175183267,15.830235472961045,17.100344797818188,13.505789187666673,14.436714801303037,11.213775449303037,12.384653535969703,12.180291600636368,11.6942227389697,15.020530925333336,17.200665918333335,21.271401258333334,18.29802523166667,16.65318842166667,11.18071273166667,7.974203202666672,3.445843246000005],"name":"Mean time to recover 5"},{"type":"scatter","x":[18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,34.0,35.0,36.0,37.0,38.0,39.0,40.0,41.0,42.0,43.0,44.0,45.0,47.0,48.0,49.0,50.0,51.0,52.0],"y":[35.04033932686869,41.08539988050505,45.44097954792929,47.40115273565655,37.380282752323225,38.77821165118686,38.362455656035344,29.792830736843428,26.484902380277767,26.629003206251795,35.51875504670634,34.04437404852452,34.422549585292195,30.52653352115078,29.059309799397532,30.682706025981553,29.271646340754277,30.94488171348155,30.242257205400737,30.686363803279527,29.163452209881257,20.67575751880688,20.977932496988696,14.48279992325132,14.546210534362434,14.072319467479316,14.12731549847105,15.379213032561957,15.437953142864986,15.667933151955895,13.86906656922862,13.07046256392559,12.441707760454516,11.907074868636336],"name":"Mean time to recover 11"},{"type":"scatter","x":[5.0,6.0,7.0,8.0,10.0,11.0,18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,34.0,35.0,36.0,37.0,38.0,39.0,40.0,41.0,42.0,43.0,44.0,45.0,47.0,48.0,49.0,50.0,51.0,52.0],"y":[3.4,3.2,3.8,4.6,4.2,4.8,5.2,5.8,6.4,7.0,7.4,8.0,8.0,7.4,8.4,8.6,8.0,6.4,6.4,6.4,6.4,7.6,8.0,7.2,5.8,6.4,6.6,8.0,10.0,11.4,11.2,9.2,7.4,6.8,5.6,4.4,4.2,4.0,2.6,2.4],"name":"Mean bugs resolved pr sprint"}];
+            var layout = {"title":"MTTR","showlegend":true};
+            Plotly.newPlot('437bad70-a7cb-43f5-b659-c30e47b47d02', data, layout);
+        </script><h2>Method</h2>
+<p>THe graph shows the average lead time of bugs. That is the elapsed time from when the bug was reported til it was marked as resolved.
+This is not MTTR because for the bug to be fixed it needs to be deployed to production however since we are trying to do CD bug lead time should be strongly correlated to MTTR</p>
+
+    </body>
+</html>

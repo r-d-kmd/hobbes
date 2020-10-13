@@ -262,14 +262,15 @@ function awaitRunningState(){
     done
 
     echo "Waiting for DB to be operational"
-    while [ "$(logs service/gateway-svc | grep "DB initialized")" != "DB initialized" ]
+    while [ "$(logs gateway | grep "DB initialized")" != "DB initialized" ]
     do
         sleep 1
     done
 
     echo "Waiting for Rabbit-MQ to be operational"
-    while [ "$(logs service/configurations-svc | grep "Watching queue")" != "Watching queue: cache" ]
+    while [ "$(logs configurations | grep "Watching queue")" != "Watching queue: cache" ]
     do
+        echo $(logs configurations | grep "Queue not yet ready" | tail -1)
         sleep 10
     done
 
@@ -305,7 +306,7 @@ function publish(){
 
     printf "${Green}Publisher built${NoColor}\n"
     startJob publish
-    logs job/publish -f &
+    logs publish -f &
     cd $CURRENT_DIR
 }
 
@@ -325,10 +326,6 @@ function applyProductionYaml() {
     mv kustomization.yaml ./prod_patches/kustomization.yaml
     mv ./local_patches/kustomization.yaml kustomization.yaml
     cd $CURRENT_DIR
-}
-
-function forward() {
-    kc port-forward "service/$1" $2:$2 &
 }
 
 

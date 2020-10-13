@@ -332,7 +332,7 @@ commons |> List.iter(fun common ->
         let commonSrcPath = Path.Combine(Path.GetDirectoryName(projectFile),"..")
         let packages = Directory.EnumerateFiles(commonSrcPath, "*.nupkg")
         let dateTime = System.DateTime.UtcNow
-        let version = sprintf "1.%i.%i.%i-default" dateTime.Year dateTime.DayOfYear ((int) dateTime.TimeOfDay.TotalSeconds)
+        let version = sprintf "1.%i.%i.%i" dateTime.Year dateTime.DayOfYear ((int) dateTime.TimeOfDay.TotalSeconds)
         File.deleteAll packages
         sprintf "pack --version %s ." version
         |> run "paket" commonSrcPath 

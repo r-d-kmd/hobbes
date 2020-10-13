@@ -176,7 +176,8 @@ module Types =
                          | s -> s
                          
             match collectionConfigurations |> Map.tryFind name with
-            Some _ -> failwithf "There's already a configuration called %s" name
+            Some _ -> eprintf "There's already a configuration called %s" name
+                      configurations
             | None ->
                 configurations.Add(collection,
                                    collectionConfigurations 

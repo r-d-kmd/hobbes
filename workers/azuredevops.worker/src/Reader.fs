@@ -56,6 +56,7 @@ module Reader =
         let odataQuery = 
             if source.Query |> Array.isEmpty |> not then
                 source.Query
+                |> String.concat System.Environment.NewLine
                 |> Hobbes.OData.Compile.expressions
             else
                 {

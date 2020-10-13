@@ -32,7 +32,7 @@ steps:
   displayName: Azure CLI
   inputs:
     azureSubscription: Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)
-    scriptType: ps
+    scriptType: bash/pscore
     scriptLocation: inlineScript
     inlineScript: |
       az acr login --name hobbes

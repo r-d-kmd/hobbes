@@ -31,11 +31,10 @@ steps:
 - task: AzureCLI@2
   displayName: Azure CLI
   inputs:
-    azureSubscription: Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)
-    scriptType: bash/pscore
-    scriptLocation: inlineScript
-    inlineScript: |
-      az acr login --name hobbes
+    azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: 'az acr login --name hobbes'
 
 # Download Minikube and it's prerequisites
 - script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /

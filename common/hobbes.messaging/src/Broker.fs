@@ -140,7 +140,7 @@ module Broker =
         let connection = factory.CreateConnection()
         let channel = connection.CreateModel()
         //to limit memory pressure, we're only going to handle one message at a time in any consumer
-        channel.BasicQos(1u,0us,false)
+        //channel.BasicQos(1u,0us,true)
         channel
     
 
@@ -165,7 +165,7 @@ module Broker =
                     declare channel Queue.DeadLetterQueue
                 with e -> 
                     if tries % (60000 / waitms) = 0 then //write the message once every minute
-                        printfn "Queue not yet ready. Message: %s" e.Message
+                        printfn "Queue not yet ready. Halloo Message: %s" e.Message
                     do! retry()
             } 
         inner 0

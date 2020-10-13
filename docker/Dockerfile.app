@@ -9,7 +9,7 @@ COPY ./build/paket.* ./
 COPY build/.paket /.paket
 
 RUN mono /.paket/paket.exe config add-credentials https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 --username na --password ${ARG_FEED}
-RUN mono /.paket/paket.exe restore
+RUN mono /.paket/paket.exe update
 
 COPY paket.references /paket.references
 COPY hobbes.properties.targets .

@@ -331,15 +331,7 @@ function forward() {
     kc port-forward "service/$1" $2:$2 &
 }
 
-alias kc=kubectl
-alias logs="kc logs"
-alias get="kc get"
-alias pods="get pods"
-alias jobs="get jobs"
-alias services="get services"
-alias delete="kc delete"
-alias apply="kc apply"
-alias describe="kc describe"
+
 
 
 printf "Project home folder is:\n"

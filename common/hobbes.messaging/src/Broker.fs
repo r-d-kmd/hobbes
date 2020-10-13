@@ -165,7 +165,7 @@ module Broker =
                     declare channel Queue.DeadLetterQueue
                 with e -> 
                     if tries % (60000 / waitms) = 0 then //write the message once every minute
-                        printfn "Queue not yet ready. Halloo Message: %s" e.Message
+                        printfn "Queue not yet ready. Message: %s" e.Message
                     do! retry()
             } 
         inner 0

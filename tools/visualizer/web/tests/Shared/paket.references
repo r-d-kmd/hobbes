@@ -1,2 +1,3 @@
-Expecto
-Fable.Mocha
+group visualizer.web
+    Expecto
+    Fable.Mocha

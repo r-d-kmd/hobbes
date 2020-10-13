@@ -20,7 +20,10 @@ type private ODataResponse = JsonProvider<"""{
     "value":[{"WorkItemId":54820,"WorkItemType":"Task","ChangedDate":"2018-09-14T06:44:46.557+02:00","State":"New","StateCategory":"Proposed","Iteration":{"ProjectSK":"85b47b07-63fb-4dd2-8461-4c7204161d0b","IterationSK":"09803824-181d-4297-a5d5-9d19fe88fec2","IterationId":"09803824-181d-4297-a5d5-9d19fe88fec2","IterationName":"Team Australia","Number":1518,"IterationPath":"KMDLoGIC\\Team Australia","StartDate":"2019-12-09T00:00:00+01:00","EndDate":"2020-07-31T23:59:59.999+02:00","IterationLevel1":"KMDLoGIC","IterationLevel2":"Team Australia","IterationLevel3":null,"IterationLevel4":null,"IterationLevel5":null,"IterationLevel6":null,"IterationLevel7":null,"IterationLevel8":null,"IterationLevel9":null,"IterationLevel10":null,"IterationLevel11":null,"IterationLevel12":null,"IterationLevel13":null,"IterationLevel14":null,"Depth":1,"IsEnded":true}},{"WorkItemId":54820,"WorkItemType":"Task","ChangedDate":"2018-09-14T06:44:46.557+02:00","State":"New","StateCategory":"Proposed","Iteration":{"ProjectSK":"85b47b07-63fb-4dd2-8461-4c7204161d0b","IterationSK":"09803824-181d-4297-a5d5-9d19fe88fec2","IterationId":"09803824-181d-4297-a5d5-9d19fe88fec2","IterationName":"Team Australia","Number":1518,"IterationPath":"KMDLoGIC\\Team Australia","StartDate":"2019-12-09T00:00:00+01:00","EndDate":"2020-07-31T23:59:59.999+02:00","IterationLevel1":"KMDLoGIC","IterationLevel2":"Team Australia","IterationLevel3":null,"IterationLevel4":null,"IterationLevel5":null,"IterationLevel6":null,"IterationLevel7":null,"IterationLevel8":null,"IterationLevel9":null,"IterationLevel10":null,"IterationLevel11":null,"IterationLevel12":null,"IterationLevel13":null,"IterationLevel14":null,"Depth":1,"IsEnded":true}}],
     "@odata.nextLink":"https://analytics.dev.azure.com/kmddk/kmdlogic/_odata/v2.0/WorkItemRevisions?$expand=Iteration&$select=State%2CChangedDate%2CWorkITemId%2CWorkItemType%2CState%2CStateCategory%2CIteration&$filter=Iteration%2FStartDate%20gt%202019-01-01Z&$skiptoken=89900635"
     } """>
-let cacheDir = ".cache"
+let cacheDir = 
+    let name = ".cache"
+    if Directory.Exists name |> not then Directory.CreateDirectory name |> ignore
+    name
 let readValue (json:JsonValue)  = 
     let rec inner json namePrefix = 
         let wrap (v : #System.IComparable) = 
@@ -64,12 +67,23 @@ let read (source : Source) =
         )
  
     let requestData f =
-        let rec readChunks (record : ODataResponse.Root) = 
-            let nextLink = record.OdataNextLink
+        let rec readChunks url = 
             seq { 
+                let cacheFile =System.IO.Path.Combine(cacheDir, (url |> md5Hash) + ".json")
+                let record = 
+                    if File.Exists cacheFile |> not then
+                        let data = f url
+                        let record = data |> ODataResponse.Parse
+                        let nextLink = record.OdataNextLink
+                        if nextLink |> System.String.IsNullOrWhiteSpace |> not  then
+                            File.WriteAllText(cacheFile,data)
+                        record
+                    else
+                        File.ReadAllText cacheFile |> ODataResponse.Parse
+                    
                 yield! record.Value 
-                if nextLink |> System.String.IsNullOrWhiteSpace |> not then 
-                    yield! nextLink |> f |> readChunks 
+                if record.OdataNextLink |> System.String.IsNullOrWhiteSpace |> not then 
+                    yield! record.OdataNextLink |> readChunks 
             }
 
         let query = 
@@ -90,41 +104,26 @@ let read (source : Source) =
                                 )
               )
         let cacheFile = cacheDir + "/" + (url |> md5Hash) + ".json"
-        if File.Exists cacheFile |> not then
-            let data =
-                System.String.Join(",", 
-                    f url
-                    |> readChunks
-                    |> Seq.map(fun v -> v.JsonValue.ToString())
-                ) |> sprintf "[%s]"
-            File.WriteAllText(cacheFile,data)
-            data
-        else
-            File.ReadAllText cacheFile
-        |> JsonValue.Parse
+        url
+        |> readChunks
+                    
 
     if source.ProviderName.ToLower() = "odata" then
         let user = getStringFromValue "user"
         let pwd = getStringFromValue "pwd"
         
-        let doc = requestData (fun url ->
+        let values = requestData (fun url ->
             printfn "Reading data from %s" url
             Http.RequestString(url,
                 headers = [
-                  if user.IsSome then yield FSharp.Data.HttpRequestHeaders.BasicAuth user.Value pwd.Value
+                  if user.IsSome then yield HttpRequestHeaders.BasicAuth user.Value pwd.Value
                 ],
                 httpMethod = "GET"
-            ) |> ODataResponse.Parse
+            )
         )
 
-        
-        let values = 
-            match doc with
-            JsonValue.Array a -> a
-            | a -> failwithf "An error occurred while reading the data. Instead of ana rray the result was %A" a
-            
         values
-        |> Seq.collect readValue
+        |> Seq.collect (fun v -> v.JsonValue |> readValue)
         |> Seq.groupBy fst
         |> Seq.map(fun (columnName,cells) -> 
             columnName,cells 

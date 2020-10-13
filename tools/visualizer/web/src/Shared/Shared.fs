@@ -7,22 +7,30 @@ type ChartType =
     | Column
     | Scatter
 
-type YValue =
+type PointValue =
     Text of string
     | Date of DateTime
     | Number of float
 
 type Point =
     {
-        Y : YValue
-        X : float
+        Y : PointValue
+        X : PointValue
     }
 
 type ChartModel =
-    { Id : string
-      ChartType : ChartType
-      Data : Point [] []
-      }
+    {
+        Id : string
+        Title : string
+        ChartType : ChartType
+        Data : seq<seq<Point>>
+    }
+
+type AreaModel =
+    {
+        Id : string
+        ChartIds : string list
+    }
 
 module Route =
     let builder typeName methodName =
@@ -30,5 +38,6 @@ module Route =
 
 type IChartApi =
     {
-        getCharts : string -> Async<ChartModel list>
+        getChart : string -> Async<ChartModel>
+        getAreas : unit -> Async<AreaModel list>
     }

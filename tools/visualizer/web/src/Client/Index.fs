@@ -8,19 +8,21 @@ open Fable.Recharts
 open Fable.Recharts.Props
 module R = Fable.React.Standard
 module P = Fable.React.Props
+open Fable.FontAwesome
 
 let margin t r b l =
     Chart.Margin { top = t; bottom = b; right = r; left = l }
 
 
 type Model =
-    { Charts: ChartModel list
+    { Areas: AreaModel list
       SelectedChart : ChartModel
     }
 
 type Msg =
-    | GotCharts of ChartModel list
-    | ChartSelected of ChartModel
+    | GotAreas of AreaModel list
+    | ChartSelected of string
+    | GotChart of ChartModel
 let ChartApi =
     Remoting.createApi()
     |> Remoting.withRouteBuilder Route.builder
@@ -28,22 +30,34 @@ let ChartApi =
 
 let init(): Model * Cmd<Msg> =
     let model =
-        { Charts = []
+        { Areas = []
           SelectedChart = {
               Id = ""
+              Title = ""
               Data = [||]
               ChartType = Column
           }}
-    let cmd = Cmd.OfAsync.perform ChartApi.getCharts "Logic" GotCharts
+    let cmd = Cmd.OfAsync.perform ChartApi.getAreas () GotAreas
     model, cmd
 
 let update (msg: Msg) (model: Model): Model * Cmd<Msg> =
     match msg with
-    | GotCharts charts ->
-        Fable.Core.JS.console.log("Got charts",charts)
-        { model with Charts = charts }, charts.Head |> ChartSelected |> Cmd.ofMsg
-    | ChartSelected c ->
-        { model with SelectedChart = c }, Cmd.none
+    | GotAreas areas ->
+        let headArea = areas |> List.head
+        let chartId = sprintf "%s/%s" headArea.Id (headArea.ChartIds |> List.head)
+        { model with Areas = areas }, chartId |> ChartSelected |> Cmd.ofMsg
+    | ChartSelected chartId ->
+        { model with
+            SelectedChart = {
+              Id = ""
+              Title = ""
+              Data = [||]
+              ChartType = Column
+            }
+        }, Cmd.OfAsync.perform ChartApi.getChart chartId GotChart
+    | GotChart chart ->
+        { model with SelectedChart = chart}, Cmd.none
+
 type NumberSeriesPoint =
     {
         Y : float
@@ -53,20 +67,22 @@ type NumberSeriesPoint =
 open Fable.React
 open Fable.React.Props
 open Fulma
+
 [<Emit("""(function(x,y){return { name : x, uv : y};})($0,$1)""")>]
 let create x y : obj = jsNative
 
 let lineChart chart =
     let data =
-        chart.Data.[0]
-        |> Array.map(fun (d : Point) ->
+        chart.Data
+        |> Seq.head
+        |> Seq.map(fun (d : Point) ->
             let y =
                match d.Y with
                Number f ->
                    f
                | v -> failwithf "Not a number %A" v
             create d.X y
-        )
+        ) |> Array.ofSeq
     lineChart
         [ margin 5. 20. 5. 0.
           Chart.Width 600.
@@ -90,7 +106,9 @@ let lineChart chart =
 
 let barChart chart =
     let data =
-        chart.Data.[0]
+        chart.Data
+        |> Seq.head
+        |> Array.ofSeq
         |> Array.map(fun (d : Point) ->
             let y =
                match d.Y with
@@ -184,17 +202,40 @@ let pieChartSample() =
 *)
 
 let navBrand model dispatch =
-    model.Charts
-    |> List.map(fun chart ->
-        Navbar.Item.a [
+    model.Areas
+    |> List.map(fun area ->
+        let createChartId areaId chartId =
+            sprintf "%s/%s" areaId chartId
+        let isActive =
+            area.ChartIds |> List.tryFind(fun c -> createChartId area.Id c = model.SelectedChart.Id) |> Option.isSome
+        Navbar.Item.div [
             Navbar.Item.Props [ OnClick(fun e ->
-                chart |> ChartSelected |> dispatch
-                JS.console.log("Chart selected", chart.Id)
+                (area.ChartIds |> List.head) |> createChartId area.Id |> ChartSelected |> dispatch
                 e.preventDefault()
             )]
-            Navbar.Item.IsActive (chart = model.SelectedChart)
+            Navbar.Item.IsActive isActive
         ] [
-            str chart.Id
+            Dropdown.dropdown [ Dropdown.IsHoverable; ]
+                [ Dropdown.trigger [ ]
+                    [ Button.button [ ]
+                        [ span [ ]
+                            [ str area.Id ]
+                          Icon.icon [ Icon.Size IsSmall ]
+                            [ Fa.i [ Fa.Solid.AngleDown ]
+                                [ ] ] ] ]
+                  Dropdown.menu [ ]
+                    [ Dropdown.content [ ]
+                         <| List.map(fun chartId ->
+                                 let chartId = createChartId area.Id chartId
+                                 let isActive = model.SelectedChart.Id = chartId
+                                 Dropdown.Item.a [ Dropdown.Item.IsActive isActive;Dropdown.Item.Option.Props[OnClick(fun e ->
+                                     chartId |> ChartSelected |> dispatch
+                                     e.preventDefault()
+                                 )]]
+                                    [ str chartId ]
+                            ) area.ChartIds
+                  ]
+            ]
         ]
     ) |> Navbar.Brand.div [ ]
 
@@ -207,7 +248,7 @@ let containerBox (model : ChartModel) (dispatch : Msg -> unit) =
         Box.box' [ ] [
             Content.content [ ]
                [
-                 Heading.p [Heading.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered)] ] [str model.Id ]
+                 Heading.p [Heading.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered)] ] [str model.Title ]
                  div [] [renderChart model]
                ]
         ]
@@ -235,7 +276,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                     Column.column [
                         Column.Width (Screen.All, Column.Is6)
                         Column.Offset (Screen.All, Column.Is3)
-                    ] [ if model.SelectedChart.Data.Length > 0 then yield containerBox model.SelectedChart dispatch ]
+                    ] [ if model.SelectedChart.Data |> Seq.isEmpty |> not then yield containerBox model.SelectedChart dispatch ]
                 ]
             ]
     ]

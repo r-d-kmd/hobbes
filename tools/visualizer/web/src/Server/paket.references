@@ -1,2 +1,6 @@
-Saturn
-Fable.Remoting.Giraffe
+group visualizer.web
+    Saturn
+    Fable.Remoting.Giraffe
+
+group web
+    FSharp.Data

@@ -65,7 +65,7 @@ steps:
 - script: |
       source functions.sh 
       build sdk 8
-      docker push kmdrd/sdk
+      docker push hobbes.azurecr.io/sdk
       build BuildForTest 8
   displayName: Build the world
 

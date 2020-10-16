@@ -64,13 +64,13 @@ steps:
   
 - script: |
       source functions.sh 
-      build sdk 8
+      build sdk
   displayName: Build SDK
 
 - script: |
       docker push hobbes.azurecr.io/sdk
   displayName: Push SDK
-  
+
 - script: |
       build BuildForTest 8
   displayName: Build the world

@@ -65,6 +65,8 @@ steps:
 - script: |
       source functions.sh 
       build sdk
+  env:
+     FEED_PAT: $(FEED_PAT)
   displayName: Build SDK
 
 - script: |

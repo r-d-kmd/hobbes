@@ -75,6 +75,8 @@ steps:
 
 - script: |
       build BuildForTest 8
+  env:
+     FEED_PAT: $(FEED_PAT)
   displayName: Build the world
 
 - script: |

@@ -18,6 +18,6 @@ ONBUILD COPY ./src/ .
 
 ONBUILD RUN cat /paket.references >> ./paket.references
 ONBUILD RUN mono /.paket/paket.exe update
-ONBUILD cat paket.lock | sed 's/>= netcoreapp5.0/>= netcoreapp3.1/' >> paket.lock
+ONBUILD RUN cat paket.lock | sed 's/>= netcoreapp5.0/>= netcoreapp3.1/' >> paket.lock
 
 ONBUILD RUN dotnet publish -c ${BUILD_CONFIGURATION} -o /app

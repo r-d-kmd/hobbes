@@ -168,7 +168,7 @@ let serviceDir = DirectoryInfo "./services"
 let workerDir = DirectoryInfo "./workers"
 
 //Set to 'Normal' to have more information when trouble shooting 
-let verbosity = Quiet
+let verbosity = MSBuildVerbosity.Detailed
     
 let package conf outputDir projectFile =
     DotNet.publish (fun opts -> 

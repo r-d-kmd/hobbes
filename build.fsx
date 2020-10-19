@@ -369,7 +369,7 @@ create Targets.SdkImage (fun _ ->
     let tag = sprintf "%s/app" dockerOrg
     let file = Some("Dockerfile.app")
     let build configuration = 
-        docker (Build(file,tag,["CONFIGURATION",configuration; "ARG_FEED", (Environment.environVarOrDefault "FEED_PAT" "Missing")])) dockerDir.Name
+        docker (Build(file,tag,["CONFIGURATION",configuration; "ARG_FEED", (Environment.environVar "FEED_PAT")])) dockerDir.Name
     match buildConfiguration with 
     DotNet.BuildConfiguration.Release ->
         build "Release"

@@ -43,6 +43,7 @@ type Targets =
    | PullRuntime
    | TestNoBuild
    | Runtime
+   | PushPackages
    | Generic of string
 
 let targetName = 
@@ -69,6 +70,7 @@ let targetName =
        | Targets.TestNoBuild -> "TestNoBuild"
        | Targets.PullApp -> "PullApp"
        | Targets.Runtime -> "Runtime"
+       | Targets.PushPackages -> "PushPackages"
 
 
 
@@ -323,24 +325,29 @@ apps
     buildApp name appType dir
     Targets.PreApps ==> Targets.Generic(name) ==> Targets.Build |> ignore
 ) 
-
-commons |> List.iter(fun common ->
-    let targetName = common
-    create targetName (fun _ -> 
-        let projectFile = commonPath common
+let paket workDir args = run "dotnet" workDir ("paket " + args)
+commons |> List.iter(fun target ->
+    let projectFile = commonPath target
+    let commonSrcPath = Path.Combine(Path.GetDirectoryName(projectFile),"..")
+    let packTarget = (("Pack" + target.ToString()) |> Targets.Generic)
+    create packTarget (fun _ -> 
         package buildConfiguration commonLibDir projectFile
-        let commonSrcPath = Path.Combine(Path.GetDirectoryName(projectFile),"..")
         let packages = Directory.EnumerateFiles(commonSrcPath, "*.nupkg")
         let dateTime = System.DateTime.UtcNow
         let version = sprintf "1.%i.%i.%i" dateTime.Year dateTime.DayOfYear ((int) dateTime.TimeOfDay.TotalSeconds)
         File.deleteAll packages
         sprintf "pack --version %s ." version
-        |> run "paket" commonSrcPath 
+        |> paket commonSrcPath 
+    )
+    let pushTarget = (("Push" + target.ToString()) |> Targets.Generic)
+    create pushTarget (fun _ -> 
         let nupkgFilePath = Directory.EnumerateFiles(commonSrcPath, "*.nupkg")
                             |> Seq.exactlyOne
         sprintf "push --url %s --api-key na %s" nugetFeedUrl nupkgFilePath
-        |> run "paket" "./"
+        |> paket "./"
     )
+
+    packTarget ==> pushTarget |> ignore
 ) 
 
 create Targets.GenericSdk (fun _ ->   
@@ -368,8 +375,18 @@ create Targets.Runtime (fun _ ->
 create Targets.SdkImage (fun _ ->   
     let tag = sprintf "%s/app" dockerOrg
     let file = Some("Dockerfile.app")
+
     let build configuration = 
-        docker (Build(file,tag,["CONFIGURATION",configuration; "ARG_FEED", (Environment.environVar "FEED_PAT")])) dockerDir.Name
+        match "FEED_PAT" |> Environment.environVarOrNone  with
+        None -> failwith "No PAT for the nuget feed was provided"
+        | Some argFeed -> 
+            docker <| Build(file,tag,[
+                            "CONFIGURATION",configuration
+                            "ARG_FEED", argFeed
+                        ]
+                      )
+                   <| dockerDir.Name
+
     match buildConfiguration with 
     DotNet.BuildConfiguration.Release ->
         build "Release"
@@ -398,16 +415,22 @@ create Targets.PullDb (fun _ ->
 )
 
 Targets.Dependencies 
-    ?=> Targets.Core 
+    ?=> Targets.Generic("Pack" + Targets.Core.ToString())
     ==> Targets.SdkImage
 
 Targets.Dependencies
-    ?=> Targets.Web
+    ?=> Targets.Generic("Pack" + Targets.Web.ToString())
     ==> Targets.SdkImage
 
 Targets.Dependencies
-    ?=> Targets.Messaging
+    ?=> Targets.Generic("Pack" + Targets.Messaging.ToString())
     ==> Targets.SdkImage
+
+Targets.Generic("Push" + Targets.Messaging.ToString())
+    ==> Targets.Generic("Push" + Targets.Core.ToString())
+    ==> Targets.Generic("Push" + Targets.Web.ToString())
+    ==> Targets.PushPackages
+
 
 Targets.SdkImage
     ?=> Targets.Runtime

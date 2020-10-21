@@ -46,8 +46,8 @@ group test
     storage: none
     
     nuget FsUnit
-    nuget FsUnit.xUnit
-    nuget xUnit
+    nuget FsUnit.xunit
+    nuget xunit
     nuget Microsoft.NET.Test.SDK
     nuget microsoft.testplatform.testhost
     nuget xunit.runner.VisualStudio  
@@ -114,7 +114,7 @@ group visualizer.web
     nuget Fable.Recharts
 
 group Build
-    source https://api.nuget.org/v3/index.json
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
     framework: netstandard2.0
     storage: none
 

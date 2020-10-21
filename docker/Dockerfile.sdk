@@ -5,5 +5,5 @@ RUN apt-get update
 RUN apt-get install mono-complete -y
 
 ENV PATH="$PATH:/root/.dotnet/tools"
-RUN dotnet tool install --global Paket --version=5.243
+RUN dotnet tool install --global Paket --version=5.249.0
 RUN echo $(paket --version) 

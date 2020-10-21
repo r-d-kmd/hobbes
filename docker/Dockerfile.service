@@ -1,4 +1,7 @@
 FROM hobbes.azurecr.io/app AS build
+ENV BUILD_ENV=docker
+COPY ./src/ .
+RUN dotnet publish -c ${BUILD_CONFIGURATION} -o /app
 
 # final stage/image
 FROM hobbes.azurecr.io/runtime

@@ -1,9 +1,4 @@
-﻿FSharp.Core
-
-group web
-    FSharp.Data
-
-group visualizer
+﻿group visualizer
     MathNet.Numerics
     MathNet.Numerics.FSharp
     XPlot.Plotly
@@ -14,3 +9,5 @@ group visualizer
     Deedle
     Accord.MachineLearning
     FSharp.Formatting
+    FSharp.Data
+    FSharp.Core

@@ -1,7 +1,5 @@
 group workbench
     Argu
-
-group web
     Saturn 
     Giraffe
     FSharp.Data

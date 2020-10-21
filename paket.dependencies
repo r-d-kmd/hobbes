@@ -1,37 +1,41 @@
 version 5.249.2
-source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
+source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
 framework: auto-detect
 storage: none
 
-nuget FSharp.Core
-nuget Newtonsoft.Json
-nuget Thoth.Json.Net
+nuget FSharp.Core ~> 4
 
 group workbench
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
     
     nuget Argu
+    nuget Saturn = 0.13.1
+    nuget Giraffe
+    nuget FSharp.Data
+    nuget FSharp.Core ~> 4
 
 group core
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
 
     nuget Accord.MachineLearning
     nuget Deedle
     nuget FParsec
+    nuget Thoth.Json.Net
+    nuget FSharp.Core ~> 4
 
 group collectors
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
-
+    nuget FSharp.Core ~> 4
     nuget RabbitMQ.Client
 
 group web
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%" 
     framework: auto-detect
     storage: none
 
@@ -39,9 +43,12 @@ group web
     nuget Giraffe
     nuget FSharp.Data
     nuget Microsoft.Extensions.PlatformAbstractions
+    nuget FSharp.Core ~> 4
+    nuget Newtonsoft.Json
+    nuget Thoth.Json.Net
 
 group test
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
     
@@ -50,18 +57,19 @@ group test
     nuget xunit
     nuget Microsoft.NET.Test.SDK
     nuget microsoft.testplatform.testhost
-    nuget xunit.runner.VisualStudio  
+    nuget xunit.runner.VisualStudio
+    nuget FSharp.Core ~> 4  
 
 group tutorial
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
     nuget FSharp.Formatting
 
 group visualizer
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
-    storage: packages
+    storage: none
 
     # FSharp.Data
     nuget FSharp.Data 
@@ -81,18 +89,22 @@ group visualizer
     nuget Deedle
     nuget Accord.MachineLearning
     nuget FSharp.Formatting
+    
+    nuget FSharp.Data
+    nuget FSharp.Core ~> 4
 
 group docker
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
     
+    nuget FSharp.Core ~> 4
     nuget hobbes.core
     nuget hobbes.messaging 
     nuget hobbes.web
 
 group visualizer.web
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
 
@@ -112,13 +124,14 @@ group visualizer.web
     nuget Fable.Remoting.Client
     nuget Fulma
     nuget Fable.Recharts
+    nuget FSharp.Data
 
 group Build
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: netstandard2.0
     storage: none
 
-    nuget FSharp.Core
+    nuget FSharp.Core ~> 4
     nuget Fake.Core.ReleaseNotes
     nuget Fake.Core.Target
     nuget Fake.DotNet.Cli

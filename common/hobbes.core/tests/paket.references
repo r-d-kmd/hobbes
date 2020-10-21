@@ -1,9 +1,8 @@
-FSharp.Core
-
 group core
     Accord.MachineLearning
     Deedle
     FParsec
+    FSharp.Core
 
 group test
     Microsoft.NET.Test.Sdk

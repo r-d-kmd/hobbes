@@ -25,9 +25,12 @@ type Targets =
    GenericSdk 
    | CleanCommon
    | Dependencies
-   | Core
-   | Web
-   | Messaging
+   | PackCore
+   | PackWeb
+   | PackMessaging
+   | PushCore
+   | PushWeb
+   | PushMessaging
    | PushCommonNugets
    | Sdk
    | SdkImage
@@ -50,9 +53,12 @@ let targetName =
         Targets.GenericSdk -> "GenericSdk"
        | Targets.CleanCommon -> "CleanCommon"
        | Targets.Dependencies -> "Dependencies"
-       | Targets.Core -> "Core"
-       | Targets.Web -> "Web"
-       | Targets.Messaging -> "Messaging"
+       | Targets.PackCore -> "PackCore"
+       | Targets.PushCore -> "PushCore"
+       | Targets.PackWeb -> "PackWeb"
+       | Targets.PushWeb -> "PushWeb"
+       | Targets.PackMessaging -> "PackMessaging"
+       | Targets.PushMessaging -> "PushMessaging"
        | Targets.PushCommonNugets -> "PushCommonNugets"
        | Targets.SdkImage -> "SdkImage"
        | Targets.Sdk -> "Sdk"
@@ -70,7 +76,15 @@ let targetName =
        | Targets.PullApp -> "PullApp"
        | Targets.Runtime -> "Runtime"
 
-
+let getCommonLibProjectName = 
+    function
+        Targets.PackCore -> "core"
+        | Targets.PackMessaging -> "messaging"
+        | Targets.PackWeb -> "web"
+        | Targets.PushCore -> "core"
+        | Targets.PushMessaging -> "messaging"
+        | Targets.PushWeb -> "web"
+        | _ -> failwith "Not a common lib"
 
 open Fake.Core.TargetOperators
 let inline (==>) (lhs : Targets) (rhs : Targets) =
@@ -186,13 +200,13 @@ let package conf outputDir projectFile =
 let commonPath target =
     let name =
         (target
-         |> targetName).ToLower()
+         |> getCommonLibProjectName).ToLower()
     sprintf "./common/hobbes.%s/src/hobbes.%s.fsproj" name name
 let commons = 
     [
-        Targets.Web
-        Targets.Core
-        Targets.Messaging
+        Targets.PackWeb
+        Targets.PackCore
+        Targets.PackMessaging
     ]
 let apps : seq<App*string> = 
     let enumerateProjectFiles (dir : DirectoryInfo) = 
@@ -279,13 +293,18 @@ create Targets.Complete ignore
 create Targets.PushApps ignore
 create Targets.All ignore
 create Targets.Build ignore
-create Targets.Sdk ignore
-
 create Targets.PreApps ignore
 create Targets.BuildForTest ignore
+create Targets.PushCommonNugets ignore
+
+create Targets.Sdk (fun _ -> 
+   let tag = sprintf "%s/app" dockerOrg
+   docker (Push tag) dockerDir.Name
+)
 
 create Targets.CleanCommon (fun _ ->
-    let deleteFiles lib =
+    let deleteFiles common =
+        let lib = common |> getCommonLibProjectName
         [
             sprintf "docker/.lib/hobbes.%s.dll"
             sprintf "docker/.lib/hobbes.%s.deps.json"
@@ -297,7 +316,7 @@ create Targets.CleanCommon (fun _ ->
         )
         
     commons
-    |> List.iter (string >> deleteFiles)
+    |> List.iter deleteFiles
 )
 
 create Targets.Dependencies (fun _ ->
@@ -323,24 +342,36 @@ apps
     buildApp name appType dir
     Targets.PreApps ==> Targets.Generic(name) ==> Targets.Build |> ignore
 ) 
-
-commons |> List.iter(fun common ->
-    let targetName = common
-    create targetName (fun _ -> 
-        let projectFile = commonPath common
+let paket workDir args = run "dotnet" workDir ("paket " + args)
+commons |> List.iter(fun target ->
+    let projectFile = commonPath target
+    let commonSrcPath = Path.Combine(Path.GetDirectoryName(projectFile),"..")
+    let packTarget = target
+    create packTarget (fun _ -> 
         package buildConfiguration commonLibDir projectFile
-        let commonSrcPath = Path.Combine(Path.GetDirectoryName(projectFile),"..")
         let packages = Directory.EnumerateFiles(commonSrcPath, "*.nupkg")
         let dateTime = System.DateTime.UtcNow
         let version = sprintf "1.%i.%i.%i" dateTime.Year dateTime.DayOfYear ((int) dateTime.TimeOfDay.TotalSeconds)
         File.deleteAll packages
         sprintf "pack --version %s ." version
-        |> run "paket" commonSrcPath 
+        |> paket commonSrcPath 
+    )
+
+    let pushTarget = 
+        match target with
+        Targets.PackCore -> Targets.PushCore
+        | Targets.PackWeb -> Targets.PushWeb
+        | Targets.PackMessaging -> Targets.PushMessaging
+        | _ -> failwith "Not a common lib pack target"
+
+    create pushTarget (fun _ -> 
         let nupkgFilePath = Directory.EnumerateFiles(commonSrcPath, "*.nupkg")
                             |> Seq.exactlyOne
         sprintf "push --url %s --api-key na %s" nugetFeedUrl nupkgFilePath
-        |> run "paket" "./"
+        |> paket "./"
     )
+
+    packTarget ==> pushTarget |> ignore
 ) 
 
 create Targets.GenericSdk (fun _ ->   
@@ -368,12 +399,21 @@ create Targets.Runtime (fun _ ->
 create Targets.SdkImage (fun _ ->   
     let tag = sprintf "%s/app" dockerOrg
     let file = Some("Dockerfile.app")
+
     let build configuration = 
-        docker (Build(file,tag,["CONFIGURATION",configuration; "ARG_FEED", (Environment.environVar "FEED_PAT")])) dockerDir.Name
+        match "FEED_PAT" |> Environment.environVarOrNone  with
+        None -> failwith "No PAT for the nuget feed was provided"
+        | Some argFeed -> 
+            docker <| Build(file,tag,[
+                            "CONFIGURATION",configuration
+                            "ARG_FEED", argFeed
+                        ]
+                      )
+                   <| dockerDir.Name
+
     match buildConfiguration with 
     DotNet.BuildConfiguration.Release ->
         build "Release"
-        docker (Push tag) dockerDir.Name
     | _ -> build "Debug"
 )
 
@@ -398,16 +438,22 @@ create Targets.PullDb (fun _ ->
 )
 
 Targets.Dependencies 
-    ?=> Targets.Core 
+    ?=> Targets.PackCore
     ==> Targets.SdkImage
 
 Targets.Dependencies
-    ?=> Targets.Web
+    ?=> Targets.PackWeb
     ==> Targets.SdkImage
 
 Targets.Dependencies
-    ?=> Targets.Messaging
+    ?=> Targets.PackMessaging
     ==> Targets.SdkImage
+
+Targets.PushMessaging
+    ==> Targets.PushCore
+    ==> Targets.PushWeb
+    ==> Targets.PushCommonNugets
+
 
 Targets.SdkImage
     ?=> Targets.Runtime

@@ -73,6 +73,10 @@ steps:
       docker push hobbes.azurecr.io/sdk
   displayName: Push SDK
 
+- script: build PushPackages
+  displayName: Push Packages
+
+
 - script: |
       build BuildForTest 8
   env:

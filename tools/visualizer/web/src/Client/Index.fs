@@ -208,11 +208,13 @@ let navBrand model dispatch =
             sprintf "%s/%s" areaId chartId
         let isActive =
             area.ChartIds |> List.tryFind(fun c -> createChartId area.Id c = model.SelectedChart.Id) |> Option.isSome
+
         Navbar.Item.div [
+            Navbar.Item.HasDropdown
             Navbar.Item.Props [ OnClick(fun e ->
                 (area.ChartIds |> List.head) |> createChartId area.Id |> ChartSelected |> dispatch
                 e.preventDefault()
-            )]
+            ) ]
             Navbar.Item.IsActive isActive
         ] [
             Dropdown.dropdown [ Dropdown.IsHoverable; ]

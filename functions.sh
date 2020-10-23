@@ -328,8 +328,16 @@ function applyProductionYaml() {
     cd $CURRENT_DIR
 }
 
+function addSource(){
+    dotnet nuget add source --name KMD_FEED \
+        --username "rsl@kmd.dk" \
+        --password "Almost55" \
+        https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
+}
 
-
+function pushPackage(){
+    nuget push -Source KMD_FEED -ApiKey az $1
+}
 
 printf "Project home folder is:\n"
 printf " - ${LightBlue}$SCRIPT_DIR\n"

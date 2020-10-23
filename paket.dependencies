@@ -90,7 +90,6 @@ group visualizer
     nuget Accord.MachineLearning
     nuget FSharp.Formatting
     
-    nuget FSharp.Data
     nuget FSharp.Core ~> 4
 
 group docker

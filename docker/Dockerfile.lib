@@ -1,0 +1,20 @@
+FROM hobbes.azurecr.io/app AS build
+ENV BUILD_ENV=docker
+COPY ./src/ .
+RUN rm -f *.nupkg
+
+ARG VERSION
+ARG FEED_URL="https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2"
+ARG FEED_PAT
+
+ENV VERSION=${VERSION}
+ENV FEED_URL=${FEED_URL}
+ENV FEED_PAT=${FEED_PAT}
+ENV VSS_NUGET_EXTERNAL_FEED_ENDPOINTS \
+    "{\"endpointCredentials\": [{\"endpoint\":\"${FEED_URL}\", \"username\":\"${FEED_PAT}\", \"password\":\"${FEED_PAT}\"}]}"
+
+RUN curl -L https://raw.githubusercontent.com/Microsoft/artifacts-credprovider/master/helpers/installcredprovider.sh  | sh
+RUN echo "<?xml version=\"1.0\" encoding=\"utf-8\"?><configuration><packageSources><clear /><add key=\"KMD_Package_Feed\" value=\"${FEED_URL}\" /></packageSources></configuration>" >> nuget.config
+RUN dotnet build --configuration Release
+RUN paket pack --version "$VERSION" . 
+RUN dotnet nuget push --source "$FEED_URL" --api-key az "$(ls *.nupkg)" 

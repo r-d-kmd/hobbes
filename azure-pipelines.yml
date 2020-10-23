@@ -64,14 +64,13 @@ steps:
   
 - script: |
       source functions.sh 
-      echo "*************************************************************"
-      echo "$FEED_PAT"
       build sdk
   env:
      FEED_PAT: $(FEED_PAT)
   displayName: Build SDK
 
 - script: |
+      source funcstions.sh
       build BuildForTest 8
   env:
      FEED_PAT: $(FEED_PAT)

@@ -25,13 +25,9 @@ type Targets =
    GenericSdk 
    | CleanCommon
    | Dependencies
-   | PackCore
-   | PackWeb
-   | PackMessaging
-   | PushCore
-   | PushWeb
-   | PushMessaging
-   | PushCommonNugets
+   | Core
+   | Web
+   | Messaging
    | Sdk
    | SdkImage
    | PreApps
@@ -53,13 +49,9 @@ let targetName =
         Targets.GenericSdk -> "GenericSdk"
        | Targets.CleanCommon -> "CleanCommon"
        | Targets.Dependencies -> "Dependencies"
-       | Targets.PackCore -> "PackCore"
-       | Targets.PushCore -> "PushCore"
-       | Targets.PackWeb -> "PackWeb"
-       | Targets.PushWeb -> "PushWeb"
-       | Targets.PackMessaging -> "PackMessaging"
-       | Targets.PushMessaging -> "PushMessaging"
-       | Targets.PushCommonNugets -> "PushCommonNugets"
+       | Targets.Core -> "Core"
+       | Targets.Web -> "Web"
+       | Targets.Messaging -> "Messaging"
        | Targets.SdkImage -> "SdkImage"
        | Targets.Sdk -> "Sdk"
        | Targets.PreApps -> "PreApps"
@@ -78,13 +70,16 @@ let targetName =
 
 let getCommonLibProjectName = 
     function
-        Targets.PackCore -> "core"
-        | Targets.PackMessaging -> "messaging"
-        | Targets.PackWeb -> "web"
-        | Targets.PushCore -> "core"
-        | Targets.PushMessaging -> "messaging"
-        | Targets.PushWeb -> "web"
+        Targets.Core -> "core"
+        | Targets.Messaging -> "messaging"
+        | Targets.Web -> "web"
         | _ -> failwith "Not a common lib"
+
+let argFeed = 
+    match "FEED_PAT" |> Environment.environVarOrNone  with
+    None -> failwith "No PAT for the nuget feed was provided"
+    | Some argFeed -> 
+        argFeed
 
 open Fake.Core.TargetOperators
 let inline (==>) (lhs : Targets) (rhs : Targets) =
@@ -204,9 +199,9 @@ let commonPath target =
     sprintf "./common/hobbes.%s/src/hobbes.%s.fsproj" name name
 let commons = 
     [
-        Targets.PackWeb
-        Targets.PackCore
-        Targets.PackMessaging
+        Targets.Web
+        Targets.Core
+        Targets.Messaging
     ]
 let apps : seq<App*string> = 
     let enumerateProjectFiles (dir : DirectoryInfo) = 
@@ -295,7 +290,6 @@ create Targets.All ignore
 create Targets.Build ignore
 create Targets.PreApps ignore
 create Targets.BuildForTest ignore
-create Targets.PushCommonNugets ignore
 
 create Targets.Sdk (fun _ -> 
    let tag = sprintf "%s/app" dockerOrg
@@ -353,25 +347,8 @@ commons |> List.iter(fun target ->
         let dateTime = System.DateTime.UtcNow
         let version = sprintf "1.%i.%i.%i" dateTime.Year dateTime.DayOfYear ((int) dateTime.TimeOfDay.TotalSeconds)
         File.deleteAll packages
-        sprintf "pack --version %s ." version
-        |> paket commonSrcPath 
+        docker <| Build(Some "../../docker/Dockerfile.lib", "temp", ["VERSION",version;"FEED_PAT",argFeed]) <| commonSrcPath 
     )
-
-    let pushTarget = 
-        match target with
-        Targets.PackCore -> Targets.PushCore
-        | Targets.PackWeb -> Targets.PushWeb
-        | Targets.PackMessaging -> Targets.PushMessaging
-        | _ -> failwith "Not a common lib pack target"
-
-    create pushTarget (fun _ -> 
-        let nupkgFilePath = Directory.EnumerateFiles(commonSrcPath, "*.nupkg")
-                            |> Seq.exactlyOne
-        sprintf "push --url %s --api-key na %s" nugetFeedUrl nupkgFilePath
-        |> paket "./"
-    )
-
-    packTarget ==> pushTarget |> ignore
 ) 
 
 create Targets.GenericSdk (fun _ ->   
@@ -401,10 +378,7 @@ create Targets.SdkImage (fun _ ->
     let file = Some("Dockerfile.app")
 
     let build configuration = 
-        match "FEED_PAT" |> Environment.environVarOrNone  with
-        None -> failwith "No PAT for the nuget feed was provided"
-        | Some argFeed -> 
-            docker <| Build(file,tag,[
+        docker <| Build(file,tag,[
                             "CONFIGURATION",configuration
                             "ARG_FEED", argFeed
                         ]
@@ -438,22 +412,16 @@ create Targets.PullDb (fun _ ->
 )
 
 Targets.Dependencies 
-    ?=> Targets.PackCore
+    ?=> Targets.Core
     ==> Targets.SdkImage
 
 Targets.Dependencies
-    ?=> Targets.PackWeb
+    ?=> Targets.Web
     ==> Targets.SdkImage
 
 Targets.Dependencies
-    ?=> Targets.PackMessaging
+    ?=> Targets.Messaging
     ==> Targets.SdkImage
-
-Targets.PushMessaging
-    ==> Targets.PushCore
-    ==> Targets.PushWeb
-    ==> Targets.PushCommonNugets
-
 
 Targets.SdkImage
     ?=> Targets.Runtime

@@ -64,6 +64,8 @@ steps:
   
 - script: |
       source functions.sh 
+      echo "*************************************************************"
+      echo "$FEED_PAT"
       build sdk
   env:
      FEED_PAT: $(FEED_PAT)

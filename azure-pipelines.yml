@@ -72,7 +72,7 @@ steps:
   displayName: Build SDK
 
 - script: |
-      docker push hobbes.azurecr.io/sdk
+      docker push hobbes.azurecr.io/app
   displayName: Push SDK
 
 - script: build PushPackages

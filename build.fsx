@@ -345,8 +345,10 @@ commons |> List.iter(fun target ->
         let packages = Directory.EnumerateFiles(commonSrcPath, "*.nupkg")
         let dateTime = System.DateTime.UtcNow
         let version = sprintf "1.%i.%i.%i" dateTime.Year dateTime.DayOfYear ((int) dateTime.TimeOfDay.TotalSeconds)
+        File.Copy(Path.Combine(commonSrcPath,"../../docker/Dockerfile.lib"),Path.Combine(commonSrcPath,"Dockerfile"))
         File.deleteAll packages
-        docker <| Build(Some "../../docker/Dockerfile.lib", "temp", ["VERSION",version;"FEED_PAT",argFeed]) <| commonSrcPath 
+        docker <| Build(None, "temp", ["VERSION",version;"FEED_PAT",argFeed]) <| commonSrcPath 
+        File.Delete (Path.Combine(commonSrcPath,"Dockerfile"))
     )
 ) 
 

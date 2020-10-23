@@ -342,7 +342,6 @@ commons |> List.iter(fun target ->
     let commonSrcPath = Path.Combine(Path.GetDirectoryName(projectFile),"..")
     let packTarget = target
     create packTarget (fun _ -> 
-        package buildConfiguration commonLibDir projectFile
         let packages = Directory.EnumerateFiles(commonSrcPath, "*.nupkg")
         let dateTime = System.DateTime.UtcNow
         let version = sprintf "1.%i.%i.%i" dateTime.Year dateTime.DayOfYear ((int) dateTime.TimeOfDay.TotalSeconds)

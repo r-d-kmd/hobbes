@@ -1,7 +1,7 @@
 FROM hobbes.azurecr.io/sdk
 WORKDIR /source
 ARG CONFIGURATION=release
-ARG ARG_FEED=433hp5ologxbv6itb4lir7mzde2qf6x75tnwrzvhom3udr6qomrq
+ARG ARG_FEED
 ENV FEED_PAT ${ARG_FEED}
 ENV BUILD_CONFIGURATION release
 ENV BUILD_ENV docker

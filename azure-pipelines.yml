@@ -72,10 +72,6 @@ steps:
   displayName: Build SDK
 
 - script: |
-      docker push hobbes.azurecr.io/app
-  displayName: Push SDK
-
-- script: |
       build BuildForTest 8
   env:
      FEED_PAT: $(FEED_PAT)

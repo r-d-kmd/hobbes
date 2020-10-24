@@ -1,4 +1,4 @@
-FROM hobbes.azurecr.io/app AS build
+FROM base AS build
 ENV BUILD_ENV=docker
 COPY ./src/ .
 RUN cat /paket.references >> ./paket.references

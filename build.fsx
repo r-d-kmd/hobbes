@@ -240,6 +240,7 @@ let buildApp (name : string) (appType : string) workingDir =
         let tags =
            let t = createDockerTag dockerOrg tag
            [
+               tag
                t + ":" + assemblyVersion
                t + ":" + "latest"
            ]
@@ -386,10 +387,13 @@ create Targets.SdkImage (fun _ ->
                       )
                    <| dockerDir.Name
 
-    match buildConfiguration with 
-    DotNet.BuildConfiguration.Release ->
+    (match buildConfiguration with 
+     DotNet.BuildConfiguration.Release ->
         build "Release"
-    | _ -> build "Debug"
+     | _ -> build "Debug")
+
+    run "paket" "." "update" 
+    docker (Build(Some "docker/Dockerfile.base","base", [])) "."
 )
 
 create Targets.TestNoBuild (fun _ ->

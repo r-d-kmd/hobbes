@@ -2,6 +2,7 @@
 .fake/
 .ionide/
 .vs/
+.paket/
 .vscode/
 common/
 kubernetes/
@@ -9,7 +10,8 @@ packages/
 packaging/
 paket-files/
 services/
-workbench/
+tools/
+tutorial/
 workers/
 .dockerignore
 .gitignore

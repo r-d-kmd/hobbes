@@ -41,3 +41,6 @@ nexus.txt
 chart.html
 *.cache
 tools/visualizer/*.html
+services/**/Dockerfile
+workers/**/Dockerfile
+common/**/Dockerfile

@@ -2,4 +2,4 @@
 FROM hobbes.azurecr.io/app AS build
 ENV BUILD_ENV=docker
 COPY paket.lock .
-RUN paket restore
+RUN dotnet paket restore

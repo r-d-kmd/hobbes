@@ -392,7 +392,11 @@ create Targets.SdkImage (fun _ ->
         build "Release"
      | _ -> build "Debug")
 
-    run "paket" "." "update" 
+    try
+        run "dotnet" "." "paket update"
+    with _ ->
+        run "paket" "." "update"
+        
     docker (Build(Some "docker/Dockerfile.base","base", [])) "."
 )
 

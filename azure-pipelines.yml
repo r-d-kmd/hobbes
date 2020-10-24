@@ -70,7 +70,8 @@ steps:
   displayName: Build SDK
 
 - script: |
-    fake build --target BuildForTest
+    source functions.sh
+    build BuildForTest
   env:
      FEED_PAT: $(FEED_PAT)
   displayName: Build the world

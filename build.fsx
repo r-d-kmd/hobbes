@@ -392,11 +392,12 @@ create Targets.SdkImage (fun _ ->
         build "Release"
      | _ -> build "Debug")
 
-    try
+    //until dotnet 5 is release we disable this. THere's an error in paket
+    (* try
         run "dotnet" "." "paket update"
-    with _ ->
+      with _ ->
         run "paket" "." "update"
-
+    *)
     docker (Build(Some "docker/Dockerfile.base","base", [])) "."
 )
 

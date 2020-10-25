@@ -240,7 +240,7 @@ let buildApp (name : string) (appType : string) workingDir =
         let tags =
            let t = createDockerTag dockerOrg tag
            [
-               tag
+               "hobbes-" + tag
                t + ":" + assemblyVersion
                t + ":" + "latest"
            ]
@@ -396,7 +396,7 @@ create Targets.SdkImage (fun _ ->
         run "dotnet" "." "paket update"
     with _ ->
         run "paket" "." "update"
-        
+
     docker (Build(Some "docker/Dockerfile.base","base", [])) "."
 )
 

@@ -83,6 +83,7 @@ steps:
   displayName: Setup tests
 
 - script: |
+    sleep 60
     printf "${NoColor}"
     source functions.sh
     kubectl logs job/publish
@@ -101,6 +102,7 @@ steps:
     else
         logs az
         exit $TESTRESULT
+    fi
   displayName: Run postman tests
 
 - script: |

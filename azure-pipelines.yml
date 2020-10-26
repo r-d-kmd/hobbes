@@ -64,10 +64,10 @@ steps:
   
 - script: |
       source functions.sh 
-      build sdk
+      build sdk 4
   env:
      FEED_PAT: $(FEED_PAT)
-  displayName: Build SDK 4
+  displayName: Build SDK 
 
 - script: |
     source functions.sh

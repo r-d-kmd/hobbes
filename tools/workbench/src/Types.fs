@@ -116,7 +116,7 @@ module Types =
     open Hobbes.Web.RawdataTypes
     let parse stmt =
         let stmt = stmt |> string
-        Hobbes.Parsing.Parser.parse [stmt]
+        Hobbes.Parsing.StatementParser.parse stmt
         |> Seq.exactlyOne
     let createTransformation name (statements : Hobbes.DSL.Statements list) =
        //verify the validity of the statements

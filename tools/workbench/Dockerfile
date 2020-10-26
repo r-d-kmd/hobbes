@@ -1,4 +1,4 @@
-FROM kmdrd/app AS build
+FROM hobbes.azurecr.io/app AS build
 
 # final stage/image
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1

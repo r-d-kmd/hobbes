@@ -64,14 +64,14 @@ steps:
   
 - script: |
       source functions.sh 
-      build sdk 4
+      build sdk
   env:
      FEED_PAT: $(FEED_PAT)
   displayName: Build SDK 
 
 - script: |
     source functions.sh
-    build BuildForTest 8
+    build BuildForTest
   env:
      FEED_PAT: $(FEED_PAT)
   displayName: Build the world

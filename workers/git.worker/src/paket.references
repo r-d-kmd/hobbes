@@ -1,9 +1,8 @@
-Newtonsoft.Json
-Thoth.Json.Net
-
 group web
     Saturn 
     Giraffe
     FSharp.Data
     Microsoft.Extensions.PlatformAbstractions
+    FSharp.Core
+    Newtonsoft.Json
 

@@ -1,11 +1,11 @@
 namespace Hobbes.Parsing
 
-open FParsec.Primitives
 open FParsec.CharParsers
+open FParsec.Primitives
+open Hobbes.Parsing.Primitives
 
 [<AutoOpen>]
 module Keywords = 
-    type Parser<'a> = Parser<'a,unit>
     let private createOperator op : Parser<_> = 
         spaces >>. skipString op .>> spaces
     let opArrow  = createOperator "->" 

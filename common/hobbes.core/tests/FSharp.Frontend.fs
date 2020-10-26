@@ -10,18 +10,11 @@ open Hobbes.FSharp
 
 
 module Frontend =
-    let inline debug() = 
-        if not System.Diagnostics.Debugger.IsAttached then
-            printfn "Attach debugger"
-            while not System.Diagnostics.Debugger.IsAttached do
-                System.Threading.Thread.Sleep 100
-
-        System.Diagnostics.Debugger.Break()
-        
-    let parse stmt =
-        let stmt = stmt |> string
-        Parser.parse [stmt]
-        |> Seq.exactlyOne
+    
+    let parse =
+        string
+        >> StatementParser.parse
+        >> Seq.exactlyOne
 
     let buildComparisonExpr expr1 expr2 oper =
         Comparison (expr1, expr2, oper)
@@ -112,7 +105,7 @@ module Frontend =
         let parsedStatements = 
             create (column "Test") (If (!> "State" == matchState) (Then 1.) (Else 2.))
             |> parse
-        let execute = Compile.parsedExpressions [parsedStatements] 
+        let execute = Compile.parsedStatements [parsedStatements] 
         let actual = 
             testDataset() 
             |> execute 
@@ -131,7 +124,7 @@ module Frontend =
         let parsedStatements = 
             create (column "Test") (If (!> "State" == matchState) (Then 1) (Else (If (!> "State" == nestedMatchState) (Then 2) (Else 3))))
             |> parse
-        let execute = Compile.parsedExpressions [parsedStatements] 
+        let execute = Compile.parsedStatements [parsedStatements] 
         let actual = 
             testDataset() 
             |> execute 
@@ -146,7 +139,7 @@ module Frontend =
     [<Fact>]
     let onlyReturnAll() =
         let statement = only (!!> "foo" == !!> "foo") |> parse
-        let execute = Compile.parsedExpressions [statement]
+        let execute = Compile.parsedStatements [statement]
         testDataset() 
         |> execute 
         |> asTable
@@ -155,7 +148,7 @@ module Frontend =
     [<Fact>]
     let onlyReturnNone() =
         let statement = only (!!> "foo" == !!> "boo") |> parse
-        let execute = Compile.parsedExpressions [statement]
+        let execute = Compile.parsedStatements [statement]
         let actual = 
             testDataset() 
             |> execute 
@@ -166,7 +159,7 @@ module Frontend =
     [<Fact>]
     let onlyReturnSomeString() =
         let statement = only (!> "State" == "Active") |> parse
-        let execute = Compile.parsedExpressions [statement]
+        let execute = Compile.parsedStatements [statement]
         let actual = 
             testDataset() 
             |> execute 
@@ -179,7 +172,7 @@ module Frontend =
     [<Fact>]
     let onlyReturnSomeInt() =
         let statement = only (!> "Sprint" == 5) |> parse
-        let execute = Compile.parsedExpressions [statement]
+        let execute = Compile.parsedStatements [statement]
         let actual = 
             testDataset()
             |> execute 
@@ -191,12 +184,11 @@ module Frontend =
 
     [<Fact>]
     let onlyReturnSomeDateTime() =
-        debug()
 
         let step = 3
         let date = System.DateTime(2019,8,25).AddDays(float step)
         let statement = only (!> "Sprint Start Date" == date) |> parse
-        let execute = Compile.parsedExpressions [statement]
+        let execute = Compile.parsedStatements [statement]
         let actual = 
             testDataset() 
             |> execute 
@@ -209,7 +201,7 @@ module Frontend =
     [<Fact>]
     let sliceColumnsNonExisting() =
         let statement = slice columns ["None"] |> parse
-        let execute = Compile.parsedExpressions [statement]
+        let execute = Compile.parsedStatements [statement]
         let actual =
             testDataset() 
             |> execute
@@ -220,7 +212,7 @@ module Frontend =
     [<Fact>]
     let sliceColumnsOne() =
         let statement = slice columns ["Sprint"] |> parse
-        let execute = Compile.parsedExpressions [statement]
+        let execute = Compile.parsedStatements [statement]
         let actual =
             testDataset() 
             |> execute
@@ -231,7 +223,7 @@ module Frontend =
     [<Fact>]
     let sliceColumnsMany() =
         let statement = slice columns ["Sprint"; "Sprint Start Date"] |> parse
-        let execute = Compile.parsedExpressions [statement]
+        let execute = Compile.parsedStatements [statement]
         let actual =
             testDataset() 
             |> execute
@@ -244,7 +236,7 @@ module Frontend =
     let sliceColumnsAll() =
         let allColumns = testDataTable |> Seq.map fst |> List.ofSeq
         let statement = slice columns allColumns |> parse
-        let execute = Compile.parsedExpressions [statement]
+        let execute = Compile.parsedStatements [statement]
         let actual =
             testDataset() 
             |> execute
@@ -259,7 +251,7 @@ module Frontend =
     [<Fact>]
     let sortByColumnNumericValues() =
         let statement = sort by "Count" |> parse
-        let execute = Compile.parsedExpressions [statement]
+        let execute = Compile.parsedStatements [statement]
         let actual =
             testDataset() 
             |> execute
@@ -271,7 +263,7 @@ module Frontend =
     [<Fact>]
     let sortByColumnStringValues() =
         let statement = sort by "State" |> parse
-        let execute = Compile.parsedExpressions [statement]
+        let execute = Compile.parsedStatements [statement]
         let actual =
             testDataset() 
             |> execute
@@ -283,7 +275,7 @@ module Frontend =
     [<Fact>]
     let sortByColumnDateTimeValues() =
         let statement = sort by "Sprint Start Date" |> parse
-        let execute = Compile.parsedExpressions [statement]
+        let execute = Compile.parsedStatements [statement]
         let actual =
             testDataset() 
             |> execute
@@ -298,7 +290,7 @@ module Frontend =
         let statement = 
             create (column keysColumn) Expression.Keys
             |> parse
-        let execute =  Compile.parsedExpressions [statement]
+        let execute =  Compile.parsedStatements [statement]
         let expected = 
             testDataTable
             |> Seq.head
@@ -323,7 +315,7 @@ module Frontend =
                 create (column keysColumn) Expression.Keys
             ] |> List.map parse
 
-        let execute =  Compile.parsedExpressions statements
+        let execute =  Compile.parsedStatements statements
         let actual =
             testDataset() 
             |> execute
@@ -334,7 +326,7 @@ module Frontend =
     [<Fact>]
     let rename() =
         let statement = rename "State" "NewName" |> parse
-        let execute =  Compile.parsedExpressions [statement]
+        let execute =  Compile.parsedStatements [statement]
         let actual =
             testDataset() 
             |> execute
@@ -355,7 +347,7 @@ module Frontend =
     [<Fact>]
     let groupByMaxBy() =
         let statement = group by ["State"] => maxby !> "Sprint" |> parse
-        let execute =  Compile.parsedExpressions [statement]
+        let execute =  Compile.parsedStatements [statement]
         let actual =
             testDataset() 
             |> execute
@@ -395,7 +387,7 @@ module Frontend =
     [<Fact>]
     let groupByMinBy() =
         let statement = group by ["State"] => minby !> "Sprint" |> parse
-        let execute =  Compile.parsedExpressions [statement]
+        let execute =  Compile.parsedStatements [statement]
         let actual =
             testDataset() 
             |> execute

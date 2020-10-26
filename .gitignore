@@ -19,7 +19,6 @@ workbench.json
 **/AssemblyInfo.fs
 hobbes.server/db/data1/
 kubernetes/env.JSON
-.lib/
 .env
 kubernetes/env.yaml
 tutorial/*.html
@@ -27,6 +26,7 @@ tutorial/scripts/*.html
 repositories/
 temp.*
 *.ignore
+*.nupkg
 docker/tmp
 **/src/Properties/
 docker/build
@@ -38,3 +38,8 @@ kubernetes/log.txt
 hobbes-vscode/hb/grammar/hobbes.YAML-tmLanguage
 nexus.txt
 chart.html
+*.cache
+tools/visualizer/*.html
+services/**/Dockerfile
+workers/**/Dockerfile
+common/**/Dockerfile

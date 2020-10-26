@@ -1,9 +1,9 @@
-version 5.249.2
+version 5.251.0
 source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
 framework: auto-detect
 storage: none
 
-nuget FSharp.Core ~> 4
+nuget FSharp.Core ~> 5
 
 group workbench
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
@@ -14,7 +14,7 @@ group workbench
     nuget Saturn = 0.13.1
     nuget Giraffe
     nuget FSharp.Data
-    nuget FSharp.Core ~> 4
+    nuget FSharp.Core ~> 5
 
 group core
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
@@ -25,13 +25,13 @@ group core
     nuget Deedle
     nuget FParsec
     nuget Thoth.Json.Net
-    nuget FSharp.Core ~> 4
+    nuget FSharp.Core ~> 5
 
 group collectors
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
-    nuget FSharp.Core ~> 4
+    nuget FSharp.Core ~> 5
     nuget RabbitMQ.Client
 
 group web
@@ -43,7 +43,7 @@ group web
     nuget Giraffe
     nuget FSharp.Data
     nuget Microsoft.Extensions.PlatformAbstractions
-    nuget FSharp.Core ~> 4
+    nuget FSharp.Core ~> 5
     nuget Newtonsoft.Json
     nuget Thoth.Json.Net
 
@@ -58,7 +58,7 @@ group test
     nuget Microsoft.NET.Test.SDK
     nuget microsoft.testplatform.testhost
     nuget xunit.runner.VisualStudio
-    nuget FSharp.Core ~> 4  
+    nuget FSharp.Core ~> 5  
 
 group tutorial
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
@@ -90,14 +90,14 @@ group visualizer
     nuget Accord.MachineLearning
     nuget FSharp.Formatting
     
-    nuget FSharp.Core ~> 4
+    nuget FSharp.Core ~> 5
 
 group docker
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
     
-    nuget FSharp.Core ~> 4
+    nuget FSharp.Core ~> 5
     nuget hobbes.core
     nuget hobbes.messaging 
     nuget hobbes.web
@@ -130,7 +130,7 @@ group Build
     framework: netstandard2.0
     storage: none
 
-    nuget FSharp.Core ~> 4
+    nuget FSharp.Core ~> 5
     nuget Fake.Core.ReleaseNotes
     nuget Fake.Core.Target
     nuget Fake.DotNet.Cli

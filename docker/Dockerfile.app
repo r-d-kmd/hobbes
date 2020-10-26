@@ -12,7 +12,8 @@ ENV FEED_PAT ${ARG_FEED}
 ENV BUILD_CONFIGURATION release
 ENV BUILD_ENV docker
 
-RUN dotnet new tool-manifest
-RUN dotnet tool install paket
+RUN mkdir .config
+COPY .config/dotnet-tools.json .config/
+RUN dotnet tool restore 
 COPY paket.dependencies .
 RUN dotnet paket update

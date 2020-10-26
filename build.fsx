@@ -346,9 +346,10 @@ commons |> List.iter(fun target ->
         let packages = Directory.EnumerateFiles(commonSrcPath, "*.nupkg")
         let dateTime = System.DateTime.UtcNow
         let version = sprintf "1.%i.%i.%i" dateTime.Year dateTime.DayOfYear ((int) dateTime.TimeOfDay.TotalSeconds)
-        File.Copy(Path.Combine(commonSrcPath,"../../docker/Dockerfile.lib"),Path.Combine(commonSrcPath,"Dockerfile"))
+        let dockerfile = Path.Combine(commonSrcPath,"Dockerfile")
+        File.Copy(Path.Combine(commonSrcPath,"../../docker/Dockerfile.lib"),dockerfile,true)
         File.deleteAll packages
-        docker <| Build(None, "temp", ["VERSION",version;"FEED_PAT",argFeed]) <| commonSrcPath 
+        docker <| Build(None, "temp", ["VERSION_ARG",version;"FEED_PAT_ARG",argFeed]) <| commonSrcPath 
         File.Delete (Path.Combine(commonSrcPath,"Dockerfile"))
     )
 ) 
@@ -392,12 +393,6 @@ create Targets.SdkImage (fun _ ->
         build "Release"
      | _ -> build "Debug")
 
-    //until dotnet 5 is release we disable this. THere's an error in paket
-    (* try
-        run "dotnet" "." "paket update"
-      with _ ->
-        run "paket" "." "update"
-    *)
     docker (Build(Some "docker/Dockerfile.base","base", [])) "."
 )
 

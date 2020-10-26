@@ -3,3 +3,4 @@ group core
     Deedle
     FParsec
     Thoth.Json.Net
+    FSharp.Core

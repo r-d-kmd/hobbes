@@ -3,13 +3,13 @@ ENV BUILD_ENV=docker
 COPY ./src/ .
 RUN rm -f *.nupkg
 
-ARG VERSION
-ARG FEED_URL="https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2"
-ARG FEED_PAT
+ARG VERSION_ARG
+ARG FEED_URL_Arg="https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2"
+ARG FEED_PAT_ARG
 
 ENV VERSION=${VERSION}
-ENV FEED_URL=${FEED_URL}
-ENV FEED_PAT=${FEED_PAT}
+ENV FEED_URL=${FEED_URL_ARG}
+ENV FEED_PAT=${FEED_PAT_ARG}
 ENV VSS_NUGET_EXTERNAL_FEED_ENDPOINTS \
     "{\"endpointCredentials\": [{\"endpoint\":\"${FEED_URL}\", \"username\":\"${FEED_PAT}\", \"password\":\"${FEED_PAT}\"}]}"
 

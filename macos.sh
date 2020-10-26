@@ -11,17 +11,33 @@ function setupTest(){
     sleep 3
     printf "${Purple}Publishing transformations and configurations\n"
     publish
-    printf "${Purple}Publishing\n"
-    sleep 10
-    kubectl wait --for=condition=complete job/publish --timeout=60s
-    printf "${Purple}Published${NoColor}\n" 
-    printf "${Cyan}Sync\n"
-    CONFIG_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs | grep "key" | wc -l)
-    printf "${Cyan}Syncing${NoColor}\n"
-    sync
-    sleep 10
-    kubectl wait --for=condition=complete job/sync --timeout=60s
-    printf "${Green}Syncronization and tranformations completed.\n${NoColor}"
+    PRESULT=$?
+    if [ "$PRESULT" -eq "0" ]
+    then
+        printf "${Purple}Publishing\n"
+        sleep 10
+        kubectl wait --for=condition=complete job/publish --timeout=60s
+        printf "${Purple}Published${NoColor}\n" 
+        printf "${Cyan}Sync\n"
+        CONFIG_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs | grep "key" | wc -l)
+        printf "${Cyan}Syncing${NoColor}\n"
+        sync
+        SREULT=$?
+        if [ "$SREULT" -eq 0 ]
+        then
+            sleep 10
+            kubectl wait --for=condition=complete job/sync --timeout=60s
+            printf "${Green}Syncronization and tranformations completed.\n${NoColor}"
+        else
+            printf "${Red}Syncronization failed.\n${NoColor}"
+            cd $CURRENT_DIR
+            exit $SREULT
+        fi
+    else
+       printf "${Red}Publishing failed.\n${NoColor}"
+       cd $CURRENT_DIR
+       exit $PRESULT
+    fi
     cd $CURRENT_DIR
 }
 

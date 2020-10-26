@@ -1,16 +1,19 @@
-FROM kmdrd/sdk
+FROM hobbes.azurecr.io/sdk
 WORKDIR /source
 ARG CONFIGURATION=release
-ENV BUILD_CONFIGURATION ${CONFIGURATION}
+ARG ARG_FEED
+
+COPY docker/build/.paket/Paket.Restore.targets /.paket/Paket.Restore.targets
+COPY docker/paket.references /paket.references
+COPY docker/hobbes.properties.targets .
+COPY docker/.lib/yaml-parser/*.* /source/.lib/
+
+ENV FEED_PAT ${ARG_FEED}
+ENV BUILD_CONFIGURATION release
 ENV BUILD_ENV docker
 
-COPY ./build/paket.* ./
-COPY build/.paket /.paket
-
-RUN mono /.paket/paket.exe restore
-
-COPY .lib/ /.lib/
-COPY hobbes.properties.targets ./
-
-ONBUILD COPY ./src/ .
-ONBUILD RUN dotnet publish -c ${BUILD_CONFIGURATION} -o /app
+RUN mkdir .config
+COPY .config/dotnet-tools.json .config/
+RUN dotnet tool restore 
+COPY paket.dependencies .
+RUN dotnet paket update

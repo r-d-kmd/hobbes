@@ -1,12 +1,10 @@
-Newtonsoft.Json
-Thoth.Json.Net
-
 group web
     Saturn 
     Giraffe
     FSharp.Data
     Microsoft.Extensions.PlatformAbstractions
+    Newtonsoft.Json
+    Thoth.Json.Net
     
 group collectors
     RabbitMQ.Client
-    

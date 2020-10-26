@@ -35,7 +35,7 @@ module Processer =
     let transform statements originalData  =
         originalData
         |> toMatrix
-        |> Hobbes.FSharp.Compile.expressions statements     
+        |> Hobbes.FSharp.Compile.statements (String.concat System.Environment.NewLine statements)
 
     let format format rows columnNames =
       

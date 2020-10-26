@@ -1,0 +1,28 @@
+provider: rest
+url: https://analytics.dev.azure.com/kmddk/gandalf/_odata/v2.0/WorkItemRevisions?%24expand=Iteration&%24select=State,ChangedDate,WorkITemId%2CWorkItemType%2CState%2CStateCategory%2CIteration&%24filter=Iteration%2FStartDate%20gt%202019-01-01Z
+user: a6plj3mmef7ithp54265tqr2kxeu2huz4s2hemgtudkh2sd2vyhq 
+pwd: a6plj3mmef7ithp54265tqr2kxeu2huz4s2hemgtudkh2sd2vyhq
+values: value
+
+
+!# An overview of the state of items at the end of the sprints
+Each column represents the number of user stories or bugs in that particular state at the end of the sprint
+!#
+
+
+only ((WorkItemType = 'User Story') || (WorkItemType = 'Bug'))
+group by "Iteration.IterationName" WorkItemId -> maxby ChangedDate
+rename column "Iteration.IterationLevel4" "Sprint Name"
+create column SprintNumber (int (regex ["Sprint Name"] /[Ss][Pp][Rr][Ii][Nn][Tt] [^\\d]*([\\d]+).*/ [$1]))
+rename column State "DetailedState"
+create column State (if [StateCategory = 'Completed' || StateCategory = 'Resolved' || StateCategory = 'Remove'] {'Done'} else { if ["StateCategory" = 'InProgress'] {'Doing'} else {'Todo'} })
+only !(SprintNumber = missing)
+pivot [SprintNumber] [State] -> count [SprintNumber]
+sort by column SprintNumber
+
+
+!#
+Here's a picute of a cat
+  
+![Alt text](https://static.boredpanda.com/blog/wp-content/uploads/2014/02/funny-wet-cats-36.jpg)
+!#

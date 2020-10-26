@@ -68,7 +68,18 @@ let targetName =
        | Targets.PullApp -> "PullApp"
        | Targets.Runtime -> "Runtime"
 
+let getCommonLibProjectName = 
+    function
+        Targets.Core -> "core"
+        | Targets.Messaging -> "messaging"
+        | Targets.Web -> "web"
+        | _ -> failwith "Not a common lib"
 
+let argFeed = 
+    match "FEED_PAT" |> Environment.environVarOrNone  with
+    None -> failwith "No PAT for the nuget feed was provided"
+    | Some argFeed -> 
+        argFeed
 
 open Fake.Core.TargetOperators
 let inline (==>) (lhs : Targets) (rhs : Targets) =
@@ -86,7 +97,7 @@ let runOrDefaultWithArguments =
     targetName
     >> Target.runOrDefaultWithArguments 
 
-let dockerOrg = "kmdrd"
+let dockerOrg = "hobbes.azurecr.io"
 let run command workingDir args = 
     let arguments = 
         match args |> String.split ' ' with
@@ -98,13 +109,14 @@ let run command workingDir args =
     |> CreateProcess.ensureExitCode
     |> Proc.run
     |> ignore
-let buildConfigurationName = (Environment.environVarOrDefault "CONFIGURATION" "Debug").ToLower()
-let mutable buildConfiguration = 
-    match buildConfigurationName with
-    "release" -> 
+let nugetFeedUrl = "https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2"
+//let buildConfigurationName = (Environment.environVarOrDefault "CONFIGURATION" "Debug").ToLower()
+let buildConfiguration = 
+    //match buildConfigurationName with
+    //"release" -> 
         printfn "Using release configuration"
         DotNet.BuildConfiguration.Release
-    | _ -> DotNet.BuildConfiguration.Debug
+    //| _ -> DotNet.BuildConfiguration.Debug
 type DockerCommand = 
     Push of string
     | Pull of string
@@ -165,7 +177,7 @@ let serviceDir = DirectoryInfo "./services"
 let workerDir = DirectoryInfo "./workers"
 
 //Set to 'Normal' to have more information when trouble shooting 
-let verbosity = Quiet
+let verbosity = Normal
     
 let package conf outputDir projectFile =
     DotNet.publish (fun opts -> 
@@ -183,7 +195,7 @@ let package conf outputDir projectFile =
 let commonPath target =
     let name =
         (target
-         |> targetName).ToLower()
+         |> getCommonLibProjectName).ToLower()
     sprintf "./common/hobbes.%s/src/hobbes.%s.fsproj" name name
 let commons = 
     [
@@ -228,6 +240,7 @@ let buildApp (name : string) (appType : string) workingDir =
         let tags =
            let t = createDockerTag dockerOrg tag
            [
+               "hobbes-" + tag
                t + ":" + assemblyVersion
                t + ":" + "latest"
            ]
@@ -276,13 +289,17 @@ create Targets.Complete ignore
 create Targets.PushApps ignore
 create Targets.All ignore
 create Targets.Build ignore
-create Targets.Sdk ignore
-
 create Targets.PreApps ignore
 create Targets.BuildForTest ignore
 
+create Targets.Sdk (fun _ -> 
+   let tag = sprintf "%s/app" dockerOrg
+   docker (Push tag) dockerDir.Name
+)
+
 create Targets.CleanCommon (fun _ ->
-    let deleteFiles lib =
+    let deleteFiles common =
+        let lib = common |> getCommonLibProjectName
         [
             sprintf "docker/.lib/hobbes.%s.dll"
             sprintf "docker/.lib/hobbes.%s.deps.json"
@@ -294,7 +311,7 @@ create Targets.CleanCommon (fun _ ->
         )
         
     commons
-    |> List.iter (string >> deleteFiles)
+    |> List.iter deleteFiles
 )
 
 create Targets.Dependencies (fun _ ->
@@ -320,12 +337,20 @@ apps
     buildApp name appType dir
     Targets.PreApps ==> Targets.Generic(name) ==> Targets.Build |> ignore
 ) 
-
-commons |> List.iter(fun common ->
-    let targetName = common
-    create targetName (fun _ -> 
-        let projectFile = commonPath common
-        package buildConfiguration commonLibDir projectFile
+let paket workDir args = run "dotnet" workDir ("paket " + args)
+commons |> List.iter(fun target ->
+    let projectFile = commonPath target
+    let commonSrcPath = Path.Combine(Path.GetDirectoryName(projectFile),"..")
+    let packTarget = target
+    create packTarget (fun _ -> 
+        let packages = Directory.EnumerateFiles(commonSrcPath, "*.nupkg")
+        let dateTime = System.DateTime.UtcNow
+        let version = sprintf "1.%i.%i.%i" dateTime.Year dateTime.DayOfYear ((int) dateTime.TimeOfDay.TotalSeconds)
+        let dockerfile = Path.Combine(commonSrcPath,"Dockerfile")
+        File.Copy(Path.Combine(commonSrcPath,"../../docker/Dockerfile.lib"),dockerfile,true)
+        File.deleteAll packages
+        docker <| Build(None, "temp", ["VERSION_ARG",version;"FEED_PAT_ARG",argFeed]) <| commonSrcPath 
+        File.Delete (Path.Combine(commonSrcPath,"Dockerfile"))
     )
 ) 
 
@@ -336,10 +361,6 @@ create Targets.GenericSdk (fun _ ->
 
     build "Dockerfile.sdk"
     docker (Push tag) dockerDir.Name
-
-    //build the debug version for local use if required
-    if buildConfiguration = DotNet.BuildConfiguration.Debug then
-        build "Dockerfile.sdk-debug"
 )
 
 create Targets.Runtime (fun _ ->
@@ -357,14 +378,22 @@ create Targets.Runtime (fun _ ->
 
 create Targets.SdkImage (fun _ ->   
     let tag = sprintf "%s/app" dockerOrg
-    let file = Some("Dockerfile.app")
+    let file = Some("docker/Dockerfile.app")
+
     let build configuration = 
-        docker (Build(file,tag,["CONFIGURATION",configuration])) dockerDir.Name
-    match buildConfiguration with 
-    DotNet.BuildConfiguration.Release ->
+        docker <| Build(file,tag,[
+                            "CONFIGURATION",configuration
+                            "ARG_FEED", argFeed
+                        ]
+                      )
+                   <| "."
+
+    (match buildConfiguration with 
+     DotNet.BuildConfiguration.Release ->
         build "Release"
-        docker (Push tag) dockerDir.Name
-    | _ -> build "Debug"
+     | _ -> build "Debug")
+
+    docker (Build(Some "docker/Dockerfile.base","base", [])) "."
 )
 
 create Targets.TestNoBuild (fun _ ->
@@ -372,23 +401,23 @@ create Targets.TestNoBuild (fun _ ->
 )
 
 create Targets.PullRuntime (fun _ ->
-    docker (Pull "kmdrd/runtime") "."
+    docker (Pull (sprintf "%s/runtime" dockerOrg)) "."
 )
 
 create Targets.PullSdk (fun _ ->
-    docker (Pull "kmdrd/sdk") "."
+    docker (Pull (sprintf "%s/sdk" dockerOrg)) "."
 )
 
 create Targets.PullApp (fun _ ->
-    docker (Pull "kmdrd/app") "."
+    docker (Pull (sprintf "%s/app" dockerOrg)) "."
 )
 
 create Targets.PullDb (fun _ ->
-    docker (Pull "kmdrd/couchdb") "."
+    docker (Pull (sprintf "%s/couchdb" dockerOrg)) "."
 )
 
 Targets.Dependencies 
-    ?=> Targets.Core 
+    ?=> Targets.Core
     ==> Targets.SdkImage
 
 Targets.Dependencies

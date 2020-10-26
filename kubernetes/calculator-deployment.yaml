@@ -20,5 +20,9 @@ spec:
         image: calculator
         name: calculator
         resources: {}
+        ports:
+          - containerPort: 4024
+          - containerPort: 3702
+            protocol: UDP 
       restartPolicy: Always
 status: {}

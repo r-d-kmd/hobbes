@@ -188,7 +188,7 @@ module DataStructures =
           .Replace("\"","\\\"") 
         + "\""
     type IDataMatrix = 
-        abstract Transform : AST.Expression -> IDataMatrix
+        abstract Transform : AST.Statement -> IDataMatrix
         abstract Combine : IDataMatrix -> IDataMatrix
         abstract Join : string -> IDataMatrix -> IDataMatrix
         abstract ToJson : unit -> string
@@ -332,11 +332,19 @@ module DataStructures =
                 let lhsExp =
                     fun series -> 
                         compileExpression lhs series
-                        |> Series.mapValues(fun v -> v :?> float)
+                        |> Series.mapValues(function
+                            :? float as f -> f
+                            | :? int as i -> float i
+                            | :? decimal as i -> float i
+                            | v -> failwithf "Can't convert %A into float" v)
                 let rhsExp = 
                     fun series -> 
                         compileExpression rhs series
-                        |> Series.mapValues(fun v -> v :?> float)
+                        |> Series.mapValues(function
+                            :? float as f -> f
+                            | :? int as i -> float i
+                            | :? decimal as i -> float i
+                            | v -> failwithf "Can't convert %A into float" v)
                 let f : Series<AST.KeyType,float> -> Series<AST.KeyType,float> -> Series<AST.KeyType,float> = 
                     match op with
                     AST.Addition -> (+)
@@ -412,6 +420,7 @@ module DataStructures =
                             (s
                              |> System.DateTimeOffset.Parse).DateTime
                             |> Some
+                        | :? DateTime as d -> d |> Some
                         | _ -> None
 
                     let formatter (date : System.DateTime) =
@@ -973,9 +982,6 @@ module DataStructures =
                 | AST.Column c ->
                     column c
                     |> DataMatrix
-                    :> IDataMatrix
-                | AST.NoOp -> 
-                    this
                     :> IDataMatrix
             member this.ToJson() =
                 let table = 

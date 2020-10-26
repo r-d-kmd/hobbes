@@ -92,17 +92,30 @@ module AST =
        | SortBy of columnName : string
        | Only of condition: BooleanExpression
 
-    type ColumnExpression = 
+    type ColumnStatements = 
         CreateColumn of ComputationExpression * string
         | RenameColumn of string * string
         | Pivot of rowkey: ComputationExpression * columnkey: ComputationExpression * value : ComputationExpression * Reduction
 
-    type Expression = 
+    type Statement = 
         Reduction of Reduction
         | FilterAndSorting of FilterAndSorting
         | Cluster of Cluster
-        | Column of ColumnExpression
-        | NoOp
+        | Column of ColumnStatements
+
+    type Value = 
+        | Mapping of Map<Value, Value> 
+        | Sequence of Value list
+        | String of string
+        | Boolean of bool
+        | Decimal of decimal
+        | Null
+
+    type Block = 
+        Statements of Statement list
+        | Comment of string
+        | Source of source:string * properties:Map<string,Value>
+
     [<CustomEquality>]
     [<CustomComparison>]
     type KeyType =
@@ -194,10 +207,14 @@ module AST =
                                 lst1
                                 |> List.zip lst2
                                 |> List.tryFind(fun (a,b) -> a <> b)
-                                |> Option.bind(fun _ -> Some -1)
+                                |> Option.bind(fun (a,b) -> (a :> System.IComparable).CompareTo b |> Some)
                                 |> Option.orElse(Some 0)
                                 |> Option.get
-                            | _,_ -> -1
+                            | DateTime dt1,DateTime dt2 -> dt1.CompareTo dt2
+                            | Missing,Missing -> 0
+                            | Missing,_ -> -1
+                            | _,Missing -> 1
+                            | a,b -> failwithf "Can't compare %A to %A" a b
                         result
                        
                     | _ -> -1

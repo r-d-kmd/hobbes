@@ -6,7 +6,10 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../hobbes.core/src/hobbes.core.fsproj" />
+    <Reference Include="yaml-parser"><HintPath>../.lib/yaml-parser/yaml-parser.dll</HintPath></Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../src/hobbes.core.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AST.fs" />

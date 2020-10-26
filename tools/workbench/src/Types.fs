@@ -176,7 +176,8 @@ module Types =
                          | s -> s
                          
             match collectionConfigurations |> Map.tryFind name with
-            Some _ -> failwithf "There's already a configuration called %s" name
+            Some _ -> eprintf "There's already a configuration called %s" name
+                      configurations
             | None ->
                 configurations.Add(collection,
                                    collectionConfigurations 
@@ -196,9 +197,11 @@ module Types =
                   addConfiguration col (source : Source ) name transformations
             )
         | Test ->
-            configurations <- add Test           
-            configurations <- add Development
-        | _ ->
+            configurations <- add Test
+        | Production ->
+            configurations <- add Test
+            configurations <- add collection
+        | _ -> 
             configurations <- add collection
                 
     let rec allConfigurations collection =

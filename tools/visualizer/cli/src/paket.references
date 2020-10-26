@@ -1,0 +1,13 @@
+﻿group visualizer
+    MathNet.Numerics
+    MathNet.Numerics.FSharp
+    XPlot.Plotly
+    XPlot.GoogleCharts
+    XPlot.GoogleCharts.Deedle
+    Newtonsoft.Json
+    FParsec
+    Deedle
+    Accord.MachineLearning
+    FSharp.Formatting
+    FSharp.Data
+    FSharp.Core

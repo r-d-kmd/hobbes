@@ -268,8 +268,9 @@ function awaitRunningState(){
     done
 
     echo "Waiting for Rabbit-MQ to be operational"
-    while [ "$(logs conf | grep "Watching queue")" != "Watching queue: cache" ]
+    while [ "$(logs configurations | grep "Watching queue")" != "Watching queue: cache" ]
     do
+        echo $(logs configurations | grep "Queue not yet ready" | tail -1)
         sleep 10
     done
 
@@ -305,7 +306,7 @@ function publish(){
 
     printf "${Green}Publisher built${NoColor}\n"
     startJob publish
-    logs job/publish -f &
+    logs publish -f &
     cd $CURRENT_DIR
 }
 
@@ -327,20 +328,16 @@ function applyProductionYaml() {
     cd $CURRENT_DIR
 }
 
-function forward() {
-    kc port-forward "service/$1" $2:$2 &
+function addSource(){
+    dotnet nuget add source --name KMD_FEED \
+        --username "rsl@kmd.dk" \
+        --password "Almost55" \
+        https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
 }
 
-alias kc=kubectl
-alias logs="kc logs"
-alias get="kc get"
-alias pods="get pods"
-alias jobs="get jobs"
-alias services="get services"
-alias delete="kc delete"
-alias apply="kc apply"
-alias describe="kc describe"
-
+function pushPackage(){
+    nuget push -Source KMD_FEED -ApiKey az $1
+}
 
 printf "Project home folder is:\n"
 printf " - ${LightBlue}$SCRIPT_DIR\n"

@@ -1,4 +1,7 @@
 FROM hobbes.azurecr.io/app AS build
+COPY ./src/ .
+RUN cat /paket.references >> ./paket.references
+RUN dotnet publish -c ${BUILD_CONFIGURATION} -o /app
 
 # final stage/image
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1

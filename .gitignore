@@ -19,7 +19,6 @@ workbench.json
 **/AssemblyInfo.fs
 hobbes.server/db/data1/
 kubernetes/env.JSON
-docker/.lib/
 .env
 kubernetes/env.yaml
 tutorial/*.html

@@ -378,7 +378,7 @@ create Targets.Runtime (fun _ ->
 
 create Targets.SdkImage (fun _ ->   
     let tag = sprintf "%s/app" dockerOrg
-    let file = Some("Dockerfile.app")
+    let file = Some("docker/Dockerfile.app")
 
     let build configuration = 
         docker <| Build(file,tag,[
@@ -386,7 +386,7 @@ create Targets.SdkImage (fun _ ->
                             "ARG_FEED", argFeed
                         ]
                       )
-                   <| dockerDir.Name
+                   <| "."
 
     (match buildConfiguration with 
      DotNet.BuildConfiguration.Release ->

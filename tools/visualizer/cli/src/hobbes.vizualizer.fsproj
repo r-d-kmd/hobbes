@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetsPath Condition="$(BUILD_ENV) == 'docker'">./</TargetsPath>
-    <TargetsPath Condition="$(TargetsPath) == ''">../../</TargetsPath>
+    <TargetsPath Condition="$(TargetsPath) == ''">../../../../</TargetsPath>
   </PropertyGroup>
   <Import Project="$(TargetsPath)hobbes.properties.targets" />
   <PropertyGroup>

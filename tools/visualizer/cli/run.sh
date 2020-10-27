@@ -1,5 +1,5 @@
 #!/bin/sh
-dotnet build --configuration Release
+dotnet build --configuration Release --project src/hobbes.vizualizer.fsproj
 for file in *.hb
 do 
     echo "*************************$file***********************************"
@@ -7,7 +7,7 @@ do
     if [ "$file" -nt "$filename" ]
     then
         echo "$file is newer than $filename"
-        dotnet bin/Release/netcoreapp3.1/hobbes.vizualizer.dll "$file" line
+        dotnet src/bin/Release/netcoreapp3.1/hobbes.vizualizer.dll "$file" line
     else
         echo "Nothing to do $filename is up to date"
     fi

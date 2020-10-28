@@ -210,7 +210,7 @@ module Broker =
 
             
             let consumer = EventingBasicConsumer(channel)
-            let messageException tag (e : System.Exception) json = 
+            let messageException tag (e : Exception) json = 
                 logAndComplete (fun () -> channel.BasicReject(tag,false)) (fun l -> MessageException(e.Message, l)) json
                 {
                         OriginalQueue = queue

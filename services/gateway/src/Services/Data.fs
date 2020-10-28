@@ -4,7 +4,7 @@ open Hobbes.Web.Log
 open Hobbes.Web.Routing
 open Hobbes.Helpers.Environment
 open Hobbes.Web
-
+open Hobbes.Messaging.Broker
 [<RouteArea "/data">]
 module Data = 
     let private cacheRevision confDoc = 
@@ -19,6 +19,20 @@ module Data =
             match Http.get (key + ":Json" |> Http.UniformDataService.ReadFormatted |> Http.UniformData) id with
             Http.Success json ->
                 200, json
-            | Http.Error(sc,m) -> sc,sprintf "Data for configuration %s not found. Message: %s" configuration m
+            | Http.Error(404,m) -> 
+                debugf "Data for configuration %s not found. Message: %s" configuration m
+                match Http.get (key |> Http.UniformDataService.Read |> Http.UniformData) id with
+                Http.Success _ ->
+                    {
+                       Format = Json
+                       CacheKey = key
+                    }
+                    |> Format
+                    |> Broker.Calculation
+                    503, "{}"
+                | Http.Error(sc,m) -> 
+                    sc,sprintf "Data for configuration %s not found. Message: %s" configuration m
+            | Http.Error(sc,m) ->
+                sc,m
         | Http.Error(sc,m) -> sc,sprintf "Configuration %s not found. Message: %s" configuration m
     

@@ -114,9 +114,11 @@ let dependingTransformations (cacheKey : string) =
     match dependencies |> Map.tryFind cacheKey with
     None -> 
         Log.debugf "No dependencies found for key (%s)" cacheKey
-        Seq.empty, readyForFormat
+        Seq.empty, true
     | Some dependencies ->
-        dependencies, readyForFormat
+        let shouldFormat = 
+               dependencies |> Seq.isEmpty || readyForFormat
+        dependencies, shouldFormat
 let handleMerges cacheKey = 
     match merges |> Map.tryFind cacheKey with
     None -> ()
@@ -150,6 +152,7 @@ let getDependingTransformations (cacheMsg : CacheMessage) =
          | Updated cacheKey -> 
             let depending, format = dependingTransformations cacheKey
             if format then
+                Log.debugf "Final json for %s" cacheKey
                 {
                    Format = Json
                    CacheKey = cacheKey
@@ -170,6 +173,14 @@ let getDependingTransformations (cacheMsg : CacheMessage) =
                     |> Transform
                     |> Broker.Calculation
                 )
+            else
+                Log.debugf "No dependencies so expecting final json for %s" cacheKey
+                {
+                   Format = Json
+                   CacheKey = cacheKey
+                }
+                |> Format
+                |> Broker.Calculation
             handleMerges cacheKey
             handleJoins cacheKey
             Success

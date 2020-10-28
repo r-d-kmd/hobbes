@@ -33,6 +33,6 @@ module Data =
                 | Http.Error(sc,m) -> 
                     sc,sprintf "Data for configuration %s not found. Message: %s" configuration m
             | Http.Error(sc,m) ->
-                sc,m
+                sc,sprintf "Failed retrieving data. Message: %s" m
         | Http.Error(sc,m) -> sc,sprintf "Configuration %s not found. Message: %s" configuration m
     

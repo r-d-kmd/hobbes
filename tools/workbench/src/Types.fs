@@ -199,7 +199,6 @@ module Types =
         | Test ->
             configurations <- add Test
         | Production ->
-            configurations <- add Test
             configurations <- add collection
         | _ -> 
             configurations <- add collection

@@ -349,7 +349,7 @@ commons |> List.iter(fun target ->
         let dockerfile = Path.Combine(commonSrcPath,"Dockerfile")
         File.Copy(Path.Combine(commonSrcPath,"../../docker/Dockerfile.lib"),dockerfile,true)
         File.deleteAll packages
-        docker <| Build(None, "temp", ["VERSION_ARG",version;"FEED_PAT_ARG",argFeed]) <| commonSrcPath 
+        docker <| Build(None, "temp", ["VERSION_ARG", Environment.environVarOrDefault "VERSION" version;"FEED_PAT_ARG",argFeed]) <| commonSrcPath 
         File.Delete (Path.Combine(commonSrcPath,"Dockerfile"))
     )
 ) 

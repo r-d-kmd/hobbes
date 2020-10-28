@@ -74,6 +74,7 @@ steps:
     build BuildForTest
   env:
      FEED_PAT: $(FEED_PAT)
+     VERSION: "1.2021.$(Build.BuildNumber)"
   displayName: Build the world
 
 - script: |

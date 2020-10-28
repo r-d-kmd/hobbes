@@ -102,6 +102,11 @@ steps:
         kubectl logs service/gateway-svc
     else
         logs az
+        printf "${Yellow}********************************************$(NoColor}\n"
+        logs conf -f
+        logs calc -f
+        sleep 10000
+        printf "${Yellow}***********************EXIT EXIT EXIT*********************$(NoColor}\n"
         exit $TESTRESULT
     fi
   displayName: Run postman tests

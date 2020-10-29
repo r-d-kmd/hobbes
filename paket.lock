@@ -448,17 +448,18 @@ NUGET
       Newtonsoft.Json (>= 12.0.2) - restriction: || (&& (== net40) (>= net461)) (&& (== net40) (>= netstandard2.0)) (== netcoreapp3.1)
       TaskBuilder.fs (>= 2.1) - restriction: || (&& (== net40) (>= net461)) (&& (== net40) (>= netstandard2.0)) (== netcoreapp3.1)
       Utf8Json (>= 1.3.7) - restriction: || (&& (== net40) (>= net461)) (&& (== net40) (>= netstandard2.0)) (== netcoreapp3.1)
-    hobbes.core (1.2020.299.61589)
+    hobbes.core (1.2020.301.29063)
       Accord.MachineLearning
       Deedle
       FParsec
+      FSharp.Core (>= 5.0 < 6.0)
       Thoth.Json.Net
-    hobbes.messaging (1.2020.294.60003)
-      FSharp.Core
+    hobbes.messaging (1.2020.301.28839)
+      FSharp.Core (>= 5.0 < 6.0)
       FSharp.Data
       Newtonsoft.Json
       RabbitMQ.Client
-    hobbes.web (1.2020.300.37891)
+    hobbes.web (1.2020.301.28990)
       FSharp.Data
       Giraffe
       Newtonsoft.Json

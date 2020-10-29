@@ -1,9 +1,11 @@
-FROM kmdrd/app AS build
+FROM base AS build
+COPY ./src/ .
+RUN cat /paket.references >> ./paket.references
+RUN dotnet publish -c Releasae -o /app
 
 # final stage/image
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
 
-ARG WORKER_NAME
 WORKDIR /app
 COPY --from=build /app .
 

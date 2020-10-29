@@ -16,5 +16,5 @@ ENV VSS_NUGET_EXTERNAL_FEED_ENDPOINTS \
 RUN curl -L https://raw.githubusercontent.com/Microsoft/artifacts-credprovider/master/helpers/installcredprovider.sh  | sh
 RUN echo "<?xml version=\"1.0\" encoding=\"utf-8\"?><configuration><packageSources><clear /><add key=\"KMD_Package_Feed\" value=\"${FEED_URL}\" /></packageSources></configuration>" >> nuget.config
 RUN dotnet build --configuration Release
-RUN paket pack --version "$VERSION" . 
+RUN dotnet paket pack --version "$VERSION" . 
 RUN dotnet nuget push --source "$FEED_URL" --api-key az "$(ls *.nupkg)" 

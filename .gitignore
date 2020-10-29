@@ -43,3 +43,5 @@ tools/visualizer/*.html
 services/**/Dockerfile
 workers/**/Dockerfile
 common/**/Dockerfile
+*.hb
+tools/visualizer/cli/html

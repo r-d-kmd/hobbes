@@ -7,8 +7,8 @@ module Test =
     let projects = 
       [
         Project.Flowerpot 
-        Project.Gandalf
-        Project.Nexus
+        //Project.Gandalf
+        //Project.Nexus
       ]
     
     let addGitConfiguraiton name transformations = 

@@ -17,9 +17,13 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="yaml-parser"><HintPath>./.lib/yaml-parser/yaml-parser.dll</HintPath></Reference>
-  </ItemGroup>
-  <ItemGroup>
+    <Compile Include="yaml-parser/prelude.fs" />
+    <Compile Include="yaml-parser/types.fs" />
+    <Compile Include="yaml-parser/primitives.fs" />
+    <Compile Include="yaml-parser/flow-styles.fs" />
+    <Compile Include="yaml-parser/block-styles.fs" />
+    <Content Include="yaml-parser/script.fsx" />
+    <Compile Include="yaml-parser/parser.fs" />
     <Compile Include="backend/AST.fs" />
     <Compile Include="backend/Primitives.fs" />
     <Compile Include="backend/Keywords.fs" />

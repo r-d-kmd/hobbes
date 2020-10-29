@@ -11,25 +11,59 @@ function setupTest(){
     sleep 3
     printf "${Purple}Publishing transformations and configurations\n"
     publish
-    printf "${Purple}Publishing\n"
-    sleep 10
-    kubectl wait --for=condition=complete job/publish --timeout=60s
-    printf "${Purple}Published${NoColor}\n" 
-    printf "${Cyan}Sync\n"
-    CONFIG_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs | grep "key" | wc -l)
-    printf "${Cyan}Syncing${NoColor}\n"
-    sync
-    sleep 10
-    kubectl wait --for=condition=complete job/sync --timeout=60s
-    printf "${Green}Syncronization and tranformations completed.\n${NoColor}"
+    PRESULT=$?
+    if [ "$PRESULT" -eq "0" ]
+    then
+        printf "${Purple}Publishing\n"
+        sleep 10
+        kubectl wait --for=condition=complete job/publish --timeout=60s
+        printf "${Purple}Published${NoColor}\n" 
+        printf "${Cyan}Sync\n"
+        CONFIG_COUNT=$(curl --silent http://admin:password@127.0.0.1:5984/configurations/_all_docs | grep "key" | wc -l)
+        printf "${Cyan}Syncing${NoColor}\n"
+        sync
+        SREULT=$?
+        if [ "$SREULT" -eq 0 ]
+        then
+            sleep 10
+            kubectl wait --for=condition=complete job/sync --timeout=60s
+            printf "${Green}Syncronization and tranformations completed.\n${NoColor}"
+        else
+            printf "${Red}Syncronization failed.\n${NoColor}"
+            cd $CURRENT_DIR
+            exit $SREULT
+        fi
+    else
+       printf "${Red}Publishing failed.\n${NoColor}"
+       cd $CURRENT_DIR
+       exit $PRESULT
+    fi
     cd $CURRENT_DIR
 }
 
-function test(){
+function systemTest() {
+    sleep 60
     printf "${NoColor}"
-    logs job/publish
-    logs job/sync
-    kubectl port-forward service/gateway-svc 30080:80 >> /dev/null &
-    sleep 30
-    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY)
-} 
+    kubectl port-forward service/gateway-svc 30080:80 &
+    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY) >> testresults.txt
+    TESTRESULT=$?
+    if [ "$TESTRESULT" -eq "0" ]
+    then
+        printf "${Green}********************* Done Testing ***********************\n"
+        cat testresults.txt
+        printf "${NoColor}"
+    else
+        printf "${Red}********************* Done Testing ***********************\n"
+        cat testresults.txt
+        printf "${NoColor}"
+        logs az
+        printf "${Yellow}********************************************\n${NoColor}"
+        logs gateway
+        printf "${Yellow}********************************************\n${NoColor}"
+        logs calc -f &
+        printf "${Yellow}*********************** WAITING FOR EXIT *********************${NoColor}\n"
+        sleep 600
+        printf "${Yellow}*********************** EXIT EXIT EXIT *********************${NoColor}\n"
+        exit $TESTRESULT
+    fi
+}

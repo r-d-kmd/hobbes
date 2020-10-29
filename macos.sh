@@ -41,39 +41,29 @@ function setupTest(){
     cd $CURRENT_DIR
 }
 
-function test(){
-    printf "${NoColor}"
-    logs job/publish
-    logs job/sync
-    kubectl port-forward service/gateway-svc 30080:80 >> /dev/null &
-    sleep 30
-    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY)
-} 
-
 function systemTest() {
     sleep 60
     printf "${NoColor}"
-    kubectl logs job/publish
-    kubectl logs job/sync
-    printf "${Green}"
-    logs az
-    printf "${Blue}"
-    logs calc
-    printf "${NoCOlor}"
     kubectl port-forward service/gateway-svc 30080:80 &
-    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY)
+    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY) >> testresults.txt
     TESTRESULT=$?
     if [ "$TESTRESULT" -eq "0" ]
     then
-        kubectl logs service/gateway-svc
+        printf "${Green}********************* Done Testing ***********************\n"
+        cat testresults.txt
+        printf "${NoColor}"
     else
+        printf "${Red}********************* Done Testing ***********************\n"
+        cat testresults.txt
+        printf "${NoColor}"
         logs az
         printf "${Yellow}********************************************\n${NoColor}"
         logs gateway
         printf "${Yellow}********************************************\n${NoColor}"
-        logs calc -f
-        sleep 10000
-        printf "${Yellow}***********************EXIT EXIT EXIT*********************${NoColor}\n"
+        logs calc -f &
+        printf "${Yellow}*********************** WAITING FOR EXIT *********************${NoColor}\n"
+        sleep 600
+        printf "${Yellow}*********************** EXIT EXIT EXIT *********************${NoColor}\n"
         exit $TESTRESULT
     fi
 }

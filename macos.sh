@@ -40,30 +40,3 @@ function setupTest(){
     fi
     cd $CURRENT_DIR
 }
-
-function systemTest() {
-    sleep 60
-    printf "${NoColor}"
-    kubectl port-forward service/gateway-svc 30080:80 &
-    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY) >> testresults.txt
-    TESTRESULT=$?
-    if [ "$TESTRESULT" -eq "0" ]
-    then
-        printf "${Green}********************* Done Testing ***********************\n"
-        cat testresults.txt
-        printf "${NoColor}"
-    else
-        printf "${Red}********************* Done Testing ***********************\n"
-        cat testresults.txt
-        printf "${NoColor}"
-        logs az
-        printf "${Yellow}********************************************\n${NoColor}"
-        logs gateway
-        printf "${Yellow}********************************************\n${NoColor}"
-        logs calc -f &
-        printf "${Yellow}*********************** WAITING FOR EXIT *********************${NoColor}\n"
-        sleep 600
-        printf "${Yellow}*********************** EXIT EXIT EXIT *********************${NoColor}\n"
-        exit $TESTRESULT
-    fi
-}

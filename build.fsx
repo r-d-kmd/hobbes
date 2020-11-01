@@ -27,8 +27,6 @@ type Targets =
    | Build
    | All
    | PushApps
-   | BuildForTest
-   | TestNoBuild
    | Generic of string
 
 let targetName = 
@@ -38,8 +36,6 @@ let targetName =
        | Targets.Build -> "Build"
        | Targets.All -> "All"
        | Targets.PushApps -> "PushApps"
-       | Targets.BuildForTest -> "BuildForTest"
-       | Targets.TestNoBuild -> "TestNoBuild"
        | Targets.Generic s -> s
 
 let argFeed = 
@@ -243,7 +239,6 @@ create Targets.PushApps ignore
 create Targets.All ignore
 create Targets.Build ignore
 create Targets.PreApps ignore
-create Targets.BuildForTest ignore
 
 
 apps
@@ -260,15 +255,9 @@ create Targets.Builder (fun _ ->
     docker (Build(file,tag, ["FEED_PAT_ARG", argFeed])) "."
 )
 
-create Targets.TestNoBuild (fun _ ->
-    run "setupTest" "." "" |> ignore
-)
-
-Targets.Builder 
-   ?=> Targets.Build ==> Targets.BuildForTest
-
-Targets.Build ==> Targets.BuildForTest
-Targets.Builder==> Targets.BuildForTest
+Targets.Builder ?=> Targets.PreApps
+Targets.Build ==> Targets.All
+Targets.Builder ==> Targets.All
 
 Targets.Build
 |> runOrDefaultWithArguments 

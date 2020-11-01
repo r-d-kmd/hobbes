@@ -67,6 +67,7 @@ steps:
     build BuildForTest 8
   env:
      FEED_PAT: $(FEED_PAT)
+     VERSION: "2.1.$(Build.BuildNumber)"
   displayName: Build the world
 
 - script: |

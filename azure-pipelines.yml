@@ -61,20 +61,12 @@ steps:
 # Set up cluster
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
-  
-- script: |
-      source functions.sh 
-      build sdk
-  env:
-     FEED_PAT: $(FEED_PAT)
-  displayName: Build SDK 
 
 - script: |
     source functions.sh
-    build BuildForTest
+    build BuildForTest 8
   env:
      FEED_PAT: $(FEED_PAT)
-     VERSION: "1.2021.$(Build.BuildNumber)"
   displayName: Build the world
 
 - script: |

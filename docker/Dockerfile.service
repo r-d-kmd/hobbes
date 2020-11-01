@@ -1,12 +1,12 @@
-FROM base AS build
-ENV BUILD_ENV=docker
-COPY ./src/ .
-RUN cat /paket.references >> ./paket.references
-RUN dotnet publish -c ${BUILD_CONFIGURATION} -o /app
+FROM builder AS build
+ARG EXECUTABLE
+ENV EXECUTABLE=${EXECUTABLE}
 
 # final stage/image
-FROM hobbes.azurecr.io/runtime
+FROM kmdrd/runtime
+COPY --from=build /tmp/start.sh /tmp/start.sh 
+WORKDIR /app
+COPY --from=build /app .
 
 ENV port 8085
-
-ENTRYPOINT dotnet ${SERVICE_NAME}.dll
+ENTRYPOINT /tmp/start.sh

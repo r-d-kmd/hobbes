@@ -8,4 +8,8 @@ group web
 
 group collectors
     RabbitMQ.Client
-    
+
+group docker
+    hobbes.core
+    hobbes.messaging 
+    hobbes.web

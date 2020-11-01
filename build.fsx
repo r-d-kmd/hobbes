@@ -22,58 +22,25 @@ open Fake.IO
 
 [<RequireQualifiedAccess>]
 type Targets = 
-   GenericSdk 
-   | CleanCommon
-   | Dependencies
-   | Core
-   | Web
-   | Messaging
-   | Sdk
-   | SdkImage
+   Builder
    | PreApps
    | Build
    | All
-   | Complete
    | PushApps
    | BuildForTest
-   | PullSdk
-   | PullApp
-   | PullDb
-   | PullRuntime
    | TestNoBuild
-   | Runtime
    | Generic of string
 
 let targetName = 
     function
-        Targets.GenericSdk -> "GenericSdk"
-       | Targets.CleanCommon -> "CleanCommon"
-       | Targets.Dependencies -> "Dependencies"
-       | Targets.Core -> "Core"
-       | Targets.Web -> "Web"
-       | Targets.Messaging -> "Messaging"
-       | Targets.SdkImage -> "SdkImage"
-       | Targets.Sdk -> "Sdk"
+       | Targets.Builder -> "Builder"
        | Targets.PreApps -> "PreApps"
        | Targets.Build -> "Build"
        | Targets.All -> "All"
-       | Targets.Complete -> "Complete"
        | Targets.PushApps -> "PushApps"
        | Targets.BuildForTest -> "BuildForTest"
-       | Targets.Generic name -> name
-       | Targets.PullSdk  -> "PullSdk"
-       | Targets.PullDb -> "PullDb"
-       | Targets.PullRuntime  -> "PullRuntime"
        | Targets.TestNoBuild -> "TestNoBuild"
-       | Targets.PullApp -> "PullApp"
-       | Targets.Runtime -> "Runtime"
-
-let getCommonLibProjectName = 
-    function
-        Targets.Core -> "core"
-        | Targets.Messaging -> "messaging"
-        | Targets.Web -> "web"
-        | _ -> failwith "Not a common lib"
+       | Targets.Generic s -> s
 
 let argFeed = 
     match "FEED_PAT" |> Environment.environVarOrNone  with
@@ -144,9 +111,8 @@ let docker command dir =
         let args = arguments.Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries)
         System.String.Join(" ",args) 
     run "docker" dir (arguments.Replace("  "," ").Trim())
-let commonLibDir = "./docker/.lib/"
 
-let assemblyVersion = Environment.environVarOrDefault "APPVEYOR_BUILD_VERSION" "2.0.default"
+let assemblyVersion = Environment.environVarOrDefault "VERSION" "2.0.default"
 
 let createDockerTag dockerOrg (tag : string) = sprintf "%s/hobbes-%s" dockerOrg (tag.ToLower())
 
@@ -190,19 +156,6 @@ let package conf outputDir projectFile =
                                    }    
                         }
                    ) projectFile
-
-
-let commonPath target =
-    let name =
-        (target
-         |> getCommonLibProjectName).ToLower()
-    sprintf "./common/hobbes.%s/src/hobbes.%s.fsproj" name name
-let commons = 
-    [
-        Targets.Web
-        Targets.Core
-        Targets.Messaging
-    ]
 let apps : seq<App*string> = 
     let enumerateProjectFiles (dir : DirectoryInfo) = 
         dir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
@@ -285,51 +238,13 @@ let buildApp (name : string) (appType : string) workingDir =
     create pushTarget push
     buildTarget ==> pushTarget ==> Targets.PushApps |> ignore
 
-create Targets.Complete ignore
+
 create Targets.PushApps ignore
 create Targets.All ignore
 create Targets.Build ignore
 create Targets.PreApps ignore
 create Targets.BuildForTest ignore
 
-create Targets.Sdk (fun _ -> 
-   let tag = sprintf "%s/app" dockerOrg
-   docker (Push tag) dockerDir.Name
-)
-
-create Targets.CleanCommon (fun _ ->
-    let deleteFiles common =
-        let lib = common |> getCommonLibProjectName
-        [
-            sprintf "docker/.lib/hobbes.%s.dll"
-            sprintf "docker/.lib/hobbes.%s.deps.json"
-            sprintf "docker/.lib/hobbes.%s.pdb"
-        ] |> List.iter(fun f -> 
-            let file = f lib
-            if File.exists file then
-                File.delete file
-        )
-        
-    commons
-    |> List.iter deleteFiles
-)
-
-create Targets.Dependencies (fun _ ->
-  let outputDir = "./docker/build"
-  let paketDir = outputDir + "/.paket"
-  Shell.cleanDirs 
-      [
-          outputDir
-          paketDir
-      ]
-  
-  [
-      "paket.dependencies"
-      "paket.lock"
-  ] |> Shell.copy outputDir
-  System.IO.Directory.EnumerateFiles ".paket"
-  |> Shell.copy paketDir
-)
 
 apps
 |> Seq.iter(fun (app,dir) ->
@@ -338,137 +253,22 @@ apps
     Targets.PreApps ==> Targets.Generic(name) ==> Targets.Build |> ignore
 ) 
 let paket workDir args = run "dotnet" workDir ("paket " + args)
-commons |> List.iter(fun target ->
-    let projectFile = commonPath target
-    let commonSrcPath = Path.Combine(Path.GetDirectoryName(projectFile),"..")
-    let packTarget = target
-    create packTarget (fun _ -> 
-        let packages = Directory.EnumerateFiles(commonSrcPath, "*.nupkg")
-        let dateTime = System.DateTime.UtcNow
-        let version = sprintf "1.%i.%i.%i" dateTime.Year dateTime.DayOfYear ((int) dateTime.TimeOfDay.TotalSeconds)
-        let dockerfile = Path.Combine(commonSrcPath,"Dockerfile")
-        File.Copy(Path.Combine(commonSrcPath,"../../docker/Dockerfile.lib"),dockerfile,true)
-        File.deleteAll packages
-        docker <| Build(None, "temp", ["VERSION_ARG", Environment.environVarOrDefault "VERSION" version;"FEED_PAT_ARG",argFeed]) <| commonSrcPath 
-        File.Delete (Path.Combine(commonSrcPath,"Dockerfile"))
-    )
-) 
 
-create Targets.GenericSdk (fun _ ->   
-    let tag = sprintf "%s/sdk" dockerOrg
-    let build file = 
-       docker (Build(Some file,tag,[])) dockerDir.Name
-
-    build "Dockerfile.sdk"
-    docker (Push tag) dockerDir.Name
-)
-
-create Targets.Runtime (fun _ ->
-    let isDebug = buildConfiguration = DotNet.BuildConfiguration.Debug
-    let runtimeFileVersion = 
-        if isDebug then
-           "Dockerfile.runtime-debug"
-        else
-           "Dockerfile.runtime" 
-    let tag = sprintf "%s/runtime"dockerOrg
-    docker (Build(Some(runtimeFileVersion),tag,[])) dockerDir.Name
-    if not isDebug then
-        docker (Push tag) dockerDir.Name
-)
-
-create Targets.SdkImage (fun _ ->   
-    let tag = sprintf "%s/app" dockerOrg
-    let file = Some("docker/Dockerfile.app")
-
-    let build configuration = 
-        docker <| Build(file,tag,[
-                            "CONFIGURATION",configuration
-                            "ARG_FEED", argFeed
-                        ]
-                      )
-                   <| "."
-
-    (match buildConfiguration with 
-     DotNet.BuildConfiguration.Release ->
-        build "Release"
-     | _ -> build "Debug")
-
-    docker (Build(Some "docker/Dockerfile.base","base", [])) "."
+create Targets.Builder (fun _ ->   
+    let tag = "builder"
+    let file = Some("docker/Dockerfile.builder")
+    docker (Build(file,tag, ["FEED_PAT_ARG", argFeed])) "."
 )
 
 create Targets.TestNoBuild (fun _ ->
     run "setupTest" "." "" |> ignore
 )
 
-create Targets.PullRuntime (fun _ ->
-    docker (Pull (sprintf "%s/runtime" dockerOrg)) "."
-)
-
-create Targets.PullSdk (fun _ ->
-    docker (Pull (sprintf "%s/sdk" dockerOrg)) "."
-)
-
-create Targets.PullApp (fun _ ->
-    docker (Pull (sprintf "%s/app" dockerOrg)) "."
-)
-
-create Targets.PullDb (fun _ ->
-    docker (Pull (sprintf "%s/couchdb" dockerOrg)) "."
-)
-
-Targets.Dependencies 
-    ?=> Targets.Core
-    ==> Targets.SdkImage
-
-Targets.Dependencies
-    ?=> Targets.Web
-    ==> Targets.SdkImage
-
-Targets.Dependencies
-    ?=> Targets.Messaging
-    ==> Targets.SdkImage
-
-Targets.SdkImage
-    ?=> Targets.Runtime
-    ==> Targets.Sdk
-
-Targets.GenericSdk
-    ?=> Targets.CleanCommon
-    ==> Targets.Dependencies
-    ==> Targets.Sdk
-    ?=> Targets.PreApps
-    ==> Targets.Build
-    ==> Targets.All
-
-Targets.SdkImage
-    ==> Targets.Sdk
-Targets.Runtime
-    ==> Targets.Sdk
-
-Targets.PullSdk ?=> Targets.PreApps
-Targets.PullRuntime ?=> Targets.PreApps
+Targets.Builder 
+   ?=> Targets.Build ==> Targets.BuildForTest
 
 Targets.Build ==> Targets.BuildForTest
-Targets.PullApp ==> Targets.BuildForTest 
-Targets.PullDb ==> Targets.BuildForTest
-Targets.PullSdk ==> Targets.BuildForTest
-Targets.PullRuntime ==> Targets.BuildForTest
-
-
-Targets.PullRuntime ?=> Targets.PreApps
-Targets.PullApp ?=> Targets.PreApps
-
-Targets.Runtime ==> Targets.PushApps
-Targets.PullApp ==> Targets.PushApps 
-Targets.PullDb ==> Targets.PushApps
-Targets.PullSdk ==> Targets.PushApps
-Targets.PullRuntime ==> Targets.PushApps
-
-
-Targets.GenericSdk
-    ==> Targets.Complete
-Targets.All
-    ==> Targets.Complete
+Targets.Builder==> Targets.BuildForTest
 
 Targets.Build
 |> runOrDefaultWithArguments 

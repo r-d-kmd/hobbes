@@ -64,7 +64,7 @@ steps:
 
 - script: |
     source functions.sh
-    build BuildForTest 8
+    build all 8
   env:
      FEED_PAT: $(FEED_PAT)
      VERSION: "2.1.$(Build.BuildNumber)"

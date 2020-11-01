@@ -3,3 +3,8 @@ group web
     Saturn 
     Giraffe
     FSharp.Data
+
+group docker
+    hobbes.core
+    hobbes.messaging 
+    hobbes.web

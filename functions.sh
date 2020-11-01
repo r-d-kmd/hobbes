@@ -258,6 +258,7 @@ function awaitRunningState(){
         then
             echo "Waiting for pod/$NAME"
             kubectl wait --for=condition=ready "pod/$NAME" --timeout=60s
+            kubectl logs "pod/$NAME"
         fi
     done
 

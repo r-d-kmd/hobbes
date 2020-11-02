@@ -6,3 +6,7 @@ group web
     FSharp.Core
     Newtonsoft.Json
 
+group docker
+    hobbes.core
+    hobbes.messaging 
+    hobbes.web

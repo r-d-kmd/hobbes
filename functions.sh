@@ -258,6 +258,14 @@ function awaitRunningState(){
         then
             echo "Waiting for pod/$NAME"
             kubectl wait --for=condition=ready "pod/$NAME" --timeout=60s
+
+            #empty if there are no pods running for the given name. Ie the wait timed out
+            if [ -z "$(kubectl get pods --field-selector=status.phase=Running | grep $NAME)" ]
+            then
+                #print out the log so that we can get som einfo on what went wrong
+                kubectl logs "pod/$NAME"
+                exit 1
+            fi
         fi
     done
 

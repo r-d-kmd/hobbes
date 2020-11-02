@@ -81,23 +81,6 @@ else
     services
 fi
 
-function shouldBuildSdk(){
-    BUILD_SDK=0
-    for FILE in $(git diff HEAD HEAD~ --name-only)
-    do
-        if [[ $FILE =~ common/* ]]
-        then
-           BUILD_SDK=1
-        elif [[ $FILE == "docker/Dockerfile.sdk" ]]
-        then 
-           BUILD_SDK=1
-        elif [[ $FILE == "docker/Dockerfile.runtime" ]]
-        then
-           BUILD_SDK=1   
-        fi
-    done 
-}
-
 function getName(){
     echo "$(kubectl get pods | grep $1 | cut -d ' ' -f 1 )"
 }
@@ -203,7 +186,7 @@ function start() {
     cd $CURRENT_DIR
 }
 
-function startkube(){
+function startKube(){
     minikube start --driver=docker --memory=4GB
 }
 
@@ -213,21 +196,6 @@ function update(){
     start
     kubectl apply -f env.JSON
     cd $CURRENT_DIR
-}
-
-function isRunning(){
-    local APP_NAME=$(echo "$1")
-    if [ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "sync" ]
-    then 
-        echo "True"
-    else
-        if [ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "sync" ][ "$(echo "$APP_NAME" | cut -d '-' -f1)" = "publish" ]
-        then
-            echo "True"
-        else
-            echo $(kubectl get pod/$1 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')
-        fi
-    fi
 }
 
 function pingService(){

@@ -187,7 +187,7 @@ function start() {
 }
 
 function startKube(){
-    minikube start --driver=docker --memory=4GB --cpus=$1
+    minikube start --driver=docker --memory=4GB --cpus=8
 }
 
 function update(){

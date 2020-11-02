@@ -1,6 +1,0 @@
-
-FROM hobbes.azurecr.io/app AS build
-ENV BUILD_ENV=docker
-COPY paket.lock .
-COPY paket.dependencies .
-RUN dotnet paket restore

@@ -2,9 +2,6 @@
   <PropertyGroup>
     <TargetsPath Condition="$(BUILD_ENV) == 'docker'">./</TargetsPath>
     <TargetsPath Condition="$(TargetsPath) == ''">../../../</TargetsPath>
-  </PropertyGroup>
-  <Import Project="$(TargetsPath)hobbes.properties.targets" />
-  <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>

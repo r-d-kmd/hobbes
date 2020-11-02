@@ -51,7 +51,11 @@ steps:
   displayName: Pull minikube image
 
 # Start Minikube
-- script: minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
+#minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11 --cpus 8
+- script: |
+    source functions.sh
+    mk --cpus=8
+    
   displayName: Start Minikube
 
 # Fix permissions issue in AzurePipelines
@@ -64,7 +68,7 @@ steps:
 
 - script: |
     source functions.sh
-    build all 
+    build all 8
   env:
      FEED_PAT: $(FEED_PAT)
      VERSION: "2.1.$(Build.BuildNumber)"

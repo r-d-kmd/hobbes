@@ -203,8 +203,9 @@ function start() {
     cd $CURRENT_DIR
 }
 
-function startkube(){
-    minikube start --driver=docker --memory=4GB
+alias mk=minikube start --driver=docker --memory=4GB
+function startKub(){
+    mk
 }
 
 function update(){

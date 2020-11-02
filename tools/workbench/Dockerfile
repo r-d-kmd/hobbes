@@ -1,16 +1,16 @@
-FROM base AS build
-COPY ./src/ .
-RUN cat /paket.references >> ./paket.references
-RUN dotnet publish -c Releasae -o /app
+FROM builder AS build
+ARG EXECUTABLE
+ENV EXECUTABLE=${EXECUTABLE}
 
 # final stage/image
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
-
+FROM kmdrd/runtime
+COPY --from=build /tmp/start.sh /tmp/start.sh 
 WORKDIR /app
 COPY --from=build /app .
 
 ENV COLLECTION test
 ENV HOST "http://gateway-svc"
 ENV PAT ""
+ENV port 8085
 
-ENTRYPOINT ["dotnet","hobbes.workbench.dll"]
+ENTRYPOINT /tmp/start.sh

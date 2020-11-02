@@ -1,3 +1,8 @@
 group workbench
     Argu
     FSharp.Data
+
+group docker
+    hobbes.core
+    hobbes.messaging 
+    hobbes.web

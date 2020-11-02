@@ -1,5 +1,0 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1
-WORKDIR /source
- 
-RUN apt-get update
-RUN apt-get install mono-complete -y

@@ -54,7 +54,7 @@ steps:
 #minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11 --cpus 8
 - script: |
     source functions.sh
-    startKube 8
+    startKube
     
   displayName: Start Minikube
 
@@ -68,7 +68,7 @@ steps:
 
 - script: |
     source functions.sh
-    build all 8
+    build all 2
   env:
      FEED_PAT: $(FEED_PAT)
      VERSION: "2.1.$(Build.BuildNumber)"

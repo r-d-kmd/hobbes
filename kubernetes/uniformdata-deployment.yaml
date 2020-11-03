@@ -19,7 +19,10 @@ spec:
         envFrom:
         - secretRef:
             name: env
-        resources: {}
+        resources:
+          requests:
+            memory: "1.5Gi"
+            cpu: "100m"
       restartPolicy: Always
       imagePullSecrets:
       - name: acr-secret

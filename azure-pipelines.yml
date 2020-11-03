@@ -4,40 +4,16 @@
 # https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
 
 trigger:
-- master
+- development
 
 pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- task: AzureCLI@2
-  displayName: Azure CLI
-  inputs:
-    azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: 'az acr login --name hobbes'
 
-# Need go 1.13 or higher
-- task: GoTool@0
-  inputs:
-    version: '1.13'
-- script: GO111MODULE=on GOPATH=$tmpGoPath go get sigs.k8s.io/kustomize/kustomize/v3
-  displayName: Go get kustomize
+- script: newman --version
+  displayName: Verify newman version
 
-
-- script: |
-    unset GOPATH
-    unset GO111MODULES
-    git clone https://github.com/kubernetes-sigs/kustomize
-    cd kustomize
-    git checkout kustomize/v3.2.3
-    (cd kustomize; go install .)
-    ~/go/bin/kustomize version
-  displayName: Install Kustomize
-- task: KubectlInstaller@0
-  inputs:
-    kubectlVersion: 'latest'
 - script: dotnet tool update fake-cli
   displayName: Install Fake
   
@@ -52,12 +28,23 @@ steps:
   inputs:
     kubectlVersion: 'latest'
 
+- task: AzureCLI@2
+  displayName: Azure CLI
+  inputs:
+    azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: 'az acr login --name hobbes'
+
 # Download Minikube and it's prerequisites
 - script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /
   displayName: Minikube prerequisites  
 
 - script: curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
   displayName: Downloading Minikube
+
+- script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
+  displayName: Docker login
 
 #- script: docker login https://docker.pkg.github.com -u="$GIT_USER" -p="$GIT_PASS"
 - script: docker pull gcr.io/k8s-minikube/kicbase:v0.0.11
@@ -75,45 +62,64 @@ steps:
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
-- script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
-  displayName: Docker login
-- task: AzureCLI@2
-  inputs:
-    azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
+- script: |
       source functions.sh 
-      az acr login --name hobbes
-      docker pull hobbes.azurecr.io/app:latest
-      docker push hobbes.azurecr.io/app:latest
-      build PushApps
-      if [[ ! "$?" -eq "0" ]]
-      then 
-          exit 1
-      fi
-      docker images
+      build sdk
   env:
-    FEED_PAT: $(FEED_PAT)
-    VERSION: "1.2021.$(Build.BuildNumber)"   
+     FEED_PAT: $(FEED_PAT)
+  displayName: Build SDK 
+
+- script: |
+    source functions.sh
+    build all 2
+  env:
+     FEED_PAT: $(FEED_PAT)
+     VERSION: "1.2021.$(Build.BuildNumber)"
   displayName: Build the world
 
 - script: |
-    source functions.sh && applyProductionYaml
-  displayName: Setup production yaml
- 
-- script: source functions.sh && cd kubernetes && kubectl apply -f test.yaml
-  displayName: Apply production yaml to minikube
-  
-- task: AzureCLI@2
-  inputs:
-    azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      az aks get-credentials --name hobbes-kub --resource-group hobbes-rg
-      kubectl get all
-      cd kubernetes
-      ls
-      echo "$(ENV_FILE)" | kubectl apply -f -
-      kubectl apply -f test.yaml
+    source functions.sh
+    start
+    setupTest
+  displayName: Setup tests
+
+- script: |
+    source functions.sh
+    sleep 60
+    printf "${NoColor}"
+    kubectl port-forward service/gateway-svc 30080:80 &
+    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=$(PM_APIKEY) -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=$(PM_APIKEY) --env-var "ip"=$(minikube ip) --env-var "master_key"=$(MASTER_KEY) >> testresults.txt
+    TESTRESULT=$?
+    if [ "$TESTRESULT" -eq "0" ]
+    then
+        printf "${Green}********************* Done Testing ***********************\n"
+        cat testresults.txt
+        printf "${NoColor}"
+    else
+        printf "${Red}********************* Done Testing ***********************\n"
+        cat testresults.txt
+        printf "${NoColor}"
+        logs az
+        printf "${Yellow}********************************************\n${NoColor}"
+        logs gateway
+        printf "${Yellow}********************************************\n${NoColor}"
+        logs calc -f &
+        printf "${Yellow}*********************** WAITING FOR EXIT *********************${NoColor}\n"
+        sleep 600
+        printf "${Yellow}*********************** EXIT EXIT EXIT *********************${NoColor}\n"
+        exit $TESTRESULT
+    fi
+  displayName: Run postman tests
+
+- script: |
+    docker push kmdrd/workbench
+    git config --global credential.helper store
+    git config --global user.email "hobbes_buildserver@kmd.dk"
+    git config --global user.name "Build server"
+    echo "azure-pipelines.yml merge=ours" > .gitattributes
+    git config --global merge.ours.driver true
+    git remote add pseudo https://$(GIT_ACCESS_TOKEN):x-oauth-basic@github.com/r-d-kmd/hobbes.git
+    git checkout master
+    git merge origin/development
+    git push pseudo master
+  displayName: Push to master

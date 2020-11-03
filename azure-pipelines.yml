@@ -88,7 +88,7 @@ steps:
       az acr login --name hobbes
       docker pull hobbes.azurecr.io/app:latest
       docker push hobbes.azurecr.io/app:latest
-      build PushApps 8 
+      build PushApps
       docker images
   env:
     FEED_PAT: $(FEED_PAT)

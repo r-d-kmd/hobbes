@@ -90,6 +90,7 @@ steps:
     scriptLocation: 'inlineScript'
     inlineScript: |
       docker login hobbes.azurecr.io -u 00000000-0000-0000-0000-000000000000 -p ${REGISTRY_TOKEN}
+      az acr check-name
       az aks get-credentials --name hobbes-kub --resource-group hobbes-rg
       kubectl get all
       cd kubernetes

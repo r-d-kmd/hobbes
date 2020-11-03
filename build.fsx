@@ -60,7 +60,7 @@ let runOrDefaultWithArguments =
     targetName
     >> Target.runOrDefaultWithArguments 
 
-let dockerOrg = "hobbes"
+let dockerOrg = "hobbes.azurecr.io"
 let run command workingDir args = 
     let arguments = 
         match args |> String.split ' ' with

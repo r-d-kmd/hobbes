@@ -17,6 +17,17 @@ steps:
     version: '1.13'
 - script: GO111MODULE=on GOPATH=$tmpGoPath go get sigs.k8s.io/kustomize/kustomize/v3
   displayName: Go get kustomize
+- task: AzureCLI@2
+  displayName: Azure CLI
+  inputs:
+    azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: 'az acr login --name hobbes'
+
+- script: |
+   docker login hobbes.azurecr.io -u="00000000-0000-0000-0000-000000000000" -p="${REGISTRY_TOKEN}"
+   docker pull hobbes.azurecr.io/couchdb
 
 - script: |
     unset GOPATH

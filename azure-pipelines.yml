@@ -10,7 +10,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-  '
+
 # Need go 1.13 or higher
 - task: GoTool@0
   inputs:

@@ -88,6 +88,7 @@ steps:
       docker pull hobbes.azurecr.io/app:latest
       docker push hobbes.azurecr.io/app:latest
       source functions.sh 
+      docker build -t calculator .
       build PushApps 8 
       docker images
   env:

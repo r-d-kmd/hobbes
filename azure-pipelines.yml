@@ -84,11 +84,10 @@ steps:
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
     inlineScript: |
+      source functions.sh 
       az acr login --name hobbes
       docker pull hobbes.azurecr.io/app:latest
       docker push hobbes.azurecr.io/app:latest
-      source functions.sh 
-      docker build -t calculator .
       build PushApps 8 
       docker images
   env:

@@ -6,6 +6,3 @@
   path: /spec/template/spec/containers/0/image
   value: hobbes.azurecr.io/hobbes-configurations:latest
     
-- op: add
-  path: /spec/template/spec/imagePullSecrets/name
-  value: acr-secret

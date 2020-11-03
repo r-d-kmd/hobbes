@@ -78,11 +78,16 @@ steps:
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
-- script: |
-    az acr login --name hobbes
-    source functions.sh 
-    build PushApps 8 
-    docker images
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      az acr login --name hobbes
+      source functions.sh 
+      build PushApps 8 
+      docker images
   env:
     FEED_PAT: $(FEED_PAT)
     VERSION: "1.2021.$(Build.BuildNumber)"   

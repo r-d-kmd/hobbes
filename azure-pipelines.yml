@@ -84,8 +84,9 @@ steps:
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
     inlineScript: |
-      docker login hobbes.azurecr.io -u="00000000-0000-0000-0000-000000000000" -p="${REGISTRY_TOKEN}"
       az acr login --name hobbes
+      docker pull hobbes.azurecr.io/app:latest
+      docker push hobbes.azurecr.io/app:latest
       source functions.sh 
       build PushApps 8 
       docker images

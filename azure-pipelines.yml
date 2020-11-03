@@ -6,12 +6,8 @@
 trigger:
 - development
 
-resources:
-  containers:
-  - container: minikube
-    image: kmdrd/buildagent:minikube
-
-container: minikube
+pool:
+  vmImage: 'ubuntu-latest'
 
 steps:
 
@@ -55,11 +51,7 @@ steps:
   displayName: Pull minikube image
 
 # Start Minikube
-#minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11 --cpus 8
-- script: |
-    source functions.sh
-    startKube
-    
+- script: minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
   displayName: Start Minikube
 
 # Fix permissions issue in AzurePipelines
@@ -69,13 +61,20 @@ steps:
 # Set up cluster
 - script: echo "$(ENV_FILE)" | kubectl apply -f -
   displayName: Apply kubernetes environment file
+  
+- script: |
+      source functions.sh 
+      build sdk
+  env:
+     FEED_PAT: $(FEED_PAT)
+  displayName: Build SDK 
 
 - script: |
     source functions.sh
-    build all 2
+    build BuildForTest
   env:
      FEED_PAT: $(FEED_PAT)
-     VERSION: "2.1.$(Build.BuildNumber)"
+     VERSION: "1.2021.$(Build.BuildNumber)"
   displayName: Build the world
 
 - script: |

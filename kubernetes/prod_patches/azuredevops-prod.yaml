@@ -9,7 +9,3 @@
 - op: replace
   path: /spec/replicas
   value: 3
-    
-- op: add
-  path: /spec/template/spec/imagePullSecrets/name
-  value: acr-secret

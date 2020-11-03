@@ -25,4 +25,6 @@ spec:
           - containerPort: 3702
             protocol: UDP 
       restartPolicy: Always
+      imagePullSecrets:
+      - name: acr-secret
 status: {}

@@ -18,7 +18,7 @@ steps:
     scriptLocation: 'inlineScript'
     inlineScript: |
       az acr login --name hobbes
-      docker pull hobbes.azurecr.io/couchdb
+      docker pull hobbes.azurecr.io/hobbes-azuredevops
 # Need go 1.13 or higher
 - task: GoTool@0
   inputs:

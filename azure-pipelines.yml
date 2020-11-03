@@ -17,6 +17,7 @@ steps:
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
     inlineScript: 'az acr login --name hobbes'
+
 # Need go 1.13 or higher
 - task: GoTool@0
   inputs:
@@ -78,6 +79,7 @@ steps:
   displayName: Apply kubernetes environment file
   
 - script: |
+    az acr login --name hobbes
     source functions.sh 
     build PushApps 8 
     docker images

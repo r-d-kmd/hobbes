@@ -16,7 +16,9 @@ steps:
     azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
-    inlineScript: 'az acr login --name hobbes'
+    inlineScript: |
+      az acr login --name hobbes
+      docker pull hobbes.azurecr.io/couchdb
 # Need go 1.13 or higher
 - task: GoTool@0
   inputs:

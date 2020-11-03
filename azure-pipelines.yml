@@ -89,7 +89,7 @@ steps:
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
     inlineScript: |
-      docker login hobbes.azurecr.io -u 00000000-0000-0000-0000-000000000000 -password=${REGISTRY_TOKEN}
+      docker login hobbes.azurecr.io -u 00000000-0000-0000-0000-000000000000 --password=${REGISTRY_TOKEN}
       az acr check-name --name hobbes
       az aks get-credentials --name hobbes-kub --resource-group hobbes-rg
       kubectl get all

@@ -16,7 +16,7 @@ steps:
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
     inlineScript: |
-      docker login hobbes.azurecr.io -u 00000000-0000-0000-0000-000000000000 -p ${REGISTRY_TOKEN}
+      docker login hobbes.azurecr.io -u 00000000-0000-0000-0000-000000000000 -p "${REGISTRY_TOKEN}"
       docker pull hobbes.azurecr.io/couchdb
 # Need go 1.13 or higher
 - task: GoTool@0

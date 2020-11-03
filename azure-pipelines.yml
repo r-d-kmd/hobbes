@@ -6,8 +6,12 @@
 trigger:
 - development
 
-pool:
-  vmImage: 'ubuntu-latest'
+resources:
+  containers:
+  - container: minikube
+    image: kmdrd/buildagent:minikube
+
+container: minikube
 
 steps:
 

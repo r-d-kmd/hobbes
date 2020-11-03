@@ -4,4 +4,4 @@
 
 - op: replace
   path: /spec/template/spec/containers/0/image
-  value: kmdrd/hobbes-gateway:latest
+  value: hobbes.azurecr.io/hobbes-gateway:latest

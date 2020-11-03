@@ -240,6 +240,7 @@ create Targets.All ignore
 create Targets.Build ignore
 create Targets.PreApps ignore
 
+Targets.Builder ==> Targets.PushApps
 
 apps
 |> Seq.iter(fun (app,dir) ->

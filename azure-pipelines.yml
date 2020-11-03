@@ -59,9 +59,6 @@ steps:
 - script: curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
   displayName: Downloading Minikube
 
-- script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
-  displayName: Docker login
-
 #- script: docker login https://docker.pkg.github.com -u="$GIT_USER" -p="$GIT_PASS"
 - script: docker pull gcr.io/k8s-minikube/kicbase:v0.0.11
   displayName: Pull minikube image

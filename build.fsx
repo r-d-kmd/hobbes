@@ -240,7 +240,6 @@ create Targets.All ignore
 create Targets.Build ignore
 create Targets.PreApps ignore
 
-Targets.Builder ==> Targets.PushApps
 
 apps
 |> Seq.iter(fun (app,dir) ->
@@ -256,6 +255,7 @@ create Targets.Builder (fun _ ->
     docker (Build(file,tag, ["FEED_PAT_ARG", argFeed])) "."
 )
 
+Targets.Builder ==> Targets.PushApps
 Targets.Builder ?=> Targets.PreApps
 Targets.Build ==> Targets.All
 Targets.Builder ==> Targets.All

@@ -10,6 +10,13 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
+- task: AzureCLI@2
+  displayName: Azure CLI
+  inputs:
+    azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: 'az acr login --name hobbes'
 # Need go 1.13 or higher
 - task: GoTool@0
   inputs:

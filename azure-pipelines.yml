@@ -89,6 +89,10 @@ steps:
       docker pull hobbes.azurecr.io/app:latest
       docker push hobbes.azurecr.io/app:latest
       build PushApps
+      if [[ ! "$?" -eq "0" ]]
+      then 
+          exit 1
+      fi
       docker images
   env:
     FEED_PAT: $(FEED_PAT)

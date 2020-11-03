@@ -7,5 +7,5 @@
   value: hobbes.azurecr.io/hobbes-calculator:latest
     
 - op: add
-  path: /spec/template/spec/containers/0/imagePullSecrets
+  path: /spec/template/spec/imagePullSecrets
   value: acr-secret

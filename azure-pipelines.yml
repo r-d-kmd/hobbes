@@ -95,5 +95,3 @@ steps:
       ls
       echo "$(ENV_FILE)" | kubectl apply -f -
       kubectl apply -f test.yaml
-      kubectl port-forward service/db-svc 5984:5984 &
-      kubectl delete --all pods

@@ -77,7 +77,7 @@ steps:
   displayName: Build the world
 
 - script: |
-    source functions.shapplyProductionYaml
+    source functions.sh && applyProductionYaml
   displayName: Setup production yaml
  
 - script: source functions.sh && cd kubernetes && kubectl apply -f test.yaml

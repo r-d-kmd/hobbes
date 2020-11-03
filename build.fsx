@@ -255,6 +255,7 @@ create Targets.Builder (fun _ ->
     docker (Build(file,tag, ["FEED_PAT_ARG", argFeed])) "."
 )
 
+Targets.Builder ==> Targets.PushApps
 Targets.Builder ?=> Targets.PreApps
 Targets.Build ==> Targets.All
 Targets.Builder ==> Targets.All

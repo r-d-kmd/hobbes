@@ -35,6 +35,7 @@ steps:
     (cd kustomize; go install .)
     ~/go/bin/kustomize version
   displayName: Install Kustomize
+
 - task: KubectlInstaller@0
   inputs:
     kubectlVersion: 'latest'
@@ -85,8 +86,6 @@ steps:
     inlineScript: |
       source functions.sh 
       az acr login --name hobbes
-      docker pull hobbes.azurecr.io/app:latest
-      docker push hobbes.azurecr.io/app:latest
       build PushApps
       if [[ ! "$?" -eq "0" ]]
       then 

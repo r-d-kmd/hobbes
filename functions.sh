@@ -294,6 +294,8 @@ function forward(){
 
 #This function builds the production yaml configuration in the kubernetes folder.
 function applyProductionYaml() {
+
+
     local CURRENT_DIR=$(pwd)
     cd $KUBERNETES_DIR
     mv kustomization.yaml ./local_patches/kustomization.yaml

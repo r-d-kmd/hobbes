@@ -7,5 +7,5 @@
   value: hobbes.azurecr.io/hobbes-git:latest
    
 - op: add
-  path: /spec/template/spec/imagePullSecrets
+  path: /spec/template/spec/imagePullSecrets/name
   value: acr-secret

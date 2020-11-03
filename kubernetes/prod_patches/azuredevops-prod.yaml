@@ -11,5 +11,5 @@
   value: 3
     
 - op: add
-  path: /spec/template/spec/imagePullSecrets
+  path: /spec/template/spec/imagePullSecrets/name
   value: acr-secret

@@ -28,10 +28,6 @@ steps:
 
 
 - script: |
-   docker login hobbes.azurecr.io -u="00000000-0000-0000-0000-000000000000" -p="${REGISTRY_TOKEN}"
-   docker pull hobbes.azurecr.io/couchdb
-
-- script: |
     unset GOPATH
     unset GO111MODULES
     git clone https://github.com/kubernetes-sigs/kustomize
@@ -87,6 +83,9 @@ steps:
     source functions.sh 
     build PushApps 8 
     docker images
+  env:
+    FEED_PAT: $(FEED_PAT)
+    VERSION: "1.2021.$(Build.BuildNumber)"   
   displayName: Build the world
 
 - script: |

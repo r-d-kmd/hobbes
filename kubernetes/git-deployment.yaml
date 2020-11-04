@@ -19,10 +19,6 @@ spec:
         imagePullPolicy: Never
         image: git
         name: git
-        resources:
-          requests:
-            memory: "100Mi"
-            cpu: "100m"
       restartPolicy: Always
       imagePullSecrets:
       - name: acr-secret

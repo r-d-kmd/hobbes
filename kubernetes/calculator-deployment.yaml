@@ -24,10 +24,6 @@ spec:
           - containerPort: 4024
           - containerPort: 3702
             protocol: UDP 
-        resources:
-          requests:
-            memory: "100Mi"
-            cpu: "100m"
       restartPolicy: Always
       imagePullSecrets:
       - name: acr-secret

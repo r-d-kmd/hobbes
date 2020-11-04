@@ -23,10 +23,6 @@ spec:
         env:
           - name: MAX_LOG_LENGTH
             value: "50000000"
-        resources:
-          requests:
-            memory: "100Mi"
-            cpu: "100m"
       restartPolicy: Always
       imagePullSecrets:
       - name: acr-secret

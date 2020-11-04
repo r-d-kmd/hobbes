@@ -19,7 +19,6 @@ spec:
         imagePullPolicy: Never
         image: gateway
         name: gateway
-        resources: {}
       restartPolicy: Always
       imagePullSecrets:
       - name: acr-secret

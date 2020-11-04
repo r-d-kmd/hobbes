@@ -19,7 +19,6 @@ spec:
         imagePullPolicy: Never
         image: git
         name: git
-        resources: {}
       restartPolicy: Always
       imagePullSecrets:
       - name: acr-secret

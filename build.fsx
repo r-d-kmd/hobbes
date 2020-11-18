@@ -19,6 +19,7 @@ nuget Fake.Tools.Git ~> 5 //"
 open Fake.Core
 open Fake.DotNet
 open Fake.IO
+open System.IO
 
 [<RequireQualifiedAccess>]
 type Targets = 
@@ -183,7 +184,7 @@ let apps : seq<App*string> =
 let buildApp (name : string) (appType : string) workingDir =
     
     let tag = name.ToLower()
-    
+    let srcDir = Path.Combine(workingDir,"src")
     let build _ = 
         
         let tags =
@@ -194,9 +195,12 @@ let buildApp (name : string) (appType : string) workingDir =
                t + ":" + "latest"
            ]
 
+        let dockerFilePath = sprintf "%s/Dockerfile.service" dockerDir.FullName
+        //read the docker file template
         let file = 
-            sprintf "%s/Dockerfile.service" dockerDir.FullName
-            |> System.IO.File.ReadAllText
+            dockerFilePath
+            |> File.ReadAllText
+        //substitute some placeholders in dockerfile
         let content = 
             match appType.ToLower() with
             "service" -> 
@@ -205,11 +209,45 @@ let buildApp (name : string) (appType : string) workingDir =
                 file.Replace("${SERVICE_NAME}",name + ".worker")
             | _ -> failwithf "Don't know app type %s" appType
 
-        let dest = sprintf "%s/Dockerfile" workingDir
-        System.IO.File.WriteAllText(dest,content)
-        printfn "Dockerfile (%s) written to %s" content dest
+        let setAttributes orgFile destFile = 
+            let attributes = File.GetAttributes(orgFile)
+            File.SetAttributes(destFile,FileAttributes.ReadOnly ||| FileAttributes.Temporary ||| attributes)
+
+        let localDockerFile = sprintf "%s/Dockerfile" workingDir
+        let preamble = 
+            (sprintf """# This is a temporary file do not edit
+# edit %s instead
+""" dockerFilePath)
+        
+        File.WriteAllText(localDockerFile,preamble + content)
+        setAttributes dockerFilePath localDockerFile
+
+        let sharedFiles = 
+            [
+                "common/hobbes.messaging/src/Broker.fs"
+            ] 
+
+        //copy shared files
+        sharedFiles
+        |> List.iter(fun f ->
+            let content = 
+                "//This is a temporary build file and should not be altered"::
+                (sprintf "//If changes are need edit %s" f)::
+                 (File.ReadAllLines f
+                  |> List.ofArray)
+            let destFile = Path.Combine(srcDir, Path.GetFileName f)
+            File.WriteAllLines(destFile,content)
+            setAttributes f destFile
+        )        
 
         docker (Build(None,tag,[])) workingDir
+        //clean up temporarily copied shared files
+        sharedFiles
+        |> List.iter(fun f ->
+            Path.Combine(srcDir,Path.GetFileName(f))
+            |> File.Delete
+        )
+        File.Delete localDockerFile
         tags
         |> List.iter(fun t -> 
             docker (Tag(tag,t)) workingDir

@@ -24,7 +24,7 @@ RUN dotnet paket restore
 FROM build-base
 ONBUILD COPY ./src /source
 WORKDIR /source
-RUN echo "#!/bin/bash" >> /tmp/start.sh
+
 ONBUILD RUN echo "dotnet \"$(expr $(ls *.?sproj) : '\(.*\)\..sproj').dll\"\n" >> /tmp/start.sh
 ONBUILD RUN chmod +x /tmp/start.sh
 ONBUILD RUN cat /tmp/start.sh

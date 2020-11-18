@@ -11,8 +11,9 @@ ENV FEED_USER ${FEED_USER_ARG}
 ENV FEED_PASSWORD ${FEED_PASSWORD_ARG}
 
 COPY setEnv.sh /tmp/setEnv.sh
-RUN chmod +x /tmp/setEnv.sh
-RUN /tmp/setEnv.sh
+RUN cat /tmp/setEnv.sh >> /tmp/temp.sh
+RUN chmod +x /tmp/temp.sh
+RUN /tmp/temp.sh
 
 COPY .fake/build.fsx/.paket/Paket.Restore.targets /.paket/Paket.Restore.targets
 COPY paket.lock .
@@ -23,7 +24,7 @@ RUN dotnet paket restore
 FROM build-base
 ONBUILD COPY ./src /source
 WORKDIR /source
-RUN echo "#!/bin/bash" >> /tmp/setenv.sh
+RUN echo "#!/bin/bash" >> /tmp/start.sh
 ONBUILD RUN echo "dotnet \"$(expr $(ls *.?sproj) : '\(.*\)\..sproj').dll\"\n" >> /tmp/start.sh
 ONBUILD RUN chmod +x /tmp/start.sh
 ONBUILD RUN cat /tmp/start.sh

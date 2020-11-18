@@ -59,7 +59,7 @@ steps:
   displayName: Fix permissions
 
 # Set up cluster
-- script: echo "$(ENV_FILE)" | kubectl apply -f -
+- script: echo '$(ENV_FILE)' | kubectl apply -f -
   displayName: Apply kubernetes environment file
   env:
     ENV_FILE: $(ENV_FILE)

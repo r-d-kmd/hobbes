@@ -4,10 +4,11 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <DebugType>Portable</DebugType>
-    <TargetsPath Condition="$(BUILD_ENV) == 'docker'">./</TargetsPath>
-    <TargetsPath Condition="$(TargetsPath) == ''">../../../</TargetsPath>
+    <BrokerPath Condition="$(BUILD_ENV) == 'docker'">Broker.fs</BrokerPath>
+    <BrokerPath Condition="$(BrokerPath) == ''">../../../common/hobbes.messaging/src/Broker.fs</BrokerPath>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(BrokerPath)" />
     <Compile Include="Data.fs" />
     <Compile Include="Reader.fs" />
     <Compile Include="Program.fs" />

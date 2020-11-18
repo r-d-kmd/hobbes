@@ -243,7 +243,7 @@ module Broker =
                                 printfn "%s" m
                                 logAndComplete (fun () -> 
                                        let failCount = fails.AddOrUpdate(tag,1,fun a b -> fails.[a] + b)
-                                       channel.BasicReject(tag,failCount < 5)) (fun l -> MessageFailure(json, l)
+                                       channel.BasicReject(tag,failCount < 5)) (fun l -> MessageFailure(json, m)
                                     ) (serialize msg)
                             | Excep e ->
                                 messageException ea.DeliveryTag e (serialize msg)

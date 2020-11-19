@@ -115,4 +115,4 @@ steps:
       cd kubernetes
       ls
       echo "$(ENV_FILE)" | kubectl apply -f -
-      kubectl apply -f test.yaml
+      kubectl apply -f test.yaml   

@@ -188,6 +188,13 @@ function start() {
 
 function startKube(){
     minikube start --driver=docker --memory=4GB
+    
+    if [[ $(uname -s) == CYGWIN_NT* ]] || [[ $(uname -s) == "Darwin" ]] || [[ $(uname -s) == MINGW64_NT* ]]
+    then
+        eval $(minikube docker-env)
+    else
+        eval $(SHELL=/bin/bash; minikube -p minikube docker-env)
+    fi
 }
 
 function update(){
@@ -308,8 +315,6 @@ function applyProductionYaml() {
 
 function addSource(){
     dotnet nuget add source --name KMD_FEED \
-        --username "rsl@kmd.dk" \
-        --password "Almost55" \
         https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
 }
 
@@ -322,3 +327,4 @@ printf " - ${LightBlue}$SCRIPT_DIR\n"
 printf "${NoColor}Apps found:\n${LightBlue}"
 printf ' - %s\n' "${APPS[@]}"
 printf "${NoColor}"
+

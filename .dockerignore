@@ -22,3 +22,5 @@ hobbes.sln
 installatin.md
 paket.exe
 README.md
+workers/**/src/Broker.fs
+services/**/src/Broker.fs

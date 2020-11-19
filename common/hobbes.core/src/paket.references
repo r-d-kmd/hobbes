@@ -1,6 +1,0 @@
-group core
-    Accord.MachineLearning
-    Deedle
-    FParsec
-    Thoth.Json.Net
-    FSharp.Core

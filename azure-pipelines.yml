@@ -73,7 +73,7 @@ steps:
   displayName: Fix permissions
 
 # Set up cluster
-- script: echo "$(ENV_FILE)" | kubectl apply -f -
+- script: echo '$(ENV_FILE)' | kubectl apply -f -
   displayName: Apply kubernetes environment file
   
 - script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"

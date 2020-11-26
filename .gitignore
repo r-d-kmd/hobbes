@@ -1,4 +1,6 @@
 build.fsx.lock
+BuildExtension.fsx.lock
+BuildGeneral.fsx.lock
 .fake/
 .ionide/
 .vs/
@@ -26,6 +28,7 @@ tutorial/scripts/*.html
 repositories/
 temp.*
 *.ignore
+!build.ignore
 *.nupkg
 docker/tmp
 **/src/Properties/

@@ -98,8 +98,7 @@ group docker
     storage: none
     
     nuget FSharp.Core ~> 5
-    nuget hobbes.core
-    nuget hobbes.messaging 
+    nuget hobbes.core ~> 1.1
     nuget hobbes.web
 
 group visualizer.web

@@ -114,10 +114,11 @@ module BuildGeneral =
 
     let projects : seq<string*string> = 
         let enumerateProjectFiles (dir : DirectoryInfo) =
+            let ignoreFilePath = "./.buildignore"
             let ignores =
-                if File.exists("./build.ignore")
+                if File.exists(ignoreFilePath)
                 then
-                    File.ReadLines("./build.ignore")
+                    File.ReadLines(ignoreFilePath)
                     |> Seq.map DirectoryInfo
                 else
                     Seq.empty

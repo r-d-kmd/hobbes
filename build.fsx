@@ -285,7 +285,6 @@ apps
     buildApp name appType dir
     Targets.PreApps ==> Targets.Generic(name) ==> Targets.Build |> ignore
 ) 
-let paket workDir args = run "dotnet" workDir ("paket " + args)
 
 create Targets.Builder (fun _ ->   
     let tag = "builder"

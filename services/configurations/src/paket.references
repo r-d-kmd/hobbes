@@ -11,5 +11,4 @@ group collectors
 
 group docker
     hobbes.core
-    hobbes.messaging 
     hobbes.web

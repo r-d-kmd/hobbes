@@ -328,3 +328,5 @@ printf "${NoColor}Apps found:\n${LightBlue}"
 printf ' - %s\n' "${APPS[@]}"
 printf "${NoColor}"
 
+alias fake=dotnet fake
+alias paket=dotnet paket

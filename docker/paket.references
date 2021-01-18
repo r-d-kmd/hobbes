@@ -1,6 +1,6 @@
 
 
 group docker
-    hobbes.core
+    hobbes.Core
     hobbes.messaging
     hobbes.web

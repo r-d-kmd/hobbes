@@ -104,3 +104,8 @@ module Data =
     [<Get "/ping">]
     let ping () =
         200, "pong - Configurations"
+
+    
+    [<Get ("/configurations")>]
+    let allConfigurations () =
+        200, listConfigurations().ToString()

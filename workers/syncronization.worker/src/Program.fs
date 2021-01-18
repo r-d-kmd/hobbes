@@ -1,8 +1,10 @@
 
 open Hobbes.Web
+open Hobbes.Web.RawdataTypes
 open Hobbes.Messaging
 open Hobbes.Messaging.Broker
 open Hobbes.Helpers
+open FSharp.Data
 
 type CollectorList = FSharp.Data.JsonProvider<"""["azure devops","git"]""">
 type SourceList = FSharp.Data.JsonProvider<"""[{
@@ -18,11 +20,24 @@ type SourceList = FSharp.Data.JsonProvider<"""[{
                 "dataset" : "commits",
                 "server" : "https://analytics.dev.azure.com/kmddk/flowerpot"
             }]""">
+
+type DataSet = FSharp.Data.JsonProvider<"""
+        {
+          "_id": "34d147fc6e2509c0080e1dbd7f2337fa",
+          "_rev": "1-aa275c7c28e46827114998269841843d",
+          "timeStamp": "12/03/2020 15:22:42",
+          "data": {
+            "columnNames": [],
+            "values": []
+          }
+        }
+""">
 [<EntryPoint>]
 let main _ =
     
     async{
         do! awaitQueue()
+        let timeOfSync = System.DateTime.Now
         let mutable timeOfLastMessage = System.DateTime.Now
         let failures = System.Collections.Generic.List()
         let exceptions = System.Collections.Generic.List()
@@ -52,6 +67,7 @@ let main _ =
                 |> Array.collect(fun collector ->
                     match Http.get (Http.Configurations (Http.Sources collector)) SourceList.Parse  with
                     Http.Success sources ->
+                        printfn "%A" sources.[0]
                         sources
                     | Http.Error (sc,m) -> 
                         failwithf "Failed retrievining sources. %d - %s" sc m
@@ -77,18 +93,21 @@ let main _ =
                 if delta < 0.0 then
                     if System.DateTime.Now > timeout then
                         eprintfn "Timed out while syncronizing"
-                    else
-                        printfn "Waiting for action to quite down"     
+                    else 
                         waitForSync (-1 * (delta + 1.0 |> int))
                 else
-                    printfn "Completed syncronization"
-                    printfn "Exceptions:"
-                    exceptions
-                    |> Seq.iter(fun (m,json) -> eprintfn "Message: %s. Message: %s" m json)
-                    printfn "Failures:"
-                    failures
-                    |> Seq.iter(fun (m,json) -> eprintfn "Message: %s. Message: %s" m json)
+                    let mutable succesful = 0
+                    let mutable failures  = 0
+                    let mutable badStamp  = 0
+                    printfn "succes: %A, failures: %A, bad timestamp: %A" succesful failures badStamp
+                    printfn("Sync-moniter starting")
+                    let x = Http.get (Http.Service.Configurations (Http.ConfigurationService.AllConfigurations)) Config.Parse
+
+                    printfn "%A" x
+                    
+                    printfn "succes: %A, failures: %A, bad timestamp: %A" succesful failures badStamp
             waitForSync 1
+            
         | Http.Error(sc,m) -> 
             failwithf "Failed retrievining collectors. %d - %s" sc m
             

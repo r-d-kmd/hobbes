@@ -4,11 +4,15 @@ framework: auto-detect
 storage: none
 
 nuget FSharp.Core ~> 5
+ 
+nuget Microsoft.AspNetCore.Authentication.JwtBearer ~> 3.0.3
 
 group workbench
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
+ 
+    nuget Microsoft.AspNetCore.Authentication.JwtBearer ~> 3.0.3
     
     nuget Argu
     nuget Saturn = 0.13.1
@@ -20,6 +24,8 @@ group core
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
+ 
+    nuget Microsoft.AspNetCore.Authentication.JwtBearer ~> 3.0.3
 
     nuget Accord.MachineLearning
     nuget Deedle
@@ -31,6 +37,8 @@ group collectors
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
+ 
+    nuget Microsoft.AspNetCore.Authentication.JwtBearer ~> 3.0.3
     nuget FSharp.Core ~> 5
     nuget RabbitMQ.Client
 
@@ -38,6 +46,8 @@ group web
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%" 
     framework: auto-detect
     storage: none
+ 
+    nuget Microsoft.AspNetCore.Authentication.JwtBearer ~> 3.0.3
 
     nuget Saturn = 0.13.1
     nuget Giraffe
@@ -58,7 +68,8 @@ group test
     nuget Microsoft.NET.Test.SDK
     nuget microsoft.testplatform.testhost
     nuget xunit.runner.VisualStudio
-    nuget FSharp.Core ~> 5  
+    nuget FSharp.Core ~> 5 
+    nuget Microsoft.AspNetCore.Authentication.JwtBearer ~> 3.0.3
 
 group tutorial
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
@@ -72,7 +83,9 @@ group visualizer
     storage: none
 
     # FSharp.Data
-    nuget FSharp.Data 
+    nuget FSharp.Data  
+    nuget Microsoft.AspNetCore.Authentication.JwtBearer ~> 3.0.3
+
 
     # MathNet.Numerics
     nuget MathNet.Numerics 
@@ -96,15 +109,20 @@ group docker
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
+ 
+    nuget Microsoft.AspNetCore.Authentication.JwtBearer ~> 3.0.3
     
     nuget FSharp.Core ~> 5
     nuget hobbes.core ~> 1.1
     nuget hobbes.web
+    nuget hobbes.messaging
 
 group visualizer.web
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
+ 
+    nuget Microsoft.AspNetCore.Authentication.JwtBearer ~> 3.0.3
 
     nuget Fable.SimpleJson 3.11.0
     nuget Fable.Remoting.Giraffe
@@ -128,6 +146,8 @@ group Build
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2 username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: netstandard2.0
     storage: none
+ 
+    nuget Microsoft.AspNetCore.Authentication.JwtBearer ~> 3.0.3
 
     nuget FSharp.Core ~> 5
     nuget Fake.Core.ReleaseNotes

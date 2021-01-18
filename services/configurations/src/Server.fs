@@ -18,6 +18,7 @@ let private appRouter = router {
     withArg <@ transformation @>
     withArg <@ sources @>
     fetch <@ collectors @>
+    fetch <@ allConfigurations @>
     withBody <@ storeConfiguration @>
     withBody <@ storeTransformation @>
 } 

@@ -100,7 +100,9 @@ module BuildGeneral =
 
     let feedPat = 
         match "FEED_PAT" |> Environment.environVarOrNone  with
-        None -> failwith "No PAT for the nuget feed was provided"
+        None -> 
+            eprintfn "No PAT for the nuget feed was provided"
+            ""
         | Some argFeed -> 
             argFeed
 

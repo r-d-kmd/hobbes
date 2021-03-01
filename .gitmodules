@@ -1,0 +1,3 @@
+[submodule "services/calvin"]
+	path = services/calvin
+	url = https://github.com/r-d-kmd/calvin.git

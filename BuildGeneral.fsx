@@ -85,7 +85,9 @@ module BuildGeneral =
                 let buildArgs = 
                     System.String.Join(" ", 
                         buildArgs 
-                        |> List.map(fun (n,v) -> sprintf "--build-arg %s=%s" n v)
+                        |> List.map(fun (n,v) -> 
+                            let v = if v = "" then "\"\"" else v
+                            sprintf "--build-arg %s=%s" n v)
                     ).Trim()
                 ( match file with
                   None -> 

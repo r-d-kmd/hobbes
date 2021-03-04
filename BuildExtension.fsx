@@ -126,7 +126,7 @@ module BuildExtension =
                 let destFile = Path.Combine(srcDir, Path.GetFileName f)
                 File.WriteAllLines(destFile,content)
             )
-        printfn "Then this happened"
+        
 
         let targetName =
             name.ToLower() 

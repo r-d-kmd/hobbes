@@ -2,7 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
+    <OutputPath>bin/$(Configuration)</OutputPath>
     <DebugType>Portable</DebugType>
     <TargetsPath Condition="$(BUILD_ENV) == 'docker'">./</TargetsPath>
     <TargetsPath Condition="$(TargetsPath) == ''">../../../</TargetsPath>
@@ -14,5 +15,5 @@
     <Compile Include="Services/Root.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
-  <Import Project="..\..\..\.paket\Paket.Restore.targets" />
+  <Import Project="..\..\..\.paket\Paket.targets" />
 </Project>

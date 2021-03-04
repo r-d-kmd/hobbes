@@ -3,7 +3,7 @@
     <TargetsPath Condition="$(BUILD_ENV) == 'docker'">./</TargetsPath>
     <TargetsPath Condition="$(TargetsPath) == ''">../../../</TargetsPath>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>netcoreapp5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Types.fs" />

@@ -1,8 +1,7 @@
-group web
-    FSharp.Data
-    FSharp.Core
-    Newtonsoft.Json
-    Thoth.Json.Net
+FSharp.Data
+FSharp.Core
+Newtonsoft.Json
+Thoth.Json.Net
 
 group collectors
     RabbitMQ.Client

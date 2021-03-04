@@ -1,10 +1,9 @@
-group web
-    Saturn 
-    Giraffe
-    FSharp.Data
-    Microsoft.Extensions.PlatformAbstractions
-    FSharp.Core
-    Newtonsoft.Json
+Saturn 
+Giraffe
+FSharp.Data
+Microsoft.Extensions.PlatformAbstractions
+FSharp.Core
+Newtonsoft.Json
 
 group docker
     hobbes.core

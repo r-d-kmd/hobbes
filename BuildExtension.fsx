@@ -53,11 +53,56 @@ module BuildExtension =
     let dockerOrg = Environment.environVarOrDefault "DOKCER_ORG" "hobbes.azurecr.io"
     let tagPrefix = "hobbes"
     let createDockerTag dockerOrg (tag : string) = sprintf "%s/%s-%s" dockerOrg tagPrefix (tag.ToLower())
+    let ignoreLines =
+        File.ReadAllLines ".buildignore"
+        |> Seq.fold(fun ignores l ->
+            if Directory.Exists l then
+               (DirectoryInfo(l).FullName)::ignores
+            elif File.exists l then
+                (FileInfo(l).FullName)::ignores
+            else
+               ignores
+        ) ([])
+        
+    let ignores f = 
+        let fullName = 
+            if Directory.Exists f then
+                DirectoryInfo(f).FullName |> Some
+            elif File.exists f then
+                FileInfo(f).FullName |> Some
+            else
+                None
+        match fullName with
+        None -> false
+        | Some f ->
+            let rec inDir (d : DirectoryInfo) (fDir : DirectoryInfo) = 
+               if fDir = null then false
+               else
+                  fDir.FullName = d.FullName || inDir d fDir.Parent 
 
+            ignoreLines
+            |> List.exists(fun d -> 
+               if f = d then true
+               elif Path.isDirectory d then
+                   if File.Exists(f) then
+                       FileInfo(f).Directory |> inDir (DirectoryInfo(d))
+                   else false
+               else
+                 false
+            )
+            
+
+        
     let apps : seq<App*string> = 
         let enumerateProjectFiles (dir : DirectoryInfo) = 
-            dir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
-            |> Seq.filter(fun n -> n.Name.ToLower().EndsWith(".tests.fsproj") |> not) //exclude test projects
+            if ignores dir.FullName |> not then 
+                dir.EnumerateFiles("*.fsproj",SearchOption.AllDirectories)
+                |> Seq.filter(fun n -> 
+                    (n.Name.ToLower().EndsWith(".tests.fsproj")
+                     || n.FullName |> ignores) |> not) //exclude test projects
+            else
+                Seq.empty
+            
         let services = 
             serviceDir
             |> enumerateProjectFiles
@@ -81,7 +126,7 @@ module BuildExtension =
                 Path.GetFileNameWithoutExtension (file.Name.Split('.') |> Array.head) |> Worker, workingDir
             )
         services |> Seq.append workers
-
+    printfn "Apps: %A" (apps |> List.ofSeq)
     let dockerFilePath = sprintf "%s/Dockerfile.service" dockerDir.FullName
     let sharedFiles = 
         [

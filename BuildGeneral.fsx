@@ -118,22 +118,49 @@ module BuildGeneral =
 
     let projects : seq<string*string> = 
         let enumerateProjectFiles (dir : DirectoryInfo) =
-            let ignores =
-                if File.exists("./build.ignore")
-                then
-                    File.ReadLines("./build.ignore")
-                    |> Seq.map DirectoryInfo
-                else
-                    Seq.empty
+            let ignoreLines =
+                File.ReadAllLines ".buildignore"
+                |> Seq.fold(fun ignores l ->
+                    if Directory.Exists l then
+                       (DirectoryInfo(l).FullName)::ignores
+                    elif File.exists l then
+                        (FileInfo(l).FullName)::ignores
+                    else
+                       ignores
+                ) ([])
+            let ignores f = 
+                let fullName = 
+                    if Directory.Exists f then
+                        DirectoryInfo(f).FullName |> Some
+                    elif File.exists f then
+                        FileInfo(f).FullName |> Some
+                    else
+                        None
+                match fullName with
+                None -> false
+                | Some f ->
+                    let rec inDir (d : DirectoryInfo) (fDir : DirectoryInfo) = 
+                       if fDir = null then false
+                       else
+                          fDir.FullName = d.FullName || inDir d fDir.Parent 
+
+                    ignoreLines
+                    |> List.exists(fun d -> 
+                       if f = d then true
+                       elif Path.isDirectory d then
+                           if File.Exists(f) then
+                               FileInfo(f).Directory |> inDir (DirectoryInfo(d))
+                           else false
+                       else
+                         false
+                    )
             dir.EnumerateFiles("*.?sproj",SearchOption.AllDirectories)
             |> Seq.filter(fun n ->
                 let name = n.Name.ToLower()
                 let fullName = n.FullName
                 name.EndsWith(".tests.fsproj") |> not && //exclude test projects
                 name.EndsWith(".tests.csproj") |> not && //exclude test projects
-                ignores
-                |> Seq.fold(fun state (ignore : DirectoryInfo) -> state || fullName.Contains(ignore.FullName)) false //exclude ignores
-                |> not
+                ignores n.FullName |> not
             ) 
 
         DirectoryInfo "./"

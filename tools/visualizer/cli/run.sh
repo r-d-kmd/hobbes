@@ -1,5 +1,5 @@
 #!/bin/sh
-dotnet build --configuration Release --project src/hobbes.vizualizer.fsproj
+dotnet build --configuration Release src/hobbes.vizualizer.fsproj
 for file in *.hb
 do 
     echo "*************************$file***********************************"

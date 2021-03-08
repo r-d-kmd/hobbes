@@ -5,10 +5,9 @@
     <TargetFramework>netcoreapp5.0</TargetFramework>
     <DebugType>Portable</DebugType>
     <BrokerPath Condition="$(BUILD_ENV) == 'docker'">Broker.fs</BrokerPath>
-    <BrokerPath Condition="$(BrokerPath) == ''">../../../common/hobbes.messaging/src/Broker.fs</BrokerPath>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(BrokerPath)" />
+    <Compile Include="Broker.fs" />
     <Compile Include="Reader.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

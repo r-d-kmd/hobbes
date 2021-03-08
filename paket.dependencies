@@ -1,7 +1,6 @@
 version 5.257.0
-source https://api.nuget.org/v3/index.json
+source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
 framework: auto-detect
-storage: none
 
 nuget FSharp.Core ~> 5
 nuget Saturn = 0.13.1
@@ -10,9 +9,14 @@ nuget FSharp.Data
 nuget Microsoft.Extensions.PlatformAbstractions
 nuget Newtonsoft.Json
 nuget Thoth.Json.Net
+nuget RabbitMQ.Client
+nuget Accord.MachineLearning
+nuget Deedle
+nuget FParsec
+nuget Thoth.Json.Net
 
 group workbench
-    source https://api.nuget.org/v3/index.json
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
     
@@ -22,26 +26,8 @@ group workbench
     nuget FSharp.Data
     nuget FSharp.Core ~> 5
 
-group core
-    source https://api.nuget.org/v3/index.json
-    framework: auto-detect
-    storage: none
-
-    nuget Accord.MachineLearning
-    nuget Deedle
-    nuget FParsec
-    nuget Thoth.Json.Net
-    nuget FSharp.Core ~> 5
-
-group collectors
-    source https://api.nuget.org/v3/index.json
-    framework: auto-detect
-    storage: none
-    nuget FSharp.Core ~> 5
-    nuget RabbitMQ.Client
-
 group test
-    source https://api.nuget.org/v3/index.json
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
     
@@ -54,13 +40,13 @@ group test
     nuget FSharp.Core ~> 5  
 
 group tutorial
-    source https://api.nuget.org/v3/index.json
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
     nuget FSharp.Formatting
 
 group visualizer
-    source https://api.nuget.org/v3/index.json
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
 
@@ -86,16 +72,14 @@ group visualizer
     nuget FSharp.Core ~> 5
 
 group docker
-    source https://api.nuget.org/v3/index.json
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
-    storage: none
-    
-    nuget FSharp.Core ~> 5
+
     nuget hobbes.core
     nuget hobbes.web
 
 group visualizer.web
-    source https://api.nuget.org/v3/index.json
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
 
@@ -118,7 +102,7 @@ group visualizer.web
     nuget FSharp.Data
 
 group Build
-    source https://api.nuget.org/v3/index.json
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: netstandard2.0
     storage: none
 

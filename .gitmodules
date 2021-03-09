@@ -4,9 +4,9 @@
 [submodule "services/configurations"]
 	path = services/configurations
 	url = https://github.com/runefs/hobbes.configurations.git
-[submodule "common/hobbes.web"]
-	path = common/hobbes.web
+[submodule "libs/hobbes.web"]
+	path = libs/hobbes.web
 	url = https://github.com/r-d-kmd/hobbes.web.git
-[submodule "common/hobbes.core"]
-	path = common/hobbes.core
+[submodule "libs/hobbes.core"]
+	path = libs/hobbes.core
 	url = https://github.com/r-d-kmd/hobbes.core.git

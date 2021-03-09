@@ -1,0 +1,117 @@
+version 5.257.0
+source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+framework: auto-detect
+
+nuget FSharp.Core ~> 5
+nuget Saturn = 0.13.1
+nuget Giraffe
+nuget FSharp.Data
+nuget Microsoft.Extensions.PlatformAbstractions
+nuget Newtonsoft.Json
+nuget Thoth.Json.Net
+nuget RabbitMQ.Client
+nuget Accord.MachineLearning
+nuget Deedle
+nuget FParsec
+
+group workbench
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+    framework: auto-detect
+    storage: none
+    
+    nuget Argu
+    nuget Saturn = 0.13.1
+    nuget Giraffe
+    nuget FSharp.Data
+    nuget FSharp.Core ~> 5
+
+group test
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+    framework: auto-detect
+    storage: none
+    
+    nuget FsUnit
+    nuget FsUnit.xunit
+    nuget xunit
+    nuget Microsoft.NET.Test.SDK
+    nuget microsoft.testplatform.testhost
+    nuget xunit.runner.VisualStudio
+    nuget FSharp.Core ~> 5  
+
+group tutorial
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+    framework: auto-detect
+    storage: none
+    nuget FSharp.Formatting
+
+group visualizer
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+    framework: auto-detect
+    storage: none
+
+    # FSharp.Data
+    nuget FSharp.Data 
+
+    # MathNet.Numerics
+    nuget MathNet.Numerics 
+    nuget MathNet.Numerics.FSharp 
+
+    # XPlot
+    nuget XPlot.Plotly 
+    nuget XPlot.GoogleCharts 
+    nuget XPlot.GoogleCharts.Deedle 
+    nuget Newtonsoft.Json 
+    
+    #should be same version as core but as long as this is a script we need to store them
+    nuget FParsec
+    nuget Deedle
+    nuget Accord.MachineLearning
+    nuget FSharp.Formatting
+    
+    nuget FSharp.Core ~> 5
+
+group docker
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+    framework: auto-detect
+
+    nuget hobbes.core
+    nuget hobbes.web
+
+group visualizer.web
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+    framework: auto-detect
+    storage: none
+
+    nuget Fable.SimpleJson 3.11.0
+    nuget Fable.Remoting.Giraffe
+    nuget Saturn
+    nuget Expecto
+
+    nuget Fable.Core
+    nuget Fable.Elmish
+    nuget Fable.Elmish.React
+    nuget Fable.Elmish.Debugger
+    nuget Fable.Elmish.HMR
+    nuget Fable.FontAwesome.Free
+    nuget Fable.Mocha
+    nuget Fable.React
+    nuget Fable.Remoting.Client
+    nuget Fulma
+    nuget Fable.Recharts
+    nuget FSharp.Data
+
+group Build
+    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+    framework: netcoreapp3.1
+    storage: none
+
+    nuget Fake ~> 5
+    nuget Fake.Core ~> 5
+    nuget Fake.Core.Target
+    nuget Fake.DotNet
+    nuget Fake.DotNet.AssemblyInfoFile
+    nuget Fake.DotNet.Cli
+    nuget Fake.DotNet.NuGet
+    nuget Fake.IO.FileSystem
+    nuget Fake.Tools.Git ~> 5
+    nuget Kmdrd.FAKE

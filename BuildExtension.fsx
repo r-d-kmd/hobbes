@@ -126,7 +126,7 @@ module BuildExtension =
                 Path.GetFileNameWithoutExtension (file.Name.Split('.') |> Array.head) |> Worker, workingDir
             )
         services |> Seq.append workers
-    printfn "Apps: %A" (apps |> List.ofSeq)
+        
     let dockerFilePath = sprintf "%s/Dockerfile.service" dockerDir.FullName
     let sharedFiles = 
         [

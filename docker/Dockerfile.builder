@@ -25,8 +25,6 @@ RUN if [ ! -f ".config/dotnet-tools.json" ]; then \
 RUN dotnet tool restore
 RUN dotnet paket restore
 
-RUN echo "$(dotnet --version)"
-
 FROM build-base
 ONBUILD COPY ./src /source
 WORKDIR /source

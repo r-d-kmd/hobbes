@@ -13,7 +13,6 @@ nuget RabbitMQ.Client
 nuget Accord.MachineLearning
 nuget Deedle
 nuget FParsec
-nuget Thoth.Json.Net
 
 group workbench
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
@@ -103,12 +102,16 @@ group visualizer.web
 
 group Build
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
-    framework: netstandard2.0
+    framework: netcoreapp3.1
     storage: none
 
-    nuget FSharp.Core ~> 5
-    nuget Fake.Core.ReleaseNotes
+    nuget Fake ~> 5
+    nuget Fake.Core ~> 5
     nuget Fake.Core.Target
+    nuget Fake.DotNet
+    nuget Fake.DotNet.AssemblyInfoFile
     nuget Fake.DotNet.Cli
+    nuget Fake.DotNet.NuGet
     nuget Fake.IO.FileSystem
-    nuget Farmer
+    nuget Fake.Tools.Git ~> 5
+    nuget Kmdrd.FAKE

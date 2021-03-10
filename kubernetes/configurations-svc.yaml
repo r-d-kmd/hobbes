@@ -1,25 +1,10 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Service
 metadata:
-  name: configurations
+  name: configurations-svc
 spec:
-  replicas: 1
+  ports:
+  - port: 8085
+    targetPort: 8085
   selector:
-    matchLabels:
-      app: configurations
-  template:
-    metadata:
-      labels:
-        app: configurations
-    spec:
-      containers:
-      - imagePullPolicy: Never
-        image: configurations
-        name: configurations
-        envFrom:
-        - secretRef:
-            name: env
-      restartPolicy: Always
-      imagePullSecrets:
-      - name: acr-secret
-status: {}
+    app: configurations

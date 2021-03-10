@@ -10,10 +10,10 @@ start by running `source functions.sh` from the root of the project. This file i
 
 ### Builder
 When building for the first time or after removing all docker images or similar start by building the target `builder` i.e `build builder`.
-This creates a docker image used for caching packages and other stuff that rarely changes. If you make changes to the paket.dependencies file, You'd need to run this target again
+This creates a docker image used for caching packages and other stuff that rarely changes. If you make changes to the paket.dependencies file, You'd need to run this target again.
 
 ### Build
-IF running `build` with no arguments the entire application will be build providing initial feedback such as compile warnings and errors on whether the application is good to go ie be tested
+IF running `build` with no arguments the entire application will be build providing initial feedback such as compile warnings and errors on whether the application is good to go ie be tested. The build might fail with an error stating that the packages couldn't be downloaded. with a 401. The most likely cause is that you haven't set the environment variable FEED_PAT or that the PAT stored in that variable is no longer valid.
 
 ### setupTest
 When the application has been build (and minikube started `minikube start`) execute the function `start`followed by `setupTest`this will start the application and populate with test data

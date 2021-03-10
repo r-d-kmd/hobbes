@@ -32,4 +32,3 @@ WORKDIR /source
 ONBUILD RUN echo "dotnet \"$(expr $(ls *.?sproj) : '\(.*\)\..sproj').dll\"\n" >> /tmp/start.sh
 ONBUILD RUN chmod +x /tmp/start.sh
 ONBUILD RUN cat /tmp/start.sh
-ONBUILD RUN dotnet publish -c ${BUILD_CONFIGURATION} -o /app

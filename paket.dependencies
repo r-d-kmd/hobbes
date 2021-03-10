@@ -1,5 +1,5 @@
 version 5.257.0
-source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
 framework: auto-detect
 
 nuget FSharp.Core ~> 5
@@ -15,7 +15,7 @@ nuget Deedle
 nuget FParsec
 
 group workbench
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+    source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
     
@@ -26,7 +26,7 @@ group workbench
     nuget FSharp.Core ~> 5
 
 group test
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+    source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
     
@@ -39,13 +39,13 @@ group test
     nuget FSharp.Core ~> 5  
 
 group tutorial
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+    source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
     nuget FSharp.Formatting
 
 group visualizer
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+    source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
 
@@ -71,14 +71,14 @@ group visualizer
     nuget FSharp.Core ~> 5
 
 group docker
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+    source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
 
     nuget hobbes.core
     nuget hobbes.web
 
 group visualizer.web
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+    source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect
     storage: none
 
@@ -101,7 +101,7 @@ group visualizer.web
     nuget FSharp.Data
 
 group Build
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
+    source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: netcoreapp3.1
     storage: none
 

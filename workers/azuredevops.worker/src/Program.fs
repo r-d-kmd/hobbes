@@ -13,8 +13,8 @@ let synchronize (source : AzureDevOpsSource.Root) token =
         Log.excf e "Sync failed due to exception"
         None
     |> Option.bind(fun (statusCode,body) ->
-        Log.debugf "Sync finised with statusCode %d" statusCode
-        if statusCode > 200 || statusCode < 300 then 
+        if statusCode >= 200 && statusCode <= 300 then 
+            Log.debugf "Sync finised with statusCode %d" statusCode
             match Reader.read source with
             _,None -> failwith "Could not read data from raw"
             | key,Some d -> Some (key, d)

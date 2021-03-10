@@ -48,3 +48,4 @@ workers/**/Dockerfile
 *.hb
 tools/visualizer/cli/html
 services/**/src/Broker.fs
+workers/**/src/Broker.fs

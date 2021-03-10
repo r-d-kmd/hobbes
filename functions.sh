@@ -291,10 +291,13 @@ function publish(){
     cd tools/workbench
     
     docker build -t kmdrd/workbench .
-
-    printf "${Green}Publisher built${NoColor}\n"
-    startJob publish
-    logs publish -f &
+    RESULT=$?
+    if (( RESULT == 0)); then
+        printf "${Green}Publisher built${NoColor}\n"
+        startJob publish
+        logs publish -f &
+        RESULT=$?
+    fi
     cd $CURRENT_DIR
 }
 

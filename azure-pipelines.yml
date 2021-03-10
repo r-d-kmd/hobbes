@@ -18,7 +18,6 @@ steps:
   displayName: Install Fake
   
 - task: NuGetToolInstaller@1
-- script: echo "$(ENV_FILE)"
 
 - task: DockerInstaller@0
   inputs:

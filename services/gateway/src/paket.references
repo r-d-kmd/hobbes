@@ -1,10 +1,9 @@
-group web
-    Microsoft.Extensions.PlatformAbstractions
-    Saturn 
-    Giraffe
-    FSharp.Data
+Microsoft.Extensions.PlatformAbstractions
+Saturn 
+Giraffe
+FSharp.Data
+RabbitMQ.Client
 
 group docker
     hobbes.core
-    hobbes.messaging 
     hobbes.web

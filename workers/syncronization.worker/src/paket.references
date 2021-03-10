@@ -1,12 +1,8 @@
-group web
-    FSharp.Data
-    FSharp.Core
-    Newtonsoft.Json
-
-group collectors
-    RabbitMQ.Client
+FSharp.Data
+FSharp.Core
+Newtonsoft.Json
+RabbitMQ.Client
     
 group docker
     hobbes.core
-    hobbes.messaging 
     hobbes.web

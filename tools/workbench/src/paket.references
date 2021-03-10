@@ -4,5 +4,4 @@ group workbench
 
 group docker
     hobbes.core
-    hobbes.messaging 
     hobbes.web

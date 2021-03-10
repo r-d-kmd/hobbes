@@ -136,6 +136,11 @@ function clean(){
 function build(){    
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
+    if [ "$1" != "builder" ]; then        
+        if [[ "$(docker images -q builder 2> /dev/null)" == "" ]]; then
+            build builder
+        fi
+    fi 
     re='^[0-9]+$'
     if [ -z "$1" ]
     then 
@@ -328,3 +333,5 @@ printf "${NoColor}Apps found:\n${LightBlue}"
 printf ' - %s\n' "${APPS[@]}"
 printf "${NoColor}"
 
+alias fake="dotnet fake"
+alias paket="dotnet paket"

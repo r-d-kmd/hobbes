@@ -11,7 +11,7 @@
   <Import Project="$(TargetsPath)hobbes.properties.targets" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>netcoreapp5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="create.fs" />

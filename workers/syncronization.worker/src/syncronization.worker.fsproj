@@ -2,12 +2,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
  <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>netcoreapp5.0</TargetFramework>
     <DebugType>Portable</DebugType>
     <TargetsPath Condition="$(BUILD_ENV) == 'docker'">./</TargetsPath>
     <TargetsPath Condition="$(TargetsPath) == ''">../../../</TargetsPath>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Broker.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <Import Project="..\..\..\.paket\Paket.Restore.targets" />

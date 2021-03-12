@@ -185,7 +185,11 @@ function start() {
     kubectl apply -f env.JSON
     for kube_dir in $(find . -type d -name kubernetes)
     do
-        kubectl apply -k $kube_dir
+        if [ -f "$kube_dir/kustomization.yaml" ]
+        then
+            kubectl apply -k $kube_dir
+            if (( $? > 0 )); then exit $?; fi
+        fi
     done
     
     awaitRunningState

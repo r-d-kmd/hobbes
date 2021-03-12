@@ -1,9 +1,0 @@
-FSharp.Data
-FSharp.Core
-Newtonsoft.Json
-Thoth.Json.Net
-RabbitMQ.Client
-
-group docker
-    hobbes.core
-    hobbes.web

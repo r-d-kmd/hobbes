@@ -6,5 +6,3 @@ bases:
 
 ressources:
   - git-scaling.yaml
-  - calculator.yaml
-  - syncronization-job.yaml

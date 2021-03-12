@@ -5,9 +5,6 @@ resources:
   - local_patches/db-volume.yaml
   - db-deployment.yaml
   - db-svc.yaml
-  - azuredevops-deployment.yaml
-  - calculator-deployment.yaml
-  - git-deployment.yaml
   - rabbitmq-controller.yaml
   - rabbitmq-service.yaml
   - metrics-server.yaml

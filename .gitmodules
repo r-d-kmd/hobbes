@@ -13,3 +13,6 @@
 [submodule "services/uniformdata"]
 	path = services/uniformdata
 	url = https://github.com/r-d-kmd/hobbes.uniformdata.git
+[submodule "services/gateway"]
+	path = services/gateway
+	url = https://github.com/r-d-kmd/hobbes.gateway.git

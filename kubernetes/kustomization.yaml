@@ -8,18 +8,11 @@ resources:
   - azuredevops-deployment.yaml
   - calculator-deployment.yaml
   - git-deployment.yaml
-  - gateway-deployment.yaml
-  - gateway-svc.yaml
   - rabbitmq-controller.yaml
   - rabbitmq-service.yaml
   - metrics-server.yaml
   
 patchesJson6902:
-  - target:
-      version: v1
-      kind: Service
-      name: gateway-svc
-    path: local_patches/gateway-svc-dev.yaml
   - target:
       version: v1
       kind: Service

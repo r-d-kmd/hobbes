@@ -16,3 +16,6 @@
 [submodule "services/gateway"]
 	path = services/gateway
 	url = https://github.com/r-d-kmd/hobbes.gateway.git
+[submodule "workers/azuredevops.worker"]
+	path = workers/azuredevops.worker
+	url = https://github.com/r-d-kmd/hobbes.azuredevops.worker.git

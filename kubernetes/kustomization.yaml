@@ -8,8 +8,6 @@ resources:
   - azuredevops-deployment.yaml
   - calculator-deployment.yaml
   - git-deployment.yaml
-  - configurations-deployment.yaml
-  - configurations-svc.yaml
   - gateway-deployment.yaml
   - gateway-svc.yaml
   - uniformdata-deployment.yaml
@@ -34,8 +32,3 @@ patchesJson6902:
       kind: Service
       name: uniformdata-svc
     path: local_patches/uniformdata-svc-dev.yaml
-  - target:
-      version: v1
-      kind: Service
-      name: configurations-svc
-    path: local_patches/configurations-svc-dev.yaml

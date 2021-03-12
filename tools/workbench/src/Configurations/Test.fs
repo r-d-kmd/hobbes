@@ -24,7 +24,8 @@ module Test =
 
         [
             Flowerpot.renaming,"renamed"
-            Azure.stateRenaming,"stateRenaming"
+            Azure.renaming,"stateRenaming"
+            Azure.uniformWorkItems,"uniformWorkItems"
             General.foldBySprint,"foldBySprint"
             General.onlyInSprint,"onlyInSprint"
         ] |> List.fold(fun previous (current,name) ->

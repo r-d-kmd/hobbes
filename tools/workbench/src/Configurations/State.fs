@@ -23,7 +23,7 @@ module State =
           Project.Nexus, [Nexus.renaming]
           Project.UVskole, [UVskole.renaming]
           Project.Logic, [KMDLoGIC.renaming]
-      ] |> List.map(fun (p,lst) -> p,(Azure.stateRenaming::(lst |> List.rev)) |> List.rev )
+      ] |> List.map(fun (p,lst) -> p,(Azure.renaming::Azure.uniformWorkItems::(lst |> List.rev)) |> List.rev )
       |> Map.ofList
 
   let add name transformations = 

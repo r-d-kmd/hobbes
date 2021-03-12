@@ -182,9 +182,11 @@ function listServices(){
 
 function start() {
     local CURRENT_DIR=$(pwd)
-    cd $KUBERNETES_DIR
     kubectl apply -f env.JSON
-    kubectl apply -k ./ 
+    for kube_dir in $(find . -type d -name kubernetes)
+    do
+        kubectl apply -k $kube_dir
+    done
     
     awaitRunningState
     
@@ -328,6 +330,33 @@ function addSource(){
 
 function pushPackage(){
     nuget push -Source KMD_FEED -ApiKey az $1
+}
+
+function test(){
+    kubectl port-forward service/db-svc 5984:5984 &
+    kubectl port-forward service/gateway-svc 30080:80 &
+
+    PM_APIKEY="$(cat "postman api-key.md")"
+    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=$(minikube ip) --env-var "master_key"=${MASTER_KEY} >> testresults.txt
+    TESTRESULT=$?
+    if [ "$TESTRESULT" -eq "0" ]
+    then
+        printf "${Green}********************* Test passed ***********************\n"
+        cat testresults.txt
+        printf "${Green}********************* Test passed ***********************\n"
+        printf "${NoColor}"
+    else
+        printf "${Red}********************* Test failed ***********************\n"
+        cat testresults.txt
+        printf "${NoColor}"
+        logs az
+        printf "${Yellow}********************************************\n${NoColor}"
+        logs gateway
+        printf "${Yellow}********************************************\n${NoColor}"
+        logs calc -f &
+        printf "${Red}********************* Test failed ***********************\n"
+        #exit $TESTRESULT
+    fi
 }
 
 printf "Project home folder is:\n"

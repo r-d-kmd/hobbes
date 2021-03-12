@@ -19,3 +19,6 @@
 [submodule "workers/azuredevops.worker"]
 	path = workers/azuredevops.worker
 	url = https://github.com/r-d-kmd/hobbes.azuredevops.worker.git
+[submodule "workers/git.worker"]
+	path = workers/git.worker
+	url = https://github.com/r-d-kmd/hobbes.git.worker.git

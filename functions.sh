@@ -359,8 +359,8 @@ function test(){
         printf "${Yellow}********************************************\n${NoColor}"
         logs calc -f &
         printf "${Red}********************* Test failed ***********************\n"
-        #exit $TESTRESULT
     fi
+    exit $TESTRESULT
 }
 
 printf "Project home folder is:\n"

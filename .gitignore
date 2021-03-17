@@ -52,3 +52,4 @@ workers/**/src/Broker.fs
 postman api-key.md
 testresults.txt
 env.JSON
+tests/testdata.json

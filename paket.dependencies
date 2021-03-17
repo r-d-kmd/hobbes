@@ -115,3 +115,17 @@ group Build
     nuget Fake.IO.FileSystem
     nuget Fake.Tools.Git ~> 5
     nuget Kmdrd.FAKE
+
+group integrationtest
+    source https://api.nuget.org/v3/index.json
+    framework: netstandard2.1
+    nuget Fake ~> 5
+    nuget Fake.Core ~> 5
+    nuget Fake.Core.Target 
+    nuget Fake.DotNet
+    nuget Fake.DotNet.AssemblyInfoFile
+    nuget Fake.DotNet.Cli
+    nuget Fake.DotNet.NuGet
+    nuget Fake.IO.FileSystem
+    nuget Fake.Tools.Git ~> 5
+    nuget FSharp.Data

@@ -182,8 +182,8 @@ function listServices(){
 
 function start() {
     local CURRENT_DIR=$(pwd)
-    kubectl apply -f env.JSON
-    for kube_dir in $(find . -type d -name kubernetes)
+    kubectl apply -f $SCRIPT_DIR/env.JSON
+    for kube_dir in $(find $SCRIPT_DIR -type d -name kubernetes)
     do
         if [ -f "$kube_dir/kustomization.yaml" ]
         then
@@ -287,9 +287,6 @@ function startJob(){
     cd $CURRENT_DIR
 }
 
-function sync(){
-    startJob sync
-}
 
 function publish(){
     local CURRENT_DIR=$(pwd)

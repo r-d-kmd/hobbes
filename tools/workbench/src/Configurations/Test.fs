@@ -18,9 +18,9 @@ module Test =
           projects
           |> List.iter(fun project -> addConfiguration Test (Source.AzureDevOps(project)) name transformations)
     let initialise() = 
-        [
+        (*[
             Git.allCommits
-        ] |> addGitConfiguraiton "allCommits"
+        ] |> addGitConfiguraiton "allCommits" *)
 
         [
             Flowerpot.renaming,"renamed"
@@ -28,14 +28,10 @@ module Test =
             Azure.uniformWorkItems,"uniformWorkItems"
             General.foldBySprint,"foldBySprint"
             General.onlyInSprint,"onlyInSprint"
-        ] |> List.fold(fun previous (current,name) ->
-            let next = current::previous
-            next
-            |> List.rev
-            |> addConfiguration Test (Source.AzureDevOps(Project.Flowerpot)) name
-            next
-        ) [] |> ignore
+        ]   |> addConfiguration Test (Source.AzureDevOps(Project.Flowerpot)) "Complete Test"
 
         [
-          Metrics.martin
-        ] |> addAzureConfiguration "martin"
+            Flowerpot.renaming,"renamed"
+            Azure.renaming,"stateRenaming"
+            Azure.uniformWorkItems,"uniformWorkItems"
+        ]   |> addConfiguration Test (Source.AzureDevOps(Project.Flowerpot)) "Test"

@@ -31,6 +31,7 @@ module Broker =
         | CalculationQueue
         | DeadLetterQueue
         | LogQueue
+        | LocalDataQueue
         | GenericQueue of string
         with member x.Name
                with get() = 
@@ -41,6 +42,7 @@ module Broker =
                     | CalculationQueue -> "calculation"
                     | DeadLetterQueue -> "deadletter"
                     | LogQueue -> "log"
+                    | LocalDataQueue -> "localdata"
                     | GenericQueue name -> name.ToLower()
 
     type CacheMessage = 
@@ -288,6 +290,10 @@ module Broker =
             publish Queue.LogQueue (Message msg)
         static member Log (handler : LogMessage -> _) = 
             watch Queue.LogQueue handler false
+        static member LocalData(msg : SyncMessage) = 
+            publish Queue.LocalDataQueue (Message msg)
+        static member LocalData (handler : SyncMessage -> _) = 
+            watch Queue.LocalDataQueue handler false
         static member Generic queueName msg =
             assert(queueName |> String.IsNullOrWhiteSpace |> not)
             publishString (Queue.GenericQueue queueName) msg

@@ -20,7 +20,7 @@ module Test =
     let initialise() = 
         (*[
             Git.allCommits
-        ] |> addGitConfiguraiton "allCommits" *)
+        ] |> addGitConfiguraiton "allCommits" 
 
         [
             Flowerpot.renaming,"renamed"
@@ -29,7 +29,7 @@ module Test =
             General.foldBySprint,"foldBySprint"
             General.onlyInSprint,"onlyInSprint"
         ]   |> List.map (fst)
-        |> ( addConfiguration Test (Source.AzureDevOps(Project.Flowerpot)) "Complete Test")
+        |> ( addConfiguration Test (Source.AzureDevOps(Project.Flowerpot)) "Complete Test")*)
 
         [
             Flowerpot.renaming,"renamed"

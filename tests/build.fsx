@@ -66,7 +66,9 @@ let request httpMethod user pwd url =
 type Data = JsonProvider<"""testdata.json""">
 
 let get =
-    request "get" masterkey "" >> Data.Parse
+    request "get" masterkey ""
+    >> Data.Parse
+
 let dbUser = (env.Data.CouchdbUser |> fromBase64) 
 let dbPwd = (env.Data.CouchdbPassword |> fromBase64) 
 type DocList = JsonProvider<"""{
@@ -89,15 +91,10 @@ type DocList = JsonProvider<"""{
     }
   ]
 }""">
-let listDocuments dbName = 
-   
-    let list = 
-       dbName
-       |> sprintf "http://localhost:5984/%s/_all_docs"
-       |> request "get" dbUser dbPwd 
-    printfn "user: '%s'. pwd: '%s' data: %s" dbUser dbPwd list
-    list
-    |> DocList.Parse
+let listDocuments =   
+    sprintf "http://localhost:5984/%s/_all_docs"
+    >> request "get" dbUser dbPwd 
+    >> DocList.Parse
 
 let kubectlf command args =
     start true "kubectl" "../kubernetes" (command + " " + args)
@@ -110,8 +107,8 @@ let applyk dir =
     run true "kubectl" dir "apply -k ."
 
 let forwardServicePort serviceName here there =
-    kubectl true "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=30s" serviceName) |> ignore
-    kubectl true "port-forward" (sprintf "service/%s-svc %d:%d" serviceName here there)
+    kubectlf "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=30s" serviceName) |> ignore
+    kubectlf "port-forward" (sprintf "service/%s-svc %d:%d" serviceName here there)
     
 let startJob silent jobName = 
     let kubectl = kubectl silent
@@ -210,21 +207,35 @@ create "complete-sync" (fun _ ->
         count
     
     while configCount > countDataset() do
-        try awaitJobCompletion 10 "sync" |> ignore with _ -> ()
+        try 
+            awaitJobCompletion 10 "sync" |> ignore 
+            //the sync worker is done and the above exits immediately
+            System.Threading.Thread.Sleep 10000
+        with _ -> ()
 )
+
+let areEqual actual expected (successes,failed)=
+    if actual = expected then
+       (successes + 1), failed
+    else
+       eprintf "Expected %A but got %A" expected actual
+       successes,(failed + 1)
 
 create "data" (fun _ ->
     let res = get "http://localhost:8080/data/json/azureDevops.Flowerpot.Test"
     let first = res.[0]
-    assert(res.Length = 120)
-    assert(first.TimeStamp = System.DateTime.Parse "03/11/2021 10:34:15")
-    assert(first.SprintName |> Option.isNone)
-    assert(first.WorkItemId = 79312)
-    assert(first.ChangedDate = System.DateTime.Parse "04/30/2019 14:57:50")
-    assert(first.WorkItemType = "User Story")
-    assert(first.SprintNumber |> Option.isNone)
-    assert(first.State = "Done")
-    ()
+
+    let successes,failed = 
+        (0,0)
+        |> areEqual res.Length 27 
+        |> areEqual first.TimeStamp  (System.DateTime.Parse "17/03/2021 14:27:32")
+        |> areEqual first.SprintName None
+        |> areEqual first.WorkItemId  79312
+        |> areEqual first.ChangedDate  (System.DateTime.Parse "30/04/2019 14:57:50")
+        |> areEqual first.WorkItemType  "User Story"
+        |> areEqual first.SprintNumber None
+        |> areEqual first.State  "Done"
+    printfn "Successes: %d. Failures: %d" successes failed
 )
 
 Target.create "test" ignore

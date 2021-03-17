@@ -57,7 +57,7 @@ let start silent command workingDir args =
     |> Proc.start
 
 let request httpMethod user pwd url = 
-    Http.RequestString(url,
+    FSharp.Data.Http.RequestString(url,
         httpMethod = httpMethod,
         silentHttpErrors = true,
         headers = [HttpRequestHeaders.BasicAuth user pwd]

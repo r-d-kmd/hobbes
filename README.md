@@ -37,3 +37,30 @@ To be able to run the application you are going to ned a few tools such as docke
 #### Installing minikube
 - `curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube`
 - `sudo mv minikube /usr/local/bin`
+
+### Deploying to the kubernetes cluster
+First of all we need to make sure the minikube is running. This can be done by hand or by utilizing some helper functions we have
+by hand: 'minikube start --driver=docker --cpu=<number of CPUs you can spare> --memory=XGb <X being more than 4>
+Or using helper functions
+- `source functions.sh`
+- `startKube`
+
+It's recommended to source the script because it also configures the shell environment. If it's the first time you start the kube you might have to source again for everyting to be set up correctly
+
+#### Build the world
+The deployment script expects the services and workers to already be built. To do this we need to trigger a build
+
+    dotnet fake build 
+
+takes care of that. If you haven't already restored the tools you'll get and error. run `dotnet tool restore` to fix that and then re-run the above command.
+If the build goes well you are ready to deploy and run the first test
+
+#### deploying and testing
+After starting the kube and building the services and workders navigate to `./tests/` and execute the command
+
+    dotnet fake build
+
+This times another build file is used (`./tests/build.fsx`). It has a series of stept to deploy the services and workers to the kubernetes cluster as well as fetching data that can be used for testing. The most likely errors are that you have not set up your Azure DevOps PAT in the env.JSON file (or that you simply haven't created that file yet).
+
+If everything is set up correctly you will now have everything deployed, populated with data and tested ready to start developing new features
+

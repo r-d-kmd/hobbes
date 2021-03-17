@@ -28,10 +28,12 @@ module Test =
             Azure.uniformWorkItems,"uniformWorkItems"
             General.foldBySprint,"foldBySprint"
             General.onlyInSprint,"onlyInSprint"
-        ]   |> addConfiguration Test (Source.AzureDevOps(Project.Flowerpot)) "Complete Test"
+        ]   |> List.map (fst)
+        |> ( addConfiguration Test (Source.AzureDevOps(Project.Flowerpot)) "Complete Test")
 
         [
             Flowerpot.renaming,"renamed"
             Azure.renaming,"stateRenaming"
             Azure.uniformWorkItems,"uniformWorkItems"
-        ]   |> addConfiguration Test (Source.AzureDevOps(Project.Flowerpot)) "Test"
+        ]  |> List.map (fst)
+        |> (addConfiguration Test (Source.AzureDevOps(Project.Flowerpot)) "Test")

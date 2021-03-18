@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "bridge-to-kubernetes.service",
+			"type": "bridge-to-kubernetes.service",
+			"service": "localdata-svc",
+			"ports": [
+				0
+			],
+			"targetCluster": "minikube",
+			"targetNamespace": "default",
+			"useKubernetesServiceEnvironmentVariables": false,
+			"isolateAs": "rune-4a56"
+		}
+	]
+}

@@ -1,5 +1,6 @@
 namespace Workbench
 open Hobbes.Web.RawdataTypes
+open Thoth.Json.Net
 
 [<AutoOpen>]
 module Types = 
@@ -68,6 +69,7 @@ module Types =
         | Jira of Project
         | Merge of string list
         | Join of Join
+        | Local of id:string * columns: string list * rows: obj list list
         | None
         with override this.ToString() = 
                match this with
@@ -100,6 +102,29 @@ module Types =
                         "right" : "%s",
                         "field" : "%s"
                     }""" this.Name join.Left join.Right join.Field
+               | Local (id,columns,rows) ->
+                    Encode.object
+                        [
+                            "provider", Encode.string "localdata"
+                            "id",Encode.string id
+                            "columns", columns |> List.map Encode.string |> Encode.list
+                            "rows", 
+                                    rows
+                                    |> List.map(fun row ->
+                                        row
+                                        |> List.map(fun v ->
+                                            match v with
+                                            :? int as i -> 
+                                               Encode.int i
+                                            | :? float as f -> 
+                                               Encode.float f
+                                            | :? string as s -> 
+                                                Encode.string s
+                                            | v -> v |> string |> Encode.string
+                                        ) |> Encode.list
+                                    ) |> Encode.list
+                        ]
+                    |> Encode.toString 0
                | Jira _
                | None -> failwith "Don't know what to do"
              member this.Name 
@@ -110,6 +135,7 @@ module Types =
                      | Jira p -> "jira." + p.ToString()
                      | Merge ids -> "merge." + (System.String.Join("+",ids))
                      | Join join -> sprintf "join.%s.%s.%s" join.Left join.Right join.Field
+                     | Local(id,columns,_) -> System.String.Join(".", "local"::id::columns)
                      | None -> null
     
     

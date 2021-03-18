@@ -15,7 +15,7 @@ spec:
       containers:
       - envFrom:
         - secretRef:
-            name: env
+            name: localdata
         imagePullPolicy: Never
         image: localdata
         name: localdata
@@ -27,3 +27,16 @@ spec:
       imagePullSecrets:
       - name: acr-secret
 status: {}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: localdata-svc
+spec:
+  ports:
+  - port: 8085
+    targetPort: 8085
+  selector:
+    app: localdata

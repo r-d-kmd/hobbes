@@ -47,6 +47,34 @@ Or using helper functions
 
 It's recommended to source the script because it also configures the shell environment. If it's the first time you start the kube you might have to source again for everyting to be set up correctly
 
+#### Configuration before build
+You will need to create a `env.JSON` file and place it in the root of the workspace before you can deploy and run the application. Then content of the file should be as below with the specified changes of course
+
+    { 
+        "apiVersion": "v1", 
+        "kind": "Secret",
+        "metadata": {
+            "name": "env"
+        },
+        "type": "Opaque",
+        "data": {
+            "AZURE_TOKEN_TIME_PAYROLL_KMDDK": "same as FEED_PAT but base64 encoded",
+            "AZURE_TOKEN_KMDDK": "same as FEED_PAT but base64 encoded",
+            "KEY_SUFFIX": "random string",
+            "COUCHDB_PASSWORD": "admin password to the db",
+            "COUCHDB_USER": "admin user to the db",
+            "SERVER_PORT": "ODA4NQo=",
+            "GIT_AZURE_USER" :"can be generated at https://kmddk.visualstudio.com and should be base64 encoded",
+            "GIT_AZURE_PASSWORD" :"N2I0Y2N6ZzdtazJoaW96Nm5oNzYyZ3VwaHI3NGtzcW5vaDQ2djZzd2R5ZXB6N3JzbnFxYQ==",
+            "MASTER_USER": "A master user that can be used to call the Gateway API. Any random string will do and shuold be base64 encoded",
+            "RABBIT_HOST": "cmFiYml0bXEtc2VydmljZQo=",
+            "RABBIT_PORT": "NTY3Mg==",
+            "RABBIT_USER": "Z3Vlc3Q=",
+            "RABBIT_PASSWORD": "Z3Vlc3Q=",
+            "FEED_PAT": "can be generated at https://kmddk.visualstudio.com and shuold not be encoded"
+        }
+    }
+
 #### Build the world
 The deployment script expects the services and workers to already be built. To do this we need to trigger a build
 

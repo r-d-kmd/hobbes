@@ -3,37 +3,33 @@ open Workbench.Types
 open Workbench.Transformations
 
 module Test = 
-
-    let projects = 
-      [
-        Project.Flowerpot 
-        //Project.Gandalf
-        //Project.Nexus
-      ]
-    
-    let addGitConfiguraiton name transformations = 
-          projects
-          |> List.iter(fun project -> addConfiguration Test (Source.Git(Commits,project)) name transformations)
-    let addAzureConfiguration name transformations = 
-          projects
-          |> List.iter(fun project -> addConfiguration Test (Source.AzureDevOps(project)) name transformations)
-    let initialise() = 
-        (*[
-            Git.allCommits
-        ] |> addGitConfiguraiton "allCommits" 
-
+    let testConfig() = 
         [
-            Flowerpot.renaming,"renamed"
-            Azure.renaming,"stateRenaming"
-            Azure.uniformWorkItems,"uniformWorkItems"
-            General.foldBySprint,"foldBySprint"
-            General.onlyInSprint,"onlyInSprint"
-        ]   |> List.map (fst)
-        |> ( addConfiguration Test (Source.AzureDevOps(Project.Flowerpot)) "Complete Test")*)
+          Flowerpot.renaming
+        ] |> addConfiguration Test (Source.Local("test",
+                                                 [
+                                                   "WorkItemId"
+                                                   "WorkItemType"
+                                                   "Iteration.IterationLevel2"
+                                                 ],
+                                                 [ for i in 88108..88115 ->
+                                                   [
+                                                     i
+                                                     (match i % 3 with
+                                                      0 -> "User Story"
+                                                      | 1 -> "Bug"
+                                                      | _ -> "Task"
+                                                     )
+                                                     (sprintf "Iteration %d" (i % 10))
+                                                    ]
+                                                 ])) "localtest"
+    let initialise() = 
 
         [
             Flowerpot.renaming,"renamed"
             Azure.renaming,"stateRenaming"
             Azure.uniformWorkItems,"uniformWorkItems"
         ]  |> List.map (fst)
-        |> (addConfiguration Test (Source.AzureDevOps(Project.Flowerpot)) "Test")
+        |> addConfiguration Test (Source.AzureDevOps(Project.Flowerpot)) "Test"
+
+        

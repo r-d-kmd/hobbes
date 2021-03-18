@@ -104,7 +104,11 @@ let kubectl silent command args =
     run silent "kubectl" "../kubernetes" (command + " " + args)
 
 let applyk dir = 
-    run true "kubectl" dir "apply -k ."
+    run true "kubectl" dir "apply -k ." +
+    if System.IO.File.Exists(System.IO.Path.Combine(dir, "env.JSON")) then 
+        run true "kubectl" dir "apply -f env.JSON"
+    else
+        0
 
 let forwardServicePort serviceName here there =
     kubectlf "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=30s" serviceName) |> ignore
@@ -130,14 +134,34 @@ let awaitJobCompletion timeout jobName =
     kubectl false "wait" (sprintf "--for=condition=complete --timeout=%ds job/%s" timeout jobName) |> ignore
     jobName
 
-let docker command workingDir arguments =
-    run false "docker" workingDir (command + " " + arguments)
+type DockerCommand =
+    Build
+    | Push
+    override x.ToString() =
+        match x with
+        Build -> "build"
+        | Push -> "push"
+
+let docker (command : DockerCommand) workingDir arguments =
+    run false "docker" workingDir (command.ToString() + " " + arguments)
 
 let create name f =
     Target.create name f
     name ==> "All"
 
 Target.create "All" ignore
+
+create "build" (fun _ ->
+    run false "dotnet" ".." "fake build" |> ignore
+)
+
+(*create "buildbuilder" (fun _ ->
+    env.Data.FeedPat
+    |> Environment.environVarOrDefault "FEED_PAT"
+    |> sprintf "-f docker/Dockerfile.builder -t builder --build-arg FEED_PAT_ARG=%s ."
+    |> docker Build "../"
+    |> ignore
+)*)
 
 create "deploy" (fun _ ->
     
@@ -173,7 +197,7 @@ create "port-forwarding" (fun _ ->
 )
 
 create "publish" (fun _ ->    
-    let res = docker "build" "../tools/workbench" "-t kmdrd/workbench ."
+    let res = docker Build "../tools/workbench" "-t kmdrd/workbench ."
     
     if res = 0 then
         startJob false "publish"
@@ -239,8 +263,21 @@ create "data" (fun _ ->
 )
 
 Target.create "test" ignore
+Target.create "retest" ignore
 
-"deploy"
+"port-forwarding"
+   ==> "retest"
+
+"publish"
+   ==> "retest"
+"sync"
+   ==> "retest"
+
+"test"
+   ==> "retest" 
+
+"build"
+  ?=> "deploy"
   ?=> "port-forwarding"
   ?=> "publish"
   ?=> "sync"

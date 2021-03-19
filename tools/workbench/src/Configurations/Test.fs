@@ -24,7 +24,6 @@ module Test =
                                                     ]
                                                  ])) "localtest"
     let initialise() = 
-
         [
             Flowerpot.renaming,"renamed"
             Azure.renaming,"stateRenaming"

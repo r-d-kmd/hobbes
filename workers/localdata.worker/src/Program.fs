@@ -1,8 +1,6 @@
-open Hobbes.Helpers.Environment
 open Hobbes.Web
 open Hobbes.Messaging
 open Hobbes.Messaging.Broker
-open FSharp.Data
 open Saturn
 open Giraffe
 open Hobbes.Web.Routing

@@ -4,6 +4,38 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        
+        {
+            "name": "Launch localdata with Kubernetes",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "bridge-to-kubernetes.compound",
+            "program": "${workspaceFolder}/workers/localdata.worker/src/bin/Debug/netcoreapp5.0/localdata.worker.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/workers/localdata.worker/src/",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "env": {
+                "COUCHDB_USER": "${COUCHDB_USER}",
+                "COUCHDB_PASSWORD": "${COUCHDB_PASSWORD}",
+                "DB_URL": "http://localhost:5984",
+                "ASPNETCORE_URLS": "http://+:8085"
+            }
+        },
+        {
+            "name": "Launch localdata",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/workers/localdata.worker/src/bin/Debug/netcoreapp5.0/localdata.worker.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/workers/localdata.worker/src/",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "env": {
+                "COUCHDB_USER": "${COUCHDB_USER}",
+                "COUCHDB_PASSWORD": "${COUCHDB_PASSWORD}",
+                "DB_URL": "http://localhost:5984"
+            }
+        }
     ]
 }

@@ -3,3 +3,10 @@ kind: Kustomization
 
 resources:
   - localdata-deployment.yaml
+
+patchesJson6902:
+  - target:
+      version: v1
+      kind: Service
+      name: localdata-svc
+    path: local_patches/localdata.yaml

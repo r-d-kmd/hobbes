@@ -318,9 +318,9 @@ function applyProductionYaml() {
     for kube_dir in $(find $SCRIPT_DIR -type d -name kubernetes)
     do
         echo $kube_dir
-        if [ -f "$kube_dir/kustomization.yaml" ]
+        if [ -f "$kube_dir/prod_patches/kustomization.yaml" ]
         then
-            mv $kube_dir/kustomization.yaml .$kube_dir/local_patches/kustomization.yaml
+            mv $kube_dir/kustomization.yaml $kube_dir/local_patches/kustomization.yaml
             mv $kube_dir/prod_patches/kustomization.yaml $kube_dir/kustomization.yaml
             kustomize build -o test.yaml
             mv $kube_dir/kustomization.yaml $kube_dir/prod_patches/kustomization.yaml
@@ -332,9 +332,6 @@ function applyProductionYaml() {
     #awaitRunningState
     
     cd $CURRENT_DIR
-
-
-
 }
 
 function addSource(){

@@ -313,16 +313,28 @@ function forward(){
 
 #This function builds the production yaml configuration in the kubernetes folder.
 function applyProductionYaml() {
-
-
     local CURRENT_DIR=$(pwd)
-    cd $KUBERNETES_DIR
-    mv kustomization.yaml ./local_patches/kustomization.yaml
-    mv ./prod_patches/kustomization.yaml kustomization.yaml
-    ~/go/bin/kustomize build -o test.yaml
-    mv kustomization.yaml ./prod_patches/kustomization.yaml
-    mv ./local_patches/kustomization.yaml kustomization.yaml
+    kubectl apply -f $SCRIPT_DIR/env.JSON
+    for kube_dir in $(find $SCRIPT_DIR -type d -name kubernetes)
+    do
+        echo $kube_dir
+        if [ -f "$kube_dir/kustomization.yaml" ]
+        then
+            mv $kube_dir/kustomization.yaml .$kube_dir/local_patches/kustomization.yaml
+            mv $kube_dir/prod_patches/kustomization.yaml $kube_dir/kustomization.yaml
+            kustomize build -o test.yaml
+            mv $kube_dir/kustomization.yaml $kube_dir/prod_patches/kustomization.yaml
+            mv $kube_dir/local_patches/kustomization.yaml $kube_dir/kustomization.yaml
+#            kubectl apply -k $kube_dir
+        fi
+    done
+    
+    #awaitRunningState
+    
     cd $CURRENT_DIR
+
+
+
 }
 
 function addSource(){

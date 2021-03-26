@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - calculator-deployment.yaml
+#  - prod_patches/calculator-prod.yaml
+  - prod_patches/calculator-hpa.yaml
+
+patchesJson6902:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: calculator
+    path: prod_patches/calculator-prod.yaml

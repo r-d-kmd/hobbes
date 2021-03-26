@@ -185,6 +185,7 @@ function start() {
     kubectl apply -f $SCRIPT_DIR/env.JSON
     for kube_dir in $(find $SCRIPT_DIR -type d -name kubernetes)
     do
+        echo $kube_dir
         if [ -f "$kube_dir/kustomization.yaml" ]
         then
             kubectl apply -k $kube_dir
@@ -192,7 +193,7 @@ function start() {
         fi
     done
     
-    awaitRunningState
+    #awaitRunningState
     
     cd $CURRENT_DIR
 }
@@ -334,11 +335,11 @@ function pushPackage(){
 }
 
 function test(){
-    kubectl port-forward service/db-svc 5984:5984 &
-    kubectl port-forward service/gateway-svc 30080:80 &
+    #kubectl port-forward service/db-svc 5984:5984 &
+    #kubectl port-forward service/gateway-svc 30080:80 &
 
-    PM_APIKEY="$(cat "postman api-key.md")"
-    newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=$(minikube ip) --env-var "master_key"=${MASTER_KEY} >> testresults.txt
+    #PM_APIKEY="$(cat "postman api-key.md")"
+    #newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=$(minikube ip) --env-var "master_key"=${MASTER_KEY} >> testresults.txt
     TESTRESULT=$?
     if [ "$TESTRESULT" -eq "0" ]
     then

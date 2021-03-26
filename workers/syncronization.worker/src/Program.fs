@@ -77,8 +77,7 @@ let main _ =
                 if delta < 0.0 then
                     if System.DateTime.Now > timeout then
                         eprintfn "Timed out while syncronizing"
-                    else
-                        printfn "Waiting for action to quite down"     
+                    else  
                         waitForSync (-1 * (delta + 1.0 |> int))
                 else
                     printfn "Completed syncronization"

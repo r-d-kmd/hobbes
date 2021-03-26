@@ -83,6 +83,12 @@ The deployment script expects the services and workers to already be built. To d
 takes care of that. If you haven't already restored the tools you'll get and error. run `dotnet tool restore` to fix that and then re-run the above command.
 If the build goes well you are ready to deploy and run the first test
 
+To be able to build and pull packages a few environment variables need to be set. To do so you can use some of the functions in `functions.sh`
+
+- `skipRestore` will be a help if you need local changes to Paket.Restore.targets. If you are debugging a project that imports `Paket.targets` and thus building it locally, then it's highly likely you should call this function (and make sure that `Paket.Restore.targets` it _not_ imported)
+- `setDefaultVersion` sets env vars that are required to build anything with a version in the project file
+- `setFeedPat`is required to be able to pull packages. It requires the above `env.JSON` in the root of the project
+
 #### deploying and testing
 After starting the kube and building the services and workders navigate to `./tests/` and execute the command
 
@@ -92,3 +98,7 @@ This times another build file is used (`./tests/build.fsx`). It has a series of 
 
 If everything is set up correctly you will now have everything deployed, populated with data and tested ready to start developing new features
 
+#### Debuging with VS Code and Kubernetes
+https://code.visualstudio.com/docs/containers/bridge-to-kubernetes
+
+This will likely fail everytime you restart minikube due to the kubeconfig (found at ~/.kube/config). If that's the case remove the `extentions` part of that file

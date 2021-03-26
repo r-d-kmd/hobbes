@@ -359,9 +359,24 @@ function test(){
     fi
     exit $TESTRESULT
 }
+
 function skipRestore(){
     export PAKET_SKIP_RESTORE_TARGETS=true
 }
+
+function setDefaultVersion(){
+    export MAJOR=0
+    export MINOR=0
+    export BUILD_VERSION=1
+}
+
+function setFeedPat(){
+    local CURRENT_DIR=$(pwd)
+    cd $SCRIPT_DIR
+    export FEED_PAT="$(echo "$(cat env.JSON | jq -r .data.FEED_PAT)" | base64 -d)"
+    cd $CURRENT_DIR
+}
+
 printf "Project home folder is:\n"
 printf " - ${LightBlue}$SCRIPT_DIR\n"
 printf "${NoColor}Apps found:\n${LightBlue}"

@@ -104,15 +104,20 @@ let kubectl silent command args =
     run silent "kubectl" "../kubernetes" (command + " " + args)
 
 let applyk dir = 
+    let envFile = System.IO.Path.Combine(dir, "localenv.json")
     run true "kubectl" dir "apply -k ." +
-    if System.IO.File.Exists(System.IO.Path.Combine(dir, "env.JSON")) then 
-        run true "kubectl" dir "apply -f env.JSON"
+    if envFile |> System.IO.File.Exists then 
+        run true "kubectl" dir ("apply -f " + envFile)
     else
         0
 
 let forwardServicePort serviceName here there =
-    kubectlf "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=30s" serviceName) |> ignore
-    kubectlf "port-forward" (sprintf "service/%s-svc %d:%d" serviceName here there)
+    try
+        kubectl true "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=30s" serviceName) |> ignore
+    with _ -> ()
+    try
+        kubectlf "port-forward" (sprintf "service/%s %d:%d" serviceName here there)
+    with _ -> ()
     
 let startJob silent jobName = 
     let kubectl = kubectl silent
@@ -188,12 +193,12 @@ create "deploy" (fun _ ->
 )
 
 create "port-forwarding" (fun _ ->
-    try
-        forwardServicePort "gateway" 8080 80 |> ignore
-    with _ -> ()
-    try
-        forwardServicePort "db" 5984 5984 |> ignore
-    with _ -> ()
+    [
+      "gateway-svc", 8080, 80
+      "db-svc", 5984, 5984
+      "rabbitmq-service", 5672, 5672
+      "uniformdata-svc", 8099, 8085
+    ] |> List.iter(fun (serviceName, localPort, podPort) -> forwardServicePort serviceName localPort podPort)
 )
 
 create "publish" (fun _ ->    

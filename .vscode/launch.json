@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch localdata with Kubernetes",
+            "name": "Localdata",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "bridge-to-kubernetes.compound",
@@ -18,11 +18,38 @@
                 "COUCHDB_USER": "${COUCHDB_USER}",
                 "COUCHDB_PASSWORD": "${COUCHDB_PASSWORD}",
                 "DB_URL": "http://localhost:5984",
-                "ASPNETCORE_URLS": "http://+:8085"
+                "RABBIT_HOST": "localhost",
+                "RABBIT_PORT": "5672",
+                "UNIFORMDATA_DNS": "localhost",
+                "UNIFORMDATA_PORT" : "8099",
+                "UNIFORM_PORT" : "8099",
+                "ASPNETCORE_URLS": "http://localhost:8085"
             }
         },
         {
-            "name": "Launch localdata",
+            "name": "Configurations",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "bridge-to-kubernetes.compound",
+            "program": "${workspaceFolder}/services/configurations/src/bin/Debug/net5.0/configurations.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/services/configurations/src/",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "env": {
+                "COUCHDB_USER": "${COUCHDB_USER}",
+                "COUCHDB_PASSWORD": "${COUCHDB_PASSWORD}",
+                
+                "RABBIT_HOST": "localhost",
+                "RABBIT_PORT": "5672",
+                "UNIFORMDATA_DNS": "localhost",
+                "UNIFORMDATA_PORT": "8099",
+                "UNIFORM_PORT": "8099",
+                "ASPNETCORE_URLS": "http://localhost:8085"
+            }
+        },
+        {
+            "name": "Run standalone localdata",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
@@ -34,7 +61,13 @@
             "env": {
                 "COUCHDB_USER": "${COUCHDB_USER}",
                 "COUCHDB_PASSWORD": "${COUCHDB_PASSWORD}",
-                "DB_URL": "http://localhost:5984"
+                "DB_URL": "http://+:5984",
+                "RABBIT_HOST": "+",
+                "RABBIT_PORT": "5672",
+                "UNIFORMDATA_DNS": "localhost",
+                "UNIFORMDATA_PORT": "8099",
+                "UNIFORM_PORT": "8099",
+                "ASPNETCORE_URLS": "http://+:8085"
             }
         }
     ]

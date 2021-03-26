@@ -11,54 +11,40 @@ module Data =
     type internal LocalDataProviderConfig = JsonProvider<"""{
                 "provider" : "local",
                 "id" : "lkjlkj", 
-                "data" : [{
-                    "prop1":2,
-                    "prop2":"lkjlkj",
-                    "setup" : false
-                },{
-                    "prop1":2,
-                    "prop2":"lkjlkj",
-                    "setup" : false
-                }]
+                "columns" : [
+                    "prop1",
+                    "prop2",
+                    "setup"], 
+                "rows" : [
+                    [2,"lkjlkj",false],
+                    ["lkjlkj",2.003,{"d":0}]
+                ]
             }""">
 
     let synchronize (source : LocalDataProviderConfig.Root) =
         let body = 
-            let columnNames, rows = 
-                source.Data
-                |> Array.fold(fun (columnNames, rows) o ->
-                    let props = 
-                        match o.JsonValue with
-                        JsonValue.Record props ->
-                            props
-                        | v -> failwithf "Expected a record but got (%s)" (v.ToString())
-                    let cns = 
-                        props
-                        |> Array.fold(fun cn (k, _) -> cn |> Set.add k) columnNames
-                    cns,(props
-                        |> Map.ofArray)::rows
-                )(Set.empty,[])
+            let columnNames = 
+                source.Columns
+            let rows = 
+                source.Rows
+                |> Array.map(fun row ->
+                    match row.JsonValue with
+                    JsonValue.Array cells ->
+                        cells
+                        |> Array.map(fun cell ->
+                            match cell with
+                            JsonValue.String s -> s :> obj
+                            | JsonValue.Number n -> n :> obj
+                            | JsonValue.Float f -> f :> obj
+                            | JsonValue.Boolean b -> b :> obj
+                            | JsonValue.Null  -> null :> obj
+                            | _ -> failwith "Must be a simple value"
+                        )
+                    | v -> failwithf "Expected an array but got (%s)" (v.ToString())
+                )
             {
-               ColumnNames = columnNames |> Set.toArray
-               Values = 
-                   rows
-                   |> List.map(fun row ->
-                       columnNames
-                       |> Set.toArray
-                       |> Array.map(fun columnName ->
-                           match row |> Map.tryFind columnName with
-                           None -> null
-                           | Some v -> 
-                               match v with
-                               JsonValue.String s -> s :> obj
-                               | JsonValue.Number n -> n :> obj
-                               | JsonValue.Float f -> f :> obj
-                               | JsonValue.Boolean b -> b :> obj
-                               | JsonValue.Null  -> null :> obj
-                               | _ -> failwith "Must be a simple value"
-                       
-                       )
-                   ) |> List.toArray
+               ColumnNames = columnNames
+               Values = rows
                RowCount = rows.Length
             } : Cache.DataResult
     

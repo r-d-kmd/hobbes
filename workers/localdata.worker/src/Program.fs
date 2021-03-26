@@ -27,7 +27,7 @@ let handleMessage message =
             Log.excf e "Failed to process message"
             Excep e
 
-Database.awaitDbServer()
+
 async{    
     do! awaitQueue()
     Broker.LocalData handleMessage

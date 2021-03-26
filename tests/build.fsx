@@ -104,9 +104,9 @@ let kubectl silent command args =
     run silent "kubectl" "../kubernetes" (command + " " + args)
 
 let applyk dir = 
-    let envFile = System.IO.Path.Combine(dir, "localenv.json")
+    let envFile = "localenv.json"
     run true "kubectl" dir "apply -k ." +
-    if envFile |> System.IO.File.Exists then 
+    if System.IO.Path.Combine(dir, envFile) |> System.IO.File.Exists then 
         run true "kubectl" dir ("apply -f " + envFile)
     else
         0

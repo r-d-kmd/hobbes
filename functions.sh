@@ -386,3 +386,6 @@ printf "${NoColor}"
 
 alias fake="dotnet fake"
 alias paket="dotnet paket"
+alias subadd="git submodule foreach git add ."
+alias subcommit="git submodule foreach git commit -m"
+alias subpush="git submodule foreach git push "

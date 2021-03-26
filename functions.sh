@@ -317,15 +317,20 @@ function applyProductionYaml() {
     kubectl apply -f $SCRIPT_DIR/env.JSON
     for kube_dir in $(find $SCRIPT_DIR -type d -name kubernetes)
     do
-        echo $kube_dir
+        echo "Directory: " $kube_dir
         if [ -f "$kube_dir/prod_patches/kustomization.yaml" ]
         then
+            echo "moving" $kube_dir/kustomization.yaml "into" $kube_dir/local_patches/kustomization.yaml 
             mv $kube_dir/kustomization.yaml $kube_dir/local_patches/kustomization.yaml
+            echo "moving" $kube_dir/prod_patches/kustomization.yaml "into" $kube_dir/kustomization.yaml
             mv $kube_dir/prod_patches/kustomization.yaml $kube_dir/kustomization.yaml
-            kustomize build -o test.yaml
+            echo "Producing file"
+            kustomize build -o $kube_dir
+            echo "moving" $kube_dir/kustomization.yaml "back into" $kube_dir/prod_patches/kustomization.yaml
             mv $kube_dir/kustomization.yaml $kube_dir/prod_patches/kustomization.yaml
+            echo "moving" $kube_dir/local_patches/kustomization.yaml "back into" $kube_dir/kustomization.yaml
             mv $kube_dir/local_patches/kustomization.yaml $kube_dir/kustomization.yaml
-#            kubectl apply -k $kube_dir
+#           kubectl apply -k $kube_dir
         fi
     done
     

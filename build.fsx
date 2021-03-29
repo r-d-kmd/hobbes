@@ -10,10 +10,9 @@ nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //"
 #load "./.fake/build.fsx/intellisense.fsx"
 
-#load "BuildGeneral.fsx"
-open BuildGeneral.BuildGeneral
 #load "BuildExtension.fsx"
 open BuildExtension.BuildExtension
+open BuildGeneral.BuildGeneral
 
 #if !FAKE
 #r "netstandard"

@@ -13,9 +13,7 @@ stages:
     jobs:
       - job: development
         steps:
-        - script: newman --version
-          displayName: Verify newman version
-
+        
         - script: dotnet tool update fake-cli
           displayName: Install Fake
           
@@ -88,6 +86,9 @@ stages:
           displayName: Run integration tests
           env:
             MASTER_KEY: $(MASTER_KEY)
+            ENV_FILE: $(ENV_FILE)
+            COUCH_USER: "admin"
+            COUCH_PASSWORD: "password"
             
         - script: |
             docker push kmdrd/workbench

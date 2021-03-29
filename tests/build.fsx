@@ -24,8 +24,63 @@ let fromBase64 s =
     (System.Convert.FromBase64String s
      |> System.Text.Encoding.Default.GetString).Trim()
 
-type Env = JsonProvider<"""../env.JSON""">
-let env = Env.GetSample()
+type Env = JsonProvider<"""{ 
+    "apiVersion": "v1", 
+    "kind": "Secret",
+    "metadata": {
+      "name": "env"
+    },
+    "type": "Opaque",
+    "data": {
+      "AZURE_TOKEN_TIME_PAYROLL_KMDDK": "jlajsdflkajsdfl",
+      "AZURE_TOKEN_KMDDK": "jlajsdflkajsdfl",
+      "KEY_SUFFIX": "jlajsdflkajsdfl",
+      "COUCHDB_PASSWORD": "jlajsdflkajsdfl",
+      "COUCHDB_USER": "jlajsdflkajsdfl",
+      "SERVER_PORT": "jlajsdflkajsdfl",
+      "GIT_AZURE_USER" :"jlajsdflkajsdfl",
+      "GIT_AZURE_PASSWORD" :"jlajsdflkajsdfl",
+      "MASTER_USER": "jlajsdflkajsdfl",
+      "RABBIT_HOST": "jlajsdflkajsdfl",
+      "RABBIT_PORT": "jlajsdflkajsdfl",
+      "RABBIT_USER": "jlajsdflkajsdfl",
+      "RABBIT_PASSWORD": "jlajsdflkajsdfl",
+      "FEED_PAT": "lksdjaflkj"
+    }
+  }""">
+let globalEnvFile = Fake.IO.Path.getFullName "../env.JSON"
+let env = 
+    if System.IO.File.Exists globalEnvFile then
+        printfn "Loading global env file"
+        Env.Load globalEnvFile
+    else
+        sprintf """{ 
+            "apiVersion": "v1", 
+            "kind": "Secret",
+            "metadata": {
+              "name": "env"
+            },
+            "type": "Opaque",
+            "data": {
+              "AZURE_TOKEN_TIME_PAYROLL_KMDDK": "jlajsdflkajsdfl",
+              "AZURE_TOKEN_KMDDK": "jlajsdflkajsdfl",
+              "KEY_SUFFIX": "jlajsdflkajsdfl",
+              "COUCHDB_PASSWORD": "%s",
+              "COUCHDB_USER": "%s",
+              "SERVER_PORT": "jlajsdflkajsdfl",
+              "GIT_AZURE_USER" :"jlajsdflkajsdfl",
+              "GIT_AZURE_PASSWORD" :"jlajsdflkajsdfl",
+              "MASTER_USER": "%s",
+              "RABBIT_HOST": "jlajsdflkajsdfl",
+              "RABBIT_PORT": "jlajsdflkajsdfl",
+              "RABBIT_USER": "jlajsdflkajsdfl",
+              "RABBIT_PASSWORD": "jlajsdflkajsdfl",
+              "FEED_PAT": "lksdjaflkj"
+            }
+          }""" (Environment.environVarOrFail "COUCHDB_PASSWORD")
+               (Environment.environVarOrFail "COUCHDB_USER")
+               (Environment.environVarOrFail "MASTER_USER")
+        |> Env.Parse
 
 let masterkey = env.Data.MasterUser |> fromBase64
 let inline (<==) a b = 
@@ -183,7 +238,12 @@ create "deploy" (fun _ ->
         |> Seq.sumBy(applyk)
     if res > 0 then failwith "Failed applying all"
     printfn "Looked in %A" dirs
-    kubectl false "apply" "-f ../env.JSON" |> ignore
+    if System.IO.File.Exists globalEnvFile then
+        printfn "Using env file"
+        kubectl false "apply" "-f ../env.JSON" |> ignore
+    else
+        printfn "Using env from var"
+        run false "echo" <| sprintf "'$%s' | kubectl apply -f -" (Environment.environVarOrFail "ENV_FILE") |> ignore
 )
 
 create "port-forwarding" (fun _ ->

@@ -59,11 +59,6 @@ stages:
         - script: sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context
           displayName: Fix permissions
 
-        # Set up cluster
-        - script: echo '$(ENV_FILE)' | kubectl apply -f -
-          displayName: Apply kubernetes environment file
-          env:
-            ENV_FILE: $(ENV_FILE)
         - script: |
             source functions.sh
             build all 2
@@ -81,6 +76,9 @@ stages:
           displayName: Setup integration tests
           env:
             MASTER_KEY: $(MASTER_KEY)
+            ENV_FILE: $(ENV_FILE)
+            COUCH_USER: "admin"
+            COUCH_PASSWORD: "password"
         - task: DotNetCoreCLI@2
           inputs:
            command: 'custom'

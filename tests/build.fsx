@@ -28,7 +28,9 @@ type Env = JsonProvider<"""../env.JSON""">
 let env = Env.GetSample()
 
 let masterkey = env.Data.MasterUser |> fromBase64
-
+let inline (<==) a b = 
+    b ==> a
+    
 let createProcess silent command workingDir args =
     let arguments = 
         match args |> String.split ' ' with
@@ -160,14 +162,6 @@ create "build" (fun _ ->
     run false "dotnet" ".." "fake build" |> ignore
 )
 
-(*create "buildbuilder" (fun _ ->
-    env.Data.FeedPat
-    |> Environment.environVarOrDefault "FEED_PAT"
-    |> sprintf "-f docker/Dockerfile.builder -t builder --build-arg FEED_PAT_ARG=%s ."
-    |> docker Build "../"
-    |> ignore
-)*)
-
 create "deploy" (fun _ ->
     
     let dirs = System.IO.Directory.EnumerateDirectories("..","kubernetes", System.IO.SearchOption.AllDirectories)
@@ -269,17 +263,21 @@ create "data" (fun _ ->
 
 Target.create "test" ignore
 Target.create "retest" ignore
+Target.create "setup-test" ignore
 
-"port-forwarding"
-   ==> "retest"
+"retest"
+   <== "port-forwarding"
+   <== "publish"
+   <== "sync"
+   <== "test"
+   
 
-"publish"
-   ==> "retest"
-"sync"
-   ==> "retest"
+"setup-test"
+   <== "deploy"
+   <== "port-forwarding"
+   <== "publish"
+   <== "sync"
 
-"test"
-   ==> "retest" 
 
 "build"
   ?=> "deploy"
@@ -297,7 +295,7 @@ Target.create "retest" ignore
 "port-forwarding"
   ==> "complete-sync"
 
-"data"
-  ==> "test"
+"test"
+  <== "data"
 
 Target.runOrDefaultWithArguments "all"

@@ -63,10 +63,8 @@ module BuildGeneral =
                 None
         match fullName with
         None -> 
-            printfn "Couldn't find %s and couldn't ignore" fileOrDir
             false
         | Some f ->
-            printfn "Should ignore %s?" f
             ignoreLines
             |> List.exists(fun d -> 
                if f = d then true
@@ -76,12 +74,9 @@ module BuildGeneral =
                    else
                        false
                else
-                 if fileOrDir.Contains "calvin" then
-                           failwithf "Calvin (%s) wasn't ignored here. %A" fileOrDir ignoreLines 
                  false
             )
             
-
     open Fake.Core.TargetOperators
     let inline (==>) (lhs : Targets) (rhs : Targets) =
         Targets.Generic((targetName lhs) ==> (targetName rhs))

@@ -9,7 +9,7 @@ nuget Fake.DotNet.Cli //
 nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //"
-#load "./.fake/tests.fsx/intellisense.fsx"
+#load "../.fake/tests.fsx/intellisense.fsx"
 
 #if !FAKE
 #r "netstandard"
@@ -277,6 +277,7 @@ Target.create "setup-test" ignore
    <== "port-forwarding"
    <== "publish"
    <== "sync"
+   <== "complete-sync"
 
 
 "build"

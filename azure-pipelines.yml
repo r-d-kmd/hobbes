@@ -72,20 +72,25 @@ stages:
             VERSION: "1.2021.$(Build.BuildNumber)"
           displayName: Build the world
 
-        - script: |
-            source functions.sh
-            start
-            setupTest
-          displayName: Setup tests && kubectl port-forward service/gateway-svc 30080:80 &
-
-        - script: |
-            source functions.sh
-            test
-          displayName: Run postman tests
+        - task: DotNetCoreCLI@2
+          inputs:
+           command: 'custom'
+           custom: 'fake'
+           arguments: 'build --target setup-test'
+           workingDirectory: 'tests/'
+          displayName: Setup integration tests
           env:
             MASTER_KEY: $(MASTER_KEY)
-            PM_APIKEY: $(PM_APIKEY)
-
+        - task: DotNetCoreCLI@2
+          inputs:
+           command: 'custom'
+           custom: 'fake'
+           arguments: 'build --target test'
+           workingDirectory: 'tests/'
+          displayName: Run integration tests
+          env:
+            MASTER_KEY: $(MASTER_KEY)
+            
         - script: |
             docker push kmdrd/workbench
             git config --global credential.helper store

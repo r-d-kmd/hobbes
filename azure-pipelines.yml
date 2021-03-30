@@ -73,10 +73,10 @@ stages:
            workingDirectory: 'tests/'
           displayName: Setup integration tests
           env:
-            MASTER_KEY: $(MASTER_KEY)
+            MASTER_USER: $(MASTER_KEY)
             ENV_FILE: $(ENV_FILE)
-            COUCH_USER: "admin"
-            COUCH_PASSWORD: "password"
+            COUCHDB_USER: "admin"
+            COUCHDB_PASSWORD: "password"
         - task: DotNetCoreCLI@2
           inputs:
            command: 'custom'
@@ -85,10 +85,10 @@ stages:
            workingDirectory: 'tests/'
           displayName: Run integration tests
           env:
-            MASTER_KEY: $(MASTER_KEY)
+            MASTER_USER: $(MASTER_KEY)
             ENV_FILE: $(ENV_FILE)
-            COUCH_USER: "admin"
-            COUCH_PASSWORD: "password"
+            COUCHDB_USER: "admin"
+            COUCHDB_PASSWORD: "password"
             
         - script: |
             docker push kmdrd/workbench

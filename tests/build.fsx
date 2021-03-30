@@ -54,32 +54,7 @@ let env =
         printfn "Loading global env file"
         Env.Load globalEnvFile
     else
-        sprintf """{ 
-            "apiVersion": "v1", 
-            "kind": "Secret",
-            "metadata": {
-              "name": "env"
-            },
-            "type": "Opaque",
-            "data": {
-              "AZURE_TOKEN_TIME_PAYROLL_KMDDK": "jlajsdflkajsdfl",
-              "AZURE_TOKEN_KMDDK": "jlajsdflkajsdfl",
-              "KEY_SUFFIX": "jlajsdflkajsdfl",
-              "COUCHDB_PASSWORD": "%s",
-              "COUCHDB_USER": "%s",
-              "SERVER_PORT": "jlajsdflkajsdfl",
-              "GIT_AZURE_USER" :"jlajsdflkajsdfl",
-              "GIT_AZURE_PASSWORD" :"jlajsdflkajsdfl",
-              "MASTER_USER": "%s",
-              "RABBIT_HOST": "jlajsdflkajsdfl",
-              "RABBIT_PORT": "jlajsdflkajsdfl",
-              "RABBIT_USER": "jlajsdflkajsdfl",
-              "RABBIT_PASSWORD": "jlajsdflkajsdfl",
-              "FEED_PAT": "lksdjaflkj"
-            }
-          }""" (Environment.environVarOrFail "COUCHDB_PASSWORD")
-               (Environment.environVarOrFail "COUCHDB_USER")
-               (Environment.environVarOrFail "MASTER_USER")
+        Environment.environVarOrFail "ENV_FILE"
         |> Env.Parse
 
 let masterkey = env.Data.MasterUser |> fromBase64

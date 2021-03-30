@@ -65,12 +65,10 @@ stages:
             VERSION: "1.2021.$(Build.BuildNumber)"
           displayName: Build the world
 
-        - task: DotNetCoreCLI@2
-          inputs:
-           command: 'custom'
-           custom: 'fake'
-           arguments: 'build --target setup-test'
-           workingDirectory: 'tests/'
+        - script: |            
+            source functions.sh
+            cd tests/
+            dotnet fake build --target setup-test
           displayName: Setup integration tests
           env:
             MASTER_USER: $(MASTER_KEY)

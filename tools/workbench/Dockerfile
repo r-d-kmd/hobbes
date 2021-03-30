@@ -24,28 +24,27 @@ RUN if [ -n "$FEED_PAT" ]; then export FEED_USER="$FEED_PAT"; export FEED_PASSWO
 
 COPY paket.dependencies .
 
-RUN dotnet new tool-manifest
-RUN dotnet tool install paket
-
+COPY ./.config/dotnet-tools.json /.config/dotnet-tools.json
 RUN dotnet tool restore
-RUN dotnet paket update
 
 FROM sdk as build
 COPY ./src /source
 WORKDIR /source
 
+#install packages
+RUN dotnet paket install
+RUN dotnet paket restore
+
+#create a script that just starts the app. THe reg ex is just to make the file generic
 RUN echo "dotnet \"$(expr $(ls *.?sproj) : '\(.*\)\..sproj').dll\"\n" >> /tmp/start.sh
 RUN chmod +x /tmp/start.sh
 RUN cat /tmp/start.sh
 
-ARG EXECUTABLE
-ENV EXECUTABLE=${EXECUTABLE}
-
-# final stage/image
+#Build the app
 RUN dotnet publish -c ${BUILD_CONFIGURATION} -o /app
 
 # final stage/image
-FROM kmdrd/runtime:5.0
+FROM kmdrd/runtime:DOTNET_VERSION
 COPY --from=build /tmp/start.sh /tmp/start.sh 
 WORKDIR /app
 COPY --from=build /app .

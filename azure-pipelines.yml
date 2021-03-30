@@ -73,7 +73,7 @@ stages:
            workingDirectory: 'tests/'
           displayName: Setup integration tests
           env:
-            MASTER_KEY: $(MASTER_KEY)
+            MASTER_USER: $(MASTER_KEY)
             ENV_FILE: $(ENV_FILE)
             COUCHDB_USER: "admin"
             COUCHDB_PASSWORD: "password"
@@ -85,7 +85,7 @@ stages:
            workingDirectory: 'tests/'
           displayName: Run integration tests
           env:
-            MASTER_KEY: $(MASTER_KEY)
+            MASTER_USER: $(MASTER_KEY)
             ENV_FILE: $(ENV_FILE)
             COUCHDB_USER: "admin"
             COUCHDB_PASSWORD: "password"

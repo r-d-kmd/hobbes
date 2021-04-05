@@ -194,6 +194,7 @@ create "build" (fun _ ->
 
 create "start-kube" (fun _ ->
     run false "minikube" "." "start" |> ignore
+    run false "bash"  "." "-c eval $(minikube docker-env)" |> ignore
 )
 
 create "deploy" (fun _ ->

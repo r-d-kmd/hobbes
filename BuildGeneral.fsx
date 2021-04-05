@@ -171,7 +171,12 @@ module BuildGeneral =
             System.String.Join(" ",args) 
         run "docker" dir (arguments.Replace("  "," ").Trim())
 
-    let feedPat = env.FeedPat
+    let feedPat = 
+        let e = env.FeedPat
+        printfn "***************************"
+        printfn "%s" e
+        printfn "***************************"
+
 
     let assemblyVersion = Environment.environVarOrDefault "VERSION" "2.0.default"
     let dockerOrg = Environment.environVarOrDefault "DOKCER_ORG" "hobbes.azurecr.io" //Change to docker hub

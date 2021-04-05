@@ -59,6 +59,7 @@ stages:
 
         - script: |
             source functions.sh
+            setFeedPat
             build all 2
           env:
             FEED_PAT: $(FEED_PAT)

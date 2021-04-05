@@ -172,7 +172,7 @@ module BuildGeneral =
         run "docker" dir (arguments.Replace("  "," ").Trim())
 
     let feedPat = 
-        let e = env.FeedPat
+        let e = env.FeedPat |> System.Convert.FromBase64String |> System.Text.Encoding.Default.GetString
         printfn "***************************"
         printfn "%s" e
         printfn "***************************"

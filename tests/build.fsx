@@ -231,7 +231,7 @@ create "port-forwarding" (fun _ ->
 )
 
 create "publish" (fun _ ->    
-    let res = docker Build "../tools/workbench" "-t kmdrd/workbench ."
+    let res = docker Build "../tools/workbench" <| sprintf "--build-arg FEED_PAT_ARG=%s -t kmdrd/workbench ." (env.Data.FeedPat)
     
     if res = 0 then
         startJob false "publish"

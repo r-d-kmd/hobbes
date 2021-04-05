@@ -4,10 +4,12 @@
 .vscode/
 common/
 kubernetes/
+libs/
 packages/
 packaging/
 paket-files/
 services/
+tests/
 tools/
 tutorial/
 workers/
@@ -22,7 +24,5 @@ hobbes.sln
 installatin.md
 paket.exe
 README.md
-workers/**/src/Broker.fs
-services/**/src/Broker.fs
 bin/
 obj/

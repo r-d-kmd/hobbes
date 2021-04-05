@@ -76,7 +76,7 @@ module BuildGeneral =
              else
                 Environment.environVarOrFail "ENV_FILE"
                 |> Env.Parse
-         e.Data
+        e.Data
 
     let ignoreLines =
         File.ReadAllLines ".buildignore"

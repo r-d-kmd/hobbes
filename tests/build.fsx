@@ -192,6 +192,10 @@ create "build" (fun _ ->
     run false "dotnet" ".." "fake build" |> ignore
 )
 
+create "start-kube" (fun _ ->
+    run false "minikube" "." "start" |> ignore
+)
+
 create "deploy" (fun _ ->
     
     let dirs = System.IO.Directory.EnumerateDirectories("..","kubernetes", System.IO.SearchOption.AllDirectories)
@@ -308,12 +312,15 @@ Target.create "setup-test" ignore
    
 
 "setup-test"
+   <== "start-kube"
    <== "deploy"
    <== "port-forwarding"
    <== "publish"
    <== "sync"
    <== "complete-sync"
 
+"start-kube"
+  ?=> "deploy"
 
 "build"
   ?=> "deploy"

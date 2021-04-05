@@ -69,12 +69,14 @@ module BuildGeneral =
       }""">
     let globalEnvFile = Fake.IO.Path.getFullName "env.JSON"
     let env = 
-        if System.IO.File.Exists globalEnvFile then
-            printfn "Loading global env file"
-            Env.Load globalEnvFile
-         else
-            Environment.environVarOrFail "ENV_FILE"
-            |> Env.Parse
+        let e = 
+            if System.IO.File.Exists globalEnvFile then
+                printfn "Loading global env file"
+                Env.Load globalEnvFile
+             else
+                Environment.environVarOrFail "ENV_FILE"
+                |> Env.Parse
+         e.Data
 
     let ignoreLines =
         File.ReadAllLines ".buildignore"

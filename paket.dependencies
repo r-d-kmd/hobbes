@@ -104,7 +104,8 @@ group Build
     source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: netcoreapp3.1
     storage: none
-
+    
+    nuget FSharp.Data
     nuget Fake ~> 5
     nuget Fake.Core ~> 5
     nuget Fake.Core.Target

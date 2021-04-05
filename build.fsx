@@ -1,4 +1,5 @@
 #r "paket:
+nuget FSharp.Data //
 nuget Fake ~> 5 //
 nuget Fake.Core ~> 5 //
 nuget Fake.Core.Target  //

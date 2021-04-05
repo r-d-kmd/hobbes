@@ -1,4 +1,5 @@
 #r "paket:
+nuget FSharp.Data //
 nuget Fake ~> 5 //
 nuget Fake.Core ~> 5 //
 nuget Fake.Core.Target  //
@@ -41,6 +42,39 @@ module BuildGeneral =
            | Targets.All -> "All"
            | Targets.PushApps -> "PushApps"
            | Targets.Generic s -> s
+    
+    type Env = FSharp.Data.JsonProvider<"""{ 
+        "apiVersion": "v1", 
+        "kind": "Secret",
+        "metadata": {
+          "name": "env"
+        },
+        "type": "Opaque",
+        "data": {
+          "AZURE_TOKEN_TIME_PAYROLL_KMDDK": "jlajsdflkajsdfl",
+          "AZURE_TOKEN_KMDDK": "jlajsdflkajsdfl",
+          "KEY_SUFFIX": "jlajsdflkajsdfl",
+          "COUCHDB_PASSWORD": "jlajsdflkajsdfl",
+          "COUCHDB_USER": "jlajsdflkajsdfl",
+          "SERVER_PORT": "jlajsdflkajsdfl",
+          "GIT_AZURE_USER" :"jlajsdflkajsdfl",
+          "GIT_AZURE_PASSWORD" :"jlajsdflkajsdfl",
+          "MASTER_USER": "jlajsdflkajsdfl",
+          "RABBIT_HOST": "jlajsdflkajsdfl",
+          "RABBIT_PORT": "jlajsdflkajsdfl",
+          "RABBIT_USER": "jlajsdflkajsdfl",
+          "RABBIT_PASSWORD": "jlajsdflkajsdfl",
+          "FEED_PAT": "lksdjaflkj"
+        }
+      }""">
+    let globalEnvFile = Fake.IO.Path.getFullName "env.JSON"
+    let env = 
+        if System.IO.File.Exists globalEnvFile then
+            printfn "Loading global env file"
+            Env.Load globalEnvFile
+        else
+            Environment.environVarOrFail "ENV_FILE"
+            |> Env.Parse
 
     let ignoreLines =
         File.ReadAllLines ".buildignore"
@@ -135,13 +169,7 @@ module BuildGeneral =
             System.String.Join(" ",args) 
         run "docker" dir (arguments.Replace("  "," ").Trim())
 
-    let feedPat = 
-        match "FEED_PAT" |> Environment.environVarOrNone  with
-        None -> 
-            eprintfn "No PAT for the nuget feed was provided"
-            ""
-        | Some argFeed -> 
-            argFeed
+    let feedPat = env.FeedPat
 
     let assemblyVersion = Environment.environVarOrDefault "VERSION" "2.0.default"
     let dockerOrg = Environment.environVarOrDefault "DOKCER_ORG" "hobbes.azurecr.io" //Change to docker hub
@@ -218,6 +246,11 @@ module BuildGeneral =
     create Targets.PreApps ignore
     create Targets.PostApps ignore
 
+    
+    create (Targets.Generic "start-kube") (fun _ ->
+        run  "minikube" "." "start" |> ignore
+        run  "bash"  "." "-c eval $(minikube docker-env)" |> ignore
+    )
 
     projects
     |> Seq.iter(fun (name,dir) ->
@@ -233,7 +266,8 @@ module BuildGeneral =
             let file = Some(path)
             docker (Build(file,tag, ["FEED_PAT_ARG", feedPat])) "."
     )
-
+    
+    (Targets.Generic "start-kube") ==> Targets.PreApps
     Targets.Builder ==> Targets.PushApps
     Targets.Builder ?=> Targets.PreApps
     Targets.Build ==> Targets.All

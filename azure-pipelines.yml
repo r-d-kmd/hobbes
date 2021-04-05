@@ -68,6 +68,7 @@ stages:
         - script: |            
             source functions.sh
             cd tests/
+            build builder
             dotnet fake build --target setup-test
           displayName: Setup integration tests
           env:

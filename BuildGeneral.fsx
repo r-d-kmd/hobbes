@@ -72,7 +72,7 @@ module BuildGeneral =
         if System.IO.File.Exists globalEnvFile then
             printfn "Loading global env file"
             Env.Load globalEnvFile
-        else
+         else
             Environment.environVarOrFail "ENV_FILE"
             |> Env.Parse
 

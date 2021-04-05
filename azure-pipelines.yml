@@ -59,6 +59,7 @@ stages:
 
         - script: |
             source functions.sh
+            setFeedPat
             build all 2
           env:
             FEED_PAT: $(FEED_PAT)
@@ -68,6 +69,7 @@ stages:
         - script: |            
             source functions.sh
             cd tests/
+            build builder
             dotnet fake build --target setup-test
           displayName: Setup integration tests
           env:

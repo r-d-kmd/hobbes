@@ -176,6 +176,7 @@ module BuildGeneral =
         printfn "***************************"
         printfn "%s" e
         printfn "***************************"
+        e
 
 
     let assemblyVersion = Environment.environVarOrDefault "VERSION" "2.0.default"

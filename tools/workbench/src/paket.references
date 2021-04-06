@@ -5,3 +5,4 @@ FSharp.Data
 group docker
     hobbes.core
     hobbes.web
+ 

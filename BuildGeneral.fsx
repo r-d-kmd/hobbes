@@ -64,7 +64,7 @@ module BuildGeneral =
           "RABBIT_PORT": "jlajsdflkajsdfl",
           "RABBIT_USER": "jlajsdflkajsdfl",
           "RABBIT_PASSWORD": "jlajsdflkajsdfl",
-          "FEED_PAT": "lksdjaflkj"
+          "AZURE_DEVOPS_PAT": "lksdjaflkj"
         }
       }""">
     let globalEnvFile = Fake.IO.Path.getFullName "env.JSON"
@@ -172,7 +172,7 @@ module BuildGeneral =
         run "docker" dir (arguments.Replace("  "," ").Trim())
 
     let feedPat = 
-        let e = env.FeedPat 
+        let e = env.AzureDevopsPat
         printfn "***************************"
         printfn "Feed pat: (%s)" e
         printfn "***************************"

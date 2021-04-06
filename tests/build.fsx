@@ -32,20 +32,16 @@ type Env = JsonProvider<"""{
     },
     "type": "Opaque",
     "data": {
-      "AZURE_TOKEN_TIME_PAYROLL_KMDDK": "jlajsdflkajsdfl",
-      "AZURE_TOKEN_KMDDK": "jlajsdflkajsdfl",
       "KEY_SUFFIX": "jlajsdflkajsdfl",
       "COUCHDB_PASSWORD": "jlajsdflkajsdfl",
       "COUCHDB_USER": "jlajsdflkajsdfl",
       "SERVER_PORT": "jlajsdflkajsdfl",
-      "GIT_AZURE_USER" :"jlajsdflkajsdfl",
-      "GIT_AZURE_PASSWORD" :"jlajsdflkajsdfl",
       "MASTER_USER": "jlajsdflkajsdfl",
       "RABBIT_HOST": "jlajsdflkajsdfl",
       "RABBIT_PORT": "jlajsdflkajsdfl",
       "RABBIT_USER": "jlajsdflkajsdfl",
       "RABBIT_PASSWORD": "jlajsdflkajsdfl",
-      "FEED_PAT": "lksdjaflkj"
+      "AzureDevopsPat": "lksdjaflkj"
     }
   }""">
 let globalEnvFile = Fake.IO.Path.getFullName "../env.JSON"
@@ -236,7 +232,9 @@ create "port-forwarding" (fun _ ->
 )
 
 create "publish" (fun _ ->    
-    let res = docker Build "../tools/workbench" <| sprintf "--build-arg FEED_PAT_ARG=%s -t kmdrd/workbench ." (env.Data.FeedPat)
+    let res = 
+        docker Build "../tools/workbench" 
+        <| sprintf "--build-arg FEED_PAT_ARG=%s -t kmdrd/workbench ." (env.Data.AzureDevopsPat)
     
     if res = 0 then
         startJob false "publish"

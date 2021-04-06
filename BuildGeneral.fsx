@@ -172,11 +172,7 @@ module BuildGeneral =
         run "docker" dir (arguments.Replace("  "," ").Trim())
 
     let feedPat = 
-        let e = env.AzureDevopsPat
-        printfn "***************************"
-        printfn "Feed pat: (%s)" e
-        printfn "***************************"
-        e 
+        env.AzureDevopsPat
         |> System.Convert.FromBase64String 
         |> System.Text.Encoding.Default.GetString
 

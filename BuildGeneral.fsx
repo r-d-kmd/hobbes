@@ -10,7 +10,7 @@ nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //"
 #load "./.fake/build.fsx/intellisense.fsx"
-
+#load "build/Configuration.fsx"
 
 #if !FAKE
 #r "netstandard"
@@ -43,40 +43,9 @@ module BuildGeneral =
            | Targets.PushApps -> "PushApps"
            | Targets.Generic s -> s
     
-    type Env = FSharp.Data.JsonProvider<"""{ 
-        "apiVersion": "v1", 
-        "kind": "Secret",
-        "metadata": {
-          "name": "env"
-        },
-        "type": "Opaque",
-        "data": {
-          "AZURE_TOKEN_TIME_PAYROLL_KMDDK": "jlajsdflkajsdfl",
-          "AZURE_TOKEN_KMDDK": "jlajsdflkajsdfl",
-          "KEY_SUFFIX": "jlajsdflkajsdfl",
-          "COUCHDB_PASSWORD": "jlajsdflkajsdfl",
-          "COUCHDB_USER": "jlajsdflkajsdfl",
-          "SERVER_PORT": "jlajsdflkajsdfl",
-          "GIT_AZURE_USER" :"jlajsdflkajsdfl",
-          "GIT_AZURE_PASSWORD" :"jlajsdflkajsdfl",
-          "MASTER_USER": "jlajsdflkajsdfl",
-          "RABBIT_HOST": "jlajsdflkajsdfl",
-          "RABBIT_PORT": "jlajsdflkajsdfl",
-          "RABBIT_USER": "jlajsdflkajsdfl",
-          "RABBIT_PASSWORD": "jlajsdflkajsdfl",
-          "AZURE_DEVOPS_PAT": "lksdjaflkj"
-        }
-      }""">
-    let globalEnvFile = Fake.IO.Path.getFullName "env.JSON"
-    let env = 
-        let e = 
-            if System.IO.File.Exists globalEnvFile then
-                printfn "Loading global env file"
-                Env.Load globalEnvFile
-             else
-                Environment.environVarOrFail "ENV_FILE"
-                |> Env.Parse
-        e.Data
+    
+    let globalEnvFile = "env.JSON"
+    let env = Configuration.Environment.Environment(globalEnvFile)
 
     let ignoreLines =
         File.ReadAllLines ".buildignore"
@@ -171,11 +140,7 @@ module BuildGeneral =
             System.String.Join(" ",args) 
         run "docker" dir (arguments.Replace("  "," ").Trim())
 
-    let feedPat = 
-        env.AzureDevopsPat
-        |> System.Convert.FromBase64String 
-        |> System.Text.Encoding.Default.GetString
-
+    let feedPat = env.AzureDevopsPat
 
     let assemblyVersion = Environment.environVarOrDefault "VERSION" "2.0.default"
     let dockerOrg = Environment.environVarOrDefault "DOKCER_ORG" "hobbes.azurecr.io" //Change to docker hub

@@ -109,18 +109,6 @@ let applyk dir =
         run true "kubectl" dir ("apply -f " + envFile)
     else
         0
-
-let forwardServicePort serviceName here there =
-    try
-        kubectl true "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=120s" serviceName) |> ignore
-        try
-            kubectlf "port-forward" (sprintf "service/%s %d:%d" serviceName here there)
-        with _ -> ()
-    with _ -> 
-        //operation timed out
-        kubectl false "describe" <| sprintf "pod -l app=%s" serviceName |> ignore
-        kubectl false "logs" <| sprintf "service/%s-svc" serviceName |> ignore
-    
     
 let startJob silent jobName = 
     let kubectl = kubectl silent
@@ -169,7 +157,12 @@ create "start-kube" (fun _ ->
 )
 
 create "deploy" (fun _ ->
-    
+    if System.IO.File.Exists globalEnvFile then
+        printfn "Using env file"
+        kubectl false "apply" ("-f " + globalEnvFile) |> ignore
+    else
+        printfn "Using env from var"
+        run false "echo" "." <| sprintf "'$%s' | kubectl apply -f -" (Environment.environVarOrFail "ENV_FILE") |> ignore
     let dirs = System.IO.Directory.EnumerateDirectories("..","kubernetes", System.IO.SearchOption.AllDirectories)
     let res = 
         dirs
@@ -187,15 +180,27 @@ create "deploy" (fun _ ->
             ) |> Option.isSome
         )
         |> Seq.sumBy(applyk)
-    if res > 0 then failwith "Failed applying all"
-    printfn "Looked in %A" dirs
-    if System.IO.File.Exists globalEnvFile then
-        printfn "Using env file"
-        kubectl false "apply" ("-f " + globalEnvFile) |> ignore
-    else
-        printfn "Using env from var"
-        run false "echo" <| sprintf "'$%s' | kubectl apply -f -" (Environment.environVarOrFail "ENV_FILE") |> ignore
+    if res > 0 then failwith "Failed applying all"    
 )
+
+let awaitService serviceName =
+    create ("await-" + serviceName) (fun _ ->
+        try
+            kubectl true "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=120s" serviceName) |> ignore
+        with _ -> 
+            //operation timed out
+            kubectl false "describe" <| sprintf "pod -l app=%s" serviceName |> ignore
+            kubectl false "logs" <| sprintf "service/%s-svc" serviceName |> ignore
+            failwithf "Service error " + serviceName
+    )
+
+let forwardServicePort serviceName here there =
+    create ("port-forward-" + serviceName) (fun _ ->
+        kubectl true "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=120s" serviceName) |> ignore
+        try
+            kubectlf "port-forward" (sprintf "service/%s %d:%d" serviceName here there)
+        with _ -> () 
+    )
 
 create "port-forwarding" (fun _ ->
     [
@@ -203,7 +208,11 @@ create "port-forwarding" (fun _ ->
       "db", 5984, 5984
       "uniformdata", 8099, 8085
       "rabbitmq-service", 5672, 5672
-    ] |> List.iter(fun (serviceName, localPort, podPort) -> forwardServicePort serviceName localPort podPort)
+    ] |> List.iter(fun (serviceName, localPort, podPort) -> 
+         awaitService serviceName
+             ==> forwardServicePort serviceName localPort podPort
+         |> ignore
+    )
 )
 
 create "publish" (fun _ ->    

@@ -13,18 +13,7 @@ nuget RabbitMQ.Client
 nuget Accord.MachineLearning
 nuget Deedle
 nuget FParsec
-nuget FSharp.Data
-
-group workbench
-    source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
-    framework: auto-detect
-    storage: none
-    
-    nuget Argu
-    nuget Saturn = 0.13.1
-    nuget Giraffe
-    nuget FSharp.Data
-    nuget FSharp.Core ~> 5
+nuget Argu
 
 group test
     source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"

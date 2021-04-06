@@ -41,7 +41,7 @@ type Env = JsonProvider<"""{
       "RABBIT_PORT": "jlajsdflkajsdfl",
       "RABBIT_USER": "jlajsdflkajsdfl",
       "RABBIT_PASSWORD": "jlajsdflkajsdfl",
-      "AzureDevopsPat": "lksdjaflkj"
+      "AZURE_DEVOPS_PAT": "lksdjaflkj"
     }
   }""">
 let globalEnvFile = Fake.IO.Path.getFullName "../env.JSON"

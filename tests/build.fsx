@@ -114,6 +114,7 @@ let forwardServicePort serviceName here there =
     try
         kubectl true "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=120s" serviceName) |> ignore
     with _ -> 
+        kubectl false "describe" <| sprintf "pod -l %s" serviceName |> ignore
         kubectl false "logs" <| sprintf "service/%-svc" serviceName |> ignore
     try
         kubectlf "port-forward" (sprintf "service/%s %d:%d" serviceName here there)

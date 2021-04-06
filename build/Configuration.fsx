@@ -1,5 +1,15 @@
 #r "paket: //
-nuget FSharp.Data //"
+nuget FSharp.Data //
+nuget Fake ~> 5 //
+nuget Fake.Core ~> 5 //
+nuget Fake.Core.Target  //
+nuget Fake.DotNet //
+nuget Fake.DotNet.AssemblyInfoFile //
+nuget Fake.DotNet.Cli //
+nuget Fake.DotNet.NuGet //
+nuget Fake.IO.FileSystem //
+nuget Fake.Tools.Git ~> 5 //"
+#load "../.fake/build.fsx/intellisense.fsx"
 
 #if !FAKE
 #r "netstandard"
@@ -32,16 +42,21 @@ module Environment =
           "AZURE_DEVOPS_PAT": "lksdjaflkj"
         }
       }""">
-    type Environment(globalEnvFile) =
-        let globalEnvFile = System.IO.Path.GetFullPath globalEnvFile
-        let env = 
-            (if System.IO.File.Exists globalEnvFile then
-                printfn "Loading global env file"
-                Env.Load globalEnvFile
-             else
-                Environment.environVarOrFail "ENV_FILE"
-                |> Env.Parse).Data
-        member __.AzureDevopsPat with get() = env.AzureDevopsPat |> fromBase64
-        member __.MasterUser with get() = env.MasterUser |> fromBase64
-        member __.CouchdbUser with get() = env.CouchdbUser |> fromBase64
-        member __.CouchdbPassword with get() = env.CouchdbPassword |> fromBase64
+    type Environment private(azureDevopsPat,masterUser, dbUser,dbPwd) =
+        member __.AzureDevopsPat with get() = azureDevopsPat
+        member __.MasterUser with get() = masterUser
+        member __.CouchdbUser with get() = dbUser
+        member __.CouchdbPassword with get() = dbPwd
+
+        new(globalEnvFile : string) =
+            let globalEnvFile = System.IO.Path.GetFullPath globalEnvFile
+            let env = 
+                (if System.IO.File.Exists globalEnvFile then
+                    Env.Load globalEnvFile
+                 else
+                    Fake.Core.Environment.environVarOrFail "ENV_FILE"
+                    |> Env.Parse).Data
+            Environment(env.AzureDevopsPat |> fromBase64,
+                        env.MasterUser |> fromBase64,
+                        env.CouchdbUser |> fromBase64,
+                        env.CouchdbPassword |> fromBase64)

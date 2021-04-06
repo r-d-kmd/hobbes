@@ -27,7 +27,8 @@ let env = Configuration.Environment.Environment(globalEnvFile)
 let masterkey = env.MasterUser
 let inline (<==) a b = 
     b ==> a
-    
+
+
 let createProcess silent command workingDir args =
     let arguments = 
         match args |> String.split ' ' with
@@ -163,7 +164,6 @@ create "deploy" (fun _ ->
         kubectl false "apply" ("-f " + globalEnvFile) |> ignore
     else
         printfn "Using env from var"
-        run false "echo" "." <| sprintf "'$%s' | kubectl apply -f -" (Environment.environVarOrFail "ENV_FILE") |> ignore
     let dirs = System.IO.Directory.EnumerateDirectories("..","kubernetes", System.IO.SearchOption.AllDirectories)
     let res = 
         dirs

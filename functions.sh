@@ -18,8 +18,13 @@ White='\033[1;37m'
 NoColor='\033[0m'
 
 echo "Evaluating"
-function()
-if [[ $(uname -s) == CYGWIN_NT* ]] || [[ $(uname -s) == "Darwin" ]] || [[ $(uname -s) == MINGW64_NT* ]]; then eval $(minikube docker-env); else eval $(SHELL=/bin/bash; minikube -p minikube docker-env); fi
+
+if [[ $(uname -s) == CYGWIN_NT* ]] || [[ $(uname -s) == "Darwin" ]] || [[ $(uname -s) == MINGW64_NT* ]]
+then 
+    eval $(minikube docker-env)
+else 
+    eval $(SHELL=/bin/bash; minikube -p minikube docker-env)
+fi
 #source <(kubectl completion bash)
 
 if [[ $(uname -s) == CYGWIN_NT* ]]

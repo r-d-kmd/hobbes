@@ -10,6 +10,7 @@ nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //"
 #load "../.fake/build.fsx/intellisense.fsx"
+#load "../build/Configuration.fsx"
 
 #if !FAKE
 #r "netstandard"
@@ -20,40 +21,10 @@ open Fake.Core
 open FSharp.Data
 open Fake.Core.TargetOperators
 
-let fromBase64 s =
-    (System.Convert.FromBase64String s
-     |> System.Text.Encoding.Default.GetString).Trim()
+let globalEnvFile = "../env.JSON"
+let env = Configuration.Environment.Environment(globalEnvFile)
 
-type Env = JsonProvider<"""{ 
-    "apiVersion": "v1", 
-    "kind": "Secret",
-    "metadata": {
-      "name": "env"
-    },
-    "type": "Opaque",
-    "data": {
-      "KEY_SUFFIX": "jlajsdflkajsdfl",
-      "COUCHDB_PASSWORD": "jlajsdflkajsdfl",
-      "COUCHDB_USER": "jlajsdflkajsdfl",
-      "SERVER_PORT": "jlajsdflkajsdfl",
-      "MASTER_USER": "jlajsdflkajsdfl",
-      "RABBIT_HOST": "jlajsdflkajsdfl",
-      "RABBIT_PORT": "jlajsdflkajsdfl",
-      "RABBIT_USER": "jlajsdflkajsdfl",
-      "RABBIT_PASSWORD": "jlajsdflkajsdfl",
-      "AZURE_DEVOPS_PAT": "lksdjaflkj"
-    }
-  }""">
-let globalEnvFile = Fake.IO.Path.getFullName "../env.JSON"
-let env = 
-    if System.IO.File.Exists globalEnvFile then
-        printfn "Loading global env file"
-        Env.Load globalEnvFile
-    else
-        Environment.environVarOrFail "ENV_FILE"
-        |> Env.Parse
-
-let masterkey = env.Data.MasterUser |> fromBase64
+let masterkey = env.MasterUser
 let inline (<==) a b = 
     b ==> a
     
@@ -97,8 +68,8 @@ let get =
     request "get" masterkey ""
     >> Data.Parse
 
-let dbUser = (env.Data.CouchdbUser |> fromBase64) 
-let dbPwd = (env.Data.CouchdbPassword |> fromBase64) 
+let dbUser = env.CouchdbUser 
+let dbPwd = env.CouchdbPassword 
 type DocList = JsonProvider<"""{
   "total_rows": 13,
   "offset": 0,
@@ -216,7 +187,7 @@ create "deploy" (fun _ ->
     printfn "Looked in %A" dirs
     if System.IO.File.Exists globalEnvFile then
         printfn "Using env file"
-        kubectl false "apply" "-f ../env.JSON" |> ignore
+        kubectl false "apply" ("-f " + globalEnvFile) |> ignore
     else
         printfn "Using env from var"
         run false "echo" <| sprintf "'$%s' | kubectl apply -f -" (Environment.environVarOrFail "ENV_FILE") |> ignore
@@ -234,7 +205,7 @@ create "port-forwarding" (fun _ ->
 create "publish" (fun _ ->    
     let res = 
         docker Build "../tools/workbench" 
-        <| sprintf "--build-arg FEED_PAT_ARG=%s -t kmdrd/workbench ." (env.Data.AzureDevopsPat)
+        <| sprintf "--build-arg FEED_PAT_ARG=%s -t kmdrd/workbench ." (env.AzureDevopsPat)
     
     if res = 0 then
         startJob false "publish"

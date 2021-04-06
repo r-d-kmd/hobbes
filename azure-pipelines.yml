@@ -57,6 +57,7 @@ stages:
         - script: sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context
           displayName: Fix permissions
         - script: |
+            eval $(minikube docker-env)
             dotnet fake build --target builder
           env:
             ENV_FILE: $(ENV_FILE)
@@ -64,6 +65,7 @@ stages:
           displayName: Build builder
 
         - script: |
+            eval $(minikube docker-env)
             dotnet fake build --parallel 4
           env:
             ENV_FILE: $(ENV_FILE)
@@ -71,7 +73,7 @@ stages:
           displayName: Build the world
 
         - script: |            
-            source functions.sh
+            eval $(minikube docker-env)
             cd tests/
             dotnet fake build --target setup-test
           displayName: Setup integration tests

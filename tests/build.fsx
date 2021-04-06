@@ -195,17 +195,16 @@ create "deploy" (fun _ ->
 
 create "port-forwarding" (fun _ ->
     [
-      "gateway-svc", 8080, 80
-      "db-svc", 5984, 5984
+      "gateway", 8080, 80
+      "db", 5984, 5984
+      "uniformdata", 8099, 8085
       "rabbitmq-service", 5672, 5672
-      "uniformdata-svc", 8099, 8085
     ] |> List.iter(fun (serviceName, localPort, podPort) -> forwardServicePort serviceName localPort podPort)
 )
 
 create "publish" (fun _ ->    
     let res = 
-        docker Build "../tools/workbench" 
-        <| sprintf "--build-arg FEED_PAT_ARG=%s -t kmdrd/workbench ." (env.AzureDevopsPat)
+        docker Build "../tools/workbench" "-t kmdrd/workbench ."
     
     if res = 0 then
         startJob false "publish"

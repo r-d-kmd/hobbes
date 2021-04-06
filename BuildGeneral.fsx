@@ -239,6 +239,7 @@ module BuildGeneral =
     )
     
     (Targets.Generic "start-kube") ==> Targets.PreApps
+    (Targets.Generic "start-kube") ==> Targets.Builder
     Targets.Builder ==> Targets.PushApps
     Targets.Builder ?=> Targets.PreApps
     Targets.Build ==> Targets.All

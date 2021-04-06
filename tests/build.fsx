@@ -203,18 +203,19 @@ let forwardServicePort serviceName here there =
     )
 
 create "port-forwarding" ignore
+
 [
   "gateway", 8080, 80
   "db", 5984, 5984
   "uniformdata", 8099, 8085
 ] |> List.iter(fun (serviceName, localPort, podPort) -> 
-     awaitService serviceName
+     let target = awaitService serviceName
+     "deploy" ?=> target |> ignore
+     target
          ==> forwardServicePort serviceName localPort podPort
          ==> "port-forwarding"
      |> ignore
 )
-
-forwardServicePort "rabbitmq-service" 5672 5672 ==> "port-forwarding" |> ignore
 
 create "publish" (fun _ ->    
     let res = 

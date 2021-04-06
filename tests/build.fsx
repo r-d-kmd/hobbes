@@ -141,11 +141,12 @@ type DockerCommand =
 let docker (command : DockerCommand) workingDir arguments =
     run false "docker" workingDir (command.ToString() + " " + arguments)
 
+Target.create "All" ignore
+
 let create name f =
     Target.create name f
-    name ==> "All"
-
-Target.create "All" ignore
+    name ==> "All" |> ignore
+    name
 
 create "build" (fun _ ->
     run false "dotnet" ".." "fake build" |> ignore
@@ -191,29 +192,29 @@ let awaitService serviceName =
             //operation timed out
             kubectl false "describe" <| sprintf "pod -l app=%s" serviceName |> ignore
             kubectl false "logs" <| sprintf "service/%s-svc" serviceName |> ignore
-            failwithf "Service error " + serviceName
+            failwithf "Service %s didn't start" serviceName
     )
 
 let forwardServicePort serviceName here there =
     create ("port-forward-" + serviceName) (fun _ ->
-        kubectl true "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=120s" serviceName) |> ignore
         try
             kubectlf "port-forward" (sprintf "service/%s %d:%d" serviceName here there)
         with _ -> () 
     )
 
-create "port-forwarding" (fun _ ->
-    [
-      "gateway", 8080, 80
-      "db", 5984, 5984
-      "uniformdata", 8099, 8085
-      "rabbitmq-service", 5672, 5672
-    ] |> List.iter(fun (serviceName, localPort, podPort) -> 
-         awaitService serviceName
-             ==> forwardServicePort serviceName localPort podPort
-         |> ignore
-    )
+create "port-forwarding" ignore
+[
+  "gateway", 8080, 80
+  "db", 5984, 5984
+  "uniformdata", 8099, 8085
+] |> List.iter(fun (serviceName, localPort, podPort) -> 
+     awaitService serviceName
+         ==> forwardServicePort serviceName localPort podPort
+         ==> "port-forwarding"
+     |> ignore
 )
+
+forwardServicePort "rabbitmq-service" 5672 5672 ==> "port-forwarding" |> ignore
 
 create "publish" (fun _ ->    
     let res = 

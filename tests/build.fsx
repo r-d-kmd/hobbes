@@ -118,8 +118,8 @@ let forwardServicePort serviceName here there =
         with _ -> ()
     with _ -> 
         //operation timed out
-        kubectl false "describe" <| sprintf "pod -l %s" serviceName |> ignore
-        kubectl false "logs" <| sprintf "service/%-svc" serviceName |> ignore
+        kubectl false "describe" <| sprintf "pod -l app=%s" serviceName |> ignore
+        kubectl false "logs" <| sprintf "service/%s-svc" serviceName |> ignore
     
     
 let startJob silent jobName = 

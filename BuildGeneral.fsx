@@ -172,11 +172,13 @@ module BuildGeneral =
         run "docker" dir (arguments.Replace("  "," ").Trim())
 
     let feedPat = 
-        let e = env.FeedPat |> System.Convert.FromBase64String |> System.Text.Encoding.Default.GetString
+        let e = env.FeedPat 
         printfn "***************************"
-        printfn "%s" e
+        printfn "Feed pat: (%s)" e
         printfn "***************************"
-        e
+        e 
+        |> System.Convert.FromBase64String 
+        |> System.Text.Encoding.Default.GetString
 
 
     let assemblyVersion = Environment.environVarOrDefault "VERSION" "2.0.default"

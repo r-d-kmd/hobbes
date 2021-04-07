@@ -52,19 +52,20 @@ stages:
         # Start Minikube
         - script: |
             minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
-            echo '$ENV_FILE' | kubectl apply -f -
-          env:
-              ENV_FILE: $(ENV_FILE)
           displayName: Start Minikube
-
+        
         # Fix permissions issue in AzurePipelines
         - script: sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context
           displayName: Fix permissions
+
+        # Set up cluster
+        - script: echo '$(ENV_FILE)' | kubectl apply -f -
+          displayName: Apply kubernetes environment file
+
         - script: |
             eval $(minikube docker-env)
             dotnet fake build --target builder
           env:
-            ENV_FILE: $(ENV_FILE)
             VERSION: "1.2021.$(Build.BuildNumber)"
           displayName: Build builder
 

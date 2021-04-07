@@ -105,10 +105,9 @@ module Program =
                                        HttpRequestHeaders.BasicAuth pat ""
                                        HttpRequestHeaders.ContentType HttpContentTypes.Json
                                     ]
-                                ) |> ignore
+                                )
                 if res.StatusCode > 300 || res.StatusCode < 200 then
-                   Log.logf "Failed to publish transformations. [%s]. %d - %s" url resp.StatusCode (resp |> Http.readBody)
-                   reraise()
+                   Log.errorf "Failed to publish transformations. [%s]. %d - %s" url resp.StatusCode (resp |> Http.readBody)
             )
 
             configurations

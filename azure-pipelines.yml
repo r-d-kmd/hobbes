@@ -50,7 +50,11 @@ stages:
           displayName: Pull minikube image
 
         # Start Minikube
-        - script: minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
+        - script: |
+            minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
+            echo '$ENV_FILE' | kubectl apply -f -
+          env:
+              ENV_FILE: $(ENV_FILE)
           displayName: Start Minikube
 
         # Fix permissions issue in AzurePipelines

@@ -95,7 +95,7 @@ module Program =
             |> Seq.iter(fun doc ->
                 Log.logf "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
                 
-                let res = 
+                let resp = 
                     Http.Request(urlTransformations, 
                                  httpMethod = "PUT",
                                  body = TextRequest doc,
@@ -106,8 +106,8 @@ module Program =
                                        HttpRequestHeaders.ContentType HttpContentTypes.Json
                                     ]
                                 )
-                if res.StatusCode > 300 || res.StatusCode < 200 then
-                   Log.errorf "Failed to publish transformations. [%s]. %d - %s" url resp.StatusCode (resp |> Http.readBody)
+                if resp.StatusCode > 300 || resp.StatusCode < 200 then
+                   Log.errorf "Failed to publish transformations. [%s]. %d - %s" urlTransformations resp.StatusCode (resp |> Http.readBody)
             )
 
             configurations

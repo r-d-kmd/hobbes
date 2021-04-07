@@ -67,6 +67,7 @@ stages:
             dotnet fake build --target builder
           env:
             VERSION: "1.2021.$(Build.BuildNumber)"
+            ENV_FILE: "$(ENV_FILE)"
           displayName: Build builder
 
         - script: |
@@ -74,6 +75,7 @@ stages:
             dotnet fake build --parallel 4
           env:
             VERSION: "1.2021.$(Build.BuildNumber)"
+            ENV_FILE: "$(ENV_FILE)"
           displayName: Build the world
 
         - script: |            
@@ -82,9 +84,7 @@ stages:
             dotnet fake build --target setup-test
           displayName: Setup integration tests
           env:
-            MASTER_USER: $(MASTER_KEY)
-            COUCHDB_USER: "admin"
-            COUCHDB_PASSWORD: "password"
+            ENV_FILE: "$(ENV_FILE)"
         - task: DotNetCoreCLI@2
           inputs:
            command: 'custom'
@@ -93,9 +93,7 @@ stages:
            workingDirectory: 'tests/'
           displayName: Run integration tests
           env:
-            MASTER_USER: $(MASTER_KEY)
-            COUCHDB_USER: "admin"
-            COUCHDB_PASSWORD: "password"
+            ENV_FILE: "$(ENV_FILE)"
             
         - script: |
             docker push kmdrd/workbench

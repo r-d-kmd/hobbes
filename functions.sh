@@ -398,7 +398,7 @@ function setDefaultVersion(){
 function setFeedPat(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
-    export FEED_PAT="$(echo "$(cat env.JSON | jq -r .data.FEED_PAT)" | base64 -d)"
+    export FEED_PAT="$(echo "$(cat env.JSON | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
     cd $CURRENT_DIR
 }
 

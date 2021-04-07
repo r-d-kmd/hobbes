@@ -2,8 +2,8 @@ version 6.0.0-beta8
 source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
 framework: auto-detect
 
-nuget FSharp.Core ~> 5
-nuget Saturn = 0.13.1
+nuget FSharp.Core
+nuget Saturn
 nuget Giraffe
 nuget FSharp.Data
 nuget Microsoft.Extensions.PlatformAbstractions
@@ -14,6 +14,8 @@ nuget Accord.MachineLearning
 nuget Deedle
 nuget FParsec
 nuget Argu
+nuget hobbes.core
+nuget hobbes.web
 
 group test
     source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
@@ -59,13 +61,6 @@ group visualizer
     nuget FSharp.Formatting
     
     nuget FSharp.Core ~> 5
-
-group docker
-    source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
-    framework: auto-detect
-
-    nuget hobbes.core
-    nuget hobbes.web
 
 group visualizer.web
     source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"

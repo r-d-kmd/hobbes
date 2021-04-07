@@ -95,18 +95,19 @@ module Program =
             |> Seq.iter(fun doc ->
                 Log.logf "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
                 
-                try
+                let res = 
                     Http.Request(urlTransformations, 
                                  httpMethod = "PUT",
                                  body = TextRequest doc,
+                                 silentHttpErrors = true,
                                  headers = 
                                     [
                                        HttpRequestHeaders.BasicAuth pat ""
                                        HttpRequestHeaders.ContentType HttpContentTypes.Json
                                     ]
                                 ) |> ignore
-                with e ->
-                   Log.logf "Failed to publish transformations. URL: %s Msg: %s" urlTransformations e.Message
+                if res.StatusCode > 300 || res.StatusCode < 200 then
+                   Log.logf "Failed to publish transformations. [%s]. %d - %s" url resp.StatusCode (resp |> Http.readBody)
                    reraise()
             )
 

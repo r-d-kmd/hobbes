@@ -73,7 +73,6 @@ stages:
             eval $(minikube docker-env)
             dotnet fake build --parallel 4
           env:
-            ENV_FILE: $(ENV_FILE)
             VERSION: "1.2021.$(Build.BuildNumber)"
           displayName: Build the world
 
@@ -84,7 +83,6 @@ stages:
           displayName: Setup integration tests
           env:
             MASTER_USER: $(MASTER_KEY)
-            ENV_FILE: $(ENV_FILE)
             COUCHDB_USER: "admin"
             COUCHDB_PASSWORD: "password"
         - task: DotNetCoreCLI@2
@@ -96,7 +94,6 @@ stages:
           displayName: Run integration tests
           env:
             MASTER_USER: $(MASTER_KEY)
-            ENV_FILE: $(ENV_FILE)
             COUCHDB_USER: "admin"
             COUCHDB_PASSWORD: "password"
             

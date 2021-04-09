@@ -153,13 +153,23 @@ create "build" (fun _ ->
     run false "dotnet" ".." "fake build" |> ignore
 )
 
-create "deploy" (fun _ ->
+create "deploy" (fun x ->
+    let patch_dir =
+        match (x.Context.Arguments.[0].ToString()) with
+        | "local" -> "local_patches"
+        | "prod"  -> "prod_patches"
+        | _       -> ""
     if System.IO.File.Exists globalEnvFile then
         printfn "Using env file"
         kubectl false "apply" ("-f " + globalEnvFile) |> ignore
     else
         printfn "Using env from var"
-    let dirs = System.IO.Directory.EnumerateDirectories("..","kubernetes", System.IO.SearchOption.AllDirectories)
+    let dirs = System.IO.Directory.EnumerateDirectories("..", "kubernetes/" + patch_dir, System.IO.SearchOption.AllDirectories)
+    dirs
+        |> Seq.iter(fun dir ->
+            System.IO.Directory.Move(sprintf "%s/kustomization.yaml" dir, sprintf"../%s/kustomization.yaml" dir) 
+        )
+    let dirs = System.IO.Directory.EnumerateDirectories("..", "kubernetes", System.IO.SearchOption.AllDirectories)
     let res = 
         dirs
         |> Seq.filter(fun dir ->
@@ -176,7 +186,12 @@ create "deploy" (fun _ ->
             ) |> Option.isSome
         )
         |> Seq.sumBy(applyk)
-    if res > 0 then failwith "Failed applying all"    
+    if res > 0 then failwith "Failed applying all"
+    let dirs = System.IO.Directory.EnumerateDirectories("..", "kubernetes", System.IO.SearchOption.AllDirectories)
+    dirs
+        |> Seq.iter(fun dir ->
+            System.IO.Directory.Move(sprintf "%s/kustomization.yaml" dir, sprintf "%s/%s/kustomization.yaml" dir patch_dir) 
+        )    
 )
 
 let awaitService serviceName =

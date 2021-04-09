@@ -153,11 +153,6 @@ create "build" (fun _ ->
     run false "dotnet" ".." "fake build" |> ignore
 )
 
-create "start-kube" (fun _ ->
-    run false "minikube" "." "start" |> ignore
-    run false "bash"  "." "-c eval $(minikube docker-env)" |> ignore
-)
-
 create "deploy" (fun _ ->
     if System.IO.File.Exists globalEnvFile then
         printfn "Using env file"
@@ -282,6 +277,7 @@ create "data" (fun _ ->
         |> areEqual first.SprintNumber None
         |> areEqual first.State  "Done"
     printfn "Successes: %d. Failures: %d" successes failed
+    if failed > 0 then failwith "One or more tests failed"
 )
 
 Target.create "test" ignore
@@ -296,15 +292,11 @@ Target.create "setup-test" ignore
    
 
 "setup-test"
-   <== "start-kube"
    <== "deploy"
    <== "port-forwarding"
    <== "publish"
    <== "sync"
    <== "complete-sync"
-
-"start-kube"
-  ?=> "deploy"
 
 "build"
   ?=> "deploy"

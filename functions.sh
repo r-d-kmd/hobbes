@@ -402,6 +402,13 @@ function setFeedPat(){
     cd $CURRENT_DIR
 }
 
+function vscode(){
+    skipRestore
+    setDefaultVersion
+    setFeedPat
+    code $1
+}
+
 printf "Project home folder is:\n"
 printf " - ${LightBlue}$SCRIPT_DIR\n"
 printf "${NoColor}Apps found:\n${LightBlue}"

@@ -2,7 +2,7 @@
 .vs/
 .paket/
 .vscode/
-common/
+
 kubernetes/
 libs/
 packages/

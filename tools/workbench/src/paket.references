@@ -1,9 +1,8 @@
 Thoth.Json.Net
-
-group workbench
-    Argu
-    FSharp.Data
+Argu
+FSharp.Data
 
 group docker
     hobbes.core
     hobbes.web
+ 

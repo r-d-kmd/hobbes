@@ -2,7 +2,5 @@ FSharp.Data
 FSharp.Core
 Newtonsoft.Json
 RabbitMQ.Client
-    
-group docker
-    hobbes.core
-    hobbes.web
+hobbes.core
+hobbes.web

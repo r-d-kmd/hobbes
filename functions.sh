@@ -18,10 +18,11 @@ White='\033[1;37m'
 NoColor='\033[0m'
 
 echo "Evaluating"
+
 if [[ $(uname -s) == CYGWIN_NT* ]] || [[ $(uname -s) == "Darwin" ]] || [[ $(uname -s) == MINGW64_NT* ]]
-then
+then 
     eval $(minikube docker-env)
-else
+else 
     eval $(SHELL=/bin/bash; minikube -p minikube docker-env)
 fi
 #source <(kubectl completion bash)
@@ -133,41 +134,50 @@ function clean(){
     kubectl delete --all job
     kubectl delete --all hpa
 }
-function build(){    
+function build(){   
+
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
-    if [ "$1" != "builder" ]; then        
-        if [[ "$(docker images -q builder 2> /dev/null)" == "" ]]; then
-            build builder
-        fi
-    fi 
-    re='^[0-9]+$'
-    if [ -z "$1" ]
-    then 
-        dotnet fake build
-    elif [[ $1 =~ $re ]]
-    then
-        build "build" $1 
-    else
-        for LAST in $@; do :; done
-        if [[ $LAST =~ $re ]]
-        then
-            P=$LAST
-            echo "Running with $P parallel builds"
-        else
-            P=1
-        fi
-        for target in "$@"
-        do
-            if [[ $target =~ $re ]]
-            then
-               echo "Done building"
-            else
-                dotnet fake build --target "$target" --parallel $P
+    (
+        set -e
+        if [ "$1" != "builder" ]; then        
+            if [[ "$(docker images -q builder 2> /dev/null)" == "" ]]; then
+                build builder
             fi
-        done
-    fi
+        fi 
+        re='^[0-9]+$'
+        if [ -z "$1" ]
+        then 
+            dotnet fake build
+        elif [[ $1 =~ $re ]]
+        then
+            build "build" $1 
+        else
+            for LAST in $@; do :; done
+            if [[ $LAST =~ $re ]]
+            then
+                P=$LAST
+                echo "Running with $P parallel builds"
+            else
+                P=1
+            fi
+            for target in "$@"
+            do
+                if [[ $target =~ $re ]]
+                then
+                echo "Done building"
+                else
+                    dotnet fake build --target "$target" --parallel $P
+                fi
+            done
+        fi
+    )
+    res=$?
     cd $CURRENT_DIR
+    if [ $res -ne 0 ]; then
+        echo "We have error"
+        exit $res
+    fi
 }
 
 function describe(){
@@ -389,8 +399,15 @@ function setDefaultVersion(){
 function setFeedPat(){
     local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
-    export FEED_PAT="$(echo "$(cat env.JSON | jq -r .data.FEED_PAT)" | base64 -d)"
+    export FEED_PAT="$(echo "$(cat env.JSON | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
     cd $CURRENT_DIR
+}
+
+function vscode(){
+    skipRestore
+    setDefaultVersion
+    setFeedPat
+    code $1
 }
 
 printf "Project home folder is:\n"

@@ -110,9 +110,6 @@ module Broker =
     type Message<'a> = 
         | Message of 'a
 
-   
-        
-
     let private user = 
         match env "RABBIT_USER" null with
         null -> failwith "'USER' not configured"
@@ -162,12 +159,15 @@ module Broker =
                     return! inner (tries + 1)
                 }
             async{
+
                 try
                     let channel = init()
                     declare channel Queue.DeadLetterQueue
                 with e -> 
                     if tries % (60000 / waitms) = 0 then //write the message once every minute
-                        printfn "Queue not yet ready. Message: %s" e.Message
+                        printfn "Queue (http://%s:%d) not yet ready. Message: %s" host port e.Message
+                    if tries / (60000 / waitms) > 5 then
+                        failwith "Can't connect to queue"
                     do! retry()
             } 
         inner 0

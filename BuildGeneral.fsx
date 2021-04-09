@@ -1,4 +1,5 @@
 #r "paket:
+nuget FSharp.Data //
 nuget Fake ~> 5 //
 nuget Fake.Core ~> 5 //
 nuget Fake.Core.Target  //
@@ -9,7 +10,7 @@ nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //"
 #load "./.fake/build.fsx/intellisense.fsx"
-
+#load "build/Configuration.fsx"
 
 #if !FAKE
 #r "netstandard"
@@ -41,7 +42,46 @@ module BuildGeneral =
            | Targets.All -> "All"
            | Targets.PushApps -> "PushApps"
            | Targets.Generic s -> s
+    
+    
+    let globalEnvFile = "env.JSON"
+    let env = Configuration.Environment.Environment(globalEnvFile)
 
+    let ignoreLines =
+        File.ReadAllLines ".buildignore"
+        |> Seq.fold(fun lines l ->
+            if Directory.Exists l then
+               (DirectoryInfo(l).FullName)::lines
+            elif File.exists l then
+                (FileInfo(l).FullName)::lines
+            else
+               lines
+        ) ([])
+    printfn "Ignores: %A" ignoreLines
+    let ignores fileOrDir = 
+        let fullName = 
+            if Directory.Exists fileOrDir then
+                DirectoryInfo(fileOrDir).FullName |> Some
+            elif File.exists fileOrDir then
+                FileInfo(fileOrDir).FullName |> Some
+            else
+                None
+        match fullName with
+        None -> 
+            false
+        | Some f ->
+            ignoreLines
+            |> List.exists(fun d -> 
+               if f = d then true
+               elif Path.isDirectory d then
+                   if File.Exists(f) then
+                       FileInfo(f).FullName.StartsWith d 
+                   else
+                       false
+               else
+                 false
+            )
+            
     open Fake.Core.TargetOperators
     let inline (==>) (lhs : Targets) (rhs : Targets) =
         Targets.Generic((targetName lhs) ==> (targetName rhs))
@@ -100,13 +140,7 @@ module BuildGeneral =
             System.String.Join(" ",args) 
         run "docker" dir (arguments.Replace("  "," ").Trim())
 
-    let feedPat = 
-        match "FEED_PAT" |> Environment.environVarOrNone  with
-        None -> 
-            eprintfn "No PAT for the nuget feed was provided"
-            ""
-        | Some argFeed -> 
-            argFeed
+    let feedPat = env.AzureDevopsPat
 
     let assemblyVersion = Environment.environVarOrDefault "VERSION" "2.0.default"
     let dockerOrg = Environment.environVarOrDefault "DOKCER_ORG" "hobbes.azurecr.io" //Change to docker hub
@@ -118,46 +152,10 @@ module BuildGeneral =
 
     let projects : seq<string*string> = 
         let enumerateProjectFiles (dir : DirectoryInfo) =
-            let ignoreLines =
-                File.ReadAllLines ".buildignore"
-                |> Seq.fold(fun ignores l ->
-                    if Directory.Exists l then
-                       (DirectoryInfo(l).FullName)::ignores
-                    elif File.exists l then
-                        (FileInfo(l).FullName)::ignores
-                    else
-                       ignores
-                ) ([])
-            let ignores f = 
-                let fullName = 
-                    if Directory.Exists f then
-                        DirectoryInfo(f).FullName |> Some
-                    elif File.exists f then
-                        FileInfo(f).FullName |> Some
-                    else
-                        None
-                match fullName with
-                None -> false
-                | Some f ->
-                    let rec inDir (d : DirectoryInfo) (fDir : DirectoryInfo) = 
-                       if fDir = null then false
-                       else
-                          fDir.FullName = d.FullName || inDir d fDir.Parent 
-
-                    ignoreLines
-                    |> List.exists(fun d -> 
-                       if f = d then true
-                       elif Path.isDirectory d then
-                           if File.Exists(f) then
-                               FileInfo(f).Directory |> inDir (DirectoryInfo(d))
-                           else false
-                       else
-                         false
-                    )
+            
             dir.EnumerateFiles("*.?sproj",SearchOption.AllDirectories)
             |> Seq.filter(fun n ->
                 let name = n.Name.ToLower()
-                let fullName = n.FullName
                 name.EndsWith(".tests.fsproj") |> not && //exclude test projects
                 name.EndsWith(".tests.csproj") |> not && //exclude test projects
                 ignores n.FullName |> not
@@ -219,6 +217,11 @@ module BuildGeneral =
     create Targets.PreApps ignore
     create Targets.PostApps ignore
 
+    
+    create (Targets.Generic "start-kube") (fun _ ->
+        run  "minikube" "." "start" |> ignore
+        run  "bash"  "." "-c eval $(minikube docker-env)" |> ignore
+    )
 
     projects
     |> Seq.iter(fun (name,dir) ->
@@ -234,7 +237,9 @@ module BuildGeneral =
             let file = Some(path)
             docker (Build(file,tag, ["FEED_PAT_ARG", feedPat])) "."
     )
-
+    
+    (Targets.Generic "start-kube") ==> Targets.PreApps
+    (Targets.Generic "start-kube") ==> Targets.Builder
     Targets.Builder ==> Targets.PushApps
     Targets.Builder ?=> Targets.PreApps
     Targets.Build ==> Targets.All

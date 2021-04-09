@@ -9,7 +9,8 @@ nuget Fake.DotNet.Cli //
 nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //"
-//#load "./.fake/tests.fsx/intellisense.fsx"
+#load "../.fake/build.fsx/intellisense.fsx"
+#load "../build/Configuration.fsx"
 
 #if !FAKE
 #r "netstandard"
@@ -20,14 +21,13 @@ open Fake.Core
 open FSharp.Data
 open Fake.Core.TargetOperators
 
-let fromBase64 s =
-    (System.Convert.FromBase64String s
-     |> System.Text.Encoding.Default.GetString).Trim()
+let globalEnvFile = "../env.JSON"
+let env = Configuration.Environment.Environment(globalEnvFile)
 
-type Env = JsonProvider<"""../env.JSON""">
-let env = Env.GetSample()
+let masterkey = env.MasterUser
+let inline (<==) a b = 
+    b ==> a
 
-let masterkey = env.Data.MasterUser |> fromBase64
 
 let createProcess silent command workingDir args =
     let arguments = 
@@ -69,8 +69,8 @@ let get =
     request "get" masterkey ""
     >> Data.Parse
 
-let dbUser = (env.Data.CouchdbUser |> fromBase64) 
-let dbPwd = (env.Data.CouchdbPassword |> fromBase64) 
+let dbUser = env.CouchdbUser 
+let dbPwd = env.CouchdbPassword 
 type DocList = JsonProvider<"""{
   "total_rows": 13,
   "offset": 0,
@@ -110,14 +110,6 @@ let applyk dir =
         run true "kubectl" dir ("apply -f " + envFile)
     else
         0
-
-let forwardServicePort serviceName here there =
-    try
-        kubectl true "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=30s" serviceName) |> ignore
-    with _ -> ()
-    try
-        kubectlf "port-forward" (sprintf "service/%s %d:%d" serviceName here there)
-    with _ -> ()
     
 let startJob silent jobName = 
     let kubectl = kubectl silent
@@ -150,28 +142,24 @@ type DockerCommand =
 let docker (command : DockerCommand) workingDir arguments =
     run false "docker" workingDir (command.ToString() + " " + arguments)
 
+Target.create "All" ignore
+
 let create name f =
     Target.create name f
-    name ==> "All"
-
-Target.create "All" ignore
+    name ==> "All" |> ignore
+    name
 
 create "build" (fun _ ->
     run false "dotnet" ".." "fake build" |> ignore
 )
 
-(*create "buildbuilder" (fun _ ->
-    env.Data.FeedPat
-    |> Environment.environVarOrDefault "FEED_PAT"
-    |> sprintf "-f docker/Dockerfile.builder -t builder --build-arg FEED_PAT_ARG=%s ."
-    |> docker Build "../"
-    |> ignore
-)*)
-
-create "deploy" (fun x ->
-    
-    printfn "%s" (x.Context.Arguments.[0].ToString())
-    let dirs = System.IO.Directory.EnumerateDirectories("..","kubernetes/local_patches", System.IO.SearchOption.AllDirectories)
+create "deploy" (fun _ ->
+    if System.IO.File.Exists globalEnvFile then
+        printfn "Using env file"
+        kubectl false "apply" ("-f " + globalEnvFile) |> ignore
+    else
+        printfn "Using env from var"
+    let dirs = System.IO.Directory.EnumerateDirectories("..","kubernetes", System.IO.SearchOption.AllDirectories)
     let res = 
         dirs
         |> Seq.filter(fun dir ->
@@ -188,23 +176,45 @@ create "deploy" (fun x ->
             ) |> Option.isSome
         )
         |> Seq.sumBy(applyk)
-    if res > 0 then failwith "Failed applying all"
-    printfn "Looked in:"
-    dirs |> Seq.iter (fun x -> printfn "%s" x)
-    kubectl false "apply" "-f ../env.JSON" |> ignore
+    if res > 0 then failwith "Failed applying all"    
 )
 
-create "port-forwarding" (fun _ ->
-    [
-      "gateway-svc", 8080, 80
-      "db-svc", 5984, 5984
-      "rabbitmq-service", 5672, 5672
-      "uniformdata-svc", 8099, 8085
-    ] |> List.iter(fun (serviceName, localPort, podPort) -> forwardServicePort serviceName localPort podPort)
+let awaitService serviceName =
+    create ("await-" + serviceName) (fun _ ->
+        try
+            kubectl true "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=120s" serviceName) |> ignore
+        with _ -> 
+            //operation timed out
+            kubectl false "describe" <| sprintf "pod -l app=%s" serviceName |> ignore
+            kubectl false "logs" <| sprintf "service/%s-svc" serviceName |> ignore
+            failwithf "Service %s didn't start" serviceName
+    )
+
+let forwardServicePort serviceName here there =
+    create ("port-forward-" + serviceName) (fun _ ->
+        try
+            kubectlf "port-forward" (sprintf "service/%s %d:%d" serviceName here there)
+        with _ -> () 
+    )
+
+create "port-forwarding" ignore
+
+[
+  "gateway", 8080, 80
+  "db", 5984, 5984
+  "uniformdata", 8099, 8085
+] |> List.iter(fun (serviceName, localPort, podPort) -> 
+     let target = awaitService serviceName
+     "deploy" ?=> target |> ignore
+     target
+         ==> forwardServicePort serviceName localPort podPort
+         ==> "port-forwarding"
+     |> ignore
 )
 
 create "publish" (fun _ ->    
-    let res = docker Build "../tools/workbench" "-t kmdrd/workbench ."
+    let res = 
+        docker Build "../tools/workbench" "-t kmdrd/workbench ."
     
     if res = 0 then
         startJob false "publish"
@@ -267,21 +277,26 @@ create "data" (fun _ ->
         |> areEqual first.SprintNumber None
         |> areEqual first.State  "Done"
     printfn "Successes: %d. Failures: %d" successes failed
+    if failed > 0 then failwith "One or more tests failed"
 )
 
 Target.create "test" ignore
 Target.create "retest" ignore
+Target.create "setup-test" ignore
 
-"port-forwarding"
-   ==> "retest"
+"retest"
+   <== "port-forwarding"
+   <== "publish"
+   <== "sync"
+   <== "test"
+   
 
-"publish"
-   ==> "retest"
-"sync"
-   ==> "retest"
-
-"test"
-   ==> "retest" 
+"setup-test"
+   <== "deploy"
+   <== "port-forwarding"
+   <== "publish"
+   <== "sync"
+   <== "complete-sync"
 
 "build"
   ?=> "deploy"
@@ -299,7 +314,7 @@ Target.create "retest" ignore
 "port-forwarding"
   ==> "complete-sync"
 
-"data"
-  ==> "test"
+"test"
+  <== "data"
 
 Target.runOrDefaultWithArguments "all"

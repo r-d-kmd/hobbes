@@ -95,32 +95,36 @@ module Program =
             |> Seq.iter(fun doc ->
                 Log.logf "Creating transformation: %s" (Database.CouchDoc.Parse doc).Id
                 
-                try
+                let resp = 
                     Http.Request(urlTransformations, 
                                  httpMethod = "PUT",
                                  body = TextRequest doc,
+                                 silentHttpErrors = true,
                                  headers = 
                                     [
                                        HttpRequestHeaders.BasicAuth pat ""
                                        HttpRequestHeaders.ContentType HttpContentTypes.Json
                                     ]
-                                ) |> ignore
-                with e ->
-                   Log.logf "Failed to publish transformations. URL: %s Msg: %s" urlTransformations e.Message
-                   reraise()
+                                )
+                if resp.StatusCode > 300 || resp.StatusCode < 200 then
+                   Log.errorf "Failed to publish transformations. [%s]. %d - %s" urlTransformations resp.StatusCode (resp |> Http.readBody)
             )
 
             configurations
             |> Seq.iter(fun doc ->
                 Log.logf "Creating configurations: %s" (Database.CouchDoc.Parse doc).Id
-                Http.Request(urlConfigurations, 
-                    httpMethod = "PUT",
-                    body = TextRequest doc,
-                    headers = 
-                       [
-                          HttpRequestHeaders.BasicAuth pat ""
-                          HttpRequestHeaders.ContentType HttpContentTypes.Json
-                       ]
-                ) |> ignore
+                let resp = 
+                    Http.Request(urlConfigurations, 
+                        httpMethod = "PUT",
+                        silentHttpErrors = true,
+                        body = TextRequest doc,
+                        headers = 
+                           [
+                              HttpRequestHeaders.BasicAuth pat ""
+                              HttpRequestHeaders.ContentType HttpContentTypes.Json
+                           ]
+                    )
+                if resp.StatusCode > 300 || resp.StatusCode < 200 then
+                   Log.errorf "Failed to publish transformations. [%s]. %d - %s" urlTransformations resp.StatusCode (resp |> Http.readBody)
             )
             0

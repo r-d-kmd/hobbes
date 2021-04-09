@@ -13,9 +13,7 @@ stages:
     jobs:
       - job: development
         steps:
-        - script: newman --version
-          displayName: Verify newman version
-
+        
         - script: dotnet tool update fake-cli
           displayName: Install Fake
           
@@ -52,9 +50,10 @@ stages:
           displayName: Pull minikube image
 
         # Start Minikube
-        - script: minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
+        - script: |
+            minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
           displayName: Start Minikube
-
+        
         # Fix permissions issue in AzurePipelines
         - script: sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context
           displayName: Fix permissions
@@ -62,30 +61,40 @@ stages:
         # Set up cluster
         - script: echo '$(ENV_FILE)' | kubectl apply -f -
           displayName: Apply kubernetes environment file
-          env:
-            ENV_FILE: $(ENV_FILE)
+
         - script: |
-            source functions.sh
-            build all 2
+            eval $(minikube docker-env)
+            dotnet fake build --target builder
           env:
-            FEED_PAT: $(FEED_PAT)
             VERSION: "1.2021.$(Build.BuildNumber)"
+            ENV_FILE: "$(ENV_FILE)"
+          displayName: Build builder
+
+        - script: |
+            eval $(minikube docker-env)
+            dotnet fake build --parallel 4
+          env:
+            VERSION: "1.2021.$(Build.BuildNumber)"
+            ENV_FILE: "$(ENV_FILE)"
           displayName: Build the world
 
-        - script: |
-            source functions.sh
-            start
-            setupTest
-          displayName: Setup tests && kubectl port-forward service/gateway-svc 30080:80 &
-
-        - script: |
-            source functions.sh
-            test
-          displayName: Run postman tests
+        - script: |            
+            eval $(minikube docker-env)
+            cd tests/
+            dotnet fake build --target setup-test
+          displayName: Setup integration tests
           env:
-            MASTER_KEY: $(MASTER_KEY)
-            PM_APIKEY: $(PM_APIKEY)
-
+            ENV_FILE: "$(ENV_FILE)"
+        - task: DotNetCoreCLI@2
+          inputs:
+           command: 'custom'
+           custom: 'fake'
+           arguments: 'build --target test'
+           workingDirectory: 'tests/'
+          displayName: Run integration tests
+          env:
+            ENV_FILE: "$(ENV_FILE)"
+            
         - script: |
             docker push kmdrd/workbench
             git config --global credential.helper store

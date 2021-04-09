@@ -9,7 +9,7 @@ nuget Fake.DotNet.Cli //
 nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //"
-#load "./.fake/tests.fsx/intellisense.fsx"
+//#load "./.fake/tests.fsx/intellisense.fsx"
 
 #if !FAKE
 #r "netstandard"
@@ -168,9 +168,10 @@ create "build" (fun _ ->
     |> ignore
 )*)
 
-create "deploy" (fun _ ->
+create "deploy" (fun x ->
     
-    let dirs = System.IO.Directory.EnumerateDirectories("..","kubernetes", System.IO.SearchOption.AllDirectories)
+    printfn "%s" (x.Context.Arguments.[0].ToString())
+    let dirs = System.IO.Directory.EnumerateDirectories("..","kubernetes/local_patches", System.IO.SearchOption.AllDirectories)
     let res = 
         dirs
         |> Seq.filter(fun dir ->
@@ -188,7 +189,8 @@ create "deploy" (fun _ ->
         )
         |> Seq.sumBy(applyk)
     if res > 0 then failwith "Failed applying all"
-    printfn "Looked in %A" dirs
+    printfn "Looked in:"
+    dirs |> Seq.iter (fun x -> printfn "%s" x)
     kubectl false "apply" "-f ../env.JSON" |> ignore
 )
 

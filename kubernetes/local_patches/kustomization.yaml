@@ -1,9 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+
 resources:
-  - local_patches/db-volume.yaml
-  - db-deployment.yaml
+  - db-volume.yaml
+  - local_patches/db-deployment.yaml
   - db-svc.yaml
   - rabbitmq-controller.yaml
   - rabbitmq-service.yaml

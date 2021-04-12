@@ -217,12 +217,6 @@ module BuildGeneral =
     create Targets.PreApps ignore
     create Targets.PostApps ignore
 
-    
-    create (Targets.Generic "start-kube") (fun _ ->
-        run  "minikube" "." "start" |> ignore
-        run  "bash"  "." "-c eval $(minikube docker-env)" |> ignore
-    )
-
     projects
     |> Seq.iter(fun (name,dir) ->
         buildProject name dir
@@ -238,8 +232,6 @@ module BuildGeneral =
             docker (Build(file,tag, ["FEED_PAT_ARG", feedPat])) "."
     )
     
-    (Targets.Generic "start-kube") ==> Targets.PreApps
-    (Targets.Generic "start-kube") ==> Targets.Builder
     Targets.Builder ==> Targets.PushApps
     Targets.Builder ?=> Targets.PreApps
     Targets.Build ==> Targets.All

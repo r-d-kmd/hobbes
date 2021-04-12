@@ -97,24 +97,22 @@ module BuildExtension =
             "common/hobbes.messaging/src/Broker.fs"
         ]
 
-    let generateLocalDockerAndSharedFiles name (appType : string) workingDir =
+    let generateLocalDockerAndSharedFiles (name : string) (appType : string) workingDir =
         
         let srcDir = Path.Combine(workingDir,"src")
         let copyTempFiles _ =
             //read the docker file template
-            let dockerFile = 
-                dockerFilePath
+            let content = 
+                let projectDockerFile = 
+                    name.ToLower()
+                    |> sprintf "Dockerfile.%s"
+                if projectDockerFile
+                   |> File.exists then
+                   projectDockerFile
+                else
+                   dockerFilePath
                 |> File.ReadAllText
             let localDockerFile = sprintf "%s/Dockerfile" workingDir
-
-            //substitute some placeholders in dockerfile
-            let content = 
-                match appType.ToLower() with
-                "service" -> 
-                    dockerFile.Replace("${SERVICE_NAME}",name)
-                | "worker" ->
-                    dockerFile.Replace("${SERVICE_NAME}",name + ".worker")
-                | _ -> failwithf "Don't know app type %s" appType
 
             let preamble = 
                 (sprintf """# This is a temporary file do not edit

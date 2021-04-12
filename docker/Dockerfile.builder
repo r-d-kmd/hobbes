@@ -15,7 +15,7 @@ ENV PAKET_SKIP_RESTORE_TARGETS=true
 RUN if [ -n "$FEED_PAT" ]; then export FEED_USER="$FEED_PAT"; export FEED_PASSWORD="$FEED_PAT"; fi
 
 COPY .fake/build.fsx/.paket/Paket.Restore.targets /.paket/Paket.Restore.targets
-COPY paket.lock .
+
 COPY paket.dependencies .
 
 RUN if [ ! -f ".config/dotnet-tools.json" ]; then \
@@ -24,7 +24,7 @@ RUN if [ ! -f ".config/dotnet-tools.json" ]; then \
     fi
 
 RUN dotnet tool restore
-RUN dotnet paket restore
+RUN dotnet paket update
 
 FROM build-base
 COPY ./common/hobbes.messaging/src/Broker.fs /source/Broker.fs

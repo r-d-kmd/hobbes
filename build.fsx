@@ -9,7 +9,7 @@ nuget Fake.DotNet.Cli //
 nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //"
-#load "./.fake/build.fsx/intellisense.fsx"
+//#load "./.fake/build.fsx/intellisense.fsx"
 
 #load "BuildExtension.fsx"
 open BuildExtension.BuildExtension

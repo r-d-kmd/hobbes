@@ -9,7 +9,7 @@ nuget Fake.DotNet.Cli //
 nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //"
-#load "../.fake/build.fsx/intellisense.fsx"
+//#load ".fake/build.fsx/intellisense.fsx"
 #load "../build/Configuration.fsx"
 
 #if !FAKE
@@ -158,15 +158,16 @@ create "deploy" (fun x ->
         match (x.Context.Arguments.[0].ToString()) with
         | "local" -> "local_patches"
         | "prod"  -> "prod_patches"
-        | _       -> ""
+        | _       -> "local"
     if System.IO.File.Exists globalEnvFile then
         printfn "Using env file"
         kubectl false "apply" ("-f " + globalEnvFile) |> ignore
     else
         printfn "Using env from var"
-    let dirs = System.IO.Directory.EnumerateDirectories("..", "kubernetes/" + patch_dir, System.IO.SearchOption.AllDirectories)
+    let dirs = System.IO.Directory.EnumerateDirectories("../", "kubernetes/" + patch_dir, System.IO.SearchOption.AllDirectories)
     dirs
         |> Seq.iter(fun dir ->
+            printfn "Moving %s" dir
             System.IO.Directory.Move(sprintf "%s/kustomization.yaml" dir, sprintf"../%s/kustomization.yaml" dir) 
         )
     let dirs = System.IO.Directory.EnumerateDirectories("..", "kubernetes", System.IO.SearchOption.AllDirectories)
@@ -190,6 +191,7 @@ create "deploy" (fun x ->
     let dirs = System.IO.Directory.EnumerateDirectories("..", "kubernetes", System.IO.SearchOption.AllDirectories)
     dirs
         |> Seq.iter(fun dir ->
+            printfn "Moving %s back" dir
             System.IO.Directory.Move(sprintf "%s/kustomization.yaml" dir, sprintf "%s/%s/kustomization.yaml" dir patch_dir) 
         )    
 )

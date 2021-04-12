@@ -1,3 +1,13 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: managed-premium-delete
+parameters:
+  kind: Managed
+  storageaccounttype: Premium_LRS
+provisioner: kubernetes.io/azure-disk
+reclaimPolicy: Delete
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -104,12 +114,10 @@ metadata:
 spec:
   ports:
   - name: "5984"
-    nodePort: 30084
     port: 5984
     targetPort: 5984
   selector:
     app: db
-  type: NodePort
 status:
   loadBalancer: {}
 ---
@@ -138,6 +146,32 @@ spec:
   type: ClusterIP
 status:
   loadBalancer: {}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  labels:
+    volume: db-disk
+  name: db-disk
+spec:
+  accessModes:
+  - ReadWriteMany
+  capacity:
+    storage: 3Gi
+  hostPath:
+    path: data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-disk
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: managed-premium-delete
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -233,35 +267,6 @@ spec:
     namespace: kube-system
   version: v1beta1
   versionPriority: 100
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  labels:
-    volume: db-disk
-  name: db-disk
-spec:
-  accessModes:
-  - ReadWriteMany
-  capacity:
-    storage: 3Gi
-  hostPath:
-    path: data
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: db-disk
-spec:
-  accessModes:
-  - ReadWriteMany
-  resources:
-    requests:
-      storage: 3Gi
-  selector:
-    matchLabels:
-      volume: db-disk
-  storageClassName: standard
 ---
 apiVersion: v1
 kind: ReplicationController

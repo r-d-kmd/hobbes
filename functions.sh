@@ -335,7 +335,8 @@ function applyProductionYaml() {
             echo "moving" $kube_dir/prod_patches/kustomization.yaml "into" $kube_dir/kustomization.yaml
             mv $kube_dir/prod_patches/kustomization.yaml $kube_dir/kustomization.yaml
             echo "Producing file"
-            kustomize build -o $kube_dir
+            cd $kube_dir
+            kustomize build -o test.yaml
             echo "moving" $kube_dir/kustomization.yaml "back into" $kube_dir/prod_patches/kustomization.yaml
             mv $kube_dir/kustomization.yaml $kube_dir/prod_patches/kustomization.yaml
             echo "moving" $kube_dir/local_patches/kustomization.yaml "back into" $kube_dir/kustomization.yaml

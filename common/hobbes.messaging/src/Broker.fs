@@ -26,7 +26,7 @@ module Broker =
     [<RequireQualifiedAccess>]
     type Queue = 
         CacheQueue
-        | AzureDevOpsQueue
+        | ODataQueue
         | GitQueue
         | CalculationQueue
         | DeadLetterQueue
@@ -37,7 +37,7 @@ module Broker =
                with get() = 
                     match x with
                     CacheQueue -> "cache"
-                    | AzureDevOpsQueue -> "azuredevops"
+                    | ODataQueue -> "odata"
                     | GitQueue -> "git"
                     | CalculationQueue -> "calculation"
                     | DeadLetterQueue -> "deadletter"
@@ -276,10 +276,10 @@ module Broker =
             publish Queue.CacheQueue (Message msg)
         static member Cache (handler : CacheMessage -> _) = 
             watch Queue.CacheQueue handler true
-        static member AzureDevOps(msg : SyncMessage) = 
-            publish Queue.AzureDevOpsQueue (Message msg)
-        static member AzureDevOps (handler : SyncMessage -> _) = 
-            watch Queue.AzureDevOpsQueue handler true
+        static member OData(msg : SyncMessage) = 
+            publish Queue.ODataQueue (Message msg)
+        static member OData (handler : SyncMessage -> _) = 
+            watch Queue.ODataQueue handler true
         static member Git(msg : SyncMessage) = 
             publish Queue.GitQueue (Message msg)
         static member Git (handler : SyncMessage -> _) = 

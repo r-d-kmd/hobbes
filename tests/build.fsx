@@ -8,8 +8,9 @@ nuget Fake.DotNet.AssemblyInfoFile //
 nuget Fake.DotNet.Cli //
 nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
-nuget Fake.Tools.Git ~> 5 //"
-#load "../.fake/build.fsx/intellisense.fsx"
+nuget Fake.Tools.Git ~> 5 //
+nuget Thoth.Json.Net"
+#load ".fake/build.fsx/intellisense.fsx"
 #load "../build/Configuration.fsx"
 
 #if !FAKE
@@ -20,6 +21,7 @@ nuget Fake.Tools.Git ~> 5 //"
 open Fake.Core
 open FSharp.Data
 open Fake.Core.TargetOperators
+open Thoth.Json.Net
 
 let globalEnvFile = "../env.JSON"
 let env = Configuration.Environment.Environment(globalEnvFile)
@@ -213,15 +215,24 @@ create "port-forwarding" ignore
 )
 
 create "publish" (fun _ ->    
-    let res = 
-        docker Build "../tools/workbench" "-t kmdrd/workbench ."
-    
-    if res = 0 then
-        startJob false "publish"
-        |> awaitJobCompletion 30
-        |> ignore
-    else
-        failwith "Couldn't build publisher"    
+    System.IO.Directory.EnumerateFiles("./transformations", "*.hb")
+    |> Seq.iter(fun file ->
+        let name = System.IO.Path.GetFileNameWithoutExtension file
+        let url = sprintf "http://localhost:8080/admin/configuration"
+        FSharp.Data.Http.Request(url,
+            httpMethod = "PUT",
+            headers = [HttpRequestHeaders.BasicAuth masterkey ""],
+            body = (Encode.object [
+                                    "name", Encode.string name
+                                    "hb", file
+                                          |> System.IO.File.ReadAllText
+                                          |> Encode.string
+                                  ]
+                    |> Encode.toString 0
+                    |> TextRequest
+                   )
+        ) |> ignore
+    )
 )
 
 create "sync" (fun _ ->

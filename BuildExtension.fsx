@@ -120,14 +120,13 @@ module BuildExtension =
                          """ dockerFilePath)
                 
             File.WriteAllText(localDockerFile,preamble + content)
-            //setAttributes dockerFilePath localDockerFile
 
             //copy shared files
             sharedFiles
             |> List.iter(fun f ->
                 let content = 
                     "//This is a temporary build file and should not be altered"::
-                    (sprintf "//If changes are need edit %s" f)::
+                    (sprintf "//If changes are needed edit %s" f)::
                      (File.ReadAllLines f
                       |> List.ofArray)
                 let destFile = Path.Combine(srcDir, Path.GetFileName f)

@@ -10,7 +10,7 @@ nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //
 nuget Thoth.Json.Net"
-#load ".fake/build.fsx/intellisense.fsx"
+//#load ".fake/build.fsx/intellisense.fsx"
 #load "../build/Configuration.fsx"
 
 #if !FAKE
@@ -166,13 +166,12 @@ create "deploy" (fun x ->
         kubectl false "apply" ("-f " + globalEnvFile) |> ignore
     else
         printfn "Using env from var"
-    let dirs = System.IO.Directory.EnumerateDirectories("../", "kubernetes/" + patch_dir, System.IO.SearchOption.AllDirectories)
-    dirs
+    let dirs = System.IO.Directory.EnumerateDirectories("..", "kubernetes", System.IO.SearchOption.AllDirectories)
+    (*dirs
         |> Seq.iter(fun dir ->
             printfn "Moving %s" dir
-            System.IO.Directory.Move(sprintf "%s/kustomization.yaml" dir, sprintf"../%s/kustomization.yaml" dir) 
-        )
-    let dirs = System.IO.Directory.EnumerateDirectories("..", "kubernetes", System.IO.SearchOption.AllDirectories)
+            System.IO.Directory.Move(sprintf "%s/%s/kustomization.yaml" dir patch_dir, sprintf "%s/kustomization.yaml" dir) 
+        *)
     let res = 
         dirs
         |> Seq.filter(fun dir ->
@@ -190,7 +189,7 @@ create "deploy" (fun x ->
         )
         |> Seq.sumBy(applyk)
     if res > 0 then failwith "Failed applying all"
-    let dirs = System.IO.Directory.EnumerateDirectories("..", "kubernetes", System.IO.SearchOption.AllDirectories)
+    
     dirs
         |> Seq.iter(fun dir ->
             printfn "Moving %s back" dir

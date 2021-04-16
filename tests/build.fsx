@@ -167,11 +167,11 @@ create "deploy" (fun x ->
     else
         printfn "Using env from var"
     let dirs = System.IO.Directory.EnumerateDirectories("..", "kubernetes", System.IO.SearchOption.AllDirectories)
-    (*dirs
+    dirs
         |> Seq.iter(fun dir ->
             printfn "Moving %s" dir
             System.IO.Directory.Move(sprintf "%s/%s/kustomization.yaml" dir patch_dir, sprintf "%s/kustomization.yaml" dir) 
-        *)
+        )
     let res = 
         dirs
         |> Seq.filter(fun dir ->

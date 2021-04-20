@@ -45,7 +45,7 @@ chart.html
 tools/visualizer/*.html
 services/**/Dockerfile
 workers/**/Dockerfile
-*.hb
+tools/**/*.hb
 tools/visualizer/cli/html
 services/**/src/Broker.fs
 workers/**/src/Broker.fs

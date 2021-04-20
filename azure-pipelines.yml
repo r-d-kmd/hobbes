@@ -64,23 +64,16 @@ stages:
 
         - script: |
             eval $(minikube docker-env)
-            dotnet fake build --target builder
-          env:
-            VERSION: "1.2021.$(Build.BuildNumber)"
-            ENV_FILE: "$(ENV_FILE)"
-          displayName: Build builder
-
-        - script: |
-            eval $(minikube docker-env)
             dotnet fake build --parallel 4
           env:
-            VERSION: "1.2021.$(Build.BuildNumber)"
             ENV_FILE: "$(ENV_FILE)"
           displayName: Build the world
 
         - script: |            
             eval $(minikube docker-env)
             cd tests/
+            source ../functions.sh
+            setupLocalEnv
             dotnet fake build --target setup-test
           displayName: Setup integration tests
           env:

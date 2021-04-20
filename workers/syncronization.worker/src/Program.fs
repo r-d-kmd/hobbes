@@ -3,6 +3,7 @@ open Hobbes.Web
 open Hobbes.Messaging
 open Hobbes.Messaging.Broker
 open Hobbes.Helpers
+open Hobbes.Web.RawdataTypes
 
 type CollectorList = FSharp.Data.JsonProvider<"""["azure devops","git"]""">
 type SourceList = FSharp.Data.JsonProvider<"""[{
@@ -45,28 +46,19 @@ let main _ =
                             Broker.Success
             )
         } |> Async.Start
-        match Http.get (Http.Configurations Http.Collectors) CollectorList.Parse  with
-        Http.Success collectors ->
-            let sources =  
-                collectors
-                |> Array.collect(fun collector ->
-                    match Http.get (Http.Configurations (Http.Sources collector)) SourceList.Parse  with
-                    Http.Success sources ->
-                        sources
-                    | Http.Error (sc,m) -> 
-                        failwithf "Failed retrievining sources. %d - %s" sc m
-                ) 
-            Log.debugf "Syncronizing %d sources" (sources |> Seq.length)
-            
-            let sync (source: SourceList.Root) = 
-                let queueName = source.Provider.ToLower().Replace(" ","")
-                let json = source.JsonValue.ToString()
-                json
-                |> Sync
-                |> Message
-                |> Newtonsoft.Json.JsonConvert.SerializeObject
-                |> Broker.Generic queueName
-            sources |> Array.iter sync
+        match Http.get (Http.Configurations Http.ConfigurationList) ConfigList.Parse  with
+        Http.Success configs ->
+            async {
+                let sync (config: ConfigList.Root) = 
+                    let queueName = config.Source.Provider.ToLower().Replace(" ","")
+                    let json = config.JsonValue.ToString()
+                    json
+                    |> Sync
+                    |> Message
+                    |> Newtonsoft.Json.JsonConvert.SerializeObject
+                    |> Broker.Generic queueName
+                configs |> Array.iter sync
+            } |> Async.Start
             
             let timeout = System.DateTime.Now.AddSeconds(env "SYNC_TIMEOUT" "600" |> float)
             let idleTimeExpected = 45.0

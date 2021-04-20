@@ -10,7 +10,6 @@ nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //
 nuget Thoth.Json.Net"
-#load ".fake/build.fsx/intellisense.fsx"
 #load "../build/Configuration.fsx"
 
 #if !FAKE
@@ -106,12 +105,7 @@ let kubectl silent command args =
     run silent "kubectl" "../kubernetes" (command + " " + args)
 
 let applyk dir = 
-    let envFile = "localenv.json"
-    run true "kubectl" dir "apply -k ." +
-    if System.IO.Path.Combine(dir, envFile) |> System.IO.File.Exists then 
-        run true "kubectl" dir ("apply -f " + envFile)
-    else
-        0
+    run true "kubectl" dir "apply -k ."
     
 let startJob silent jobName = 
     let kubectl = kubectl silent
@@ -157,45 +151,68 @@ create "build" (fun _ ->
 
 create "deploy" (fun x ->
     let patch_dir =
-        match (x.Context.Arguments.[0].ToString()) with
-        | "local" -> "local_patches"
-        | "prod"  -> "prod_patches"
-        | _       -> "local"
+        match x.Context.Arguments with
+        "local"::[]-> "local_patches"
+        | "prod"::[]  -> "prod_patches"
+        | _       -> "local_patches"
+
     if System.IO.File.Exists globalEnvFile then
         printfn "Using env file"
         kubectl false "apply" ("-f " + globalEnvFile) |> ignore
     else
         printfn "Using env from var"
-    let dirs = System.IO.Directory.EnumerateDirectories("../", "kubernetes/" + patch_dir, System.IO.SearchOption.AllDirectories)
+
+    let dirs = 
+        System.IO.Directory.EnumerateDirectories("..", "kubernetes", System.IO.SearchOption.AllDirectories)
+    
     dirs
-        |> Seq.iter(fun dir ->
-            printfn "Moving %s" dir
-            System.IO.Directory.Move(sprintf "%s/kustomization.yaml" dir, sprintf"../%s/kustomization.yaml" dir) 
-        )
-    let dirs = System.IO.Directory.EnumerateDirectories("..", "kubernetes", System.IO.SearchOption.AllDirectories)
+    |> Seq.iter(fun dir ->
+        let from = 
+            (dir,patch_dir)
+            ||> sprintf "%s/%s/kustomization.yaml"
+        let ``to`` =
+            dir
+            |> sprintf "%s/kustomization.yaml"
+        if System.IO.File.Exists from then
+            System.IO.File.Copy(from , ``to``,true) 
+    )
+    
     let res = 
         dirs
-        |> Seq.filter(fun dir ->
-            [
-                "kustomization.yaml"
-                "kustomization.yml"
-                "Kustomization"
-            ] |> List.tryFind(fun f ->
-                let exists = 
-                   System.IO.Path.Combine(dir,f)
-                   |> Fake.IO.File.exists
-                if not exists then printfn "Didn't find %s/%s" dir f
-                exists
-            ) |> Option.isSome
+        |> List.ofSeq
+        |> List.sumBy(fun dir ->
+            let kustomizationFilePath = 
+                System.IO.Path.Combine(dir,"kustomization.yaml")
+            let exists = 
+               kustomizationFilePath
+               |> Fake.IO.File.exists
+            let res = 
+                if exists then 
+                    applyk dir
+                else
+                    System.IO.Directory.EnumerateFiles(dir,"*.yaml")
+                    |> Seq.sumBy(fun file -> 
+                        kubectl false "apply" (sprintf "-f %s" file)
+                    )
+            if res = 0 then
+                let envFile = "localenv.yaml"
+                if System.IO.Path.Combine(dir, envFile) |> System.IO.File.Exists then 
+                    run true "kubectl" dir ("apply -f " + envFile)
+                else
+                    0
+            else
+                res
+
         )
-        |> Seq.sumBy(applyk)
-    if res > 0 then failwith "Failed applying all"
-    let dirs = System.IO.Directory.EnumerateDirectories("..", "kubernetes", System.IO.SearchOption.AllDirectories)
+    
     dirs
-        |> Seq.iter(fun dir ->
-            printfn "Moving %s back" dir
-            System.IO.Directory.Move(sprintf "%s/kustomization.yaml" dir, sprintf "%s/%s/kustomization.yaml" dir patch_dir) 
-        )    
+    |> Seq.iter(fun dir ->
+        let filePath = System.IO.Path.Combine(dir,"kustomization.yaml")
+        if System.IO.File.Exists filePath then
+            System.IO.File.Delete(filePath) 
+    )    
+
+    if res > 0 then failwith "Failed applying all"
 )
 
 let awaitService serviceName =
@@ -212,7 +229,7 @@ let awaitService serviceName =
 let forwardServicePort serviceName here there =
     create ("port-forward-" + serviceName) (fun _ ->
         try
-            kubectlf "port-forward" (sprintf "service/%s %d:%d" serviceName here there)
+            kubectlf "port-forward" (sprintf "service/%s-svc %d:%d" serviceName here there)
         with _ -> () 
     )
 

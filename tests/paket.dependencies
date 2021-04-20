@@ -11,4 +11,4 @@ version 5.257.0
     nuget Fake.DotNet.NuGet
     nuget Fake.IO.FileSystem
     nuget Fake.Tools.Git ~> 5
-    nuget FSharp.Data
+    nuget fsharp.data = 4.0.1

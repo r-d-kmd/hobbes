@@ -7,7 +7,7 @@ nuget Thoth.Json.Net
 nuget Argu
 nuget Saturn = 0.13.1
 nuget Giraffe
-nuget FSharp.Data
+nuget fsharp.data = 4.0.1
 nuget FSharp.Core ~> 5
 nuget hobbes.core
 nuget hobbes.web

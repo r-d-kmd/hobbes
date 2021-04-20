@@ -4,7 +4,7 @@ kind: Kustomization
 
 resources:
   - db-volume.yaml
-  - local_patches/db-deployment.yaml
+  - db-deployment.yaml
   - db-svc.yaml
   - rabbitmq-controller.yaml
   - rabbitmq-service.yaml

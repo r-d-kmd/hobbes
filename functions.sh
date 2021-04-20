@@ -50,11 +50,11 @@ then
     printf "${Red}Running on windows${NoColor}\n"
 elif [[ $(uname -s) == CYGWIN_NT* ]]
 then
-    source <(cat macos.sh | dos2unix)
+    source <(cat $SCRIPT_DIR/macos.sh | dos2unix)
     printf "${Yellow}Running CygWin${NoColor}\n"
 else
     printf "${Green}Mac${NoColor}\n"
-    source macos.sh
+    source $SCRIPT_DIR/macos.sh
 fi
 
 if [[ $(uname -s) = MINGW64_NT* ]]
@@ -144,33 +144,22 @@ function build(){
             if [[ "$(docker images -q builder 2> /dev/null)" == "" ]]; then
                 build builder
             fi
+        elif [[ "$2" == "" ]]; then
+            builder build "no-cache"
+           
         fi 
         re='^[0-9]+$'
-        if [ -z "$1" ]
-        then 
-            dotnet fake build
-        elif [[ $1 =~ $re ]]
-        then
-            build "build" $1 
-        else
-            for LAST in $@; do :; done
-            if [[ $LAST =~ $re ]]
+        P=1
+        NO_CACHE=""
+        for ARG in $@; do
+            if [[ $ARG =~ $re ]]
             then
-                P=$LAST
+                P=$ARG
                 echo "Running with $P parallel builds"
-            else
-                P=1
             fi
-            for target in "$@"
-            do
-                if [[ $target =~ $re ]]
-                then
-                echo "Done building"
-                else
-                    dotnet fake build --target "$target" --parallel $P
-                fi
-            done
-        fi
+
+        done
+        dotnet fake build --target "$target" --parallel $P $NO_CACHE
     )
     res=$?
     cd $CURRENT_DIR
@@ -403,21 +392,18 @@ function setFeedPat(){
     cd $CURRENT_DIR
 }
 
-function vscode(){
+function setupLocalEnv(){
     skipRestore
     setDefaultVersion
     setFeedPat
+}
+
+function vscode(){
+    setupLocalEnv    
     code $1
 }
 
-printf "Project home folder is:\n"
-printf " - ${LightBlue}$SCRIPT_DIR\n"
-printf "${NoColor}Apps found:\n${LightBlue}"
-printf ' - %s\n' "${APPS[@]}"
-printf "${NoColor}"
+setupLocalEnv
 
 alias fake="dotnet fake"
 alias paket="dotnet paket"
-alias subadd="git submodule foreach git add ."
-alias subcommit="git submodule foreach git commit -m"
-alias subpush="git submodule foreach git push "

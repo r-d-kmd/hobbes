@@ -5,7 +5,7 @@ framework: auto-detect
 nuget FSharp.Core
 nuget Saturn
 nuget Giraffe
-nuget FSharp.Data
+nuget fsharp.data = 4.0.1
 nuget Microsoft.Extensions.PlatformAbstractions
 nuget Newtonsoft.Json
 nuget Thoth.Json.Net
@@ -14,7 +14,7 @@ nuget Accord.MachineLearning
 nuget Deedle
 nuget FParsec
 nuget Argu
-nuget hobbes.core
+nuget hobbes.core = 2.0.0-686023
 nuget hobbes.web
 
 group test
@@ -41,8 +41,8 @@ group visualizer
     framework: auto-detect
     storage: none
 
-    # FSharp.Data
-    nuget FSharp.Data 
+    # fsharp.data = 4.0.1
+    nuget fsharp.data = 4.0.1 
 
     # MathNet.Numerics
     nuget MathNet.Numerics 
@@ -83,7 +83,7 @@ group visualizer.web
     nuget Fable.Remoting.Client
     nuget Fulma
     nuget Fable.Recharts
-    nuget FSharp.Data
+    nuget fsharp.data = 4.0.1
 
 group Build
     source https://kmddk.pkgs.visualstudio.com/flowerpot/_packaging/hobbes/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
@@ -114,4 +114,4 @@ group integrationtest
     nuget Fake.DotNet.NuGet
     nuget Fake.IO.FileSystem
     nuget Fake.Tools.Git ~> 5
-    nuget FSharp.Data
+    nuget fsharp.data = 4.0.1

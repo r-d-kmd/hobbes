@@ -11,17 +11,10 @@ ENV BUILD_CONFIGURATION ${BUILD_CONFIGURATION_ARG}
 ENV FEED_PAT ${FEED_PAT_ARG}
 ENV FEED_USER ${FEED_USER_ARG}
 ENV FEED_PASSWORD ${FEED_PASSWORD_ARG}
-ENV PAKET_SKIP_RESTORE_TARGETS=true
+
 RUN if [ -n "$FEED_PAT" ]; then export FEED_USER="$FEED_PAT"; export FEED_PASSWORD="$FEED_PAT"; fi
 
-COPY .fake/build.fsx/.paket/Paket.Restore.targets /.paket/Paket.Restore.targets
-
 COPY paket.dependencies .
-
-RUN if [ ! -f ".config/dotnet-tools.json" ]; then \
-    dotnet new tool-manifest; \
-    dotnet tool install paket; \
-    fi
 
 RUN dotnet tool restore
 RUN dotnet paket update

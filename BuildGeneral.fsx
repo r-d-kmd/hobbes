@@ -17,6 +17,8 @@ nuget Fake.Tools.Git ~> 5 //"
 #r "Facades/netstandard" // https://github.com/ionide/ionide-vscode-fsharp/issues/839#issuecomment-396296095
 #endif
 
+open Fake.IO
+
 module BuildGeneral = 
     open Fake.Core
     open Fake.DotNet
@@ -114,30 +116,43 @@ module BuildGeneral =
         Push of string
         | Pull of string
         | Build of file:string option * tag:string * buildArgs: (string * string) list
+        | NoCache of DockerCommand
         | Tag of original:string * newTag:string
 
     let docker command dir =
-        let arguments = 
-            match command with
-            Push tag -> sprintf "push %s" tag
-            | Pull tag -> sprintf "pull %s" tag
-            | Build(file,tag,buildArgs) -> 
-                let buildArgs = 
-                    System.String.Join(" ", 
-                        buildArgs 
-                        |> List.map(fun (n,v) -> 
-                            let v = if v = "" then "\"\"" else v
-                            sprintf "--build-arg %s=%s" n v)
-                    ).Trim()
-                ( match file with
-                  None -> 
-                      sprintf "build -t %s %s ."  
-                  | Some f -> sprintf "build -f %s -t %s %s ." f) (tag.ToLower()) buildArgs
-            | Tag(t1,t2) -> sprintf "tag %s %s" t1 t2
-        let arguments = 
+        let arguments command = 
+            let rec inner =
+                function
+                    Push tag -> "push",tag
+                    | Pull tag -> "pull", tag
+                    | NoCache(cmd) ->
+                         let command,args = inner cmd
+                         command, args |> sprintf "--no-cache %s"
+
+                    | Build(file,tag,buildArgs) -> 
+                        let buildArgs = 
+                            System.String.Join(" ", 
+                                buildArgs 
+                                |> List.map(fun (n,v) -> 
+                                    let v = if v = "" then "\"\"" else v
+                                    sprintf "--build-arg %s=%s" n v)
+                            ).Trim()
+                        "build",(match file with
+                                 None -> 
+                                     sprintf "-t %s %s ."  
+                                 | Some f -> sprintf "-f %s -t %s %s ." f) (tag.ToLower()) buildArgs
+                    | Tag(t1,t2) -> "tag", sprintf "%s %s" t1 t2
+
+            let command, args = inner command
             //replace multiple spaces with just one space
-            let args = arguments.Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries)
-            System.String.Join(" ",args) 
+            (" ",args.Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries))
+            |> System.String.Join
+            |> sprintf "%s %s"command
+            
+
+        let arguments = 
+            arguments command
+            
         run "docker" dir (arguments.Replace("  "," ").Trim())
 
     let feedPat = env.AzureDevopsPat
@@ -183,8 +198,13 @@ module BuildGeneral =
                    t + ":" + assemblyVersion
                    t + ":" + "latest"
                ]
+            let cmd = 
+                if System.IO.Path.Combine(workingDir, "Dockerfile." + name) |> File.exists then
+                   Build("Dockerfile." + name |> Some,tag,["FEED_PAT_ARG",feedPat])
+                else
+                   Build(None,tag,[])
 
-            docker (Build(None,tag,[])) workingDir
+            docker cmd workingDir
 
             tags
             |> List.iter(fun t -> 
@@ -229,7 +249,7 @@ module BuildGeneral =
         then
             let tag = "builder"
             let file = Some(path)
-            docker (Build(file,tag, ["FEED_PAT_ARG", feedPat])) "."
+            docker (NoCache (Build(file,tag, ["FEED_PAT_ARG", feedPat]))) "."
     )
     
     Targets.Builder ==> Targets.PushApps

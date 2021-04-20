@@ -10,10 +10,6 @@ nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //
 nuget Thoth.Json.Net"
-<<<<<<< HEAD
-=======
-//#load ".fake/build.fsx/intellisense.fsx"
->>>>>>> 621af3a4f7459d5da96d0af9a9a0dcea5816408f
 #load "../build/Configuration.fsx"
 
 #if !FAKE
@@ -208,11 +204,6 @@ create "deploy" (fun x ->
                 res
 
         )
-<<<<<<< HEAD
-=======
-        |> Seq.sumBy(applyk)
-    if res > 0 then failwith "Failed applying all"
->>>>>>> 621af3a4f7459d5da96d0af9a9a0dcea5816408f
     
     dirs
     |> Seq.iter(fun dir ->

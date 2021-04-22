@@ -67,13 +67,6 @@ group visualizer
     
     nuget FSharp.Core ~> 5
 
-group docker
-    source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
-    framework: auto-detect
-
-    nuget hobbes.core
-    nuget hobbes.web
-
 group visualizer.web
     source https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v3/index.json username: "%FEED_PAT%" password: "%FEED_PAT%"
     framework: auto-detect

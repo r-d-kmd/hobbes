@@ -76,7 +76,7 @@ module BuildExtension =
                 
                 let n = Path.GetFileNameWithoutExtension file.Name
                 let name = 
-                    if n.StartsWith "hobbes." then n.Remove(0,"hobbes.".Length) else n
+                    (if n.StartsWith "hobbes." then n.Remove(0,"hobbes.".Length) else n)
                 Service name, workingDir
             )
 
@@ -148,7 +148,7 @@ module BuildExtension =
         let previousTag =
             match appType with
             |"service" -> tag
-            |"worker" -> tag + ".worker"
+            |"worker" -> tag
             | _ -> failwithf "Don't know app type %s" appType
         let t = createDockerTag dockerOrg tag
         let srcDir = Path.Combine(workingDir,"src")

@@ -1,4 +1,3 @@
-
 open Hobbes.Web
 open Hobbes.Messaging
 open Hobbes.Messaging.Broker
@@ -52,8 +51,7 @@ let main _ =
                 let sync (config: ConfigList.Root) = 
                     let queueName = config.Source.Provider.ToLower().Replace(" ","")
                     let json = config.JsonValue.ToString()
-                    json
-                    |> Sync
+                    Sync(config.Id,json)
                     |> Message
                     |> Newtonsoft.Json.JsonConvert.SerializeObject
                     |> Broker.Generic queueName

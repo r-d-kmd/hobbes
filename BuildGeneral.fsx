@@ -183,7 +183,7 @@ module BuildGeneral =
                 file.Directory.Parent.FullName
             
             let name = Path.GetFileNameWithoutExtension file.Name
-            name, workingDir
+            name.Replace(".worker",""), workingDir
         )
 
     let buildProject (name : string) workingDir =

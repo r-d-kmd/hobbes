@@ -15,8 +15,8 @@ url:
     - https://dev.azure.com/kmddk/kmdlogic/_apis/git/repositories/2191c6f8-8dda-4cbc-b9e0-fbdc5bfabb66/commits?api-version=6.0&$top=10000
     - https://dev.azure.com/kmddk/kmdlogic/_apis/git/repositories/01c03de4-5713-4cad-b3d6-ff14dc4c387e/commits?api-version=6.0&$top=10000
     - https://dev.azure.com/kmddk/kmdlogic/_apis/git/repositories/fbf1b24e-c1b9-48f4-bfbc-ff2dbf46220b/commits?api-version=6.0&$top=10000
-user: $FEED_PAT 
-pwd: $FEED_PAT
+user: $AZURE_DEVOPS_PAT 
+pwd: $AZURE_DEVOPS_PAT
 values: value
 
 

@@ -200,7 +200,7 @@ function start() {
 function startKube(){
     minikube start --driver=docker --memory=4GB --cpus=4
     
-    if [[ $(uname -s) == CYGWIN_NT* ]] || [[ $(uname -s) == "Darwin" ]] || [[ $(uname -s) == MINGW64_NT* ]]
+    if [[ $(uname -s) =~ "CYGWIN_NT*" ]] || [[ $(uname -s) == "Darwin" ]] || [[ $(uname -s) =~ "MINGW64_NT*" ]]
     then
         eval $(minikube docker-env)
     else

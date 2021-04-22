@@ -50,7 +50,7 @@ module Broker =
         | Empty
 
     type SyncMessage = 
-        Sync of string
+        Sync of name:string * config:string
         | Empty
 
     type DeadLetter =

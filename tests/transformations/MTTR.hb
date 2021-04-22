@@ -3,8 +3,8 @@ url: https://analytics.dev.azure.com/kmddk/kmdlogic/_odata/v2.0/WorkItemRevision
 expand: Iteration
 select: WorkItemId,WorkItemType,Iteration,LeadTimeDays,ChangedDate
 filter: Iteration/StartDate gt 2019-01-01Z
-user: $FEED_PAT 
-pwd: $FEED_PAT
+user: $AZURE_DEVOPS_PAT 
+pwd: $AZURE_DEVOPS_PAT
 
 
 !## Mean time to recover (MTTR)

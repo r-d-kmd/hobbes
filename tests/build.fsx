@@ -92,8 +92,13 @@ type DocList = JsonProvider<"""{
     }
   ]
 }""">
+let dns = 
+    match Fake.Core.Environment.environVarOrNone "IP" with
+    Some ip -> ip
+    | None -> "localhost"
+
 let listDocuments =   
-    sprintf "http://localhost:5984/%s/_all_docs"
+    sprintf "http://%s:5984/%s/_all_docs" dns
     >> request "get" dbUser dbPwd 
     >> DocList.Parse
 
@@ -233,12 +238,15 @@ let forwardServicePort serviceName here there =
         with _ -> () 
     )
 
-create "port-forwarding" ignore
+create "port-forwarding" (fun _ ->
+   run false "sleep" "1" |> ignore
+)
 
 [
   "gateway", 8080, 80
   "db", 5984, 5984
   "uniformdata", 8099, 8085
+  "configurations", 8089,8085
 ] |> List.iter(fun (serviceName, localPort, podPort) -> 
      let target = awaitService serviceName
      "deploy" ?=> target |> ignore
@@ -252,7 +260,17 @@ create "publish" (fun _ ->
     System.IO.Directory.EnumerateFiles("./transformations", "*.hb")
     |> Seq.iter(fun file ->
         let name = System.IO.Path.GetFileNameWithoutExtension file
-        let url = sprintf "http://localhost:8080/admin/configuration"
+        
+        let url = sprintf "http://%s:8080/admin/configuration" dns
+        printfn "Uploading to: %s" url
+
+        let projectConfigs =
+            let url = sprintf "http://%s:8089/meta/category/project" dns
+            FSharp.Data.Http.RequestString(url,
+                httpMethod = "GET"
+            )
+        printfn "Projects: %s" projectConfigs
+        
         FSharp.Data.Http.Request(url,
             httpMethod = "PUT",
             headers = [HttpRequestHeaders.BasicAuth masterkey ""],
@@ -308,7 +326,11 @@ let areEqual actual expected (successes,failed)=
        successes,(failed + 1)
 
 create "data" (fun _ ->
-    let res = get "http://localhost:8080/data/json/azureDevops.Flowerpot.Test"
+    let res = 
+        dns
+        |> sprintf "http://%s:8080/data/json/azureDevops.Flowerpot.Test"
+        |> get
+
     let first = res.[0]
 
     let successes,failed = 

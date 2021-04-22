@@ -10,7 +10,7 @@ open LocalData.Data
 let handleMessage message =
     match message with
     Empty -> Success
-    | Sync sourceDoc -> 
+    | Sync(_,sourceDoc) -> 
         Log.debugf "Received message. %s" sourceDoc
         try
             let source = sourceDoc |> LocalDataProviderConfig.Parse

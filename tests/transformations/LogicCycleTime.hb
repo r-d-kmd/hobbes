@@ -3,8 +3,8 @@ url: https://analytics.dev.azure.com/kmddk/flowerpot/_odata/v2.0/WorkItemRevisio
 expand: Iteration
 select: WorkItemId,WorkItemType,Iteration,CycleTimeDays,ChangedDate
 filter: Iteration%2FStartDate%20gt%202019-01-01Z
-user: $FEED_PAT
-pwd: $FEED_PAT
+user: $AZURE_DEVOPS_PAT
+pwd: $AZURE_DEVOPS_PAT
 
 
 !## Cycle time

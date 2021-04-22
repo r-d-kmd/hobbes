@@ -1,0 +1,5 @@
+.ionide/
+.vs/
+.paket/
+.vscode/
+.fake/

@@ -328,7 +328,7 @@ let areEqual actual expected (successes,failed)=
 create "data" (fun _ ->
     let res = 
         dns
-        |> sprintf "http://%s:8080/data/json/azureDevops.Flowerpot.Test"
+        |> sprintf "http://%s:8080/data/json/Velocity"
         |> get
 
     let first = res.[0]

@@ -5,7 +5,7 @@ filter: Iteration%2FStartDate%20gt%202019-01-01Z
 user: $AZURE_DEVOPS_PAT
 pwd: $AZURE_DEVOPS_PAT
 meta:
-  category: project
+  category: workitems
   name: flowerpot
 
 

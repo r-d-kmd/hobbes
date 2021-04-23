@@ -45,7 +45,7 @@ let main _ =
                             Broker.Success
             )
         } |> Async.Start
-        match Http.get (Http.Configurations Http.ConfigurationList) ConfigList.Parse  with
+        match Http.Success("" |> ConfigList.Parse)  with
         Http.Success configs ->
             async {
                 let sync (config: ConfigList.Root) = 

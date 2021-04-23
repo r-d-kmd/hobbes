@@ -16,7 +16,7 @@ RUN if [ -n "$FEED_PAT" ]; then export FEED_USER="$FEED_PAT"; export FEED_PASSWO
 
 COPY paket.dependencies .
 
-RUN dotnet tool restore
+RUN dotnet 
 RUN dotnet paket update
 
 FROM build-base

@@ -17,15 +17,7 @@ LightGray='\033[0;37m'
 White='\033[1;37m'
 NoColor='\033[0m'
 
-echo "Evaluating"
-
-if [[ $(uname -s) == CYGWIN_NT* ]] || [[ $(uname -s) == "Darwin" ]] || [[ $(uname -s) == MINGW64_NT* ]]
-then 
-    eval $(minikube docker-env)
-else 
-    eval $(SHELL=/bin/bash; minikube -p minikube docker-env)
-fi
-#source <(kubectl completion bash)
+source <(kubectl completion bash)
 
 if [[ $(uname -s) == CYGWIN_NT* ]]
 then
@@ -44,44 +36,6 @@ else
 fi
 KUBERNETES_DIR="$SCRIPT_DIR/kubernetes"
 
-printf "${LightBlue}sourcing${NoColor}\n"
-if [[ $(uname -s) == MINGW64_NT* ]]
-then
-    printf "${Red}Running on windows${NoColor}\n"
-elif [[ $(uname -s) == CYGWIN_NT* ]]
-then
-    source <(cat $SCRIPT_DIR/macos.sh | dos2unix)
-    printf "${Yellow}Running CygWin${NoColor}\n"
-else
-    printf "${Green}Mac${NoColor}\n"
-    source $SCRIPT_DIR/macos.sh
-fi
-
-if [[ $(uname -s) = MINGW64_NT* ]]
-then
-    declare -a APPS=("db" "azuredevops" "calculator" "configurations" "gateway" "git" "uniformdata")
-else
-    declare -a APPS=(db)
-    function services(){
-         local APP_NAME=""
-         for APP in $(find ${SCRIPT_DIR}/services -name *.fsproj | rev | cut -d'/' -f1 | rev)
-         do
-             APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
-             APPS+=($APP_NAME)
-         done 
-         APP_NAME=""
-         for APP in $(find ${SCRIPT_DIR}/workers -name *.fsproj | rev | cut -d'/' -f1 | rev)
-         do
-             if [[ "$APP" = *.worker.* ]] 
-             then
-                APP_NAME=$(echo $APP | cut -d'.' -f 1 | tr '[:upper:]' '[:lower:]')
-             fi
-             APPS+=($APP_NAME)
-         done 
-    }
-    services
-fi
-
 function getName(){
     echo "$(kubectl get pods | grep $1 | cut -d ' ' -f 1 )"
 }
@@ -90,19 +44,6 @@ function logs(){
     local NAME=$(getName $1)
     kubectl wait --for=condition=ready pod/"$NAME" --timeout=60s
     kubectl logs $2 $NAME
-}
-
-function getAppName(){
-   local SERVICE_NAME=$(kubectl get services \
-                        | grep $1 \
-                        | cut -d ' ' -f 1)
-   local APP_NAME=${SERVICE_NAME::${#SERVICE_NAME}-4}
-   echo $APP_NAME
-}
-
-function delete(){
-    local POD_NAME=$(getName $1)
-    kubectl delete "$POD_NAME"
 }
 
 function restart(){
@@ -119,10 +60,6 @@ function restart(){
     cd $CURRENT_DIR
 }
 
-function all(){
-    kubectl get all
-}
-
 function clean(){
     kubectl delete --all deployment
     kubectl delete --all service
@@ -134,141 +71,10 @@ function clean(){
     kubectl delete --all job
     kubectl delete --all hpa
 }
-function build(){   
-
-    local CURRENT_DIR=$(pwd)
-    cd $SCRIPT_DIR
-    (
-        set -e
-        if [ "$1" != "builder" ]; then        
-            if [[ "$(docker images -q builder 2> /dev/null)" == "" ]]; then
-                build builder
-            fi
-        elif [[ "$2" == "" ]]; then
-            builder build "no-cache"
-           
-        fi 
-        re='^[0-9]+$'
-        P=1
-        NO_CACHE=""
-        for ARG in $@; do
-            if [[ $ARG =~ $re ]]
-            then
-                P=$ARG
-                echo "Running with $P parallel builds"
-            fi
-
-        done
-        dotnet fake build --target "$target" --parallel $P $NO_CACHE
-    )
-    res=$?
-    cd $CURRENT_DIR
-    if [ $res -ne 0 ]; then
-        echo "We have error"
-        exit $res
-    fi
-}
-
-function describe(){
-    local NAME=$(getAppName $1)
-    local NAME=$(kubectl get pods -l app=$NAME -o name)
-    kubectl describe ${NAME}
-}
-
-function listServices(){
-    minikube service list 
-}
-
-function start() {
-    local CURRENT_DIR=$(pwd)
-    kubectl apply -f $SCRIPT_DIR/env.JSON
-    for kube_dir in $(find $SCRIPT_DIR -type d -name kubernetes)
-    do
-        echo $kube_dir
-        if [ -f "$kube_dir/kustomization.yaml" ]
-        then
-            kubectl apply -k $kube_dir
-            if (( $? > 0 )); then exit $?; fi
-        fi
-    done
-    
-    #awaitRunningState
-    
-    cd $CURRENT_DIR
-}
 
 function startKube(){
     minikube start --driver=docker --memory=4GB --cpus=4
-    
-    if [[ $(uname -s) =~ "CYGWIN_NT*" ]] || [[ $(uname -s) == "Darwin" ]] || [[ $(uname -s) =~ "MINGW64_NT*" ]]
-    then
-        eval $(minikube docker-env)
-    else
-        eval $(SHELL=/bin/bash; minikube -p minikube docker-env)
-    fi
-}
-
-function update(){
-    local CURRENT_DIR=$(pwd)
-    cd $KUBERNETES_DIR
-    start
-    kubectl apply -f env.JSON
-    cd $CURRENT_DIR
-}
-
-function pingService(){
-    curl -I -L -X GET "http://$(minikube ip):$1/ping"
-}
-
-function testServiceIsFunctioning(){
-    pingService $1 2>/dev/null | grep HTTP | tail -1 | cut -d$' ' -f2
-}
-
-function awaitRunningState(){
-    PODS=$(kubectl get pods | grep - )
-    while [ ${#PODS[@]} -eq 0 ]
-    do
-        sleep 1
-        for NAME in ${PODS_[@]}
-        do
-            echo "$NAME"
-        done
-        PODS=$(kubectl get pods | grep - )
-    done
-    
-    PODS_=$(kubectl get pods | grep - | cut -d ' ' -f 1 )
-    echo "Still waiting for: ${#PODS[@]}"
-    for NAME in ${PODS_[@]}
-    do 
-        if [[ $NAME != sync* ]] && [[ $NAME != publish* ]]
-        then
-            echo "Waiting for pod/$NAME"
-            kubectl wait --for=condition=ready "pod/$NAME" --timeout=60s
-
-            #empty if there are no pods running for the given name. Ie the wait timed out
-            if [ -z "$(kubectl get pods --field-selector=status.phase=Running | grep $NAME)" ]
-            then
-                #print out the log so that we can get som einfo on what went wrong
-                kubectl logs "pod/$NAME"
-                exit 1
-            fi
-        fi
-    done
-
-    echo "Waiting for DB to be operational"
-    while [ "$(logs gateway | grep "DB initialized")" != "DB initialized" ]
-    do
-        sleep 1
-    done
-
-    echo "Waiting for Rabbit-MQ to be operational"
-    while [ "$(logs configurations | grep "Watching queue")" != "Watching queue: cache" ]
-    do
-        echo $(logs configurations | grep "Queue not yet ready" | tail -1)
-        sleep 10
-    done
-
-    all
+    eval $(SHELL=/bin/bash; eval $(minikube -p minikube docker-env))
 }
 
 function run(){
@@ -285,28 +91,6 @@ function startJob(){
     printf "${Cyan}$1 started\n${NoColor}"
     
     cd $CURRENT_DIR
-}
-
-
-function publish(){
-    local CURRENT_DIR=$(pwd)
-    cd $SCRIPT_DIR
-    cd tools/workbench
-    
-    docker build -t kmdrd/workbench .
-    RESULT=$?
-    if (( RESULT == 0)); then
-        printf "${Green}Publisher built${NoColor}\n"
-        startJob publish
-        logs publish -f &
-        RESULT=$?
-    fi
-    cd $CURRENT_DIR
-}
-
-function forward(){
-    local NAME=$(getAppName $1)
-    kubectl port-forward service/$NAME-svc $2:$3 &>/dev/null &
 }
 
 
@@ -339,42 +123,6 @@ function applyProductionYaml() {
     cd $CURRENT_DIR
 }
 
-function addSource(){
-    dotnet nuget add source --name KMD_FEED \
-        https://kmddk.pkgs.visualstudio.com/45c29cd0-03bf-4f63-ac71-3c366095dda9/_packaging/KMD_Package_Feed/nuget/v2
-}
-
-function pushPackage(){
-    nuget push -Source KMD_FEED -ApiKey az $1
-}
-
-function test(){
-    #kubectl port-forward service/db-svc 5984:5984 &
-    #kubectl port-forward service/gateway-svc 30080:80 &
-
-    #PM_APIKEY="$(cat "postman api-key.md")"
-    #newman run https://api.getpostman.com/collections/7af4d823-d527-4bc8-88b0-d732c6243959?apikey=${PM_APIKEY} -e https://api.getpostman.com/environments/b0dfd968-9fc7-406b-b5a4-11bae0ed4b47?apikey=${PM_APIKEY} --env-var "ip"=$(minikube ip) --env-var "master_key"=${MASTER_KEY} >> testresults.txt
-    TESTRESULT=$?
-    if [ "$TESTRESULT" -eq "0" ]
-    then
-        printf "${Green}********************* Test passed ***********************\n"
-        cat testresults.txt
-        printf "${Green}********************* Test passed ***********************\n"
-        printf "${NoColor}"
-    else
-        printf "${Red}********************* Test failed ***********************\n"
-        cat testresults.txt
-        printf "${NoColor}"
-        logs az
-        printf "${Yellow}********************************************\n${NoColor}"
-        logs gateway
-        printf "${Yellow}********************************************\n${NoColor}"
-        logs calc -f &
-        printf "${Red}********************* Test failed ***********************\n"
-    fi
-    exit $TESTRESULT
-}
-
 function skipRestore(){
     export PAKET_SKIP_RESTORE_TARGETS=true
 }
@@ -386,10 +134,9 @@ function setDefaultVersion(){
 }
 
 function setFeedPat(){
-    local CURRENT_DIR=$(pwd)
     cd $SCRIPT_DIR
     export FEED_PAT="$(echo "$(cat env.JSON | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
-    cd $CURRENT_DIR
+    cd -
 }
 
 function setupLocalEnv(){

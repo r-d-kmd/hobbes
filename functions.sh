@@ -72,9 +72,13 @@ function clean(){
     kubectl delete --all hpa
 }
 
+function setDockerEnv(){
+    eval $(minikube -p minikube docker-env)
+}
+
 function startKube(){
     minikube start --driver=docker --memory=4GB --cpus=4
-    eval $(SHELL=/bin/bash; eval $(minikube -p minikube docker-env))
+    setDockerEnv
 }
 
 function run(){
@@ -143,6 +147,7 @@ function setupLocalEnv(){
     skipRestore
     setDefaultVersion
     setFeedPat
+    setDockerEnv
 }
 
 function vscode(){

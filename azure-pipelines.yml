@@ -70,10 +70,10 @@ stages:
           displayName: Build the world
 
         - script: |            
-            eval $(minikube docker-env)
             cd tests/
             source ../functions.sh
             setupLocalEnv
+            IP=$(minikube ip)
             dotnet fake build --target setup-test
           displayName: Setup integration tests
           env:

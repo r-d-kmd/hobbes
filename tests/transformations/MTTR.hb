@@ -16,7 +16,7 @@ The trend of the "long" is a stronger signal however if the short has recently c
 
 
 only ((WorkItemType = 'Bug') && !(LeadTimeDays = ''))
-rename column "Iteration.IterationLevel3" "Sprint Name"
+rename column "Iteration.IterationLevel2" "Sprint Name"
 group by "Sprint Name" WorkItemId -> maxby ChangedDate
 create column SprintNumber (int (regex ["Sprint Name"] /[Ss][Pp][Rr][Ii][Nn][Tt] [^\\d]*([\\d]+).*/ [$1]))
 slice columns "Sprint Name" SprintNumber LeadTimeDays

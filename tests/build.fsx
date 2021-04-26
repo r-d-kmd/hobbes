@@ -263,13 +263,6 @@ create "publish" (fun _ ->
         
         let url = sprintf "http://%s:8080/admin/configuration" dns
         printfn "Uploading to: %s" url
-
-        let projectConfigs =
-            let url = sprintf "http://%s:8089/meta/category/project" dns
-            FSharp.Data.Http.RequestString(url,
-                httpMethod = "GET"
-            )
-        printfn "Projects: %s" projectConfigs
         
         FSharp.Data.Http.Request(url,
             httpMethod = "PUT",

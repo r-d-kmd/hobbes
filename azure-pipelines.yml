@@ -71,8 +71,7 @@ stages:
 
         - script: |            
             cd tests/
-            source ../functions.sh
-            setupLocalEnv
+            eval $(minikube docker-env)
             export IP="$(minikube ip)"
             echo "Using ($IP) as dns for minikube"
             dotnet fake build --target setup-test

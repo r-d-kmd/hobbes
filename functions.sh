@@ -150,7 +150,7 @@ function setEnvVars(){
 function setupLocalEnv(){
     skipRestore
     setDefaultVersion
-    setFeedPat
+    setEnvVars
     setDockerEnv
 }
 
@@ -183,7 +183,10 @@ spec:
   backoffLimit: 0
 EOF
     kubectl apply -f $1.yaml
-    kubectl wait --for=condition=complete job/$podName --timeout=120s
+    sleep 30
+    kubectl describe job/$podName
+    kubectl logs job/$podName -f
+    #kubectl wait --for=condition=complete job/$podName --timeout=120s
     
     if [ "$(kubectl logs job/$podName | grep "Status:" | awk '{print $NF}')" != "Ok" ]; then
         kubectl logs job/$podName

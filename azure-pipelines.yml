@@ -64,8 +64,9 @@ stages:
 
         - script: |
             cd tests/
-            docker build -t tester --build-arg ENV_FILE="$(echo $ENV_FILE | tr "\"" "\\\"")" .
             source ../functions.sh
+            eval $(minikube docker-env)
+            docker build -t tester --build-arg ENV_FILE="$(echo $ENV_FILE | tr "\"" "\\\"")" .
             wrap "ping"
           env:
             ENV_FILE: "$(ENV_FILE)"

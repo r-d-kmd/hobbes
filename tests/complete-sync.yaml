@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: complete-syncer
+spec:
+  template:
+    spec:
+      containers:
+      - name: complete-syncer
+        image: tester
+        imagePullPolicy: Never
+        env:
+        - name: target
+          value: "complete-sync"
+      restartPolicy: Never
+  backoffLimit: 0

@@ -1,12 +1,10 @@
-
 ARG DOTNET_VERSION=5.0
 FROM kmdrd/sdk:${DOTNET_VERSION}
 
-ARG target="all"
-ENV target ${target}
+ENV target "publish"
 
-ARG envfile
-ENV ENV_FILE=${envdata}
+ARG ENV_FILE
+ENV ENV_FILE=${ENV_FILE}}
 
 COPY . /tests
 WORKDIR /tests
@@ -19,6 +17,6 @@ COPY paket.dependencies .
 
 RUN dotnet paket restore 
 
-RUN echo "echo \"${ENV_FILE}\" >> env.JSON && dotnet fake build --target ${target}" >> /tmp/start.sh
-RUN chmod +x /tmp/start.sh
-ENTRYPOINT /tmp/start.sh
+RUN dotnet fake build --list
+
+CMD [ "dotnet", "fake", "build" ]

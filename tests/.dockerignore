@@ -3,3 +3,4 @@
 .paket/
 .vscode/
 .fake/
+packages/

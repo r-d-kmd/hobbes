@@ -10,7 +10,7 @@ nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //
 nuget Thoth.Json.Net"
-#load "../build/Configuration.fsx"
+#load "Configuration.fsx"
 
 #if !FAKE
 #r "netstandard"
@@ -22,7 +22,7 @@ open FSharp.Data
 open Fake.Core.TargetOperators
 open Thoth.Json.Net
 
-let globalEnvFile = "../env.JSON"
+let globalEnvFile = "env.JSON"
 let env = Configuration.Environment.Environment(globalEnvFile)
 
 let masterkey = env.MasterUser
@@ -46,9 +46,9 @@ let createProcess silent command workingDir args =
     else
         proc
 
-let run silent command workingDir args =
+let run silent command workingDir (args : string) =
     let res = 
-        createProcess silent command workingDir args    
+        createProcess silent command workingDir <| System.String.Join(" ",args.Split([|" "|], System.StringSplitOptions.RemoveEmptyEntries))    
         |> Proc.run
 
     res.ExitCode
@@ -92,13 +92,20 @@ type DocList = JsonProvider<"""{
     }
   ]
 }""">
-let dns = 
-    match Fake.Core.Environment.environVarOrNone "IP" with
-    Some ip -> ip
-    | None -> "localhost"
+
+let getDns serviceName = 
+    match Fake.Core.Environment.environVarOrNone "BUILD_ENV" with
+    Some "docker" -> serviceName + "-svc"
+    | _ -> "localhost"
+let gateway_port = 
+    match Fake.Core.Environment.environVarOrNone "BUILD_ENV" with
+    Some "docker" -> 80
+    | _ -> 8080
+let gateway_dn = getDns "gateway"
+let dbDn = getDns "db"
 
 let listDocuments =   
-    sprintf "http://%s:5984/%s/_all_docs" dns
+    sprintf "http://%s:5984/%s/_all_docs" dbDn
     >> request "get" dbUser dbPwd 
     >> DocList.Parse
 
@@ -151,7 +158,7 @@ let create name f =
     name
 
 create "build" (fun _ ->
-    run false "dotnet" ".." "fake build" |> ignore
+    docker Build "." "-t tester ." |> ignore
 )
 
 create "deploy" (fun x ->
@@ -163,7 +170,7 @@ create "deploy" (fun x ->
 
     if System.IO.File.Exists globalEnvFile then
         printfn "Using env file"
-        kubectl false "apply" ("-f " + globalEnvFile) |> ignore
+        run false "kubectl" ("apply -f " + globalEnvFile) |> ignore
     else
         printfn "Using env from var"
 
@@ -255,13 +262,25 @@ create "port-forwarding" (fun _ ->
          ==> "port-forwarding"
      |> ignore
 )
+let wrap target =
+    create ("wrapped-" + target) (fun _ ->  
+        let podName = sprintf "%ser" target
+        let res = kubectl false "run" <| sprintf """-i --tty %s --image tester --image-pull-policy=Never --env='target=%s' """ podName target
+        if res > 0 then failwithf "Running %s failed" target
+        if kubectl true "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=120s" podName) > 0 then 
+            failwithf "Couldn't wait for target completion of %s" target
+    )
+
+wrap "publish"
+wrap "test"
+wrap "complete-sync"
 
 create "publish" (fun _ ->    
     System.IO.Directory.EnumerateFiles("./transformations", "*.hb")
     |> Seq.iter(fun file ->
         let name = System.IO.Path.GetFileNameWithoutExtension file
         
-        let url = sprintf "http://%s:8080/admin/configuration" dns
+        let url = sprintf "http://%s:%d/admin/configuration" gateway_dn gateway_port
         printfn "Uploading to: %s" url
         
         FSharp.Data.Http.Request(url,
@@ -320,8 +339,7 @@ let areEqual actual expected (successes,failed)=
 
 create "data" (fun _ ->
     let res = 
-        dns
-        |> sprintf "http://%s:8080/data/json/Velocity"
+        sprintf "http://%s:%d/data/json/Velocity" gateway_dn gateway_port
         |> get
 
     let first = res.[0]
@@ -343,6 +361,7 @@ create "data" (fun _ ->
 Target.create "test" ignore
 Target.create "retest" ignore
 Target.create "setup-test" ignore
+Target.create "publishAndSync" ignore
 
 "retest"
    <== "port-forwarding"
@@ -350,6 +369,9 @@ Target.create "setup-test" ignore
    <== "sync"
    <== "test"
    
+"publishAndSync"
+    <== "publish"
+    <== "sync"
 
 "setup-test"
    <== "deploy"
@@ -364,9 +386,6 @@ Target.create "setup-test" ignore
   ?=> "publish"
   ?=> "sync"
   ?=> "data"
-
-"port-forwarding"
-  ==> "sync"
 
 "sync"
   ?=> "complete-sync"

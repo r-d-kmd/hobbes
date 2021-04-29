@@ -84,8 +84,8 @@ stages:
             eval $(minikube docker-env)
             cd tests/
             dotnet fake build --target deploy
-            kubectl wait --for=condition=Initialized pod -l app=db --timeout=120s
-            kubectl wait --for=condition=Initialized pod -l component=rabbitmq --timeout=120s
+            kubectl wait --for=condition=Ready pod -l app=db --timeout=120s
+            kubectl wait --for=condition=Ready pod -l component=rabbitmq --timeout=120s
             kubectl get all
           env:
             ENV_FILE: "$(ENV_FILE)"

@@ -172,6 +172,9 @@ spec:
       containers:
       - name: $podName
         image: tester
+        envFrom:
+        - secretRef:
+            name: env
         imagePullPolicy: Never
         env:
         - name: target

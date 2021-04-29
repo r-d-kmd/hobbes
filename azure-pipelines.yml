@@ -63,6 +63,7 @@ stages:
           displayName: Apply kubernetes environment file
 
         - script: |
+            set -e
             cd tests/
             source ../functions.sh
             eval $(minikube docker-env)
@@ -72,21 +73,25 @@ stages:
           displayName: Build tester image
 
         - script: |
+            set -e
             eval $(minikube docker-env)
             dotnet fake build --parallel 4
           env:
             ENV_FILE: "$(ENV_FILE)"
           displayName: Build the world
         - script: |
+            set -e
             eval $(minikube docker-env)
             cd tests/
             dotnet fake build --target deploy
-            sleep 10
+            kubectl wait --for=condition=Initialized pod -l app=db --timeout=120s
+            kubectl wait --for=condition=Initialized pod -l component=rabbitmq --timeout=120s
             kubectl get all
           env:
             ENV_FILE: "$(ENV_FILE)"
           displayName: Deploy services to minikube
-        - script: |            
+        - script: |       
+            set -e     
             cd tests/
             eval $(minikube docker-env)
             source ../functions.sh
@@ -96,6 +101,7 @@ stages:
             ENV_FILE: "$(ENV_FILE)"
             
         - script: |
+            set -e
             git config --global credential.helper store
             git config --global user.email "hobbes_buildserver@kmd.dk"
             git config --global user.name "Build server"

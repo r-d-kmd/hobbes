@@ -139,11 +139,19 @@ function setDefaultVersion(){
 
 function setEnvVars(){
     cd $SCRIPT_DIR
-    export AZURE_DEVOPS_PAT="$(echo "$(cat env.JSON | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
+    if [ -z ${AZURE_DEVOPS_PAT+x} ]; then 
+        export AZURE_DEVOPS_PAT="$(echo "$(cat env.JSON | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
+    fi
     export FEED_PAT=$AZURE_DEVOPS_PAT
-    export COUCHDB_USER="$(echo "$(cat env.JSON | jq -r .data.COUCHDB_USER)" | base64 -d)"
-    export COUCHDB_PASSWORD="$(echo "$(cat env.JSON | jq -r .data.COUCHDB_PASSWORD)" | base64 -d)"
-    export MASTER_USER="$(echo "$(cat env.JSON | jq -r .data.MASTER_USER)" | base64 -d)"
+    if [ -z ${COUCHDB_USER+x} ]; then 
+        export COUCHDB_USER="$(echo "$(cat env.JSON | jq -r .data.COUCHDB_USER)" | base64 -d)"
+    fi
+    if [ -z ${COUCHDB_PASSWORD+x} ]; then 
+        export COUCHDB_PASSWORD="$(echo "$(cat env.JSON | jq -r .data.COUCHDB_PASSWORD)" | base64 -d)"
+    fi
+    if [ -z ${MASTER_USER+x} ]; then 
+        export MASTER_USER="$(echo "$(cat env.JSON | jq -r .data.MASTER_USER)" | base64 -d)"
+    fi
     cd -
 }
 

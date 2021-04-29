@@ -78,7 +78,14 @@ stages:
           env:
             ENV_FILE: "$(ENV_FILE)"
           displayName: Build the world
-
+        - script: |
+            eval $(minikube docker-env)
+            dotnet fake build --target deploy
+            sleep 10
+            kubectl get all
+          env:
+            ENV_FILE: "$(ENV_FILE)"
+          displayName: Deploy services to minikube
         - script: |            
             cd tests/
             eval $(minikube docker-env)

@@ -206,9 +206,6 @@ function test() {
        set -e
     fi
     cd $SCRIPT_DIR/tests
-
-    echo "Deploy"
-    dotnet fake build --target deploy
     
     echo "Publish"
     wrap "publish"

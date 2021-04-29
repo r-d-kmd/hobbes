@@ -163,6 +163,10 @@ create "build" (fun _ ->
     docker Build "." "-t tester ." |> ignore
 )
 
+create "ping" (fun _ ->
+    printfn "pong"
+)
+
 create "deploy" (fun x ->
     let patch_dir =
         match x.Context.Arguments with

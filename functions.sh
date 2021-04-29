@@ -201,8 +201,6 @@ function test() {
        set -e
     fi
     cd $SCRIPT_DIR/tests
-    
-    docker build -t tester .
 
     echo "Deploy"
     dotnet fake build --target deploy

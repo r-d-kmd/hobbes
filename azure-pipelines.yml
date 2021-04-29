@@ -63,6 +63,15 @@ stages:
           displayName: Apply kubernetes environment file
 
         - script: |
+            cd tests/
+            docker build -t tester --build-arg ENV_FILE="$(echo $ENV_FILE | tr "\"" "\\\"")" .
+            source ../functions.sh
+            wrap "ping"
+          env:
+            ENV_FILE: "$(ENV_FILE)"
+          displayName: Build tester image
+
+        - script: |
             eval $(minikube docker-env)
             dotnet fake build --parallel 4
           env:
@@ -70,7 +79,7 @@ stages:
           displayName: Build the world
 
         - script: |            
-            cd tests/
+            
             eval $(minikube docker-env)
             source ../functions.sh
             test

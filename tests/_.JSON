@@ -1,0 +1,20 @@
+{ 
+    "apiVersion": "v1", 
+    "kind": "Secret",
+    "metadata": {
+      "name": "env"
+    },
+    "type": "Opaque",
+    "data": {
+      "KEY_SUFFIX": "MjgwNGRlNjdiYTY5NzljNzU2ZTg3NTllNDRmZTQK",
+      "COUCHDB_PASSWORD": "cGFzc3dvcmQK",
+      "COUCHDB_USER": "YWRtaW4K",
+      "SERVER_PORT": "ODA4NQo=",
+      "MASTER_USER": "Um5vOGhjcXI5clhYcw==",
+      "RABBIT_HOST": "cmFiYml0bXEtc2VydmljZQo=",
+      "RABBIT_PORT": "NTY3Mg==",
+      "RABBIT_USER": "Z3Vlc3Q=",
+      "RABBIT_PASSWORD": "Z3Vlc3Q=",
+      "AZURE_DEVOPS_PAT": "eDV3MjIyZ2hzZWR3anc1dHhyeW9jYjN1aHFvd3pzcW5oeDUycnJpYmpjcWN5NjN5anZnYQo="
+    }
+  }

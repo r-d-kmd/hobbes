@@ -4,7 +4,7 @@ FROM kmdrd/sdk:${DOTNET_VERSION}
 ENV target "publish"
 
 ARG ENV_FILE
-ENV ENV_FILE=${ENV_FILE}}
+ENV ENV_FILE=${ENV_FILE}
 
 COPY . /tests
 WORKDIR /tests

@@ -23,9 +23,9 @@ open Fake.Core.TargetOperators
 open Thoth.Json.Net
 
 let globalEnvFile = "env.JSON"
-let env = Configuration.Environment.Environment(globalEnvFile)
+let env() = Configuration.Environment.Environment(globalEnvFile)
 
-let masterkey = env.MasterUser
+
 let inline (<==) a b = 
     b ==> a
 
@@ -66,12 +66,12 @@ let request httpMethod user pwd url =
 
 type Data = JsonProvider<"""testdata.json""">
 
-let get =
-    request "get" masterkey ""
-    >> Data.Parse
+let get url =
+    let masterkey = env().MasterUser
+    url
+    |> request "get" masterkey ""
+    |> Data.Parse
 
-let dbUser = env.CouchdbUser 
-let dbPwd = env.CouchdbPassword 
 type DocList = JsonProvider<"""{
   "total_rows": 13,
   "offset": 0,
@@ -104,7 +104,9 @@ let gateway_port =
 let gateway_dn = getDns "gateway"
 let dbDn = getDns "db"
 
-let listDocuments =   
+let listDocuments =  
+    let dbUser = env().CouchdbUser 
+    let dbPwd = env().CouchdbPassword  
     sprintf "http://%s:5984/%s/_all_docs" dbDn
     >> request "get" dbUser dbPwd 
     >> DocList.Parse
@@ -282,7 +284,7 @@ create "publish" (fun _ ->
         
         let url = sprintf "http://%s:%d/admin/configuration" gateway_dn gateway_port
         printfn "Uploading to: %s" url
-        
+        let masterkey = env().MasterUser
         FSharp.Data.Http.Request(url,
             httpMethod = "PUT",
             headers = [HttpRequestHeaders.BasicAuth masterkey ""],

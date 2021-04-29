@@ -160,10 +160,6 @@ function vscode(){
 }
 
 function wrap() {
-    #make the script fail immediately if it's on the build server
-    if [ -z ${ENV_FILE+x} ]; then
-        set -e
-    fi
     podName=$1er
     cat <<EOF > $1.yaml
 apiVersion: batch/v1
@@ -193,6 +189,8 @@ EOF
         kubectl logs job/$podName
         #make the script fail if it's on the build server
         if [ -z ${ENV_FILE+x} ]; then
+            echo "Running in local mode"
+        else
             exit 1;
         fi
     fi

@@ -72,24 +72,13 @@ stages:
         - script: |            
             cd tests/
             eval $(minikube docker-env)
-            export IP="$(minikube ip)"
-            echo "Using ($IP) as dns for minikube"
-            dotnet fake build --target setup-test
+            source ../functions.sh
+            test
           displayName: Setup integration tests
-          env:
-            ENV_FILE: "$(ENV_FILE)"
-        - task: DotNetCoreCLI@2
-          inputs:
-           command: 'custom'
-           custom: 'fake'
-           arguments: 'build --target test'
-           workingDirectory: 'tests/'
-          displayName: Run integration tests
           env:
             ENV_FILE: "$(ENV_FILE)"
             
         - script: |
-            docker push kmdrd/workbench
             git config --global credential.helper store
             git config --global user.email "hobbes_buildserver@kmd.dk"
             git config --global user.name "Build server"

@@ -153,7 +153,7 @@ module BuildGeneral =
         let arguments = 
             arguments command
             
-        run "docker" dir (arguments.Replace("  "," ").Trim())
+        run "kind" dir (arguments.Replace("  "," ").Trim())
 
     let feedPat = env.AzureDevopsPat
 

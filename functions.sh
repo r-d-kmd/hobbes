@@ -155,6 +155,64 @@ function vscode(){
     code $1
 }
 
+function wrap() {
+    #make the script fail immediately if it's on the build server
+    if [ -z ${ENV_FILE+x} ]; then
+        set -e
+    fi
+    podName=$1er
+    cat <<EOF > $1.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: $podName
+spec:
+  template:
+    spec:
+      containers:
+      - name: $podName
+        image: tester
+        imagePullPolicy: Never
+        env:
+        - name: target
+          value: "$1"
+      restartPolicy: Never
+  backoffLimit: 0
+EOF
+    kubectl apply -f $1.yaml
+    kubectl wait --for=condition=complete job/$podName --timeout=120s
+    
+    if [ "$(kubectl logs job/$podName | grep "Status:" | awk '{print $NF}')" != "Ok" ]; then
+        kubectl logs job/$podName
+        #make the script fail if it's on the build server
+        if [ -z ${ENV_FILE+x} ]; then
+            exit 1;
+        fi
+    fi
+}
+
+function test() {
+    if [ -z ${ENV_FILE+x} ]; then
+        set -e
+    fi
+    cd $SCRIPT_DIR/tests
+    
+    echo "Deploy"
+    dotnet fake build --target deploy
+    
+    echo "Publish"
+    wrap "publish"
+    
+    echo "sync"
+    dotnet fake build --target sync
+    wrap "complete-sync"
+
+    echo "test"
+    wrap "test"
+    
+    cd -
+}
+
 setupLocalEnv
 
 alias fake="dotnet fake"

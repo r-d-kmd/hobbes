@@ -1,0 +1,62 @@
+The last restore is still up to date. Nothing left to do.
+Ignores: ["/Users/Rune/Projects/hobbes/services/calvin/";
+ "/Users/Rune/Projects/hobbes/tutorial"; "/Users/Rune/Projects/hobbes/libs";
+ "/Users/Rune/Projects/hobbes/common"; "/Users/Rune/Projects/hobbes/tools"]
+run wrapped-complete-sync
+Building project with version: LocalBuild
+The following targets are available:
+   All
+   Build
+   Builder
+   CopyTempFilescalculator
+   CopyTempFilesconfigurations
+   CopyTempFilesgateway
+   CopyTempFilesgit
+   CopyTempFileslocaldata
+   CopyTempFilesodata
+   CopyTempFilessyncronization
+   CopyTempFilesuniformdata
+   DeleteTempFilescalculator
+   DeleteTempFilesconfigurations
+   DeleteTempFilesgateway
+   DeleteTempFilesgit
+   DeleteTempFileslocaldata
+   DeleteTempFilesodata
+   DeleteTempFilessyncronization
+   DeleteTempFilesuniformdata
+   PostApps
+   PreApps
+   PushApps
+   Pushcalculator
+   Pushconfigurations
+   Pushgateway
+   Pushgit
+   Pushlocaldata
+   Pushodata
+   Pushsyncronization
+   Pushuniformdata
+   Tagcalculator
+   Tagconfigurations
+   Taggateway
+   Taggit
+   Taglocaldata
+   Tagodata
+   Tagsyncronization
+   Taguniformdata
+   calculator
+   configurations
+   gateway
+   git
+   localdata
+   odata
+   syncronization
+   uniformdata
+Hint: To further diagnose the problem you can run fake in verbose mode `fake -v run ...` or set the 'FAKE_DETAILED_ERRORS' environment variable to 'true'
+Hint: The fake-runner has not been updated for at least 6 months. Please consider upgrading to get latest bugfixes, improved suggestions and F# features.
+Performance:
+ - Cli parsing: 353 milliseconds
+ - Packages: 68 milliseconds
+ - Script analyzing: 24 milliseconds
+ - Script running: 961 milliseconds
+ - Script cleanup: 1 millisecond
+ - Runtime: 2 seconds

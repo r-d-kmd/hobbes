@@ -53,8 +53,10 @@ module Environment =
             None ->
               let env = 
                 if System.IO.File.Exists globalEnvFile then
+                    printfn "Using global env file"
                     Env.Load globalEnvFile
                 else
+                    printfn "Using env var for environment"
                     Fake.Core.Environment.environVarOrFail "ENV_FILE"
                     |> Env.Parse
               Environment(env.Data.AzureDevopsPat |> fromBase64,
@@ -62,6 +64,7 @@ module Environment =
                           env.Data.CouchdbUser |> fromBase64,
                           env.Data.CouchdbPassword |> fromBase64)
             | Some pat ->
+                printfn "Using distinct env vars"
                 Environment(pat,
                         Fake.Core.Environment.environVarOrFail "MASTER_USER",
                         Fake.Core.Environment.environVarOrFail "COUCHDB_USER",

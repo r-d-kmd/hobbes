@@ -193,7 +193,9 @@ EOF
 
 function test() {
     if [ -z ${ENV_FILE+x} ]; then
-        set -e
+        echo "Running in local mode"
+    else
+       set -e
     fi
     cd $SCRIPT_DIR/tests
     

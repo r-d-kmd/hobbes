@@ -137,9 +137,13 @@ function setDefaultVersion(){
     export BUILD_VERSION=1
 }
 
-function setFeedPat(){
+function setEnvVars(){
     cd $SCRIPT_DIR
-    export FEED_PAT="$(echo "$(cat env.JSON | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
+    export AZURE_DEVOPS_PAT="$(echo "$(cat env.JSON | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
+    export FEED_PAT=$AZURE_DEVOPS_PAT
+    export COUCHDB_USER="$(echo "$(cat env.JSON | jq -r .data.COUCHDB_USER)" | base64 -d)"
+    export COUCHDB_PASSWORD="$(echo "$(cat env.JSON | jq -r .data.COUCHDB_PASSWORD)" | base64 -d)"
+    export MASTER_USER="$(echo "$(cat env.JSON | jq -r .data.MASTER_USER)" | base64 -d)"
     cd -
 }
 

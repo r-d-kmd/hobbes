@@ -79,7 +79,7 @@ stages:
           displayName: Build the world
 
         - script: |            
-            
+            cd tests/
             eval $(minikube docker-env)
             source ../functions.sh
             test

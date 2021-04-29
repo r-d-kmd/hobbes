@@ -67,7 +67,6 @@ stages:
             source ../functions.sh
             eval $(minikube docker-env)
             docker build -t tester --build-arg ENV_FILE="$(echo $ENV_FILE | tr "\"" "\\\"")" .
-            wrap "ping"
           env:
             ENV_FILE: "$(ENV_FILE)"
           displayName: Build tester image
@@ -80,6 +79,7 @@ stages:
           displayName: Build the world
         - script: |
             eval $(minikube docker-env)
+            cd tests/
             dotnet fake build --target deploy
             sleep 10
             kubectl get all

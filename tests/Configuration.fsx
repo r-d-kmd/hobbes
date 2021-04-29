@@ -49,13 +49,20 @@ module Environment =
 
         new(globalEnvFile : string) =
             let globalEnvFile = System.IO.Path.GetFullPath globalEnvFile
-            let env = 
-                (if System.IO.File.Exists globalEnvFile then
+            match Fake.Core.Environment.environVarOrNone "AZURE_DEVOPS_PAT" with
+            None ->
+              let env = 
+                if System.IO.File.Exists globalEnvFile then
                     Env.Load globalEnvFile
-                 else
+                else
                     Fake.Core.Environment.environVarOrFail "ENV_FILE"
-                    |> Env.Parse).Data
-            Environment(env.AzureDevopsPat |> fromBase64,
-                        env.MasterUser |> fromBase64,
-                        env.CouchdbUser |> fromBase64,
-                        env.CouchdbPassword |> fromBase64)
+                    |> Env.Parse
+              Environment(env.Data.AzureDevopsPat |> fromBase64,
+                          env.Data.MasterUser |> fromBase64,
+                          env.Data.CouchdbUser |> fromBase64,
+                          env.Data.CouchdbPassword |> fromBase64)
+            | Some pat ->
+                Environment(pat,
+                        Fake.Core.Environment.environVarOrFail "MASTER_USER",
+                        Fake.Core.Environment.environVarOrFail "COUCHDB_USER",
+                        Fake.Core.Environment.environVarOrFail "COUCHDB_PASSWORD")

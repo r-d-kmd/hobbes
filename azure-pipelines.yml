@@ -74,7 +74,7 @@ stages:
             eval $(minikube docker-env)
             source ../functions.sh
             test
-          displayName: Setup integration tests
+          displayName: Integration tests
           env:
             ENV_FILE: "$(ENV_FILE)"
             

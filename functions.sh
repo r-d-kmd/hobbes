@@ -197,6 +197,8 @@ function test() {
     fi
     cd $SCRIPT_DIR/tests
     
+    docker build -t tester .
+
     echo "Deploy"
     dotnet fake build --target deploy
     
@@ -209,7 +211,7 @@ function test() {
 
     echo "test"
     wrap "test"
-    
+
     cd -
 }
 

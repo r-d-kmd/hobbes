@@ -168,6 +168,7 @@ function vscode(){
 }
 
 function wrap() {
+    setEnvVars
     podName=$1er
     cat <<EOF > $1.yaml
 apiVersion: batch/v1
@@ -187,6 +188,14 @@ spec:
         env:
         - name: target
           value: "$1"
+        - name: AZURE_DEVOPS_PAT
+          value: "$AZURE_DEVOPS_PAT"
+        - name: COUCHDB_PASSWORD
+          value: "$COUCHDB_PASSWORD"
+        - name: COUCHDB_USER
+          value: "$COUCHDB_USER"
+        - name: MASTER_USER
+          value: "$MASTER_USER"
       restartPolicy: Never
   backoffLimit: 0
 EOF

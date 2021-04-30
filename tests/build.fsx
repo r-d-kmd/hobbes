@@ -397,7 +397,7 @@ Target.create "publishAndSync" ignore
   ?=> "complete-sync"
 
 "port-forwarding"
-  ==> "complete-sync"
+  ?=> "complete-sync"
 
 "test"
   <== "data"

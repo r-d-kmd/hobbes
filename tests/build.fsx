@@ -104,13 +104,18 @@ let gateway_port =
 let gateway_dn = getDns "gateway"
 let dbDn = getDns "db"
 
-let listDocuments =  
+let listDocuments dbName =  
     let dbUser = env.CouchdbUser 
-    let dbPwd = env.CouchdbPassword  
-    sprintf "http://%s:5984/%s/_all_docs" dbDn
-    >> request "get" dbUser dbPwd 
-    >> DocList.Parse
-
+    let dbPwd = env.CouchdbPassword 
+    let response = 
+        sprintf "http://%s:5984/%s/_all_docs" dbDn dbName
+        |> request "get" dbUser dbPwd 
+    try 
+        response
+        |> DocList.Parse
+    with _ ->
+        eprintfn "Failed to parse %s" response
+        reraise()
 let kubectlf command args =
     start true "kubectl" "../kubernetes" (command + " " + args)
     |> ignore

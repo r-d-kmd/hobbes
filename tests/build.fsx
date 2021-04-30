@@ -326,9 +326,9 @@ create "complete-sync" (fun _ ->
             
         printfn "Found %d datasets expecting %d" count configCount
         if count <> configCount then
-            kubectl false "logs" "pod -l app=odata" |> ignore
-            kubectl false "logs" "pod -l app=uniformdata" |> ignore
-            kubectl false "logs" "pod -l app=configurations" |> ignore
+            run false "kubectl" "." "logs pod -l app=odata" |> ignore
+            run false "kubectl" "." "logs pod -l app=uniformdata" |> ignore
+            run false "kubectl" "." "logs pod -l app=configurations" |> ignore
         count
     
     while configCount > countDataset() do

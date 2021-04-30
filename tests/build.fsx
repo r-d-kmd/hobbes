@@ -322,16 +322,13 @@ create "complete-sync" (fun _ ->
     let countDataset() = 
         let count =
             (listDocuments "uniformcache").Rows
-            |> Array.filter(fun r ->
-                match r.Id.String
-                    |> Option.map(fun str -> 
-                        if str.EndsWith(":Json") then true
-                        else false
-                    ) with
-                Some true -> true
-                | _ -> false
-            ) |> Array.length
+            |> Array.length
+            
         printfn "Found %d datasets expecting %d" count configCount
+        if count <> configCount then
+            kubectl false "logs" "pod -l app=odata" |> ignore
+            kubectl false "logs" "pod -l app=uniformdata" |> ignore
+            kubectl false "logs" "pod -l app=configurations" |> ignore
         count
     
     while configCount > countDataset() do

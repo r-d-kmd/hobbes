@@ -110,6 +110,7 @@ let listDocuments dbName =
     let response = 
         sprintf "http://%s:5984/%s/_all_docs" dbDn dbName
         |> request "get" dbUser dbPwd 
+    printfn "Response from db: %s" response
     try 
         response
         |> DocList.Parse

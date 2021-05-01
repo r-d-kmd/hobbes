@@ -318,18 +318,18 @@ create "sync" (fun _ ->
 )
 
 create "complete-sync" (fun _ ->
-    let configCount = (listDocuments "configurations").TotalRows
+    let configs = (listDocuments "configurations").Rows |> Array.map(fun r -> r.Id.ToString())
+    let configCount = configs.Length
     let countDataset() = 
-        let count =
+        let datasets = 
             (listDocuments "uniformcache").Rows
-            |> Array.length
-            
-        printfn "Found %d datasets expecting %d" count configCount
-        if count <> configCount then
-            run false "kubectl" "." "logs pod -l app=odata" |> ignore
-            run false "kubectl" "." "logs pod -l app=uniformdata" |> ignore
-            run false "kubectl" "." "logs pod -l app=configurations" |> ignore
-        count
+            |> Array.filter(fun r -> 
+                configs
+                |> Array.tryFind (fun c -> c = r.Id.ToString())
+                |> Option.isSome
+            )
+        printfn "Found %d datasets expecting %d" datasets.Length configCount
+        datasets.Length
     
     while configCount > countDataset() do
         try 

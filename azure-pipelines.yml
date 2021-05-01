@@ -111,8 +111,8 @@ stages:
             git remote add pseudo https://$(GIT_ACCESS_TOKEN):x-oauth-basic@github.com/r-d-kmd/hobbes.git
             git checkout master
             git merge origin/development
-            RESULT = $?
-            if [ "$RESULT" - eq "0" ]
+            RESULT=$?
+            if [ "$RESULT" -eq "0" ]
             then
                 git push pseudo master
             else

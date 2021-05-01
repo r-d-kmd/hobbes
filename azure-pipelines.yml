@@ -102,6 +102,7 @@ stages:
             
         - script: |
             set -e
+            git stash
             git config --global credential.helper store
             git config --global user.email "hobbes_buildserver@kmd.dk"
             git config --global user.name "Build server"

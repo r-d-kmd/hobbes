@@ -1,0 +1,7 @@
+FSharp.Data
+FSharp.Core
+Newtonsoft.Json
+Thoth.Json.Net
+RabbitMQ.Client
+hobbes.core
+hobbes.web

@@ -1,6 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+
 resources:
   - local_patches/db-volume.yaml
   - db-deployment.yaml
@@ -15,3 +16,8 @@ patchesJson6902:
       kind: Service
       name: db-svc
     path: local_patches/db-svc-dev.yaml
+  #- target:
+  #    version: v1
+  #    kind: Service
+  #    name: rabbitmq-svc-dev.yaml
+  #  path: local_patches/rabbitmq-svc-dev.yaml

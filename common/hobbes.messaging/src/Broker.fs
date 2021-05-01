@@ -26,21 +26,23 @@ module Broker =
     [<RequireQualifiedAccess>]
     type Queue = 
         CacheQueue
-        | AzureDevOpsQueue
+        | ODataQueue
         | GitQueue
         | CalculationQueue
         | DeadLetterQueue
         | LogQueue
+        | LocalDataQueue
         | GenericQueue of string
         with member x.Name
                with get() = 
                     match x with
                     CacheQueue -> "cache"
-                    | AzureDevOpsQueue -> "azuredevops"
+                    | ODataQueue -> "odata"
                     | GitQueue -> "git"
                     | CalculationQueue -> "calculation"
                     | DeadLetterQueue -> "deadletter"
                     | LogQueue -> "log"
+                    | LocalDataQueue -> "localdata"
                     | GenericQueue name -> name.ToLower()
 
     type CacheMessage = 
@@ -48,7 +50,7 @@ module Broker =
         | Empty
 
     type SyncMessage = 
-        Sync of string
+        Sync of name:string * config:string
         | Empty
 
     type DeadLetter =
@@ -108,9 +110,6 @@ module Broker =
     type Message<'a> = 
         | Message of 'a
 
-   
-        
-
     let private user = 
         match env "RABBIT_USER" null with
         null -> failwith "'USER' not configured"
@@ -160,12 +159,15 @@ module Broker =
                     return! inner (tries + 1)
                 }
             async{
+
                 try
                     let channel = init()
                     declare channel Queue.DeadLetterQueue
                 with e -> 
                     if tries % (60000 / waitms) = 0 then //write the message once every minute
-                        printfn "Queue not yet ready. Message: %s" e.Message
+                        printfn "Queue (http://%s:%d) not yet ready. Message: %s" host port e.Message
+                    if tries / (60000 / waitms) > 5 then
+                        failwith "Can't connect to queue"
                     do! retry()
             } 
         inner 0
@@ -243,8 +245,10 @@ module Broker =
                                 printfn "%s" m
                                 logAndComplete (fun () -> 
                                        let failCount = fails.AddOrUpdate(tag,1,fun a b -> fails.[a] + b)
-                                       channel.BasicReject(tag,failCount < 5)) (fun l -> MessageFailure(json, m)
-                                    ) (serialize msg)
+                                       channel.BasicReject(tag,failCount < 5)
+                                    ) 
+                                    (fun l -> MessageFailure(json, m)) 
+                                    (serialize msg)
                             | Excep e ->
                                 messageException ea.DeliveryTag e (serialize msg)
                     with e ->
@@ -272,10 +276,10 @@ module Broker =
             publish Queue.CacheQueue (Message msg)
         static member Cache (handler : CacheMessage -> _) = 
             watch Queue.CacheQueue handler true
-        static member AzureDevOps(msg : SyncMessage) = 
-            publish Queue.AzureDevOpsQueue (Message msg)
-        static member AzureDevOps (handler : SyncMessage -> _) = 
-            watch Queue.AzureDevOpsQueue handler true
+        static member OData(msg : SyncMessage) = 
+            publish Queue.ODataQueue (Message msg)
+        static member OData (handler : SyncMessage -> _) = 
+            watch Queue.ODataQueue handler true
         static member Git(msg : SyncMessage) = 
             publish Queue.GitQueue (Message msg)
         static member Git (handler : SyncMessage -> _) = 
@@ -288,6 +292,10 @@ module Broker =
             publish Queue.LogQueue (Message msg)
         static member Log (handler : LogMessage -> _) = 
             watch Queue.LogQueue handler false
+        static member LocalData(msg : SyncMessage) = 
+            publish Queue.LocalDataQueue (Message msg)
+        static member LocalData (handler : SyncMessage -> _) = 
+            watch Queue.LocalDataQueue handler false
         static member Generic queueName msg =
             assert(queueName |> String.IsNullOrWhiteSpace |> not)
             publishString (Queue.GenericQueue queueName) msg

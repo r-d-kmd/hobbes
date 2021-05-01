@@ -1,0 +1,62 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "clean",
+			"command": "dotnet",
+			"type": "shell",
+			"options": {
+				"cwd": "${workspaceFolder}/workers/localdata.worker/src"
+			},
+			"args": [
+				"clean",
+				"/consoleloggerparameters:NoSummary"
+			],
+			"osx": true,
+			"group": "build",
+			"presentation": {
+				"reveal": "silent"
+			}
+		},
+		{
+			"dependsOn": "clean",
+			"label": "build",
+			"command": "dotnet",
+			"type": "shell",
+			"options": {
+				"cwd": "${workspaceFolder}/workers/localdata.worker/src"
+			},
+			"args": [
+				"build",
+				"/property:GenerateFullPaths=true",
+				"/consoleloggerparameters:NoSummary"
+			],
+			"osx": true,
+			"group": "build",
+			"presentation": {
+				"reveal": "silent"
+			},
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "bridge-to-kubernetes.service",
+			"type": "bridge-to-kubernetes.service",
+			"service": "configurations-svc",
+			"ports": [
+				8085
+			],
+			"targetCluster": "minikube",
+			"targetNamespace": "default",
+			"useKubernetesServiceEnvironmentVariables": false,
+			"isolateAs": "rune-2d83"
+		},
+		{
+			"label": "bridge-to-kubernetes.compound",
+			"dependsOn": [
+				"bridge-to-kubernetes.service",
+				"build"
+			],
+			"dependsOrder": "sequence"
+		}
+	]
+}

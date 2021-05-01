@@ -8,7 +8,7 @@ pwd: a6plj3mmef7ithp54265tqr2kxeu2huz4s2hemgtudkh2sd2vyhq
 
 
 !## Cycle time
-The ability to react to chaning conditions as well as the ability to sustain a high due date performance is strongly linked to cycle time.
+The ability to react to changing conditions as well as the ability to sustain a high due date performance is strongly linked to cycle time.
 `wait in queue` is likewise correlated with cycle time and all else being equal a shorter cycle time will improve performace.
 if cycle time increases it's very likely that we can accept substantial decrease in individual performance without impacting the teams performance
 ## Reading the graph

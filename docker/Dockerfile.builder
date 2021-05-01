@@ -14,18 +14,13 @@ ENV FEED_PASSWORD ${FEED_PASSWORD_ARG}
 
 RUN if [ -n "$FEED_PAT" ]; then export FEED_USER="$FEED_PAT"; export FEED_PASSWORD="$FEED_PAT"; fi
 
-COPY .fake/build.fsx/.paket/Paket.Restore.targets /.paket/Paket.Restore.targets
-COPY paket.lock .
 COPY paket.dependencies .
 
-RUN if [ ! -f ".config/dotnet-tools.json" ]; then \
-    dotnet new tool-manifest; \
-    dotnet tool install paket; \
-    fi
-RUN dotnet tool restore
-RUN dotnet paket restore
+RUN dotnet 
+RUN dotnet paket update
 
 FROM build-base
+COPY ./common/hobbes.messaging/src/Broker.fs /source/Broker.fs
 ONBUILD COPY ./src /source
 WORKDIR /source
 

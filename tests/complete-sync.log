@@ -1,0 +1,130 @@
+The last restore is still up to date. Nothing left to do.
+run wrapped-complete-sync
+Building project with version: LocalBuild
+Shortened DependencyGraph for Target wrapped-complete-sync:
+<== wrapped-complete-sync
+
+The running order is:
+Group - 1
+  - wrapped-complete-sync
+Starting target 'wrapped-complete-sync'
+> "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono" --version (In: false, Out: true, Err: true)
+../kubernetes> "kubectl" run -i --tty complete-syncer --image tester --image-pull-policy=Never "--env=\"target=complete-sync\"" "" (In: false, Out: false, Err: false)
+Finished (TagStatus.Failed) 'wrapped-complete-sync' in 00:00:00.3276907
+
+---------------------------------------------------------------------
+Build Time Report
+---------------------------------------------------------------------
+Target                  Duration
+------                  --------
+Total:                  00:00:00.4833975
+---------------------------------------------------------------------
+Hint: To further diagnose the problem you can run fake in verbose mode `fake -v run ...` or set the 'FAKE_DETAILED_ERRORS' environment variable to 'true'
+Hint: The fake-runner has not been updated for at least 6 months. Please consider upgrading to get latest bugfixes, improved suggestions and F# features.
+Performance:
+ - Cli parsing: 329 milliseconds
+ - Packages: 64 milliseconds
+ - Script analyzing: 26 milliseconds
+ - Script running: 733 milliseconds
+ - Script cleanup: 27 milliseconds
+ - Runtime: 1 second
+The last restore is still up to date. Nothing left to do.
+run wrapped-complete-sync
+Building project with version: LocalBuild
+Shortened DependencyGraph for Target wrapped-complete-sync:
+<== wrapped-complete-sync
+
+The running order is:
+Group - 1
+  - wrapped-complete-sync
+Starting target 'wrapped-complete-sync'
+> "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono" --version (In: false, Out: true, Err: true)
+../kubernetes> "kubectl" run -i --tty complete-syncer --image tester --image-pull-policy=Never "--env=\"target=complete-sync\"" "" (In: false, Out: false, Err: false)
+Finished (TagStatus.Failed) 'wrapped-complete-sync' in 00:00:00.3641417
+
+---------------------------------------------------------------------
+Build Time Report
+---------------------------------------------------------------------
+Target                  Duration
+------                  --------
+Total:                  00:00:00.5666917
+---------------------------------------------------------------------
+Hint: To further diagnose the problem you can run fake in verbose mode `fake -v run ...` or set the 'FAKE_DETAILED_ERRORS' environment variable to 'true'
+Hint: The fake-runner has not been updated for at least 6 months. Please consider upgrading to get latest bugfixes, improved suggestions and F# features.
+Performance:
+ - Cli parsing: 376 milliseconds
+ - Packages: 72 milliseconds
+ - Script analyzing: 22 milliseconds
+ - Script running: 854 milliseconds
+ - Script cleanup: 25 milliseconds
+ - Runtime: 1 second
+kubectl delete pod/publisher
+kubectl get all
+[?1h=The last restore is still up to date. Nothing left to do.
+[39;49m[37mUsing target 'complete-sync' from the 'target' environment variable.
+[39;49mrun complete-sync
+[39;49m[32mBuilding project with version: LocalBuild
+[39;49m[39;49m[37mShortened DependencyGraph for Target complete-sync:
+<== complete-sync
+   <== port-forwarding
+      <== port-forward-gateway
+         <== await-gateway
+      <== port-forward-db
+         <== await-db
+      <== port-forward-uniformdata
+         <== await-uniformdata
+      <== port-forward-configurations
+         <== await-configurations
+
+[39;49m[39;49m[37mThe running order is:
+Group - 1
+  - await-configurations
+  - await-uniformdata
+  - await-db
+  - await-gateway
+Group - 2
+  - port-forward-configurations
+  - port-forward-uniformdata
+  - port-forward-db
+  - port-forward-gateway
+Group - 3
+  - port-forwarding
+Group - 4
+  - complete-sync
+[39;49m[39;49m[32mStarting target 'await-configurations'
+[39;49m[39;49m[32m> "/usr/bin/mono" --version (In: false, Out: true, Err: true)
+[39;49m[?1h=[39;49m[32m../kubernetes> "kubectl" wait --for=condition=ready pod -l app=configurations --timeout=120s (In: false, Out: false, Err: false)
+[39;49m[39;49m[32m../kubernetes> "kubectl" describe pod -l app=configurations (In: false, Out: false, Err: false)
+[39;49m[39;49m[37mFinished (Failed) 'await-configurations' in 00:00:00.9331367
+[39;49m[39;49m[32m
+[39;49m[39;49m[32m---------------------------------------------------------------------
+[39;49m[39;49m[32mBuild Time Report
+[39;49m[39;49m[32m---------------------------------------------------------------------
+[39;49m[39;49m[32mTarget                        Duration
+[39;49m[39;49m[32m------                        --------
+[39;49m[39;49m[31mawait-configurations          00:00:00.9286781   (Start of process 'kubectl' failed. WorkingDir '../kubernetes' does not exist.)
+[39;49m[39;49m[33mawait-uniformdata             00:00:00           (skipped)
+[39;49m[39;49m[33mawait-db                      00:00:00           (skipped)
+[39;49m[39;49m[33mawait-gateway                 00:00:00           (skipped)
+[39;49m[39;49m[33mport-forward-configurations   00:00:00           (skipped)
+[39;49m[39;49m[33mport-forward-uniformdata      00:00:00           (skipped)
+[39;49m[39;49m[33mport-forward-db               00:00:00           (skipped)
+[39;49m[39;49m[33mport-forward-gateway          00:00:00           (skipped)
+[39;49m[39;49m[33mport-forwarding               00:00:00           (skipped)
+[39;49m[39;49m[33mcomplete-sync                 00:00:00           (skipped)
+[39;49m[39;49m[32mTotal:                        00:00:01.2545952
+[39;49m[39;49m[31mStatus:                       Failure
+[39;49m[39;49m[32m---------------------------------------------------------------------
+[39;49m[39;49m[31mScript reported an error:
+[39;49m[39;49m[31m-> BuildFailedException: Target 'await-configurations' failed.
+[39;49m[39;49m[31m-> One or more errors occurred. (Start of process 'kubectl' failed. WorkingDir '../kubernetes' does not exist.)
+[39;49m[39;49m[31m-> DirectoryNotFoundException: Start of process 'kubectl' failed. WorkingDir '../kubernetes' does not exist.
+[39;49m[39;49m[32mHint: To further diagnose the problem you can run fake in verbose mode `fake -v run ...` or set the 'FAKE_DETAILED_ERRORS' environment variable to 'true'
+[39;49mPerformance:
+ - Cli parsing: 470 milliseconds
+ - Packages: 191 milliseconds
+ - Script analyzing: 86 milliseconds
+ - Script running: 1 second
+ - Script cleanup: 29 milliseconds
+ - Runtime: 3 seconds
+[39;49m[?1h=Session ended, resume using 'kubectl attach complete-syncer -c complete-syncer -i -t' command when the pod is running

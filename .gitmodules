@@ -1,12 +1,6 @@
 [submodule "services/calvin"]
 	path = services/calvin
 	url = https://github.com/r-d-kmd/calvin.git
-[submodule "libs/hobbes.web"]
-	path = libs/hobbes.web
-	url = https://github.com/r-d-kmd/hobbes.web.git
-[submodule "libs/hobbes.core"]
-	path = libs/hobbes.core
-	url = https://github.com/r-d-kmd/hobbes.core.git
 [submodule "services/configurations"]
 	path = services/configurations
 	url = https://github.com/r-d-kmd/hobbes.configurations.git
@@ -22,3 +16,9 @@
 [submodule "workers/git.worker"]
 	path = workers/git.worker
 	url = https://github.com/r-d-kmd/hobbes.git.worker.git
+[submodule "libs/hobbes.web"]
+	path = libs/hobbes.web
+	url = https://github.com/r-d-kmd/hobbes.web.git
+[submodule "libs/hobbes.core"]
+	path = libs/hobbes.core
+	url = https://github.com/r-d-kmd/hobbes.core.git

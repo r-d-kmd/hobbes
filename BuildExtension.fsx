@@ -15,6 +15,9 @@ nuget Fake.Tools.Git ~> 5 //"
 #r "Facades/netstandard" // https://github.com/ionide/ionide-vscode-fsharp/issues/839#issuecomment-396296095
 #endif
 
+#load "BuildGeneral.fsx"
+open BuildGeneral.BuildGeneral
+
 module BuildExtension =
 
     open Fake.Core
@@ -53,45 +56,6 @@ module BuildExtension =
     let dockerOrg = Environment.environVarOrDefault "DOKCER_ORG" "hobbes.azurecr.io"
     let tagPrefix = "hobbes"
     let createDockerTag dockerOrg (tag : string) = sprintf "%s/%s-%s" dockerOrg tagPrefix (tag.ToLower())
-    let ignoreLines =
-        File.ReadAllLines ".buildignore"
-        |> Seq.fold(fun ignores l ->
-            if Directory.Exists l then
-               (DirectoryInfo(l).FullName)::ignores
-            elif File.exists l then
-                (FileInfo(l).FullName)::ignores
-            else
-               ignores
-        ) ([])
-        
-    let ignores f = 
-        let fullName = 
-            if Directory.Exists f then
-                DirectoryInfo(f).FullName |> Some
-            elif File.exists f then
-                FileInfo(f).FullName |> Some
-            else
-                None
-        match fullName with
-        None -> false
-        | Some f ->
-            let rec inDir (d : DirectoryInfo) (fDir : DirectoryInfo) = 
-               if fDir = null then false
-               else
-                  fDir.FullName = d.FullName || inDir d fDir.Parent 
-
-            ignoreLines
-            |> List.exists(fun d -> 
-               if f = d then true
-               elif Path.isDirectory d then
-                   if File.Exists(f) then
-                       FileInfo(f).Directory |> inDir (DirectoryInfo(d))
-                   else false
-               else
-                 false
-            )
-            
-
         
     let apps : seq<App*string> = 
         let enumerateProjectFiles (dir : DirectoryInfo) = 
@@ -112,7 +76,7 @@ module BuildExtension =
                 
                 let n = Path.GetFileNameWithoutExtension file.Name
                 let name = 
-                    if n.StartsWith "hobbes." then n.Remove(0,"hobbes.".Length) else n
+                    (if n.StartsWith "hobbes." then n.Remove(0,"hobbes.".Length) else n)
                 Service name, workingDir
             )
 
@@ -133,24 +97,22 @@ module BuildExtension =
             "common/hobbes.messaging/src/Broker.fs"
         ]
 
-    let generateLocalDockerAndSharedFiles name (appType : string) workingDir =
+    let generateLocalDockerAndSharedFiles (name : string) (appType : string) workingDir =
         
         let srcDir = Path.Combine(workingDir,"src")
         let copyTempFiles _ =
             //read the docker file template
-            let dockerFile = 
-                dockerFilePath
+            let content = 
+                let projectDockerFile = 
+                    name.ToLower()
+                    |> sprintf "Dockerfile.%s"
+                if projectDockerFile
+                   |> File.exists then
+                   projectDockerFile
+                else
+                   dockerFilePath
                 |> File.ReadAllText
             let localDockerFile = sprintf "%s/Dockerfile" workingDir
-
-            //substitute some placeholders in dockerfile
-            let content = 
-                match appType.ToLower() with
-                "service" -> 
-                    dockerFile.Replace("${SERVICE_NAME}",name)
-                | "worker" ->
-                    dockerFile.Replace("${SERVICE_NAME}",name + ".worker")
-                | _ -> failwithf "Don't know app type %s" appType
 
             let preamble = 
                 (sprintf """# This is a temporary file do not edit
@@ -158,14 +120,13 @@ module BuildExtension =
                          """ dockerFilePath)
                 
             File.WriteAllText(localDockerFile,preamble + content)
-            //setAttributes dockerFilePath localDockerFile
 
             //copy shared files
             sharedFiles
             |> List.iter(fun f ->
                 let content = 
                     "//This is a temporary build file and should not be altered"::
-                    (sprintf "//If changes are need edit %s" f)::
+                    (sprintf "//If changes are needed edit %s" f)::
                      (File.ReadAllLines f
                       |> List.ofArray)
                 let destFile = Path.Combine(srcDir, Path.GetFileName f)
@@ -187,7 +148,7 @@ module BuildExtension =
         let previousTag =
             match appType with
             |"service" -> tag
-            |"worker" -> tag + ".worker"
+            |"worker" -> tag
             | _ -> failwithf "Don't know app type %s" appType
         let t = createDockerTag dockerOrg tag
         let srcDir = Path.Combine(workingDir,"src")

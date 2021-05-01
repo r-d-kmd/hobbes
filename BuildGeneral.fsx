@@ -1,4 +1,5 @@
 #r "paket:
+nuget FSharp.Data //
 nuget Fake ~> 5 //
 nuget Fake.Core ~> 5 //
 nuget Fake.Core.Target  //
@@ -9,12 +10,14 @@ nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //"
 #load "./.fake/build.fsx/intellisense.fsx"
-
+#load "build/Configuration.fsx"
 
 #if !FAKE
 #r "netstandard"
 #r "Facades/netstandard" // https://github.com/ionide/ionide-vscode-fsharp/issues/839#issuecomment-396296095
 #endif
+
+open Fake.IO
 
 module BuildGeneral = 
     open Fake.Core
@@ -41,7 +44,46 @@ module BuildGeneral =
            | Targets.All -> "All"
            | Targets.PushApps -> "PushApps"
            | Targets.Generic s -> s
+    
+    
+    let globalEnvFile = "env.JSON"
+    let env = Configuration.Environment.Environment(globalEnvFile)
 
+    let ignoreLines =
+        File.ReadAllLines ".buildignore"
+        |> Seq.fold(fun lines l ->
+            if Directory.Exists l then
+               (DirectoryInfo(l).FullName)::lines
+            elif File.exists l then
+                (FileInfo(l).FullName)::lines
+            else
+               lines
+        ) ([])
+    printfn "Ignores: %A" ignoreLines
+    let ignores fileOrDir = 
+        let fullName = 
+            if Directory.Exists fileOrDir then
+                DirectoryInfo(fileOrDir).FullName |> Some
+            elif File.exists fileOrDir then
+                FileInfo(fileOrDir).FullName |> Some
+            else
+                None
+        match fullName with
+        None -> 
+            false
+        | Some f ->
+            ignoreLines
+            |> List.exists(fun d -> 
+               if f = d then true
+               elif Path.isDirectory d then
+                   if File.Exists(f) then
+                       FileInfo(f).FullName.StartsWith d 
+                   else
+                       false
+               else
+                 false
+            )
+            
     open Fake.Core.TargetOperators
     let inline (==>) (lhs : Targets) (rhs : Targets) =
         Targets.Generic((targetName lhs) ==> (targetName rhs))
@@ -74,39 +116,46 @@ module BuildGeneral =
         Push of string
         | Pull of string
         | Build of file:string option * tag:string * buildArgs: (string * string) list
+        | NoCache of DockerCommand
         | Tag of original:string * newTag:string
 
     let docker command dir =
-        let arguments = 
-            match command with
-            Push tag -> sprintf "push %s" tag
-            | Pull tag -> sprintf "pull %s" tag
-            | Build(file,tag,buildArgs) -> 
-                let buildArgs = 
-                    System.String.Join(" ", 
-                        buildArgs 
-                        |> List.map(fun (n,v) -> 
-                            let v = if v = "" then "\"\"" else v
-                            sprintf "--build-arg %s=%s" n v)
-                    ).Trim()
-                ( match file with
-                  None -> 
-                      sprintf "build -t %s %s ."  
-                  | Some f -> sprintf "build -f %s -t %s %s ." f) (tag.ToLower()) buildArgs
-            | Tag(t1,t2) -> sprintf "tag %s %s" t1 t2
-        let arguments = 
+        let arguments command = 
+            let rec inner =
+                function
+                    Push tag -> "push",tag
+                    | Pull tag -> "pull", tag
+                    | NoCache(cmd) ->
+                         let command,args = inner cmd
+                         command, args |> sprintf "--no-cache %s"
+
+                    | Build(file,tag,buildArgs) -> 
+                        let buildArgs = 
+                            System.String.Join(" ", 
+                                buildArgs 
+                                |> List.map(fun (n,v) -> 
+                                    let v = if v = "" then "\"\"" else v
+                                    sprintf "--build-arg %s=%s" n v)
+                            ).Trim()
+                        "build",(match file with
+                                 None -> 
+                                     sprintf "-t %s %s ."  
+                                 | Some f -> sprintf "-f %s -t %s %s ." f) (tag.ToLower()) buildArgs
+                    | Tag(t1,t2) -> "tag", sprintf "%s %s" t1 t2
+
+            let command, args = inner command
             //replace multiple spaces with just one space
-            let args = arguments.Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries)
-            System.String.Join(" ",args) 
+            (" ",args.Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries))
+            |> System.String.Join
+            |> sprintf "%s %s"command
+            
+
+        let arguments = 
+            arguments command
+            
         run "docker" dir (arguments.Replace("  "," ").Trim())
 
-    let feedPat = 
-        match "FEED_PAT" |> Environment.environVarOrNone  with
-        None -> 
-            eprintfn "No PAT for the nuget feed was provided"
-            ""
-        | Some argFeed -> 
-            argFeed
+    let feedPat = env.AzureDevopsPat
 
     let assemblyVersion = Environment.environVarOrDefault "VERSION" "2.0.default"
     let dockerOrg = Environment.environVarOrDefault "DOKCER_ORG" "hobbes.azurecr.io" //Change to docker hub
@@ -118,46 +167,10 @@ module BuildGeneral =
 
     let projects : seq<string*string> = 
         let enumerateProjectFiles (dir : DirectoryInfo) =
-            let ignoreLines =
-                File.ReadAllLines ".buildignore"
-                |> Seq.fold(fun ignores l ->
-                    if Directory.Exists l then
-                       (DirectoryInfo(l).FullName)::ignores
-                    elif File.exists l then
-                        (FileInfo(l).FullName)::ignores
-                    else
-                       ignores
-                ) ([])
-            let ignores f = 
-                let fullName = 
-                    if Directory.Exists f then
-                        DirectoryInfo(f).FullName |> Some
-                    elif File.exists f then
-                        FileInfo(f).FullName |> Some
-                    else
-                        None
-                match fullName with
-                None -> false
-                | Some f ->
-                    let rec inDir (d : DirectoryInfo) (fDir : DirectoryInfo) = 
-                       if fDir = null then false
-                       else
-                          fDir.FullName = d.FullName || inDir d fDir.Parent 
-
-                    ignoreLines
-                    |> List.exists(fun d -> 
-                       if f = d then true
-                       elif Path.isDirectory d then
-                           if File.Exists(f) then
-                               FileInfo(f).Directory |> inDir (DirectoryInfo(d))
-                           else false
-                       else
-                         false
-                    )
+            
             dir.EnumerateFiles("*.?sproj",SearchOption.AllDirectories)
             |> Seq.filter(fun n ->
                 let name = n.Name.ToLower()
-                let fullName = n.FullName
                 name.EndsWith(".tests.fsproj") |> not && //exclude test projects
                 name.EndsWith(".tests.csproj") |> not && //exclude test projects
                 ignores n.FullName |> not
@@ -170,7 +183,7 @@ module BuildGeneral =
                 file.Directory.Parent.FullName
             
             let name = Path.GetFileNameWithoutExtension file.Name
-            name, workingDir
+            name.Replace(".worker",""), workingDir
         )
 
     let buildProject (name : string) workingDir =
@@ -185,8 +198,13 @@ module BuildGeneral =
                    t + ":" + assemblyVersion
                    t + ":" + "latest"
                ]
+            let cmd = 
+                if System.IO.Path.Combine(workingDir, "Dockerfile." + name) |> File.exists then
+                   Build("Dockerfile." + name |> Some,tag,["FEED_PAT_ARG",feedPat])
+                else
+                   Build(None,tag,[])
 
-            docker (Build(None,tag,[])) workingDir
+            docker cmd workingDir
 
             tags
             |> List.iter(fun t -> 
@@ -219,7 +237,6 @@ module BuildGeneral =
     create Targets.PreApps ignore
     create Targets.PostApps ignore
 
-
     projects
     |> Seq.iter(fun (name,dir) ->
         buildProject name dir
@@ -232,9 +249,9 @@ module BuildGeneral =
         then
             let tag = "builder"
             let file = Some(path)
-            docker (Build(file,tag, ["FEED_PAT_ARG", feedPat])) "."
+            docker (NoCache (Build(file,tag, ["FEED_PAT_ARG", feedPat]))) "."
     )
-
+    
     Targets.Builder ==> Targets.PushApps
     Targets.Builder ?=> Targets.PreApps
     Targets.Build ==> Targets.All

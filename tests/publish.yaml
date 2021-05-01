@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: publisher
+spec:
+  template:
+    spec:
+      containers:
+      - name: publisher
+        image: tester
+        envFrom:
+        - secretRef:
+            name: env
+        imagePullPolicy: Never
+        env:
+        - name: target
+          value: "publish"
+      restartPolicy: Never
+  backoffLimit: 0

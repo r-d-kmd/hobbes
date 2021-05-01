@@ -26,7 +26,8 @@ let transformData (message : CalculationMessage) =
         
         let dataJson = 
             data
-            |> Hobbes.FSharp.DataStructures.DataMatrix.toJson                
+            |> Hobbes.FSharp.DataStructures.DataMatrix.toJson
+            |> Thoth.Json.Net.Encode.toString 0                
         let transformedData = 
             try
                 dataJson

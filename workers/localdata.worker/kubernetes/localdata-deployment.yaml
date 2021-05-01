@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: localdata
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: localdata
+  template:
+    metadata:
+      labels:
+        app: localdata
+    spec:
+      containers:
+      - envFrom:
+        - secretRef:
+            name: localdata
+        imagePullPolicy: Never
+        image: localdata
+        name: localdata
+        resources: {}
+        env:
+          - name: MAX_LOG_LENGTH
+            value: "50000000"
+      restartPolicy: Always
+      imagePullSecrets:
+      - name: acr-secret
+status: {}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: localdata-svc
+spec:
+  ports:
+  - port: 8085
+    targetPort: 8085
+  selector:
+    app: localdata

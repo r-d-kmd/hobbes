@@ -45,10 +45,15 @@ chart.html
 tools/visualizer/*.html
 services/**/Dockerfile
 workers/**/Dockerfile
-*.hb
+tools/**/*.hb
 tools/visualizer/cli/html
 services/**/src/Broker.fs
 workers/**/src/Broker.fs
 postman api-key.md
 testresults.txt
 env.JSON
+tests/publish.yaml
+tests/test.yaml
+tests/complete-sync.yaml
+tests/ping.yaml
+tests/*.log

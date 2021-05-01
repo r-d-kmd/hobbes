@@ -287,11 +287,11 @@ wrap "publish"
 wrap "test"
 wrap "complete-sync"
 
-create "publish" (fun _ ->    
-    System.IO.Directory.EnumerateFiles("./transformations", "*.hb")
-    |> Seq.iter(fun file ->
-        let name = System.IO.Path.GetFileNameWithoutExtension file
-        
+create "publish" (fun t -> 
+    t.Context.Arguments
+    |> List.map(fun config -> 
+        config,System.IO.Path.Combine("./transformations", config + "*.hb")
+    ) |> Seq.iter(fun (name,file) ->
         let url = sprintf "http://%s:%d/admin/configuration" gateway_dn gateway_port
         printfn "Uploading to: %s" url
         let masterkey = env.MasterUser
@@ -320,7 +320,8 @@ create "sync" (fun _ ->
 create "complete-sync" (fun _ ->
     let configs = (listDocuments "configurations").Rows |> Array.map(fun r -> r.Id.ToString())
     let configCount = configs.Length
-    let countDataset() = 
+
+    let countDataset() =
         let datasets = 
             (listDocuments "uniformcache").Rows
             |> Array.filter(fun r -> 

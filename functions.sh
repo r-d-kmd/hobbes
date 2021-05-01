@@ -202,6 +202,8 @@ spec:
           value: "$COUCHDB_USER"
         - name: MASTER_USER
           value: "$MASTER_USER"
+        - name: args
+          value: $2
       restartPolicy: Never
   backoffLimit: 0
 EOF
@@ -231,7 +233,7 @@ function test() {
     cd $SCRIPT_DIR/tests
     
     echo "Publish"
-    wrap "publish"
+    wrap "publish" Velocity
     
     echo "sync"
     dotnet fake build --target sync

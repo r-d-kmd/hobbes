@@ -290,7 +290,7 @@ wrap "complete-sync"
 create "publish" (fun t -> 
     t.Context.Arguments
     |> List.map(fun config -> 
-        config,System.IO.Path.Combine("./transformations", config + "*.hb")
+        config,System.IO.Path.Combine("./transformations", config + ".hb")
     ) |> Seq.iter(fun (name,file) ->
         let url = sprintf "http://%s:%d/admin/configuration" gateway_dn gateway_port
         printfn "Uploading to: %s" url

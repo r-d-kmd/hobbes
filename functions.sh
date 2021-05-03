@@ -203,7 +203,7 @@ spec:
         - name: MASTER_USER
           value: "$MASTER_USER"
         - name: args
-          value:
+          value: $2
       restartPolicy: Never
   backoffLimit: 0
 EOF

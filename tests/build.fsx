@@ -356,7 +356,7 @@ create "data" (fun _ ->
 
     let successes,failed = 
         (0,0)
-        |> areEqual res.Length 27 
+        |> areEqual res.Length 2700 
         |> areEqual first.TimeStamp  (System.DateTime.Parse "17/03/2021 14:27:32")
         |> areEqual first.SprintName None
         |> areEqual first.WorkItemId  79312

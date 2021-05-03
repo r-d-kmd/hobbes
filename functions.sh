@@ -203,7 +203,7 @@ spec:
         - name: MASTER_USER
           value: "$MASTER_USER"
         - name: args
-          value: $2
+          value:
       restartPolicy: Never
   backoffLimit: 0
 EOF
@@ -224,7 +224,7 @@ EOF
     fi
 }
 
-function test() {
+function setupIntegrationTests(){
     if [ -z ${ENV_FILE+x} ]; then
         echo "Running in local mode"
     else
@@ -238,6 +238,17 @@ function test() {
     echo "sync"
     dotnet fake build --target sync
     wrap "complete-sync"
+
+    cd -
+}
+
+function test() {
+    if [ -z ${ENV_FILE+x} ]; then
+        echo "Running in local mode"
+    else
+       set -e
+    fi
+    cd $SCRIPT_DIR/tests
 
     echo "test"
     wrap "test"

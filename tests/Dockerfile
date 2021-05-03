@@ -19,7 +19,7 @@ RUN dotnet paket restore
 
 RUN dotnet fake build --list
 
-RUN echo "dotnet fake build --target publish $config" > /tmp/start.sh
+RUN echo "dotnet fake build --target $target $config" > /tmp/start.sh
 RUN chmod +x /tmp/start.sh
 
 CMD /tmp/start.sh

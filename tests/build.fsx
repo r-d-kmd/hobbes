@@ -310,14 +310,14 @@ let areEqual actual expected (successes,failed)=
 
 create "data" (fun _ ->
     let res = 
-        sprintf "http://%s:%d/data/json/Velocity" gateway_dn gateway_port
+        sprintf "http://%s:%d/data/json/flowerpot" gateway_dn gateway_port
         |> get
 
     let first = res.[0]
 
     let successes,failed = 
         (0,0)
-        |> areEqual res.Length 2700 
+        |> areEqual res.Length 27 
         |> areEqual first.TimeStamp  (System.DateTime.Parse "17/03/2021 14:27:32")
         |> areEqual first.SprintName None
         |> areEqual first.WorkItemId  79312

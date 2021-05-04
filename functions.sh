@@ -232,7 +232,7 @@ function setupIntegrationTests(){
     cd $SCRIPT_DIR/tests
     
     echo "Publish"
-    wrap "publish" Velocity
+    wrap "publish" "flowerpot Velocity"
     
     
     echo "sync"

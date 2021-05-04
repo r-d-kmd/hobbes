@@ -208,8 +208,9 @@ spec:
   backoffLimit: 0
 EOF
     kubectl apply -f $1.yaml
-    kubectl wait --for=condition=complete job/$podName --timeout=20s
-    kubectl logs job/$podName
+    sleep 10
+    kubectl logs job/$podName -f &
+    kubectl wait --for=condition=complete job/$podName --timeout=120s
     
     if [ "$(kubectl logs job/$podName | grep "Status:" | awk '{print $NF}')" != "Ok" ]; then
         #make the script fail if it's on the build server
@@ -232,6 +233,7 @@ function setupIntegrationTests(){
     
     echo "Publish"
     wrap "publish" Velocity
+    
     
     echo "sync"
     dotnet fake build --target sync

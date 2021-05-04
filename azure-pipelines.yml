@@ -49,10 +49,6 @@ steps:
   inputs:
     dockerVersion: '17.09.0-ce'
 
-- task: KubectlInstaller@0
-  inputs:
-    kubectlVersion: 'latest'
-
 # Download Minikube and it's prerequisites
 - script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /
   displayName: Minikube prerequisites  
@@ -98,10 +94,13 @@ steps:
   displayName: Build the world
 
 - script: |
-    source functions.sh && applyProductionYaml
+    cd kubernetes/overlays/prod
+    kustomize build . -o prod.yaml
   displayName: Setup production yaml
  
-- script: source functions.sh && cd kubernetes && kubectl apply -f test.yaml
+- script: |
+    cd kubernetes/overlays/prod
+    kubectl apply -f prod.yaml
   displayName: Apply production yaml to minikube
   
 - task: AzureCLI@2
@@ -111,8 +110,6 @@ steps:
     scriptLocation: 'inlineScript'
     inlineScript: |
       az aks get-credentials --name hobbes-kub --resource-group hobbes-rg
-      kubectl get all
-      cd kubernetes
-      ls
       echo '$(ENV_FILE)' | kubectl apply -f -
-      kubectl apply -f test.yaml   
+      cd kubernetes/overlays/prod
+      kubectl apply -f prod.yaml   

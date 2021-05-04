@@ -208,7 +208,7 @@ spec:
 EOF
     kubectl apply -f $1.yaml
     kubectl wait --for=condition=complete job/$podName --timeout=20s
-    kubectl logs job/$podName -f
+    kubectl logs job/$podName
     
     if [ "$(kubectl logs job/$podName | grep "Status:" | awk '{print $NF}')" != "Ok" ]; then
         #make the script fail if it's on the build server

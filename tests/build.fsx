@@ -293,21 +293,37 @@ create "publish" (fun t ->
         config,System.IO.Path.Combine("./transformations", config + ".hb")
     ) |> Seq.iter(fun (name,file) ->
         let url = sprintf "http://%s:%d/admin/configuration" gateway_dn gateway_port
-        printfn "Uploading to: %s" url
+        printfn "Uploading (%s) to: '%s'" file url
         let masterkey = env.MasterUser
-        FSharp.Data.Http.Request(url,
-            httpMethod = "PUT",
-            headers = [HttpRequestHeaders.BasicAuth masterkey ""],
-            body = (Encode.object [
-                                    "name", Encode.string name
-                                    "hb", file
-                                          |> System.IO.File.ReadAllText
-                                          |> Encode.string
-                                  ]
-                    |> Encode.toString 0
-                    |> TextRequest
-                   )
-        ) |> ignore
+        let response = 
+            FSharp.Data.Http.Request(url,
+                httpMethod = "PUT",
+                headers = [HttpRequestHeaders.BasicAuth masterkey ""],
+                silentHttpErrors = true,
+                body = (Encode.object [
+                                        "name", Encode.string name
+                                        "hb", file
+                                              |> System.IO.File.ReadAllText
+                                              |> Encode.string
+                                      ]
+                        |> Encode.toString 0
+                        |> TextRequest
+                       )
+            )
+        let body = 
+            match response.Body with
+            | Binary b -> 
+                let enc = 
+                    match response.Headers |> Map.tryFind "Content-Type" with
+                    None -> System.Text.Encoding.Default
+                    | Some s ->
+                        s.Split '=' 
+                        |> Array.last
+                        |> System.Text.Encoding.GetEncoding 
+                enc.GetString b 
+            | Text t -> t
+        if response.StatusCode <> 200 then
+            failwith "Couln't upload configuration. %d %s" response.StatusCode body
     )
 )
 

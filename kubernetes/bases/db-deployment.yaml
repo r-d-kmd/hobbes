@@ -16,9 +16,9 @@ spec:
      containers:
       - env:
         - name: COUCHDB_PASSWORD
-          value: password
+          value: ""
         - name: COUCHDB_USER
-          value: admin
+          value: ""
         image: kmdrd/couchdb
         imagePullPolicy: Always
         name: db

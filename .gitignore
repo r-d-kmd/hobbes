@@ -57,3 +57,5 @@ tests/test.yaml
 tests/complete-sync.yaml
 tests/ping.yaml
 tests/*.log
+kubernetes/**/prod/prod.yaml
+kubernetes/**/dev/dev.yaml

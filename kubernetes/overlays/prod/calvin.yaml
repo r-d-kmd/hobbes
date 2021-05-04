@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calvin
+spec:
+  template:
+    spec:
+      containers:
+      - imagePullPolicy: Always
+        image: kmdrd/calvin
+        name: calvin
+status: {}

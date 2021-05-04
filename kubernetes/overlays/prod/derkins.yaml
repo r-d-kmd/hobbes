@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: derkins
+spec:
+  template:
+    spec:
+      containers:
+      - image: hobbes.azurecr.io/derkins
+        imagePullPolicy: Always
+        name: derkins
+      imagePullSecrets:
+      - name: acr-secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nlp
+spec:
+  template:
+    spec:
+      containers:
+        - imagePullPolicy: Always
+          image: hobbes.azurecr.io/nlp
+          name: nlp
+      imagePullSecrets:
+      - name: acr-secret

@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+spec:
+  template:
+    spec:
+      containers:
+      - imagePullPolicy: Always
+        image: hobbes.azurecr.io/gateway
+        name: gateway
+      imagePullSecrets:
+      - name: acr-secret
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-svc
+spec:
+  selector:
+    app: gateway
+  type: LoadBalancer

@@ -1,0 +1,9 @@
+bases:
+- ../../bases
+
+patchesStrategicMerge:
+- derkins.yaml
+- calvin.yaml
+- configurations.yaml
+- uniformdata.yaml
+- gateway.yaml

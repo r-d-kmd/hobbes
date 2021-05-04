@@ -57,12 +57,15 @@ let start silent command workingDir args =
     createProcess silent command workingDir args    
     |> Proc.start
 
-let request httpMethod user pwd url = 
-    FSharp.Data.Http.RequestString(url,
-        httpMethod = httpMethod,
-        silentHttpErrors = true,
-        headers = [HttpRequestHeaders.BasicAuth user pwd]
-    )
+let request httpMethod user pwd url =
+    let res =  
+        FSharp.Data.Http.RequestString(url,
+            httpMethod = httpMethod,
+            silentHttpErrors = true,
+            headers = [HttpRequestHeaders.BasicAuth user pwd]
+        )
+    printfn "%s" res
+    res
 
 type Data = JsonProvider<"""testdata.json""">
 
@@ -173,7 +176,7 @@ create "ping" (fun _ ->
     printfn "pong"
 )
 
-create "deploy" (fun x ->
+create "deploy" (fun _ ->
     if System.IO.File.Exists globalEnvFile then
         printfn "Using env file"
         run false "kubectl" ("apply -f " + globalEnvFile) |> ignore
@@ -281,7 +284,7 @@ create "sync" (fun _ ->
 create "complete-sync" (fun _ ->
     let configs = (listDocuments "configurations").Rows |> Array.map(fun r -> r.Id.ToString())
     let configCount = configs.Length
-
+    let mutable lastSeen = -1
     let countDataset() =
         let datasets = 
             (listDocuments "uniformcache").Rows
@@ -290,8 +293,10 @@ create "complete-sync" (fun _ ->
                 |> Array.tryFind (fun c -> c = r.Id.ToString())
                 |> Option.isSome
             )
-        printfn "Found %d datasets expecting %d" datasets.Length configCount
-        datasets.Length
+        if datasets.Length <> lastSeen then
+            printfn "Found %d datasets expecting %d" datasets.Length configCount
+            lastSeen <- datasets.Length
+        lastSeen
     
     while configCount > countDataset() do
         try 

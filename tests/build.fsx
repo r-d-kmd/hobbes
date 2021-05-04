@@ -174,69 +174,14 @@ create "ping" (fun _ ->
 )
 
 create "deploy" (fun x ->
-    let patch_dir =
-        match x.Context.Arguments with
-        "local"::[]-> "local_patches"
-        | "prod"::[]  -> "prod_patches"
-        | _       -> "local_patches"
-
     if System.IO.File.Exists globalEnvFile then
         printfn "Using env file"
         run false "kubectl" ("apply -f " + globalEnvFile) |> ignore
     else
         printfn "Using env from var"
-
-    let dirs = 
-        System.IO.Directory.EnumerateDirectories("..", "kubernetes", System.IO.SearchOption.AllDirectories)
     
-    dirs
-    |> Seq.iter(fun dir ->
-        let from = 
-            (dir,patch_dir)
-            ||> sprintf "%s/%s/kustomization.yaml"
-        let ``to`` =
-            dir
-            |> sprintf "%s/kustomization.yaml"
-        if System.IO.File.Exists from then
-            System.IO.File.Copy(from , ``to``,true) 
-    )
-    
-    let res = 
-        dirs
-        |> List.ofSeq
-        |> List.sumBy(fun dir ->
-            let kustomizationFilePath = 
-                System.IO.Path.Combine(dir,"kustomization.yaml")
-            let exists = 
-               kustomizationFilePath
-               |> Fake.IO.File.exists
-            let res = 
-                if exists then 
-                    applyk dir
-                else
-                    System.IO.Directory.EnumerateFiles(dir,"*.yaml")
-                    |> Seq.sumBy(fun file -> 
-                        kubectl false "apply" (sprintf "-f %s" file)
-                    )
-            if res = 0 then
-                let envFile = "localenv.yaml"
-                if System.IO.Path.Combine(dir, envFile) |> System.IO.File.Exists then 
-                    run true "kubectl" dir ("apply -f " + envFile)
-                else
-                    0
-            else
-                res
-
-        )
-    
-    dirs
-    |> Seq.iter(fun dir ->
-        let filePath = System.IO.Path.Combine(dir,"kustomization.yaml")
-        if System.IO.File.Exists filePath then
-            System.IO.File.Delete(filePath) 
-    )    
-
-    if res > 0 then failwith "Failed applying all"
+    if run false "kubectl" "kubernetes/overlays/dev" "apply -k ." > 0 then 
+        failwith "Failed applying all"
 )
 
 let awaitService serviceName =

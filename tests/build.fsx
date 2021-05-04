@@ -180,7 +180,7 @@ create "deploy" (fun x ->
     else
         printfn "Using env from var"
     
-    if run false "kubectl" "kubernetes/overlays/dev" "apply -k ." > 0 then 
+    if run false "kubectl" "../kubernetes/overlays/dev" "apply -k ." > 0 then 
         failwith "Failed applying all"
 )
 

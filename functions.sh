@@ -173,6 +173,7 @@ function vscode(){
 }
 
 function wrap() {
+    set +e
     setEnvVars
     podName=$1er
     cat <<EOF > $1.yaml
@@ -215,7 +216,8 @@ EOF
         if [ -z ${ENV_FILE+x} ]; then
             echo "Running in local mode"
         else
-            exit 1;
+            set -e
+            exit 1
         fi
     fi
 }
@@ -233,6 +235,7 @@ function setupIntegrationTests(){
     
     echo "sync"
     dotnet fake build --target sync
+
     wrap "complete-sync"
 
     cd -

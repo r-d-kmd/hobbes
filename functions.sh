@@ -1,4 +1,3 @@
-
 Black='\033[0;30m'
 DarkGray='\033[1;30m'
 Red='\033[0;31m'
@@ -208,13 +207,10 @@ spec:
   backoffLimit: 0
 EOF
     kubectl apply -f $1.yaml
-    sleep 30
-    kubectl describe job/$podName
+    kubectl wait --for=condition=complete job/$podName --timeout=20s
     kubectl logs job/$podName -f
-    #kubectl wait --for=condition=complete job/$podName --timeout=120s
     
     if [ "$(kubectl logs job/$podName | grep "Status:" | awk '{print $NF}')" != "Ok" ]; then
-        kubectl logs job/$podName
         #make the script fail if it's on the build server
         if [ -z ${ENV_FILE+x} ]; then
             echo "Running in local mode"

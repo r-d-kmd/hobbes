@@ -58,21 +58,22 @@ let start silent command workingDir args =
     |> Proc.start
 
 let request httpMethod user pwd url =
-    let res =  
-        FSharp.Data.Http.RequestString(url,
-            httpMethod = httpMethod,
-            silentHttpErrors = true,
-            headers = [HttpRequestHeaders.BasicAuth user pwd]
-        )
-    printfn "%s" res
-    res
+    FSharp.Data.Http.RequestString(url,
+        httpMethod = httpMethod,
+        silentHttpErrors = true,
+        headers = [HttpRequestHeaders.BasicAuth user pwd]
+    )
 
 type Data = JsonProvider<"""testdata.json""">
 
 let get url =
     let masterkey = env.MasterUser
-    url
-    |> request "get" masterkey ""
+    let res = 
+        url
+        |> request "get" masterkey ""
+    printfn "Data:\n %s" res
+
+    res
     |> Data.Parse
 
 type DocList = JsonProvider<"""{
@@ -113,7 +114,7 @@ let listDocuments dbName =
     let response = 
         sprintf "http://%s:5984/%s/_all_docs" dbDn dbName
         |> request "get" dbUser dbPwd 
-    printfn "Response from db: %s" response
+    
     try 
         response
         |> DocList.Parse
@@ -222,18 +223,6 @@ create "port-forwarding" (fun _ ->
          ==> "port-forwarding"
      |> ignore
 )
-let wrap target =
-    create ("wrapped-" + target) (fun _ ->  
-        let podName = sprintf "%ser" target
-        let res = kubectl false "run" <| sprintf """-i --tty %s --image tester --image-pull-policy=Never --env='target=%s' """ podName target
-        if res > 0 then failwithf "Running %s failed" target
-        if kubectl true "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=120s" podName) > 0 then 
-            failwithf "Couldn't wait for target completion of %s" target
-    )
-
-wrap "publish"
-wrap "test"
-wrap "complete-sync"
 
 create "publish" (fun t -> 
     t.Context.Arguments

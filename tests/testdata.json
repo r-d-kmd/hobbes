@@ -1,15 +1,3 @@
-{
-  "TimeStamp": "03/16/2021 07:46:30",
-  "CreatedDate": "04/30/2019 07:54:53",
-  "ClosedDate": "05/05/2019 14:22:40",
-  "LeadTimeDays": "5.2692939",
-  "CycleTimeDays": "0.0",
-  "StoryPoints": null,
-  "RevisedDate": "01/01/9999 00:00:00",
-  "Priority": 2,
-  "Title": "Changing a transformation adds the transformation back to the pipeline",
-}
-
 [{
   "WorkItemId": "442401",
   "WorkItemType": "User Story",

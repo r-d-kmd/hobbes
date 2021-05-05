@@ -13,7 +13,7 @@ meta:
 only (WorkItemType = 'User Story')
 group by "Iteration.IterationName" WorkItemId -> maxby ChangedDate
 rename column "Iteration.IterationLevel3" "Sprint Name"
-create column SprintNumber (int (regex ["Sprint Name"] /[Ss][Pp][Rr][Ii][Nn][Tt] [^\\d]*([\\d]+).*/ [$1]))
+create column "Sprint Number" (int (regex ["Sprint Name"] /[Ss][Pp][Rr][Ii][Nn][Tt] [^\\d]*([\\d]+).*/ [$1]))
 rename column State "DetailedState"
 create column State (if [StateCategory = 'Completed' || StateCategory = 'Resolved' || StateCategory = 'Remove'] {'Done'} else { if ["StateCategory" = 'InProgress'] {'Doing'} else {'Todo'} })
 slice columns "Sprint Name" "WorkItemId" "ChangedDate" "WorkItemType" "CreatedDate" "ClosedDate" "LeadTimeDays" "CycleTimeDays" "StoryPoints" "RevisedDate" "Priority" "Title" "Sprint Number" "State"

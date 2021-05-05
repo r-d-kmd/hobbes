@@ -311,7 +311,7 @@ let areEqual actual expected (successes,failed)=
     if actual = expected then
        (successes + 1), failed
     else
-       eprintf "Expected %A but got %A" expected actual
+       eprintf "Expected %A but got %A\n" expected actual
        successes,(failed + 1)
 
 create "data" (fun _ ->
@@ -325,11 +325,11 @@ create "data" (fun _ ->
         (0,0)
         |> areEqual res.Length 27 
         //|> areEqual first.TimeStamp  (System.DateTime.Parse "17/03/2021 14:27:32")
-        |> areEqual first.SprintName None
-        |> areEqual first.WorkItemId  79312
+        |> areEqual first.SprintName (Some "Iteration 3")
+        |> areEqual first.WorkItemId  442401
         |> areEqual first.ChangedDate  (System.DateTime.Parse "30/04/2019 14:57:50")
         |> areEqual first.WorkItemType  "User Story"
-        |> areEqual first.SprintNumber None
+        |> areEqual first.SprintNumber (Some 3)
         |> areEqual first.State  "Done"
     printfn "Successes: %d. Failures: %d" successes failed
     if failed > 0 then failwith "One or more tests failed"

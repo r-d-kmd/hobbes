@@ -271,7 +271,7 @@ create "publish" (fun t ->
                 enc.GetString b 
             | Text t -> t
         if response.StatusCode <> 200 then
-            failwith "Couln't upload configuration. %d %s" response.StatusCode body
+            failwithf "Couln't upload configuration. %d %s" response.StatusCode body
     )
 )
 
@@ -285,7 +285,7 @@ create "complete-sync" (fun _ ->
     let configs = (listDocuments "configurations").Rows |> Array.map(fun r -> r.Id.ToString())
     let configCount = configs.Length
     let mutable lastSeen = -1
-    let countDataset() =
+    let countDataset lastSeen =
         let datasets = 
             (listDocuments "uniformcache").Rows
             |> Array.filter(fun r -> 
@@ -295,11 +295,12 @@ create "complete-sync" (fun _ ->
             )
         if datasets.Length <> lastSeen then
             printfn "Found %d datasets expecting %d" datasets.Length configCount
-            lastSeen <- datasets.Length
-        lastSeen
+            
+        datasets.Length
     
-    while configCount > countDataset() do
+    while configCount > lastSeen do
         try 
+            lastSeen <- countDataset lastSeen
             awaitJobCompletion 10 "sync" |> ignore 
             //the sync worker is done and the above exits immediately
             System.Threading.Thread.Sleep 10000

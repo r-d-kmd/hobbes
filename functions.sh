@@ -212,8 +212,7 @@ EOF
     kubectl logs job/$podName -f &
     kubectl wait --for=condition=complete job/$podName --timeout=120s
     
-    if [ -z "$(kubectl logs job/$podName | grep "Status:         Ok")" ]; then
-        echo "Expected 'Status:         Ok' but got '$(kubectl logs job/$podName | grep "Status:" | awk '{print $NF}')'"
+    if [ $(kubectl get job publisher -o jsonpath={.status.failed}) ]; then
         kubectl logs job/$podName
         #make the script fail if it's on the build server
         if [ -z ${ENV_FILE+x} ]; then

@@ -57,7 +57,7 @@ let start silent command workingDir args =
     createProcess silent command workingDir args    
     |> Proc.start
 
-let request httpMethod user pwd url = 
+let request httpMethod user pwd url =
     FSharp.Data.Http.RequestString(url,
         httpMethod = httpMethod,
         silentHttpErrors = true,
@@ -68,8 +68,12 @@ type Data = JsonProvider<"""testdata.json""">
 
 let get url =
     let masterkey = env.MasterUser
-    url
-    |> request "get" masterkey ""
+    let res = 
+        url
+        |> request "get" masterkey ""
+    printfn "Data:\n %s" res
+
+    res
     |> Data.Parse
 
 type DocList = JsonProvider<"""{
@@ -110,7 +114,7 @@ let listDocuments dbName =
     let response = 
         sprintf "http://%s:5984/%s/_all_docs" dbDn dbName
         |> request "get" dbUser dbPwd 
-    printfn "Response from db: %s" response
+    
     try 
         response
         |> DocList.Parse
@@ -144,7 +148,7 @@ let startJob silent jobName =
     jobName
 
 let awaitJobCompletion timeout jobName = 
-    kubectl false "wait" (sprintf "--for=condition=complete --timeout=%ds job/%s" timeout jobName) |> ignore
+    kubectl true "wait" (sprintf "--for=condition=complete --timeout=%ds job/%s" timeout jobName) |> ignore
     jobName
 
 type DockerCommand =
@@ -173,70 +177,15 @@ create "ping" (fun _ ->
     printfn "pong"
 )
 
-create "deploy" (fun x ->
-    let patch_dir =
-        match x.Context.Arguments with
-        "local"::[]-> "local_patches"
-        | "prod"::[]  -> "prod_patches"
-        | _       -> "local_patches"
-
+create "deploy" (fun _ ->
     if System.IO.File.Exists globalEnvFile then
         printfn "Using env file"
         run false "kubectl" ("apply -f " + globalEnvFile) |> ignore
     else
         printfn "Using env from var"
-
-    let dirs = 
-        System.IO.Directory.EnumerateDirectories("..", "kubernetes", System.IO.SearchOption.AllDirectories)
     
-    dirs
-    |> Seq.iter(fun dir ->
-        let from = 
-            (dir,patch_dir)
-            ||> sprintf "%s/%s/kustomization.yaml"
-        let ``to`` =
-            dir
-            |> sprintf "%s/kustomization.yaml"
-        if System.IO.File.Exists from then
-            System.IO.File.Copy(from , ``to``,true) 
-    )
-    
-    let res = 
-        dirs
-        |> List.ofSeq
-        |> List.sumBy(fun dir ->
-            let kustomizationFilePath = 
-                System.IO.Path.Combine(dir,"kustomization.yaml")
-            let exists = 
-               kustomizationFilePath
-               |> Fake.IO.File.exists
-            let res = 
-                if exists then 
-                    applyk dir
-                else
-                    System.IO.Directory.EnumerateFiles(dir,"*.yaml")
-                    |> Seq.sumBy(fun file -> 
-                        kubectl false "apply" (sprintf "-f %s" file)
-                    )
-            if res = 0 then
-                let envFile = "localenv.yaml"
-                if System.IO.Path.Combine(dir, envFile) |> System.IO.File.Exists then 
-                    run true "kubectl" dir ("apply -f " + envFile)
-                else
-                    0
-            else
-                res
-
-        )
-    
-    dirs
-    |> Seq.iter(fun dir ->
-        let filePath = System.IO.Path.Combine(dir,"kustomization.yaml")
-        if System.IO.File.Exists filePath then
-            System.IO.File.Delete(filePath) 
-    )    
-
-    if res > 0 then failwith "Failed applying all"
+    if run false "kubectl" "../kubernetes/overlays/dev" "apply -k ." > 0 then 
+        failwith "Failed applying all"
 )
 
 let awaitService serviceName =
@@ -274,40 +223,44 @@ create "port-forwarding" (fun _ ->
          ==> "port-forwarding"
      |> ignore
 )
-let wrap target =
-    create ("wrapped-" + target) (fun _ ->  
-        let podName = sprintf "%ser" target
-        let res = kubectl false "run" <| sprintf """-i --tty %s --image tester --image-pull-policy=Never --env='target=%s' """ podName target
-        if res > 0 then failwithf "Running %s failed" target
-        if kubectl true "wait" (sprintf "--for=condition=ready pod -l app=%s --timeout=120s" podName) > 0 then 
-            failwithf "Couldn't wait for target completion of %s" target
-    )
-
-wrap "publish"
-wrap "test"
-wrap "complete-sync"
 
 create "publish" (fun t -> 
     t.Context.Arguments
     |> List.map(fun config -> 
-        config,System.IO.Path.Combine("./transformations", config + "*.hb")
+        config,System.IO.Path.Combine("./transformations", config + ".hb")
     ) |> Seq.iter(fun (name,file) ->
         let url = sprintf "http://%s:%d/admin/configuration" gateway_dn gateway_port
-        printfn "Uploading to: %s" url
+        printfn "Uploading (%s) to: '%s'" file url
         let masterkey = env.MasterUser
-        FSharp.Data.Http.Request(url,
-            httpMethod = "PUT",
-            headers = [HttpRequestHeaders.BasicAuth masterkey ""],
-            body = (Encode.object [
-                                    "name", Encode.string name
-                                    "hb", file
-                                          |> System.IO.File.ReadAllText
-                                          |> Encode.string
-                                  ]
-                    |> Encode.toString 0
-                    |> TextRequest
-                   )
-        ) |> ignore
+        let response = 
+            FSharp.Data.Http.Request(url,
+                httpMethod = "PUT",
+                headers = [HttpRequestHeaders.BasicAuth masterkey ""],
+                silentHttpErrors = true,
+                body = (Encode.object [
+                                        "name", Encode.string name
+                                        "hb", file
+                                              |> System.IO.File.ReadAllText
+                                              |> Encode.string
+                                      ]
+                        |> Encode.toString 0
+                        |> TextRequest
+                       )
+            )
+        let body = 
+            match response.Body with
+            | Binary b -> 
+                let enc = 
+                    match response.Headers |> Map.tryFind "Content-Type" with
+                    None -> System.Text.Encoding.Default
+                    | Some s ->
+                        s.Split '=' 
+                        |> Array.last
+                        |> System.Text.Encoding.GetEncoding 
+                enc.GetString b 
+            | Text t -> t
+        if response.StatusCode <> 200 then
+            failwithf "Couln't upload configuration. %d %s" response.StatusCode body
     )
 )
 
@@ -320,8 +273,8 @@ create "sync" (fun _ ->
 create "complete-sync" (fun _ ->
     let configs = (listDocuments "configurations").Rows |> Array.map(fun r -> r.Id.ToString())
     let configCount = configs.Length
-
-    let countDataset() =
+    let mutable lastSeen = -1
+    let countDataset lastSeen =
         let datasets = 
             (listDocuments "uniformcache").Rows
             |> Array.filter(fun r -> 
@@ -329,11 +282,14 @@ create "complete-sync" (fun _ ->
                 |> Array.tryFind (fun c -> c = r.Id.ToString())
                 |> Option.isSome
             )
-        printfn "Found %d datasets expecting %d" datasets.Length configCount
+        if datasets.Length <> lastSeen then
+            printfn "Found %d datasets expecting %d" datasets.Length configCount
+            
         datasets.Length
     
-    while configCount > countDataset() do
+    while configCount > lastSeen do
         try 
+            lastSeen <- countDataset lastSeen
             awaitJobCompletion 10 "sync" |> ignore 
             //the sync worker is done and the above exits immediately
             System.Threading.Thread.Sleep 10000
@@ -344,25 +300,25 @@ let areEqual actual expected (successes,failed)=
     if actual = expected then
        (successes + 1), failed
     else
-       eprintf "Expected %A but got %A" expected actual
+       eprintf "Expected %A but got %A\n" expected actual
        successes,(failed + 1)
 
 create "data" (fun _ ->
     let res = 
-        sprintf "http://%s:%d/data/json/Velocity" gateway_dn gateway_port
+        sprintf "http://%s:%d/data/json/flowerpot" gateway_dn gateway_port
         |> get
 
     let first = res.[0]
 
     let successes,failed = 
         (0,0)
-        |> areEqual res.Length 2700 
-        |> areEqual first.TimeStamp  (System.DateTime.Parse "17/03/2021 14:27:32")
-        |> areEqual first.SprintName None
-        |> areEqual first.WorkItemId  79312
+        |> areEqual res.Length 27 
+        //|> areEqual first.TimeStamp  (System.DateTime.Parse "17/03/2021 14:27:32")
+        |> areEqual first.SprintName (Some "Iteration 3")
+        |> areEqual first.WorkItemId  442401
         |> areEqual first.ChangedDate  (System.DateTime.Parse "30/04/2019 14:57:50")
         |> areEqual first.WorkItemType  "User Story"
-        |> areEqual first.SprintNumber None
+        |> areEqual first.SprintNumber (Some 3)
         |> areEqual first.State  "Done"
     printfn "Successes: %d. Failures: %d" successes failed
     if failed > 0 then failwith "One or more tests failed"

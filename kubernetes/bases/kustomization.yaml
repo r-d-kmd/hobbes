@@ -1,0 +1,16 @@
+bases:
+  - ../../services/calvin/kubernetes
+  - ../../services/configurations/kubernetes
+  - ../../services/gateway/kubernetes
+  - ../../services/uniformdata/kubernetes
+  - ../../workers/azuredevops.worker/kubernetes
+  - ../../workers/syncronization.worker/kubernetes
+
+resources:
+- db-deployment.yaml
+- db-service.yaml
+- db-volume.yaml
+- metrics-server.yaml
+- rabbitmq-controller.yaml
+- rabbitmq-service.yaml
+- derkins.yaml

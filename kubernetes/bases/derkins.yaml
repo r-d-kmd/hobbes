@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: derkins
+  name: derkins-svc
+spec:
+  ports:
+  - port: 8085
+    targetPort: 8085
+  selector:
+    app: derkins
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nlp
+  name: nlp-svc
+spec:
+  ports:
+  - port: 8085
+    targetPort: 8085
+  selector:
+    app: nlp
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: derkins
+  name: derkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: derkins
+  template:
+    metadata:
+      labels:
+        app: derkins
+    spec:
+      containers:
+      - image: derkins
+        imagePullPolicy: Never
+        name: derkins
+      restartPolicy: Always
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nlp
+  name: nlp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nlp
+  template:
+    metadata:
+      labels:
+        app: nlp
+    spec:
+      containers:
+      - image: nlp
+        imagePullPolicy: Never
+        name: nlp
+      restartPolicy: Always
+status: {}

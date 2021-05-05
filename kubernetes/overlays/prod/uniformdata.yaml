@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uniformdata
+spec:
+  template:
+    spec:
+      containers:
+      - imagePullPolicy: Always
+        image: hobbes.azurecr.io/uniformdata
+        name: uniformdata
+      imagePullSecrets:
+      - name: acr-secret
+status: {}

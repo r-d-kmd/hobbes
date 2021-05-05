@@ -1,4 +1,3 @@
-
 Black='\033[0;30m'
 DarkGray='\033[1;30m'
 Red='\033[0;31m'
@@ -174,6 +173,7 @@ function vscode(){
 }
 
 function wrap() {
+    set +e
     setEnvVars
     podName=$1er
     cat <<EOF > $1.yaml
@@ -203,23 +203,23 @@ spec:
         - name: MASTER_USER
           value: "$MASTER_USER"
         - name: args
-          value:
+          value: $2
       restartPolicy: Never
   backoffLimit: 0
 EOF
     kubectl apply -f $1.yaml
-    sleep 30
-    kubectl describe job/$podName
-    kubectl logs job/$podName -f
-    #kubectl wait --for=condition=complete job/$podName --timeout=120s
+    sleep 10
+    kubectl logs job/$podName -f &
+    kubectl wait --for=condition=complete job/$podName --timeout=120s
     
-    if [ "$(kubectl logs job/$podName | grep "Status:" | awk '{print $NF}')" != "Ok" ]; then
+    if [ $(kubectl get job publisher -o jsonpath={.status.failed}) ]; then
         kubectl logs job/$podName
         #make the script fail if it's on the build server
         if [ -z ${ENV_FILE+x} ]; then
             echo "Running in local mode"
         else
-            exit 1;
+            set -e
+            exit 11
         fi
     fi
 }
@@ -233,10 +233,12 @@ function setupIntegrationTests(){
     cd $SCRIPT_DIR/tests
     
     echo "Publish"
-    wrap "publish" Velocity
+    wrap "publish" "flowerpot Velocity"
+    
     
     echo "sync"
     dotnet fake build --target sync
+
     wrap "complete-sync"
 
     cd -

@@ -1,0 +1,5 @@
+bases:
+- ../../bases
+
+patchesStrategicMerge:
+- db-deployment.yaml

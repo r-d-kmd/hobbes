@@ -148,7 +148,7 @@ let startJob silent jobName =
     jobName
 
 let awaitJobCompletion timeout jobName = 
-    kubectl false "wait" (sprintf "--for=condition=complete --timeout=%ds job/%s" timeout jobName) |> ignore
+    kubectl true "wait" (sprintf "--for=condition=complete --timeout=%ds job/%s" timeout jobName) |> ignore
     jobName
 
 type DockerCommand =

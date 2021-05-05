@@ -303,6 +303,9 @@ let areEqual actual expected (successes,failed)=
        eprintf "Expected %A but got %A\n" expected actual
        successes,(failed + 1)
 
+let writeTestLog testName =
+    System.IO.File.WriteAllText("test.log",sprintf "One or more tests in %s failed" testName)
+
 create "data" (fun _ ->
     let res = 
         sprintf "http://%s:%d/data/json/flowerpot" gateway_dn gateway_port
@@ -312,16 +315,17 @@ create "data" (fun _ ->
 
     let successes,failed = 
         (0,0)
-        |> areEqual res.Length 27 
+        |> areEqual res.Length 42 
         //|> areEqual first.TimeStamp  (System.DateTime.Parse "17/03/2021 14:27:32")
         |> areEqual first.SprintName (Some "Iteration 3")
         |> areEqual first.WorkItemId  442401
-        |> areEqual first.ChangedDate  (System.DateTime.Parse "30/04/2019 14:57:50")
         |> areEqual first.WorkItemType  "User Story"
         |> areEqual first.SprintNumber (Some 3)
         |> areEqual first.State  "Done"
     printfn "Successes: %d. Failures: %d" successes failed
-    if failed > 0 then failwith "One or more tests failed"
+    if failed > 0 then 
+        writeTestLog "data"
+        failwith "One or more tests failed"
 )
 
 Target.create "test" ignore

@@ -212,7 +212,10 @@ EOF
     kubectl logs job/$podName -f &
     kubectl wait --for=condition=complete job/$podName --timeout=120s
     
-    if [ $(kubectl get job publisher -o jsonpath={.status.failed}) ]; then
+    if [ -f "test.log" ]; then
+        echo "******************************************************"
+        cat test.log
+        echo "******************************************************"
         kubectl logs job/$podName
         #make the script fail if it's on the build server
         if [ -z ${ENV_FILE+x} ]; then

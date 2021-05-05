@@ -16,3 +16,4 @@ rename column "Iteration.IterationLevel2" "Sprint Name"
 create column SprintNumber (int (regex ["Sprint Name"] /[Ii][Tt][Ee][Rr][Aa][Tt][Ii][Oo][Nn] [^\\d]*([\\d]+).*/ [$1]))
 rename column State "DetailedState"
 create column State (if [StateCategory = 'Completed' || StateCategory = 'Resolved' || StateCategory = 'Remove'] {'Done'} else { if ["StateCategory" = 'InProgress'] {'Doing'} else {'Todo'} })
+slice columns "Sprint Name" "WorkItemId" "ChangedDate" "WorkItemType" "CreatedDate" "ClosedDate" "LeadTimeDays" "CycleTimeDays" "StoryPoints" "RevisedDate" "Priority" "Title" "Sprint Number" "State"

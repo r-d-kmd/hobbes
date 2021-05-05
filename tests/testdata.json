@@ -13,7 +13,7 @@
   "Iteration.StartDate": "03/11/2019 23:00:00",
   "Iteration.EndDate": "03/27/2019 22:59:59",
   "Iteration.IterationLevel1": "flowerpot",
-  "Sprint Name": "Iteration 3",
+  "Sprint Name": null,
   "Iteration.IterationLevel3": "",
   "Iteration.IterationLevel4": "",
   "Iteration.IterationLevel5": "",
@@ -28,7 +28,7 @@
   "Iteration.IterationLevel14": "",
   "Iteration.Depth": "1",
   "Iteration.IsEnded": true,
-  "SprintNumber": 3,
+  "SprintNumber": null,
   "State": "Done"
 },{
   "WorkItemId": "256852",

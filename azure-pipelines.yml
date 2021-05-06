@@ -161,7 +161,6 @@ stages:
             git config --global credential.helper store
             git config --global user.email "hobbes_buildserver@kmd.dk"
             git config --global user.name "Build server"
-            echo "azure-pipelines.yml merge=ours" > .gitattributes
             git config --global merge.ours.driver true
             git remote add pseudo https://$(GIT_ACCESS_TOKEN):x-oauth-basic@github.com/r-d-kmd/hobbes.git
             git checkout master

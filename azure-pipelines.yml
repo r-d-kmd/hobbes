@@ -43,8 +43,6 @@ stages:
         - script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
           displayName: Docker login
 
-        
-      
   - stage: build
     jobs:
     - job: build
@@ -79,12 +77,9 @@ stages:
           env:
             ENV_FILE: "$(ENV_FILE)"
           displayName: Build the world
-  - stage: test
-    condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/development'))
-    jobs:
-      - job: integration_tests
-        displayName: integration tests
-        steps:
+    - job: integration_tests
+      displayName: integration tests
+      steps:
         # Download Minikube and it's prerequisites
         - script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /
           displayName: Minikube prerequisites  
@@ -230,7 +225,7 @@ stages:
       # Fix permissions issue in AzurePipelines
       - script: sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context
         displayName: Fix permissions
-        
+
       - script: |
           cd kubernetes/overlays/prod
           echo '$(ENV_FILE)' | kubectl apply -f -

@@ -62,9 +62,17 @@ stages:
       steps:
         - script: |
             set -e
+
+            env=env=$(echo $ENV_FILE)
+            AZURE_DEVOPS_PAT="$(echo "$(echo env | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
+            FEED_PAT=$AZURE_DEVOPS_PAT 
+            COUCHDB_USER="$(echo "$(echo env | jq -r .data.COUCHDB_USER)" | base64 -d)"
+            COUCHDB_PASSWORD="$(echo "$(echo env | jq -r .data.COUCHDB_PASSWORD)" | base64 -d)"
+            MASTER_USER="$(echo "$(echo env | jq -r .data.MASTER_USER)" | base64 -d)"
+            
             cd tests/
-            source ../functions.sh
             eval $(minikube docker-env)
+
             docker build -t tester --build-arg ENV_FILE="$(echo $ENV_FILE | tr "\"" "\\\"")" .
           env:
             ENV_FILE: "$(ENV_FILE)"
@@ -72,6 +80,14 @@ stages:
 
         - script: |
             set -e
+            
+            env=env=$(echo $ENV_FILE)
+            AZURE_DEVOPS_PAT="$(echo "$(echo env | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
+            FEED_PAT=$AZURE_DEVOPS_PAT 
+            COUCHDB_USER="$(echo "$(echo env | jq -r .data.COUCHDB_USER)" | base64 -d)"
+            COUCHDB_PASSWORD="$(echo "$(echo env | jq -r .data.COUCHDB_PASSWORD)" | base64 -d)"
+            MASTER_USER="$(echo "$(echo env | jq -r .data.MASTER_USER)" | base64 -d)"
+            
             eval $(minikube docker-env)
             dotnet fake build --parallel 4
           env:
@@ -88,6 +104,14 @@ stages:
           displayName: Apply kubernetes environment file
         - script: |
             set -e
+            
+            env=env=$(echo $ENV_FILE)
+            AZURE_DEVOPS_PAT="$(echo "$(echo env | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
+            FEED_PAT=$AZURE_DEVOPS_PAT 
+            COUCHDB_USER="$(echo "$(echo env | jq -r .data.COUCHDB_USER)" | base64 -d)"
+            COUCHDB_PASSWORD="$(echo "$(echo env | jq -r .data.COUCHDB_PASSWORD)" | base64 -d)"
+            MASTER_USER="$(echo "$(echo env | jq -r .data.MASTER_USER)" | base64 -d)"
+            
             eval $(minikube docker-env)
             cd tests/
             echo '$(ENV_FILE)' | kubectl apply -f -
@@ -101,9 +125,17 @@ stages:
 
         - script: |       
             set -e     
+            
+            env=env=$(echo $ENV_FILE)
+            AZURE_DEVOPS_PAT="$(echo "$(echo env | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
+            FEED_PAT=$AZURE_DEVOPS_PAT 
+            COUCHDB_USER="$(echo "$(echo env | jq -r .data.COUCHDB_USER)" | base64 -d)"
+            COUCHDB_PASSWORD="$(echo "$(echo env | jq -r .data.COUCHDB_PASSWORD)" | base64 -d)"
+            MASTER_USER="$(echo "$(echo env | jq -r .data.MASTER_USER)" | base64 -d)"
+            
             cd tests/
             eval $(minikube docker-env)
-            source ../functions.sh
+            
             setupIntegrationTests
           displayName: setup Integration tests
           env:

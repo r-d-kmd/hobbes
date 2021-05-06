@@ -7,3 +7,4 @@ patchesStrategicMerge:
 - configurations.yaml
 - uniformdata.yaml
 - gateway.yaml
+- odata.yaml

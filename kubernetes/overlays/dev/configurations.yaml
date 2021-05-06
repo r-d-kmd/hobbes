@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: calvin
+  name: configurations
 spec:
   template:
     spec:
       containers:
       - imagePullPolicy: Always
-        image: kmdrd/calvin
-        name: calvin
+        image: hobbes.azurecr.io/configurations
+        name: configurations
         resources:
           requests:
             cpu: 100m
@@ -16,13 +16,15 @@ spec:
           limits:
             cpu: 250m
             memory: 256Mi
+      imagePullSecrets:
+      - name: acr-secret
 status: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: calvin-svc
+  name: configurations-svc
 spec:
   selector:
-    app: calvin
-  type: ClusterIP
+    app: configurations
+  type: NodePort

@@ -5,13 +5,15 @@
 
 trigger:
 - development
+- master
 
 pool:
   vmImage: 'ubuntu-latest'
 stages: 
-  - stage: development
+  - stage: build
     jobs:
-      - job: development
+      - job: install_dependencies
+        displayName: install dependencies
         steps:
         
         - script: dotnet tool update fake-cli
@@ -53,11 +55,8 @@ stages:
         # Fix permissions issue in AzurePipelines
         - script: sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context
           displayName: Fix permissions
-
-        # Set up cluster
-        - script: echo '$(ENV_FILE)' | kubectl apply -f -
-          displayName: Apply kubernetes environment file
-
+      - job: development
+        steps:
         - script: |
             set -e
             cd tests/
@@ -75,7 +74,15 @@ stages:
           env:
             ENV_FILE: "$(ENV_FILE)"
           displayName: Build the world
-          
+  - stage: test
+    condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/development'))
+    jobs:
+      - job: integration_tests
+        displayName: integration tests
+        steps:
+        # Set up cluster
+        - script: echo '$(ENV_FILE)' | kubectl apply -f -
+          displayName: Apply kubernetes environment file
         - script: |
             set -e
             eval $(minikube docker-env)
@@ -108,7 +115,13 @@ stages:
           displayName: Integration tests
           env:
             ENV_FILE: "$(ENV_FILE)"
-            
+  - stage: Stage_deployment
+    displayName: Stage deployment
+    condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/development'))
+    jobs:
+      - job: push_to_master
+        displayName: Push to master
+        steps:
         - script: |
             set -e
             git stash
@@ -128,3 +141,63 @@ stages:
               exit $RESULT
             fi
           displayName: Push to master
+  - stage: Deploymnet
+    condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+    jobs:
+    - job: Deployment
+      steps:
+      - task: AzureCLI@2
+        displayName: Azure CLI
+        inputs:
+          azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: 'az acr login --name hobbes'
+
+      - script: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
+        displayName: Install Kustomize
+
+      - task: AzureCLI@2
+        inputs:
+          azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            source functions.sh 
+            az acr login --name hobbes
+            build PushApps
+            if [[ ! "$?" -eq "0" ]]
+            then 
+                exit 1
+            fi
+            docker images
+        env:
+          ENV_FILE: "$(ENV_FILE)" 
+        displayName: Push the world
+
+      - script: |
+          cd kubernetes/overlays/prod
+          kustomize build . -o prod.yaml
+        displayName: Setup production yaml
+      
+      - script: |
+          cd kubernetes/overlays/prod
+          echo '$(ENV_FILE)' | kubectl apply -f -
+          kubectl apply -f prod.yaml
+        displayName: Apply production yaml to minikube
+        env:
+            ENV_FILE: "$(ENV_FILE)"
+
+      - task: AzureCLI@2
+        inputs:
+          azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            az aks get-credentials --name hobbes-cluster --resource-group cluster-rg
+            cd kubernetes/overlays/prod
+            kubectl apply -f prod.yaml
+        env:
+          ENV_FILE: "$(ENV_FILE)"   
+          

@@ -14,11 +14,9 @@ spec:
         app: db
     spec:
      containers:
-      - env:
-        - name: COUCHDB_PASSWORD
-          value: ""
-        - name: COUCHDB_USER
-          value: ""
+      - envFrom:
+        - secretRef:
+            name: env
         image: kmdrd/couchdb
         imagePullPolicy: Always
         name: db

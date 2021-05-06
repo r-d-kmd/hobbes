@@ -52,6 +52,9 @@ workers/**/src/Broker.fs
 postman api-key.md
 testresults.txt
 env.JSON
+env.yaml
+env.json
+env.yml
 tests/publish.yaml
 tests/test.yaml
 tests/complete-sync.yaml

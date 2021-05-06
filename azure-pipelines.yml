@@ -44,6 +44,7 @@ stages:
           displayName: Docker login
 
   - stage: build
+    displayName: Build and test
     jobs:
     - job: build
       steps:
@@ -176,6 +177,7 @@ stages:
             fi
           displayName: Push to master
   - stage: Deployment
+    dependsOn: build
     condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
     jobs:
     - job: Deployment

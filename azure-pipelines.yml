@@ -200,14 +200,18 @@ stages:
           scriptType: 'bash'
           scriptLocation: 'inlineScript'
           inlineScript: |
-            source functions.sh 
+            set -e
+
+            env=env=$(echo $ENV_FILE)
+            AZURE_DEVOPS_PAT="$(echo "$(echo env | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
+            FEED_PAT=$AZURE_DEVOPS_PAT 
+            COUCHDB_USER="$(echo "$(echo env | jq -r .data.COUCHDB_USER)" | base64 -d)"
+            COUCHDB_PASSWORD="$(echo "$(echo env | jq -r .data.COUCHDB_PASSWORD)" | base64 -d)"
+            MASTER_USER="$(echo "$(echo env | jq -r .data.MASTER_USER)" | base64 -d)"
+
             az acr login --name hobbes
             dotnet tool restore
-            dotnet tool fake build --target PushApps
-            if [[ ! "$?" -eq "0" ]]
-            then 
-                exit 1
-            fi
+            dotnet fake build --target PushApps
             docker images
         env:
           ENV_FILE: "$(ENV_FILE)" 

@@ -10,7 +10,7 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 stages: 
-  - stage: build
+  - stage: install
     jobs:
       - job: install_dependencies
         displayName: install dependencies
@@ -55,8 +55,11 @@ stages:
         # Fix permissions issue in AzurePipelines
         - script: sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context
           displayName: Fix permissions
-      - job: development
-        steps:
+      
+  - stage: build
+    jobs:
+    - job: build
+      steps:
         - script: |
             set -e
             cd tests/
@@ -141,7 +144,7 @@ stages:
               exit $RESULT
             fi
           displayName: Push to master
-  - stage: Deploymnet
+  - stage: Deployment
     condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
     jobs:
     - job: Deployment

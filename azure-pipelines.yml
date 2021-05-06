@@ -85,6 +85,7 @@ stages:
             MASTER_USER="$(echo "$(echo env | jq -r .data.MASTER_USER)" | base64 -d)"
             
             eval $(minikube docker-env)
+            dotnet tool restore
             dotnet fake build --parallel 4
           env:
             ENV_FILE: "$(ENV_FILE)"
@@ -111,6 +112,7 @@ stages:
             eval $(minikube docker-env)
             cd tests/
             echo '$(ENV_FILE)' | kubectl apply -f -
+            dotnet tool restore
             dotnet fake build --target deploy
             kubectl wait --for=condition=Ready pod -l app=db --timeout=120s
             kubectl wait --for=condition=Ready pod -l component=rabbitmq --timeout=120s
@@ -128,10 +130,13 @@ stages:
             COUCHDB_USER="$(echo "$(echo env | jq -r .data.COUCHDB_USER)" | base64 -d)"
             COUCHDB_PASSWORD="$(echo "$(echo env | jq -r .data.COUCHDB_PASSWORD)" | base64 -d)"
             MASTER_USER="$(echo "$(echo env | jq -r .data.MASTER_USER)" | base64 -d)"
+
+            source functions.sh
             
             cd tests/
             eval $(minikube docker-env)
-            
+            dotnet tool restore
+
             setupIntegrationTests
           displayName: setup Integration tests
           env:
@@ -142,6 +147,7 @@ stages:
             cd tests/
             eval $(minikube docker-env)
             source ../functions.sh
+            dotnet tool restore
             test
           displayName: Integration tests
           env:
@@ -197,6 +203,7 @@ stages:
           inlineScript: |
             source functions.sh 
             az acr login --name hobbes
+            dotnet tool restore
             build PushApps
             if [[ ! "$?" -eq "0" ]]
             then 

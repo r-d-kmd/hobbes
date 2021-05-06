@@ -4,111 +4,244 @@
 # https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
 
 trigger:
+- development
 - master
 
 pool:
   vmImage: 'ubuntu-latest'
+stages: 
+  - stage: install
+    jobs:
+      - job: install_dependencies
+        displayName: install dependencies
+        steps:
+        
+        - script: dotnet tool update fake-cli
+          displayName: Install Fake
+          
+        - task: NuGetToolInstaller@1
 
-steps:
-- task: AzureCLI@2
-  displayName: Azure CLI
-  inputs:
-    azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: 'az acr login --name hobbes'
+        - task: DockerInstaller@0
+          inputs:
+            dockerVersion: '17.09.0-ce'
 
-# Need go 1.13 or higher
-- task: GoTool@0
-  inputs:
-    version: '1.13'
-- script: GO111MODULE=on GOPATH=$tmpGoPath go get sigs.k8s.io/kustomize/kustomize/v3
-  displayName: Go get kustomize
+        - task: KubectlInstaller@0
+          inputs:
+            kubectlVersion: 'latest'
 
+        - task: AzureCLI@2
+          displayName: Azure CLI
+          inputs:
+            azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+            scriptType: 'bash'
+            scriptLocation: 'inlineScript'
+            inlineScript: 'az acr login --name hobbes'
 
-- script: |
-    unset GOPATH
-    unset GO111MODULES
-    git clone https://github.com/kubernetes-sigs/kustomize
-    cd kustomize
-    git checkout kustomize/v3.2.3
-    (cd kustomize; go install .)
-    ~/go/bin/kustomize version
-  displayName: Install Kustomize
+        - script: curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
+          displayName: Downloading Minikube
 
-- task: KubectlInstaller@0
-  inputs:
-    kubectlVersion: 'latest'
-- script: dotnet tool update fake-cli
-  displayName: Install Fake
-  
-- task: NuGetToolInstaller@1
+        - script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
+          displayName: Docker login
 
-- task: DockerInstaller@0
-  inputs:
-    dockerVersion: '17.09.0-ce'
+  - stage: build
+    jobs:
+    - job: build
+      steps:
+        - script: |
+            env=env=$(echo $ENV_FILE)
+            AZURE_DEVOPS_PAT="$(echo "$(echo env | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
+            FEED_PAT=$AZURE_DEVOPS_PAT 
+            COUCHDB_USER="$(echo "$(echo env | jq -r .data.COUCHDB_USER)" | base64 -d)"
+            COUCHDB_PASSWORD="$(echo "$(echo env | jq -r .data.COUCHDB_PASSWORD)" | base64 -d)"
+            MASTER_USER="$(echo "$(echo env | jq -r .data.MASTER_USER)" | base64 -d)"
+            
+            cd tests/
+            eval $(minikube docker-env)
 
-# Download Minikube and it's prerequisites
-- script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /
-  displayName: Minikube prerequisites  
+            docker build -t tester --build-arg ENV_FILE="$(echo $ENV_FILE | tr "\"" "\\\"")" .
+          env:
+            ENV_FILE: "$(ENV_FILE)"
+          displayName: Build tester image
 
-- script: curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
-  displayName: Downloading Minikube
+        - script: |
+            env=env=$(echo $ENV_FILE)
+            AZURE_DEVOPS_PAT="$(echo "$(echo env | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
+            FEED_PAT=$AZURE_DEVOPS_PAT 
+            COUCHDB_USER="$(echo "$(echo env | jq -r .data.COUCHDB_USER)" | base64 -d)"
+            COUCHDB_PASSWORD="$(echo "$(echo env | jq -r .data.COUCHDB_PASSWORD)" | base64 -d)"
+            MASTER_USER="$(echo "$(echo env | jq -r .data.MASTER_USER)" | base64 -d)"
+            
+            eval $(minikube docker-env)
+            dotnet tool restore
+            dotnet fake build --parallel 4
+          env:
+            ENV_FILE: "$(ENV_FILE)"
+          displayName: Build the world
+    - job: integration_tests
+      displayName: integration tests
+      steps:
+        # Download Minikube and it's prerequisites
+        - script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /
+          displayName: Minikube prerequisites  
+        # Start Minikube
+        - script: |
+            minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
+          displayName: Start Minikube
+        
+        # Fix permissions issue in AzurePipelines
+        - script: sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context
+          displayName: Fix permissions
 
-#- script: docker login https://docker.pkg.github.com -u="$GIT_USER" -p="$GIT_PASS"
-- script: docker pull gcr.io/k8s-minikube/kicbase:v0.0.11
-  displayName: Pull minikube image
+        # Set up cluster
+        - script: echo '$(ENV_FILE)' | kubectl apply -f -
+          displayName: Apply kubernetes environment file
+        - script: |
+            set -e
+            
+            env=env=$(echo $ENV_FILE)
+            AZURE_DEVOPS_PAT="$(echo "$(echo env | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
+            FEED_PAT=$AZURE_DEVOPS_PAT 
+            COUCHDB_USER="$(echo "$(echo env | jq -r .data.COUCHDB_USER)" | base64 -d)"
+            COUCHDB_PASSWORD="$(echo "$(echo env | jq -r .data.COUCHDB_PASSWORD)" | base64 -d)"
+            MASTER_USER="$(echo "$(echo env | jq -r .data.MASTER_USER)" | base64 -d)"
+            
+            eval $(minikube docker-env)
+            cd tests/
+            echo '$(ENV_FILE)' | kubectl apply -f -
+            dotnet tool restore
+            dotnet fake build --target deploy
+            kubectl wait --for=condition=Ready pod -l app=db --timeout=120s
+            kubectl wait --for=condition=Ready pod -l component=rabbitmq --timeout=120s
+            kubectl get all
+          env:
+            ENV_FILE: "$(ENV_FILE)"
+          displayName: Deploy services to minikube
 
-# Start Minikube
-- script: minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
-  displayName: Start Minikube
+        - script: |       
+            set -e     
+            
+            env=env=$(echo $ENV_FILE)
+            AZURE_DEVOPS_PAT="$(echo "$(echo env | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
+            FEED_PAT=$AZURE_DEVOPS_PAT 
+            COUCHDB_USER="$(echo "$(echo env | jq -r .data.COUCHDB_USER)" | base64 -d)"
+            COUCHDB_PASSWORD="$(echo "$(echo env | jq -r .data.COUCHDB_PASSWORD)" | base64 -d)"
+            MASTER_USER="$(echo "$(echo env | jq -r .data.MASTER_USER)" | base64 -d)"
 
-# Fix permissions issue in AzurePipelines
-- script: sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context
-  displayName: Fix permissions
+            source functions.sh
+            
+            cd tests/
+            eval $(minikube docker-env)
+            dotnet tool restore
 
-# Set up cluster
-- script: echo '$(ENV_FILE)' | kubectl apply -f -
-  displayName: Apply kubernetes environment file
-  
-- script: docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
-  displayName: Docker login
-- task: AzureCLI@2
-  inputs:
-    azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      source functions.sh 
-      az acr login --name hobbes
-      build PushApps
-      if [[ ! "$?" -eq "0" ]]
-      then 
-          exit 1
-      fi
-      docker images
-  env:
-    FEED_PAT: $(FEED_PAT)
-    VERSION: "1.2021.$(Build.BuildNumber)"   
-  displayName: Build the world
+            setupIntegrationTests
+          displayName: setup Integration tests
+          env:
+            ENV_FILE: "$(ENV_FILE)"
+            
+        - script: |       
+            set -e     
+            cd tests/
+            eval $(minikube docker-env)
+            source ../functions.sh
+            dotnet tool restore
+            test
+          displayName: Integration tests
+          env:
+            ENV_FILE: "$(ENV_FILE)"
+  - stage: Stage_deployment
+    displayName: Stage deployment
+    condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/development'))
+    jobs:
+      - job: push_to_master
+        displayName: Push to master
+        steps:
+        - script: |
+            set -e
+            git stash
+            git config --global credential.helper store
+            git config --global user.email "hobbes_buildserver@kmd.dk"
+            git config --global user.name "Build server"
+            git config --global merge.ours.driver true
+            git remote add pseudo https://$(GIT_ACCESS_TOKEN):x-oauth-basic@github.com/r-d-kmd/hobbes.git
+            git checkout master
+            git merge origin/development
+            RESULT=$?
+            if [ "$RESULT" -eq "0" ]
+            then
+                git push pseudo master
+            else
+              exit $RESULT
+            fi
+          displayName: Push to master
+  - stage: Deployment
+    condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+    jobs:
+    - job: Deployment
+      steps:
+      - task: AzureCLI@2
+        displayName: Azure CLI
+        inputs:
+          azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: 'az acr login --name hobbes'
 
-- script: |
-    cd kubernetes/overlays/prod
-    kustomize build . -o prod.yaml
-  displayName: Setup production yaml
- 
-- script: |
-    cd kubernetes/overlays/prod
-    kubectl apply -f prod.yaml
-  displayName: Apply production yaml to minikube
-  
-- task: AzureCLI@2
-  inputs:
-    azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      az aks get-credentials --name hobbes-kub --resource-group hobbes-rg
-      echo '$(ENV_FILE)' | kubectl apply -f -
-      cd kubernetes/overlays/prod
-      kubectl apply -f prod.yaml   
+      - script: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
+        displayName: Install Kustomize
+
+      - task: AzureCLI@2
+        inputs:
+          azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            source functions.sh 
+            az acr login --name hobbes
+            dotnet tool restore
+            build PushApps
+            if [[ ! "$?" -eq "0" ]]
+            then 
+                exit 1
+            fi
+            docker images
+        env:
+          ENV_FILE: "$(ENV_FILE)" 
+        displayName: Push the world
+
+      - script: |
+          cd kubernetes/overlays/prod
+          kustomize build . -o prod.yaml
+        displayName: Setup production yaml
+      # Download Minikube and it's prerequisites
+      - script: sudo apt-get install conntrack && set -e && export CHANGE_MINIKUBE_NONE_USER=true && sudo mount --make-rshared /
+        displayName: Minikube prerequisites  
+      # Start Minikube
+      - script: |
+          minikube start --driver docker --base-image gcr.io/k8s-minikube/kicbase:v0.0.11
+        displayName: Start Minikube
+      
+      # Fix permissions issue in AzurePipelines
+      - script: sudo chmod --recursive 777 $HOME/.minikube && sudo chmod --recursive 777 $HOME/.kube && minikube update-context
+        displayName: Fix permissions
+
+      - script: |
+          cd kubernetes/overlays/prod
+          echo '$(ENV_FILE)' | kubectl apply -f -
+          kubectl apply -f prod.yaml
+        displayName: Apply production yaml to minikube
+        env:
+            ENV_FILE: "$(ENV_FILE)"
+
+      - task: AzureCLI@2
+        inputs:
+          azureSubscription: 'Flowerpot(6df631a2-f66b-4e70-8f3c-4630dca28cbf)'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            az aks get-credentials --name hobbes-cluster --resource-group cluster-rg
+            cd kubernetes/overlays/prod
+            kubectl apply -f prod.yaml
+        env:
+          ENV_FILE: "$(ENV_FILE)"   
+          

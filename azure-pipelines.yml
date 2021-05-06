@@ -203,7 +203,7 @@ stages:
             source functions.sh 
             az acr login --name hobbes
             dotnet tool restore
-            build PushApps
+            dotnet tool fake build --target PushApps
             if [[ ! "$?" -eq "0" ]]
             then 
                 exit 1

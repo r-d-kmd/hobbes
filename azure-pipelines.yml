@@ -61,8 +61,6 @@ stages:
     - job: build
       steps:
         - script: |
-            set -e
-
             env=env=$(echo $ENV_FILE)
             AZURE_DEVOPS_PAT="$(echo "$(echo env | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
             FEED_PAT=$AZURE_DEVOPS_PAT 
@@ -79,8 +77,6 @@ stages:
           displayName: Build tester image
 
         - script: |
-            set -e
-            
             env=env=$(echo $ENV_FILE)
             AZURE_DEVOPS_PAT="$(echo "$(echo env | jq -r .data.AZURE_DEVOPS_PAT)" | base64 -d)"
             FEED_PAT=$AZURE_DEVOPS_PAT 

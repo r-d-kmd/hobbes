@@ -217,7 +217,6 @@ function setupIntegrationTests(){
     echo "Publish"
     wrap "publish" "flowerpot Velocity"
     
-    
     echo "sync"
     dotnet fake build --target sync
 

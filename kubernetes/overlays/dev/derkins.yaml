@@ -47,7 +47,7 @@ metadata:
 spec:
   selector:
     app: derkins
-  type: ClusterIP
+  type: NodePort
 ---
 apiVersion: v1
 kind: Service
@@ -56,4 +56,4 @@ metadata:
 spec:
   selector:
     app: nlp
-  type: ClusterIP
+  type: NodePort

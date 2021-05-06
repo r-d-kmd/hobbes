@@ -1,28 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: calvin
+  name: uniformdata
 spec:
   template:
     spec:
       containers:
       - imagePullPolicy: Always
-        image: kmdrd/calvin
-        name: calvin
+        image: hobbes.azurecr.io/uniformdata
+        name: uniformdata
         resources:
           requests:
             cpu: 100m
             memory: 128Mi
           limits:
-            cpu: 250m
-            memory: 256Mi
+            cpu: 1
+            memory: 1000Mi
+      imagePullSecrets:
+      - name: acr-secret
 status: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: calvin-svc
+  name: uniformdata-svc
 spec:
   selector:
-    app: calvin
+    app: uniformdata
   type: ClusterIP

@@ -9,6 +9,22 @@ spec:
       - imagePullPolicy: Always
         image: hobbes.azurecr.io/uniformdata
         name: uniformdata
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
       imagePullSecrets:
       - name: acr-secret
 status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: uniformdata-svc
+spec:
+  selector:
+    app: uniformdata
+  type: ClusterIP

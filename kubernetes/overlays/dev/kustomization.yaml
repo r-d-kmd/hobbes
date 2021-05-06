@@ -2,4 +2,7 @@ bases:
 - ../../bases
 
 patchesStrategicMerge:
-- db-deployment.yaml
+- calvin.yaml
+- derkins.yaml
+- gateway.yaml
+- uniformdata.yaml

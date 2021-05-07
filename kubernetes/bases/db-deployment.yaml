@@ -18,6 +18,11 @@ spec:
         - secretRef:
             name: env
         image: kmdrd/couchdb
+        env:
+          - name: COUCHDB_USER
+            value: admin
+          - name: COUCHDB_PASSWORD
+            value: password
         imagePullPolicy: Always
         name: db
         ports:

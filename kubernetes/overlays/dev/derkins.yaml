@@ -6,8 +6,8 @@ spec:
   template:
     spec:
       containers:
-      - image: hobbes.azurecr.io/derkins
-        imagePullPolicy: Always
+      - image: derkins
+        imagePullPolicy: Never
         name: derkins
         resources:
           requests:
@@ -16,8 +16,6 @@ spec:
           limits:
             cpu: 250m
             memory: 256Mi
-      imagePullSecrets:
-      - name: acr-secret
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -27,9 +25,7 @@ spec:
   template:
     spec:
       containers:
-        - imagePullPolicy: Always
-          image: hobbes.azurecr.io/nlp
-          name: nlp
+        - name: nlp
           resources:
             requests:
               cpu: 100m
@@ -37,8 +33,6 @@ spec:
             limits:
               cpu: 1
               memory: 1000Mi
-      imagePullSecrets:
-      - name: acr-secret
 ---
 apiVersion: v1
 kind: Service

@@ -6,3 +6,4 @@ patchesStrategicMerge:
 - derkins.yaml
 - gateway.yaml
 - uniformdata.yaml
+- db.yaml

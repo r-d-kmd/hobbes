@@ -6,8 +6,8 @@ spec:
   template:
     spec:
       containers:
-      - imagePullPolicy: Always
-        image: hobbes.azurecr.io/gateway
+      - imagePullPolicy: Never
+        image: gateway
         name: gateway
         resources:
           requests:
@@ -16,8 +16,6 @@ spec:
           limits:
             cpu: 250m
             memory: 256Mi
-      imagePullSecrets:
-      - name: acr-secret
 status: {}
 ---
 apiVersion: v1

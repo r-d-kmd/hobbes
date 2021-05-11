@@ -9,7 +9,6 @@ bases:
 resources:
 - db-deployment.yaml
 - db-service.yaml
-- db-volume.yaml
 - metrics-server.yaml
 - rabbitmq-controller.yaml
 - rabbitmq-service.yaml

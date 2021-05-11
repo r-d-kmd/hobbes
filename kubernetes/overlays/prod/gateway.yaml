@@ -24,7 +24,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: gateway-svc
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: cluster-rg
 spec:
   selector:
     app: gateway
+  loadBalancerIP: 137.135.213.69
   type: LoadBalancer

@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: uniformdata
+  name: odata
 spec:
   template:
     spec:
       containers:
       - imagePullPolicy: Always
-        image: hobbes.azurecr.io/uniformdata
-        name: uniformdata
+        image: hobbes.azurecr.io/odata
+        name: odata
         resources:
           requests:
             cpu: 100m
@@ -19,12 +19,3 @@ spec:
       imagePullSecrets:
       - name: acr-secret
 status: {}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: uniformdata-svc
-spec:
-  selector:
-    app: uniformdata
-  type: ClusterIP

@@ -7,4 +7,6 @@ patchesStrategicMerge:
 - configurations.yaml
 - uniformdata.yaml
 - gateway.yaml
+- db-volume.yaml
+- db-deployment.yaml
 - odata.yaml

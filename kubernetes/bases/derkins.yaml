@@ -43,8 +43,8 @@ spec:
         app: derkins
     spec:
       containers:
-      - image: hobbes.azurecr.io/derkins
-        imagePullPolicy: Always
+      - image: derkins
+        imagePullPolicy: Never
         name: derkins
       restartPolicy: Always
 status: {}
@@ -66,8 +66,8 @@ spec:
         app: nlp
     spec:
       containers:
-      - image: hobbes.azurecr.io/nlp
-        imagePullPolicy: Always
+      - image: nlp
+        imagePullPolicy: Never
         name: nlp
       restartPolicy: Always
 status: {}

@@ -15,5 +15,15 @@ spec:
         env:
         - name: target
           value: "test"
+        - name: AZURE_DEVOPS_PAT
+          value: ""
+        - name: COUCHDB_PASSWORD
+          value: ""
+        - name: COUCHDB_USER
+          value: ""
+        - name: MASTER_USER
+          value: ""
+        - name: args
+          value: 
       restartPolicy: Never
   backoffLimit: 0

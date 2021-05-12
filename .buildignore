@@ -3,3 +3,4 @@
 ./libs
 ./tutorial
 ./services/calvin/
+./services/asana-proxy

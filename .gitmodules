@@ -22,3 +22,6 @@
 [submodule "libs/hobbes.core"]
 	path = libs/hobbes.core
 	url = https://github.com/r-d-kmd/hobbes.core.git
+[submodule "services/asana-proxy"]
+	path = services/asana-proxy
+	url = https://github.com/r-d-kmd/asana-proxy.git

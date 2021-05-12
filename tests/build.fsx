@@ -224,6 +224,38 @@ create "port-forwarding" (fun _ ->
      |> ignore
 )
 
+create "upload" (fun t ->    
+    let url = sprintf "http://localhost:5984/uniformcache/" 
+    
+    t.Context.Arguments
+    |> List.iter(fun file ->
+        printfn "Uploading (%s) to: '%s'" file url
+        let response = 
+            FSharp.Data.Http.Request(url,
+                                     httpMethod = "POST",
+                                     headers = [HttpRequestHeaders.BasicAuth "admin" "password"],
+                                     silentHttpErrors = true,
+                                     body = 
+                                       (file
+                                        |> System.IO.File.ReadAllText
+                                        |> TextRequest)
+                                )
+        let body = 
+            match response.Body with
+            | Binary b -> 
+                let enc = 
+                    match response.Headers |> Map.tryFind "Content-Type" with
+                    None -> System.Text.Encoding.Default
+                    | Some s ->
+                        s.Split '=' 
+                        |> Array.last
+                        |> System.Text.Encoding.GetEncoding 
+                enc.GetString b 
+            | Text t -> t
+        if response.StatusCode <> 200 then
+            failwithf "Couln't upload test data. %d %s" response.StatusCode body
+    )
+)
 create "publish" (fun t -> 
     t.Context.Arguments
     |> List.map(fun config -> 

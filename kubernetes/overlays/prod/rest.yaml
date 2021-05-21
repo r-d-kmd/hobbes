@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gateway
+  name: rest
 spec:
   template:
     spec:
       containers:
       - imagePullPolicy: Always
-        image: hobbes.azurecr.io/gateway
-        name: gateway
+        image: hobbes.azurecr.io/rest
+        name: rest
         resources:
           requests:
             cpu: 100m
             memory: 128Mi
           limits:
-            cpu: 250m
-            memory: 256Mi
+            cpu: 1
+            memory: 1000Mi
       imagePullSecrets:
       - name: acr-secret
 status: {}

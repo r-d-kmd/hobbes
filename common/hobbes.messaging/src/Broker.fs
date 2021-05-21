@@ -27,7 +27,7 @@ module Broker =
     type Queue = 
         CacheQueue
         | ODataQueue
-        | GitQueue
+        | RestQueue
         | CalculationQueue
         | DeadLetterQueue
         | LogQueue
@@ -38,7 +38,7 @@ module Broker =
                     match x with
                     CacheQueue -> "cache"
                     | ODataQueue -> "odata"
-                    | GitQueue -> "git"
+                    | RestQueue -> "rest"
                     | CalculationQueue -> "calculation"
                     | DeadLetterQueue -> "deadletter"
                     | LogQueue -> "log"
@@ -280,10 +280,10 @@ module Broker =
             publish Queue.ODataQueue (Message msg)
         static member OData (handler : SyncMessage -> _) = 
             watch Queue.ODataQueue handler true
-        static member Git(msg : SyncMessage) = 
-            publish Queue.GitQueue (Message msg)
-        static member Git (handler : SyncMessage -> _) = 
-            watch Queue.GitQueue handler true
+        static member Rest(msg : SyncMessage) = 
+            publish Queue.RestQueue (Message msg)
+        static member Rest (handler : SyncMessage -> _) = 
+            watch Queue.RestQueue handler true
         static member Calculation(msg : CalculationMessage) = 
             publish Queue.CalculationQueue (Message msg)
         static member Calculation (handler : CalculationMessage -> _) = 

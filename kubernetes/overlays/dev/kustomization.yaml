@@ -3,7 +3,6 @@ bases:
 
 patchesStrategicMerge:
 - calvin.yaml
-- derkins.yaml
 - gateway.yaml
 - uniformdata.yaml
 - db.yaml

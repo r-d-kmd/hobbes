@@ -257,7 +257,14 @@ create "upload" (fun t ->
     )
 )
 create "publish" (fun t -> 
-    t.Context.Arguments
+    let arguments =
+        match t.Context.Arguments with
+        [] -> 
+            System.IO.Directory.GetFiles("./transformations", "*.hb")
+            |> Seq.map System.IO.Path.GetFileNameWithoutExtension
+            |> List.ofSeq
+        | args -> args
+    arguments
     |> List.map(fun config -> 
         config,System.IO.Path.Combine("./transformations", config + ".hb")
     ) |> Seq.iter(fun (name,file) ->

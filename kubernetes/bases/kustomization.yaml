@@ -5,6 +5,7 @@ bases:
   - ../../services/uniformdata/kubernetes
   - ../../workers/azuredevops.worker/kubernetes
   - ../../workers/syncronization.worker/kubernetes
+  - ../../workers/rest.worker/kubernetes
 
 resources:
 - db-deployment.yaml
@@ -12,4 +13,3 @@ resources:
 - metrics-server.yaml
 - rabbitmq-controller.yaml
 - rabbitmq-service.yaml
-- derkins.yaml

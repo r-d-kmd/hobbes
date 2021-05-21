@@ -1,5 +1,6 @@
 bases:
 - ../../bases
+- db-volume.yaml
 
 patchesStrategicMerge:
 - derkins.yaml
@@ -7,6 +8,6 @@ patchesStrategicMerge:
 - configurations.yaml
 - uniformdata.yaml
 - gateway.yaml
-- db-volume.yaml
 - db-deployment.yaml
 - odata.yaml
+- rest.yaml

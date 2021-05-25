@@ -6,16 +6,16 @@ spec:
   template:
     spec:
       containers:
-      - imagePullPolicy: Always
-        image: hobbes.azurecr.io/rest
-        name: rest
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 1
-            memory: 1000Mi
+        - imagePullPolicy: Always
+          image: hobbes.azurecr.io/rest
+          name: rest
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 1
+              memory: 1000Mi
       imagePullSecrets:
-      - name: acr-secret
+        - name: acr-secret
 status: {}

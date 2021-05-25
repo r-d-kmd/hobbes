@@ -236,7 +236,7 @@ module Broker =
                             match msg |> handler with
                             Success ->
                                 let m = sprintf "%A" msg
-                                printfn "Message processed successfully. %s" (m.Substring(0,min 100 m.Length))
+                                printfn "Message processed successfully. %s..." (m.Substring(0,min 100 m.Length))
                                 logAndComplete (fun () -> channel.BasicAck(tag,false)) MessageCompletion (serialize msg)
                             | Failure m ->
                                 let json = (serialize msg)

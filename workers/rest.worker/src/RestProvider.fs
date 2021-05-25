@@ -61,17 +61,26 @@ module RestProvider =
         inner json []
 
     let read (source : Source) = 
-        
-        let requestData url =
+        printfn "Reading name: %s, Urls: %A" source.Name source.Url 
+        let requestData user pwd url =
             printfn "Reading data from %s" url
             try
-                let json = 
+                let jsonStr = 
                     Http.RequestString(url,
                         headers = [
-                          if source.User.IsSome then yield HttpRequestHeaders.BasicAuth source.User.Value source.Pwd.Value
+                          match user,pwd with
+                          Some user,Some pwd ->  yield HttpRequestHeaders.BasicAuth user pwd
+                          | Some user, None ->  yield HttpRequestHeaders.BasicAuth user ""
+                          | None,Some pwd ->  yield HttpRequestHeaders.BasicAuth "" pwd
+                          | None, None -> ()
                         ],
                         httpMethod = "GET"
-                    ) |> FSharp.Data.JsonValue.Parse
+                    )
+#if DEBUG
+                printfn "Got: %s" (jsonStr)
+#endif
+                let json = jsonStr |> FSharp.Data.JsonValue.Parse
+
                 match source.Values with
                 None -> 
                     match json with
@@ -85,7 +94,8 @@ module RestProvider =
                 | v -> 
                     eprintfn "Unexpected value: %A" v
                     [||]
-            with _ ->
+            with e ->
+              Hobbes.Web.Log.excf e "Failed to read data for %s" url
               [||]
             
         let user = 
@@ -107,7 +117,7 @@ module RestProvider =
             )
 
         source.Url
-        |> Seq.collect (requestData >> Array.collect (readValue))
+        |> Seq.collect (requestData user pwd >> Array.collect (readValue))
         |> Seq.groupBy fst
         |> Seq.map(fun (columnName,cells) -> 
             columnName,cells 

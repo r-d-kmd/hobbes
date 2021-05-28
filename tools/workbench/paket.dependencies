@@ -6,7 +6,7 @@ storage: none
 nuget Thoth.Json.Net
 nuget Argu
 nuget Saturn = 0.13.1
-nuget Giraffe
+nuget Giraffe = 4.1.0
 nuget fsharp.data = 4.0.1
 nuget FSharp.Core ~> 5
 nuget hobbes.core

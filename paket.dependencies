@@ -4,7 +4,7 @@ framework: auto-detect
 
 nuget FSharp.Core
 nuget Saturn
-nuget Giraffe
+nuget Giraffe = 4.1.0
 nuget fsharp.data = 4.0.1
 nuget Microsoft.Extensions.PlatformAbstractions
 nuget Newtonsoft.Json

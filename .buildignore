@@ -2,5 +2,5 @@
 ./common
 ./libs
 ./tutorial
-./services/calvin/
+./services/calvin/tests
 ./services/asana-proxy

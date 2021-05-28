@@ -233,7 +233,7 @@ create "upload" (fun t ->
         let response = 
             FSharp.Data.Http.Request(url,
                                      httpMethod = "POST",
-                                     headers = [HttpRequestHeaders.BasicAuth "admin" "password"],
+                                     headers = [HttpRequestHeaders.BasicAuth "admin" "password"; HttpRequestHeaders.ContentType HttpContentTypes.Json],
                                      silentHttpErrors = true,
                                      body = 
                                        (file
@@ -252,7 +252,7 @@ create "upload" (fun t ->
                         |> System.Text.Encoding.GetEncoding 
                 enc.GetString b 
             | Text t -> t
-        if response.StatusCode <> 200 then
+        if response.StatusCode <> 201 then
             failwithf "Couln't upload test data. %d %s" response.StatusCode body
     )
 )
